@@ -1,0 +1,9 @@
+[ClassVersion("1.0.0")] 
+class DscTestResource : OMI_BaseResource 
+{
+    [Key]
+    string Name;
+
+    [write]
+    string LogPath;
+};

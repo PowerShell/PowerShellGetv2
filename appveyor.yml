@@ -1,0 +1,53 @@
+os:
+    - "WMF 5"
+
+# clone directory
+clone_folder: c:\projects\powershellget
+
+# Install Pester
+install:
+    - ps: nuget install pester -source https://www.powershellgallery.com/api/v2 -outputDirectory "$Env:ProgramFiles\WindowsPowerShell\Modules\." -ExcludeVersion
+
+# to run your custom scripts instead of automatic MSBuild
+#build_script:
+
+# to disable automatic builds
+build: off
+
+# branches to build
+branches:
+  # whitelist
+  only:
+    - master
+    - development
+
+# Run Pester tests and store the results
+test_script:
+    - SET PATH=c:\Program Files\WindowsPowerShell\Modules\;%PATH%;
+    - ps: |
+        $ModuleVersion = '1.1.0.0'
+        $InstallLocation = "$Env:ProgramFiles\WindowsPowerShell\Modules\PowerShellGet"
+        if($PSVersionTable.PSVersion -ge '5.0.0')
+        {
+            $InstallLocation = Join-Path -Path $InstallLocation -ChildPath $ModuleVersion
+        }
+        $null = New-Item -Path $InstallLocation -ItemType Directory -Force
+        copy "C:\projects\powershellget\powershellget\*" $InstallLocation -Recurse -Force -Verbose
+        $TestResultsFile = ".\TestResults.xml"
+        $TestResults = Invoke-Pester -Script "C:\projects\powershellget\Tests\" -OutputFormat NUnitXml -OutputFile $TestResultsFile -PassThru
+        (New-Object 'System.Net.WebClient').UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path $TestResultsFile))
+        if ($TestResultsFile.FailedCount -gt 0) {
+            throw "$($TestResultsFile.FailedCount) tests failed."
+        }
+
+# Upload the project along with TestResults as a zip archive
+on_finish:
+    - ps: |
+        $stagingDirectory = (Resolve-Path ..).Path
+        $zipFile = Join-Path $stagingDirectory "$(Split-Path $pwd -Leaf).zip"
+        Add-Type -assemblyname System.IO.Compression.FileSystem
+        [System.IO.Compression.ZipFile]::CreateFromDirectory($pwd, $zipFile)
+        @(
+            # You can add other artifacts here
+            (ls $zipFile)
+        ) | % { Push-AppveyorArtifact $_.FullName }

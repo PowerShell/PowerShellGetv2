@@ -1,4 +1,4 @@
-[![Build status](https://ci.appveyor.com/api/projects/status/5442cm0ce1rj4hpe/branch/master?svg=true)](https://ci.appveyor.com/project/PowerShell/PowerShellGet/branch/master)
+[![Build status](https://ci.appveyor.com/api/projects/status/91p7lpjoxit3gw72/branch/master?svg=true)](https://ci.appveyor.com/project/PowerShell/powershellget/branch/master)
 
 [![Join the chat at https://gitter.im/PowerShell/PowerShellGet](https://badges.gitter.im/PowerShell/PowerShellGet.svg)](https://gitter.im/PowerShell/PowerShellGet?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 

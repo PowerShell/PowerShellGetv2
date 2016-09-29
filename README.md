@@ -2,12 +2,6 @@
 
 [![Join the chat at https://gitter.im/PowerShell/PowerShellGet](https://badges.gitter.im/PowerShell/PowerShellGet.svg)](https://gitter.im/PowerShell/PowerShellGet?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-Announcements
-=============
-
-##### [PowerShellGet 1.1.0.0 also supports PowerShell Core!](https://www.powershellgallery.com/packages/PowerShellGet)
-
-
 Introduction
 ============
 

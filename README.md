@@ -7,7 +7,7 @@ Introduction
 
 PowerShellGet is a PowerShell module with commands for discovering, installing, updating and publishing the PowerShell artifacts like Modules, DSC Resources, Role Capabilities and Scripts.
 
-PowerShellGet module is also integrated with the PackageManagement module as a provider, users can also the PackageManagement cmdlets for discovering, installing and updating the PowerShell artifacts like Modules and Scripts.
+PowerShellGet module is also integrated with the PackageManagement module as a provider, users can also use the PackageManagement cmdlets for discovering, installing and updating the PowerShell artifacts like Modules and Scripts.
 
 Documentation
 =============

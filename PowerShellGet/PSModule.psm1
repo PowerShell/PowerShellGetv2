@@ -88,6 +88,9 @@ $script:PSGetSettings = $null
 $script:MyDocumentsInstalledScriptInfosPath = Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsScriptsPath -ChildPath 'InstalledScriptInfos'
 $script:ProgramFilesInstalledScriptInfosPath = Microsoft.PowerShell.Management\Join-Path -Path $script:ProgramFilesScriptsPath -ChildPath 'InstalledScriptInfos'
 
+$script:IsRunningAsElevated = $true
+$script:IsRunningAsElevatedTested = $false
+
 $script:InstalledScriptInfoFileName = 'InstalledScriptInfo.xml'
 $script:PSGetInstalledScripts = $null
 
@@ -122,7 +125,7 @@ $script:NuGetProviderName = "NuGet"
 $script:NuGetProviderVersion  = [Version]'2.8.5.201'
 
 $script:SupportsPSModulesFeatureName="supports-powershell-modules"
-$script:FastPackRefHastable = @{}
+$script:FastPackRefHashtable = @{}
 $script:NuGetBinaryProgramDataPath=if($script:IsWindows) {"$env:ProgramFiles\PackageManagement\ProviderAssemblies"}
 $script:NuGetBinaryLocalAppDataPath=if($script:IsWindows) {"$env:LOCALAPPDATA\PackageManagement\ProviderAssemblies"}
 # go fwlink for 'https://nuget.org/nuget.exe'
@@ -3425,12 +3428,12 @@ function Install-Script
         if(-not (Test-RunningAsElevated) -and ($Scope -ne "CurrentUser"))
         {
             # Throw an error when Install-Script is used as a non-admin user and '-Scope CurrentUser' is not specified
-            $AdminPreviligeErrorMessage = $LocalizedData.InstallScriptNeedsCurrentUserScopeParameterForNonAdminUser -f @($script:ProgramFilesScriptsPath, $script:MyDocumentsScriptsPath)
-            $AdminPreviligeErrorId = 'InstallScriptNeedsCurrentUserScopeParameterForNonAdminUser'
+            $AdminPrivilegeErrorMessage = $LocalizedData.InstallScriptNeedsCurrentUserScopeParameterForNonAdminUser -f @($script:ProgramFilesScriptsPath, $script:MyDocumentsScriptsPath)
+            $AdminPrivilegeErrorId = 'InstallScriptNeedsCurrentUserScopeParameterForNonAdminUser'
 
             ThrowError -ExceptionName "System.ArgumentException" `
-                        -ExceptionMessage $AdminPreviligeErrorMessage `
-                        -ErrorId $AdminPreviligeErrorId `
+                        -ExceptionMessage $AdminPrivilegeErrorMessage `
+                        -ErrorId $AdminPrivilegeErrorId `
                         -CallerPSCmdlet $PSCmdlet `
                         -ErrorCategory InvalidArgument
         }
@@ -4087,17 +4090,17 @@ function Register-PSRepository
     {
         if (Get-Variable -Name SourceLocation -ErrorAction SilentlyContinue)
         {
-            Set-Variable -Name selctedProviderName -value $null -Scope 1
+            Set-Variable -Name selectedProviderName -value $null -Scope 1
 
             if(Get-Variable -Name PackageManagementProvider -ErrorAction SilentlyContinue)
             {
-                $selctedProviderName = $PackageManagementProvider
-                $null = Get-DynamicParameters -Location $SourceLocation -PackageManagementProvider ([REF]$selctedProviderName)
+                $selectedProviderName = $PackageManagementProvider
+                $null = Get-DynamicParameters -Location $SourceLocation -PackageManagementProvider ([REF]$selectedProviderName)
             }
             else
             {
-                $dynamicParameters = Get-DynamicParameters -Location $SourceLocation -PackageManagementProvider ([REF]$selctedProviderName)
-                Set-Variable -Name PackageManagementProvider -Value $selctedProviderName -Scope 1
+                $dynamicParameters = Get-DynamicParameters -Location $SourceLocation -PackageManagementProvider ([REF]$selectedProviderName)
+                Set-Variable -Name PackageManagementProvider -Value $selectedProviderName -Scope 1
                 $null = $dynamicParameters
             }
         }
@@ -4179,9 +4182,9 @@ function Register-PSRepository
             {            
                 $providerName = $PackageManagementProvider
             }
-            elseif($selctedProviderName)
+            elseif($selectedProviderName)
             {
-                $providerName = $selctedProviderName
+                $providerName = $selectedProviderName
             }
             else
             {
@@ -4648,16 +4651,16 @@ function Test-ScriptFileInfo
 
         $notSupportedOnNanoErrorIds = @('WorkflowNotSupportedInPowerShellCore',
                                         'ConfigurationNotSupportedInPowerShellCore')
-        $errosAfterSkippingOneCoreErrors = $errors | Microsoft.PowerShell.Core\Where-Object { $notSupportedOnNanoErrorIds -notcontains $_.ErrorId}
+        $errorsAfterSkippingOneCoreErrors = $errors | Microsoft.PowerShell.Core\Where-Object { $notSupportedOnNanoErrorIds -notcontains $_.ErrorId}
 
-        if($errosAfterSkippingOneCoreErrors)
+        if($errorsAfterSkippingOneCoreErrors)
         {
             $errorMessage = ($LocalizedData.ScriptParseError -f $scriptFilePath)
             ThrowError  -ExceptionName "System.ArgumentException" `
                         -ExceptionMessage $errorMessage `
                         -ErrorId "ScriptParseError" `
                         -CallerPSCmdlet $PSCmdlet `
-                        -ExceptionObject $errosAfterSkippingOneCoreErrors `
+                        -ExceptionObject $errorsAfterSkippingOneCoreErrors `
                         -ErrorCategory InvalidArgument
             return
         }
@@ -7580,21 +7583,26 @@ function Test-RunningAsElevated
     [OutputType([bool])]
     Param()
 
-    if($script:IsWindows)
+    if(-not $script:IsRunningAsElevatedTested -and $script:IsRunningAsElevated)
     {
-        $wid=[System.Security.Principal.WindowsIdentity]::GetCurrent()
-        $prp=new-object System.Security.Principal.WindowsPrincipal($wid)
-        $adm=[System.Security.Principal.WindowsBuiltInRole]::Administrator
-        return $prp.IsInRole($adm)
-    }
-    elseif($script:IsCoreCLR)
-    {
-        # Permission models on *nix can be very complex, to the point that you could never possibly guess without simply trying what you need to try;
-        # This is totally different from Windows where you can know what you can or cannot do with/without admin rights.
-        return $true
+        if($script:IsWindows)
+        {
+            $wid=[System.Security.Principal.WindowsIdentity]::GetCurrent()
+            $prp=new-object System.Security.Principal.WindowsPrincipal($wid)
+            $adm=[System.Security.Principal.WindowsBuiltInRole]::Administrator
+            $script:IsRunningAsElevated = $prp.IsInRole($adm)
+        }
+        elseif($script:IsCoreCLR)
+        {
+            # Permission models on *nix can be very complex, to the point that you could never possibly guess without simply trying what you need to try;
+            # This is totally different from Windows where you can know what you can or cannot do with/without admin rights.
+            $script:IsRunningAsElevated = $true
+        }
+
+        $script:IsRunningAsElevatedTested = $true
     }
 
-    return $false
+    return $script:IsRunningAsElevated
 }
 
 function Get-EscapedString
@@ -10165,7 +10173,7 @@ function Find-Package
 																	-Type $artifactType `
 																	-request $request
 				
-								$script:FastPackRefHastable[$fastPackageReference] = $pkg
+								$script:FastPackRefHashtable[$fastPackageReference] = $pkg
 	
 								Write-Output -InputObject $sid
 							}
@@ -10259,22 +10267,22 @@ function Install-PackageUtility
         $packageName = $parts[1]
         $version = $parts[2]
         $sourceLocation= $parts[3]
-        $artfactType = $parts[4]
+        $artifactType = $parts[4]
 
         # The default destination location for Modules and Scripts is ProgramFiles path
         $scriptDestination = $script:ProgramFilesScriptsPath
         $moduleDestination = $script:programFilesModulesPath
         $Scope = 'AllUsers'
 
-        if($artfactType -eq $script:PSArtifactTypeScript)
+        if($artifactType -eq $script:PSArtifactTypeScript)
         {
-            $AdminPreviligeErrorMessage = $LocalizedData.InstallScriptNeedsCurrentUserScopeParameterForNonAdminUser -f @($script:ProgramFilesScriptsPath, $script:MyDocumentsScriptsPath)
-            $AdminPreviligeErrorId = 'InstallScriptNeedsCurrentUserScopeParameterForNonAdminUser'
+            $AdminPrivilegeErrorMessage = $LocalizedData.InstallScriptNeedsCurrentUserScopeParameterForNonAdminUser -f @($script:ProgramFilesScriptsPath, $script:MyDocumentsScriptsPath)
+            $AdminPrivilegeErrorId = 'InstallScriptNeedsCurrentUserScopeParameterForNonAdminUser'
         }
         else
         {
-            $AdminPreviligeErrorMessage = $LocalizedData.InstallModuleNeedsCurrentUserScopeParameterForNonAdminUser -f @($script:programFilesModulesPath, $script:MyDocumentsModulesPath)
-            $AdminPreviligeErrorId = 'InstallModuleNeedsCurrentUserScopeParameterForNonAdminUser'
+            $AdminPrivilegeErrorMessage = $LocalizedData.InstallModuleNeedsCurrentUserScopeParameterForNonAdminUser -f @($script:programFilesModulesPath, $script:MyDocumentsModulesPath)
+            $AdminPrivilegeErrorId = 'InstallModuleNeedsCurrentUserScopeParameterForNonAdminUser'
         }
 
         $installUpdate = $false
@@ -10307,8 +10315,8 @@ function Install-PackageUtility
                     {
                         # Throw an error when Install-Module/Script is used as a non-admin user and '-Scope CurrentUser' is not specified
                         ThrowError -ExceptionName "System.ArgumentException" `
-                                    -ExceptionMessage $AdminPreviligeErrorMessage `
-                                    -ErrorId $AdminPreviligeErrorId `
+                                    -ExceptionMessage $AdminPrivilegeErrorMessage `
+                                    -ErrorId $AdminPrivilegeErrorId `
                                     -CallerPSCmdlet $PSCmdlet `
                                     -ErrorCategory InvalidArgument
                     }
@@ -10326,8 +10334,8 @@ function Install-PackageUtility
             elseif(-not (Test-RunningAsElevated))
             {
                 ThrowError -ExceptionName "System.ArgumentException" `
-                           -ExceptionMessage $AdminPreviligeErrorMessage `
-                           -ErrorId $AdminPreviligeErrorId `
+                           -ExceptionMessage $AdminPrivilegeErrorMessage `
+                           -ErrorId $AdminPrivilegeErrorId `
                            -CallerPSCmdlet $PSCmdlet `
                            -ErrorCategory InvalidArgument
             }
@@ -10444,7 +10452,7 @@ function Install-PackageUtility
                 }
             }            
 
-            if($Scope -and ($artfactType -eq $script:PSArtifactTypeScript) -and (-not $installUpdate))
+            if($Scope -and ($artifactType -eq $script:PSArtifactTypeScript) -and (-not $installUpdate))
             {
                 ValidateAndSet-PATHVariableIfUserAccepts -Scope $Scope `
                                                          -ScopePath $scriptDestination `
@@ -10453,7 +10461,7 @@ function Install-PackageUtility
                                                          -Force:$Force
             }
 
-            if($artfactType -eq $script:PSArtifactTypeModule)
+            if($artifactType -eq $script:PSArtifactTypeModule)
             {
                 $message = $LocalizedData.ModuleDestination -f @($moduleDestination)
             }
@@ -10464,9 +10472,9 @@ function Install-PackageUtility
             Write-Verbose $message            
         }
 
-        Write-Debug "ArtfactType is $artfactType"
+        Write-Debug "ArtifactType is $artifactType"
 
-        if($artfactType -eq $script:PSArtifactTypeModule)
+        if($artifactType -eq $script:PSArtifactTypeModule)
         {
             # Test if module is already installed
             $InstalledModuleInfo = if(-not $IsSavePackage){ Test-ModuleInstalled -Name $packageName -RequiredVersion $RequiredVersion }
@@ -10527,7 +10535,7 @@ function Install-PackageUtility
             }
         }
 
-        if($artfactType -eq $script:PSArtifactTypeScript)
+        if($artifactType -eq $script:PSArtifactTypeScript)
         {
             # Test if script is already installed
             $InstalledScriptInfo = if(-not $IsSavePackage){ Test-ScriptInstalled -Name $packageName }
@@ -10607,7 +10615,7 @@ function Install-PackageUtility
             Write-Verbose ($LocalizedData.SpecifiedLocationAndOGP -f ($provider.ProviderName, $providerName))
 
             $InstalledItemsList = $null
-            $pkg = $script:FastPackRefHastable[$fastPackageReference]
+            $pkg = $script:FastPackRefHashtable[$fastPackageReference]
 
             # If an item has dependencies, prepare the list of installed items and 
             # pass it to the NuGet provider to not download the already installed items.
@@ -10618,7 +10626,7 @@ function Install-PackageUtility
                 $InstalledItemsList = Microsoft.PowerShell.Core\Get-Module -ListAvailable | 
                                         Microsoft.PowerShell.Core\ForEach-Object {"$($_.Name)!#!$($_.Version)".ToLower()}
 
-                if($artfactType -eq $script:PSArtifactTypeScript)
+                if($artifactType -eq $script:PSArtifactTypeScript)
                 {
                     $InstalledItemsList += $script:PSGetInstalledScripts.GetEnumerator() | 
                                                Microsoft.PowerShell.Core\ForEach-Object { 
@@ -10646,7 +10654,7 @@ function Install-PackageUtility
 
             $newRequest = $request.CloneRequest( $ProviderOptions, @($SourceLocation), $request.Credential )
 
-            if($artfactType -eq $script:PSArtifactTypeModule)
+            if($artifactType -eq $script:PSArtifactTypeModule)
             {
                 $message = $LocalizedData.DownloadingModuleFromGallery -f ($packageName, $version, $sourceLocation)
             }
@@ -10656,7 +10664,7 @@ function Install-PackageUtility
             }
             Write-Verbose $message
 
-            $installedPkgs = $provider.InstallPackage($script:FastPackRefHastable[$fastPackageReference], $newRequest)
+            $installedPkgs = $provider.InstallPackage($script:FastPackRefHashtable[$fastPackageReference], $newRequest)
 
             foreach($pkg in $installedPkgs)
             {
@@ -11069,7 +11077,7 @@ function Uninstall-Package
         $packageName = $parts[1]
         $version = $parts[2]
         $sourceLocation= $parts[3]
-        $artfactType = $parts[4]
+        $artifactType = $parts[4]
 
         if($request.IsCanceled)
         {
@@ -11093,7 +11101,7 @@ function Uninstall-Package
             }
         }
 
-        if($artfactType -eq $script:PSArtifactTypeModule)
+        if($artifactType -eq $script:PSArtifactTypeModule)
         {
             $moduleName = $packageName
             $InstalledModuleInfo = $script:PSGetInstalledModules["$($moduleName)$($version)"] 
@@ -11234,7 +11242,7 @@ function Uninstall-Package
 
             Write-Output -InputObject $InstalledModuleInfo.SoftwareIdentity
         }
-        elseif($artfactType -eq $script:PSArtifactTypeScript)
+        elseif($artifactType -eq $script:PSArtifactTypeScript)
         {
             $scriptName = $packageName
             $InstalledScriptInfo = $script:PSGetInstalledScripts["$($scriptName)$($version)"] 
@@ -11301,7 +11309,7 @@ function Uninstall-Package
             $scriptFilePath = Microsoft.PowerShell.Management\Join-Path -Path $scriptBase `
                                                                         -ChildPath "$($scriptName).ps1"
 
-            $installledScriptInfoFilePath = Microsoft.PowerShell.Management\Join-Path -Path $installedScriptInfoPath `
+            $installedScriptInfoFilePath = Microsoft.PowerShell.Management\Join-Path -Path $installedScriptInfoPath `
                                                                                       -ChildPath "$($scriptName)_$($script:InstalledScriptInfoFileName)" 
 
             # Remove the script file and it's corresponding InstalledScriptInfo.xml
@@ -11314,9 +11322,9 @@ function Uninstall-Package
                                                             -Confirm:$false -WhatIf:$false
             }
 
-            if(Microsoft.PowerShell.Management\Test-Path -Path $installledScriptInfoFilePath -PathType Leaf)
+            if(Microsoft.PowerShell.Management\Test-Path -Path $installedScriptInfoFilePath -PathType Leaf)
             {
-                Microsoft.PowerShell.Management\Remove-Item -Path $installledScriptInfoFilePath `
+                Microsoft.PowerShell.Management\Remove-Item -Path $installedScriptInfoFilePath `
                                                             -Force `
                                                             -ErrorAction SilentlyContinue `
                                                             -WarningAction SilentlyContinue `
@@ -13664,6 +13672,9 @@ function Copy-ScriptFile
         [string]
         $Scope
     )
+
+    $ev = $null
+    $message = $LocalizedData.AdministratorRightsNeededOrSpecifyCurrentUserScope
     
     # Copy the script file to destination
     if(-not (Microsoft.PowerShell.Management\Test-Path -Path $DestinationPath))
@@ -13671,13 +13682,42 @@ function Copy-ScriptFile
         $null = Microsoft.PowerShell.Management\New-Item -Path $DestinationPath `
                                                          -ItemType Directory `
                                                          -Force `
+                                                         -ErrorVariable ev `
                                                          -ErrorAction SilentlyContinue `
                                                          -WarningAction SilentlyContinue `
                                                          -Confirm:$false `
                                                          -WhatIf:$false
+        
+        if($ev)
+        {
+            $script:IsRunningAsElevated = $false
+            ThrowError -ExceptionName "System.ArgumentException" `
+                       -ExceptionMessage $message `
+                       -ErrorId "AdministratorRightsNeededOrSpecifyCurrentUserScope" `
+                       -CallerPSCmdlet $PSCmdlet `
+                       -ErrorCategory InvalidArgument `
+                       -ExceptionObject $ev
+        }
     }
 
-    Microsoft.PowerShell.Management\Copy-Item -Path $SourcePath -Destination $DestinationPath -Force -Confirm:$false -WhatIf:$false -Verbose
+    Microsoft.PowerShell.Management\Copy-Item -Path $SourcePath `
+                                              -Destination $DestinationPath `
+                                              -Force `
+                                              -Confirm:$false `
+                                              -WhatIf:$false `
+                                              -ErrorVariable ev `
+                                              -ErrorAction SilentlyContinue
+
+    if($ev)
+    {
+        $script:IsRunningAsElevated = $false
+        ThrowError -ExceptionName "System.ArgumentException" `
+                   -ExceptionMessage $message `
+                   -ErrorId "AdministratorRightsNeededOrSpecifyCurrentUserScope" `
+                   -CallerPSCmdlet $PSCmdlet `
+                   -ErrorCategory InvalidArgument `
+                   -ExceptionObject $ev
+    }
 
     if($Scope)
     {
@@ -13721,16 +13761,75 @@ function Copy-Module
         [PSCustomObject]
         $PSGetItemInfo
     )
-    
+
+    $ev = $null
+    $message = $LocalizedData.AdministratorRightsNeededOrSpecifyCurrentUserScope
+        
     if(Microsoft.PowerShell.Management\Test-Path $DestinationPath)
     {
-        Microsoft.PowerShell.Management\Remove-Item -Path $DestinationPath -Recurse -Force -ErrorAction SilentlyContinue -WarningAction SilentlyContinue -Confirm:$false -WhatIf:$false
+        Microsoft.PowerShell.Management\Remove-Item -Path $DestinationPath `
+                                                    -Recurse `
+                                                    -Force `
+                                                    -ErrorVariable ev `
+                                                    -ErrorAction SilentlyContinue `
+                                                    -WarningAction SilentlyContinue `
+                                                    -Confirm:$false `
+                                                    -WhatIf:$false
+
+        if($ev)
+        {
+            $script:IsRunningAsElevated = $false
+            ThrowError -ExceptionName "System.ArgumentException" `
+                       -ExceptionMessage $message `
+                       -ErrorId "AdministratorRightsNeededOrSpecifyCurrentUserScope" `
+                       -CallerPSCmdlet $PSCmdlet `
+                       -ErrorCategory InvalidArgument `
+                       -ExceptionObject $ev
+        }
     }
 
+
     # Copy the module to destination
-    $null = Microsoft.PowerShell.Management\New-Item -Path $DestinationPath -ItemType Directory -Force -ErrorAction SilentlyContinue -WarningAction SilentlyContinue -Confirm:$false -WhatIf:$false
-    Microsoft.PowerShell.Management\Copy-Item -Path "$SourcePath\*" -Destination $DestinationPath -Force -Recurse -Confirm:$false -WhatIf:$false
+    $null = Microsoft.PowerShell.Management\New-Item -Path $DestinationPath `
+                                                     -ItemType Directory `
+                                                     -Force `
+                                                     -ErrorVariable ev `
+                                                     -ErrorAction SilentlyContinue `
+                                                     -WarningAction SilentlyContinue `
+                                                     -Confirm:$false `
+                                                     -WhatIf:$false
+
+    if($ev)
+    {
+        $script:IsRunningAsElevated = $false
+        ThrowError -ExceptionName "System.ArgumentException" `
+                   -ExceptionMessage $message `
+                   -ErrorId "AdministratorRightsNeededOrSpecifyCurrentUserScope" `
+                   -CallerPSCmdlet $PSCmdlet `
+                   -ErrorCategory InvalidArgument `
+                   -ExceptionObject $ev
+    }
+
+    Microsoft.PowerShell.Management\Copy-Item -Path "$SourcePath\*" `
+                                              -Destination $DestinationPath `
+                                              -Force `
+                                              -Recurse `
+                                              -ErrorVariable ev `
+                                              -ErrorAction SilentlyContinue `
+                                              -Confirm:$false `
+                                              -WhatIf:$false
     
+    if($ev)
+    {
+        $script:IsRunningAsElevated = $false
+        ThrowError -ExceptionName "System.ArgumentException" `
+                   -ExceptionMessage $message `
+                   -ErrorId "AdministratorRightsNeededOrSpecifyCurrentUserScope" `
+                   -CallerPSCmdlet $PSCmdlet `
+                   -ErrorCategory InvalidArgument `
+                   -ExceptionObject $ev
+    }
+
     # Remove the *.nupkg file
     if(Microsoft.PowerShell.Management\Test-Path "$DestinationPath\$($PSGetItemInfo.Name).nupkg")
     {
@@ -14633,11 +14732,20 @@ function ThrowError
 # Create install locations for scripts if they are not already created
 if(-not (Microsoft.PowerShell.Management\Test-Path -Path $script:ProgramFilesInstalledScriptInfosPath) -and (Test-RunningAsElevated))
 {
+    $ev = $null
     $null = Microsoft.PowerShell.Management\New-Item -Path $script:ProgramFilesInstalledScriptInfosPath `
                                                      -ItemType Directory `
                                                      -Force `
+                                                     -ErrorVariable ev `
+                                                     -ErrorAction SilentlyContinue `
+                                                     -WarningAction SilentlyContinue `
                                                      -Confirm:$false `
                                                      -WhatIf:$false
+    
+    if($ev)
+    {
+        $script:IsRunningAsElevated = $false
+    }
 }
 
 if(-not (Microsoft.PowerShell.Management\Test-Path -Path $script:MyDocumentsInstalledScriptInfosPath))

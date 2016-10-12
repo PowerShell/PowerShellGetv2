@@ -225,6 +225,7 @@ ConvertFrom-StringData @'
         CatalogFileNotFoundInAvailableModule=Catalog file '{0}' is not found in the contents of the previously-installed module '{1}' with the same name.
         CatalogFileNotFoundInNewModule=Catalog file '{0}' is not found in the contents of the module '{1}' being installed.
         ValidAuthenticodeSignature=Valid authenticode signature found in the catalog file '{0}' for the module '{1}'.
+        ValidAuthenticodeSignatureInFile=Valid authenticode signature found in the file '{0}' for the module '{1}'.
         ValidatingCatalogSignature=Validating the '{0}' module files for catalog signing using the catalog file '{1}'.
         AuthenticodeIssuerMatch=Authenticode issuer '{0}' of the new module '{1}' with version '{2}' matches with the authenticode issuer '{3}' of the previously-installed module '{4}' with version '{5}'.
         ValidCatalogSignature=The catalog signature in '{0}' of the module '{1}' is valid and matches with the hash generated from the module contents.

@@ -1261,7 +1261,7 @@ function Publish-Module
         }
         finally
         {
-            Microsoft.PowerShell.Management\Remove-Item $tempModulePath -Force -Recurse -ErrorAction SilentlyContinue -WarningAction SilentlyContinue -Confirm:$false -WhatIf:$false
+            Microsoft.PowerShell.Management\Remove-Item $tempModulePath -Force -Recurse -ErrorAction Ignore -WarningAction SilentlyContinue -Confirm:$false -WhatIf:$false
         }
     }
 }
@@ -2901,7 +2901,7 @@ function Publish-Script
         }
         finally
         {
-            Microsoft.PowerShell.Management\Remove-Item $tempScriptPath -Force -Recurse -ErrorAction SilentlyContinue -WarningAction SilentlyContinue -Confirm:$false -WhatIf:$false
+            Microsoft.PowerShell.Management\Remove-Item $tempScriptPath -Force -Recurse -ErrorAction Ignore -WarningAction SilentlyContinue -Confirm:$false -WhatIf:$false
         }
     }
 }
@@ -3528,7 +3528,7 @@ function Install-Script
                 {
                     # Throw an error if there is a command with the same name and -force is not specified.
                     $cmd = Microsoft.PowerShell.Core\Get-Command -Name $scriptName `
-                                                                 -ErrorAction SilentlyContinue `
+                                                                 -ErrorAction Ignore `
                                                                  -WarningAction SilentlyContinue
                     if($cmd)
                     {
@@ -3606,7 +3606,7 @@ function Install-Script
                     if(-not $Force)
                     {
                         $cmd = Microsoft.PowerShell.Core\Get-Command -Name $psRepositoryItemInfo.Name `
-                                                                     -ErrorAction SilentlyContinue `
+                                                                     -ErrorAction Ignore `
                                                                      -WarningAction SilentlyContinue
                         if($cmd)
                         {
@@ -6157,7 +6157,7 @@ function Check-PSGalleryApiAvailability
     # check internet availability first
     $connected = $false
     $microsoftDomain = 'www.microsoft.com'
-    if(Get-Command Microsoft.PowerShell.Management\Test-Connection -ErrorAction SilentlyContinue)
+    if(Get-Command Microsoft.PowerShell.Management\Test-Connection -ErrorAction Ignore)
     {        
         $connected = Microsoft.PowerShell.Management\Test-Connection -ComputerName $microsoftDomain -Count 1 -Quiet
     }
@@ -7147,18 +7147,18 @@ function New-PSGetItemInfo
             }
         }
 		
-        $additionalMetadata =  New-Object -TypeName  System.Collections.Hashtable
+        $additionalMetadata =  Microsoft.PowerShell.Utility\New-Object PSCustomObject -Property ([ordered]@{})
         foreach ( $key in $swid.Metadata.Keys.LocalName)
         {
-            if (!$additionalMetadata.ContainsKey($key))
-            {
-                $additionalMetadata.Add($key, (Get-First $swid.Metadata[$key]) )
-            }
+            Microsoft.PowerShell.Utility\Add-Member -InputObject $additionalMetadata `
+                                                    -MemberType NoteProperty `
+                                                    -Name $key `
+                                                    -Value (Get-First $swid.Metadata[$key])
         }
-
-        if($additionalMetadata.ContainsKey('ItemType'))
+        
+        if(Get-Member -InputObject $additionalMetadata -Name 'ItemType')
         {
-            $Type = $additionalMetadata['ItemType']
+            $Type = $additionalMetadata.'ItemType'
         }
         elseif($userTags -contains 'PSModule')
         {
@@ -7420,7 +7420,7 @@ function Install-NuGetClientBinaries
             # Using Get-Command cmdlet, get the location of NuGet.exe if it is available under $env:PATH.
             # NuGet.exe does not work if it is under $env:WINDIR, so skip it from the Get-Command results.
             $nugetCmd = Microsoft.PowerShell.Core\Get-Command -Name $script:NuGetExeName `
-                                                              -ErrorAction SilentlyContinue `
+                                                              -ErrorAction Ignore `
                                                               -WarningAction SilentlyContinue | 
                             Microsoft.PowerShell.Core\Where-Object { 
                                 $_.Path -and 
@@ -8649,7 +8649,7 @@ function Get-ExportedDscResources
 
     $dscResources = @()
 
-    if(Get-Command -Name Get-DscResource -Module PSDesiredStateConfiguration -ErrorAction SilentlyContinue)
+    if(Get-Command -Name Get-DscResource -Module PSDesiredStateConfiguration -ErrorAction Ignore)
     {
         $OldPSModulePath = $env:PSModulePath
 
@@ -10582,7 +10582,7 @@ function Install-PackageUtility
                -not $Force)
             {
                 $cmd = Microsoft.PowerShell.Core\Get-Command -Name $packageName `
-                                                             -ErrorAction SilentlyContinue `
+                                                             -ErrorAction Ignore `
                                                              -WarningAction SilentlyContinue
                 if($cmd)
                 {
@@ -13948,15 +13948,7 @@ function Validate-ModuleAuthenticodeSignature
         [Switch]
         $SkipPublisherCheck
     )
-
-    $InstalledModuleDetails = $null
-    $InstalledModuleInfo = Test-ModuleInstalled -Name $CurrentModuleInfo.Name
-    if($InstalledModuleInfo)
-    {
-        $InstalledModuleDetails = Get-InstalledModuleAuthenticodeSignature -InstalledModuleInfo $InstalledModuleInfo `
-                                                                           -InstallLocation $InstallLocation
-    }
-
+    
     # Skip the publisher check when -SkipPublisherCheck is specified and 
     # it is not an update operation.
     if(-not $IsUpdateOperation -and $SkipPublisherCheck)
@@ -13967,12 +13959,21 @@ function Validate-ModuleAuthenticodeSignature
         return $true
     }
 
+    $InstalledModuleDetails = $null
+    $InstalledModuleInfo = Test-ModuleInstalled -Name $CurrentModuleInfo.Name
+    if($InstalledModuleInfo)
+    {
+        $InstalledModuleDetails = Get-InstalledModuleAuthenticodeSignature -InstalledModuleInfo $InstalledModuleInfo `
+                                                                           -InstallLocation $InstallLocation
+    }
+
     # Validate the catalog signature for the current module being installed.
     $ev = $null
     $CurrentModuleDetails = ValidateAndGet-AuthenticodeSignature -ModuleInfo $CurrentModuleInfo -ErrorVariable ev
 
     if($ev)
     {
+        Write-Debug "$ev"
         return $false
     }
 
@@ -14122,7 +14123,7 @@ function Validate-ModuleCommandAlreadyAvailable
             $CommandNamesWithWildcards = $CommandNames | Microsoft.PowerShell.Core\Foreach-Object { "$_*" }
 
             $AvailableCommand = Microsoft.PowerShell.Core\Get-Command -Name $CommandNamesWithWildcards `
-                                                                      -ErrorAction SilentlyContinue `
+                                                                      -ErrorAction Ignore `
                                                                       -WarningAction SilentlyContinue | 
                                     Microsoft.PowerShell.Core\Where-Object { ($CommandNames -contains $_.Name) -and 
                                                                              ($_.ModuleName -ne $CurrentModuleInfo.Name) } |
@@ -14159,6 +14160,7 @@ function ValidateAndGet-AuthenticodeSignature
 
     $ModuleName = $ModuleInfo.Name
     $ModuleBasePath = $ModuleInfo.ModuleBase
+    $ModuleManifestName = "$ModuleName.psd1"
     $CatalogFileName = "$ModuleName.cat"
     $CatalogFilePath = Microsoft.PowerShell.Management\Join-Path -Path $ModuleBasePath -ChildPath $CatalogFileName
 
@@ -14183,7 +14185,7 @@ function ValidateAndGet-AuthenticodeSignature
         
         Write-Verbose -Message ($LocalizedData.ValidAuthenticodeSignature -f @($CatalogFileName, $ModuleName))
         
-        if(Get-Command -Name Test-FileCatalog -Module Microsoft.PowerShell.Security -ErrorAction SilentlyContinue)
+        if(Get-Command -Name Test-FileCatalog -Module Microsoft.PowerShell.Security -ErrorAction Ignore)
         {
             Write-Verbose -Message ($LocalizedData.ValidatingCatalogSignature -f @($ModuleName, $CatalogFileName))
             
@@ -14214,6 +14216,29 @@ function ValidateAndGet-AuthenticodeSignature
     else
     {
         Write-Verbose -Message ($LocalizedData.CatalogFileNotFoundInNewModule -f ($CatalogFileName, $ModuleName))
+        
+        $message = "Using the '{0}' file for getting the authenticode signature." -f ($ModuleManifestName)
+        Write-Debug -Message $message
+
+        $AuthenticodeSignature = Microsoft.PowerShell.Security\Get-AuthenticodeSignature -FilePath $ModuleInfo.Path
+
+        if($AuthenticodeSignature)
+        {
+            if($AuthenticodeSignature.Status -eq "Valid")
+            {
+                Write-Verbose -Message ($LocalizedData.ValidAuthenticodeSignatureInFile -f @($ModuleManifestName, $ModuleName))
+            }
+            elseif($AuthenticodeSignature.Status -ne "NotSigned")
+            {
+                $message = $LocalizedData.InvalidModuleAuthenticodeSignature -f ($ModuleName, $ModuleManifestName)
+                ThrowError -ExceptionName 'System.InvalidOperationException' `
+                           -ExceptionMessage $message `
+                           -ErrorId 'InvalidAuthenticodeSignature' `
+                           -CallerPSCmdlet $PSCmdlet `
+                           -ErrorCategory InvalidOperation
+                return
+            }
+        }
     }
 
     if($AuthenticodeSignature)

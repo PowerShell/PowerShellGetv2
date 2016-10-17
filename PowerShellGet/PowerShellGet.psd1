@@ -1,6 +1,6 @@
 ﻿@{
 RootModule = 'PSModule.psm1'
-ModuleVersion = '1.1.1.0'
+ModuleVersion = '1.1.2.0'
 GUID = '1d73a601-4a6c-43c5-ba3f-619b18bbb404'
 Author = 'Microsoft Corporation'
 CompanyName = 'Microsoft Corporation'
@@ -41,7 +41,7 @@ AliasesToExport = @('inmo',
 FileList = @('PSModule.psm1',
              'PSGet.Format.ps1xml',
              'PSGet.Resource.psd1')
-RequiredModules = @(@{ModuleName='PackageManagement';ModuleVersion='1.0.0.1'})
+RequiredModules = @(@{ModuleName='PackageManagement';ModuleVersion='1.1.0.0'})
 PrivateData = @{
                 "PackageManagementProviders" = 'PSModule.psm1'
                 "SupportedPowerShellGetFormatVersions" = @('1.x')

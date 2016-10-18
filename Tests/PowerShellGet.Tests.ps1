@@ -79,7 +79,7 @@ else
 Describe "PowerShellGet - Module tests" -tags "CI" {
 
     BeforeEach {
-        Get-InstalledModule -Name $ContosoServer -AllVersions -ErrorAction SilentlyContinue | Uninstall-Module -Force
+        Get-InstalledModule -Name $ContosoServer -AllVersions -ErrorAction SilentlyContinue | PowerShellGet\Uninstall-Module -Force
     }
 
     It "Should find a module correctly" {
@@ -115,7 +115,7 @@ Describe "PowerShellGet - Module tests" -tags "CI" {
     }
 
     AfterAll {
-        Get-InstalledModule -Name $ContosoServer -AllVersions -ErrorAction SilentlyContinue | Uninstall-Module -Force
+        Get-InstalledModule -Name $ContosoServer -AllVersions -ErrorAction SilentlyContinue | PowerShellGet\Uninstall-Module -Force
     }
 }
 

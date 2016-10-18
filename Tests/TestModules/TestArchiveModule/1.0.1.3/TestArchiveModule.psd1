@@ -1,0 +1,52 @@
+@{
+ModuleVersion="1.0.1.3"
+GUID = '9b43ea9f-d25a-4342-b4ea-60dd018c6358'
+Author="manikb"
+CompanyName="Microsoft Corporation"
+Copyright="© Microsoft Corporation. All rights reserved."
+Description = 'Test module'
+NestedModules="TestArchiveModule.psm1"
+FunctionsToExport = '*'
+CmdletsToExport = '*'
+VariablesToExport = '*'
+AliasesToExport = '*'
+PrivateData = @{
+    PSData = @{
+        Tags = 'InvalidAuthenticodeSignature'
+    }
+}
+}
+
+# SIG # Begin signature block
+# MIIFvwYJKoZIhvcNAQcCoIIFsDCCBawCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
+# gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUm6H9joQ2Tou0ZBeegYbDiDz3
+# 352gggNMMIIDSDCCAjCgAwIBAgIQRKnSRUMs6L9BAKhMrtFfqjANBgkqhkiG9w0B
+# AQsFADAoMSYwJAYDVQQDDB1QU0NhdGFsb2cgVGVzdCBSb290IEF1dGhvcml0eTAe
+# Fw0xNjA2MDgyMjM3MTdaFw0xNzA2MDgyMjQ3MTdaMCExHzAdBgNVBAMMFlBTQ2F0
+# YWxvZyBDb2RlIFNpZ25pbmcwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIB
+# AQDI7h2uaJ5wIdxTP0zJCSoS4SwfMfpw8diZUqkoIGizuPdXgozy390/w1RkZyOg
+# hUlwhWXxGp2JgJS74CyeMAqlCRBpOiU4LsRrH6bqyakdAsuhQwoI5OBzb5CarKje
+# Sm445WGx4QIFWc3DjPSBhHQoYaVM4Z4X56IOad7XAEu1gUaXFV/HDyI+TKADatpO
+# xInOsyjzUQqziG+skdU7WQ6d1591JeMN+HFxFTURSSC85Oe28wpErkGmIpRiKOWo
+# kadz57gBvTi+UJv2RD5jWo6OA+Wog9T/oNUENMVb39wlhBeAsleQHrURlJO0mcqH
+# Yx+l5o1dsQz1jaOY/yRg2QeZAgMBAAGjdTBzMA4GA1UdDwEB/wQEAwIBhjAMBgNV
+# HRMBAf8EAjAAMBMGA1UdJQQMMAoGCCsGAQUFBwMDMB8GA1UdIwQYMBaAFHVYyejQ
+# FDtHp295VZ0mGyrZQtALMB0GA1UdDgQWBBRIsw6PazqRtRBjvrORvxm5BByk0TAN
+# BgkqhkiG9w0BAQsFAAOCAQEABEnKpQcgDGM5gSWbHCXTY5qhXqUJzGS5RbxwpbfG
+# RuLuw0aV7guqsW3vbj+IR2pxtrIUVQk7cx4ulNBV7KIgbTJdTmZBCn/spR+zt+AN
+# 4rR9xccEQoklKe7OKMBY6PlB/J5rzkUy4G8gls+k5+sZY9b/j5pjaN9UWVeiNa1f
+# VtiXB62bCLlUl+OT74SGTROrpO5wt/L9Yt3EL1TkZWwicNjSRStvWtgt+Zo0tkkr
+# ofTK9/D+F9fXT4Q/+DiPYjbMETLctn71eQxAz9wQwdL9jrcWoME5XVoqAHf2XBJ/
+# cSOYRIJLtopQqvSzZG0G0Or2NJpvr/wrlzcn31JTWEPrsjGCAd0wggHZAgEBMDww
+# KDEmMCQGA1UEAwwdUFNDYXRhbG9nIFRlc3QgUm9vdCBBdXRob3JpdHkCEESp0kVD
+# LOi/QQCoTK7RX6owCQYFKw4DAhoFAKB4MBgGCisGAQQBgjcCAQwxCjAIoAKAAKEC
+# gAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwG
+# CisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFK2a/lDTYHc5OS/pfCaOt5ef1RWC
+# MA0GCSqGSIb3DQEBAQUABIIBAMMcFNKXi33kGmAM1GxnO8jYsj4+wI3pyiUzUSao
+# tmDMy8ce9wtMdG43kp4fn/ZxF2p68vBfQiwzDZybMWUDrTro3Yfpge5EtoqLnVMG
+# TLZSCC23tLYMR261tcBYpHvp+OoPig4Go5pYxF5pNe3aw1zRcZyrnyzltdkJe8zP
+# 5kSStCun813GvefDQiklLyuypJlmnbgM0ZEhmkJ6rfHxtHaytjewr+IJtF7wzc1+
+# PMiNFp7s4dtSsgaaiDtuPrK/JIYlGx0Zx3eAzf/Gdf5mdiMXk+8574l9iSeYXFFD
+# +cywysBSpqO94Qi79RoM4bBCJzlYSRrEKqjVlG6UpunbUAM=
+# SIG # End signature block

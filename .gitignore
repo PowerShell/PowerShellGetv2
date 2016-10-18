@@ -40,6 +40,18 @@ powershell.version
 # generated man files
 /assets/powershell.1*
 
+# Modified .cat and .psd1 files during test run
+/Tests/TestModules/Microsoft.PowerShell.Archive/1.0.1.5/Microsoft.PowerShell.Archive.cat
+/Tests/TestModules/Microsoft.PowerShell.Archive/1.0.1.5/Microsoft.PowerShell.Archive.psd1
+/Tests/TestModules/TestArchiveModule/1.0.1.1/TestArchiveModule.cat
+/Tests/TestModules/TestArchiveModule/1.0.1.1/TestArchiveModule.psd1
+/Tests/TestModules/TestArchiveModule/1.0.1.11/TestArchiveModule.cat
+/Tests/TestModules/TestArchiveModule/1.0.1.11/TestArchiveModule.psd1
+/Tests/TestModules/TestArchiveModule/1.0.1.2/TestArchiveModule.cat
+/Tests/TestModules/TestArchiveModule/1.0.1.2/TestArchiveModule.psd1
+/Tests/TestModules/TestArchiveModule/1.0.1.5/TestArchiveModule.cat
+/Tests/TestModules/TestArchiveModule/1.0.1.5/TestArchiveModule.psd1
+
 # resgen output
 gen
 

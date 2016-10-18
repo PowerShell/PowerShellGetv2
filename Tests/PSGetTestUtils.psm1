@@ -1,4 +1,10 @@
-﻿. "$PSScriptRoot\uiproxy.ps1"
+﻿<#####################################################################################
+ # File: PSGetTestUtils.psm1
+ #
+ # Copyright (c) Microsoft Corporation, 2014
+ #####################################################################################>
+
+. "$PSScriptRoot\uiproxy.ps1"
 
 $script:PSGetProgramDataPath ="$env:ProgramData\Microsoft\Windows\PowerShell\PowerShellGet"
 $script:PSGetLocalAppDataPath="$env:LOCALAPPDATA\Microsoft\Windows\PowerShell\PowerShellGet"
@@ -45,21 +51,29 @@ function GetAndSet-PSGetTestGalleryDetails
         $ScriptSourceUri  = $env:PsgetTestGallery_ScriptUri
         $ScriptPublishUri = $env:PsgetTestGallery_PublishUri
     }
-    elseif($PSVersionTable.PSVersion -ge [Version]"5.0" -and 
-            [System.Environment]::OSVersion.Version -ge "6.2.9200.0" -and 
-            $PSCulture -eq 'en-US')
-    {
-        $SourceUri        = 'http://localhost:8765/api/v2/'
-        $PublishUri       = 'http://localhost:8765/api/v2/package'
-        $ScriptSourceUri  = $SourceUri
-        $ScriptPublishUri = $PublishUri
-    }
     else
     {
-        $SourceUri        = 'https://dtlgalleryint.cloudapp.net/api/v2/'
-        $PublishUri       = 'https://dtlgalleryint.cloudapp.net/api/v2/package'
-        $ScriptSourceUri  = 'https://dtlgalleryint.cloudapp.net/api/v2/items/psscript/'
-        $ScriptPublishUri = $PublishUri
+        $SourceUri        = 'http://localhost:8765/api/v2/'
+        $psgetModule = Import-Module -Name PowerShellGet -PassThru -Scope Local
+        $ResolvedLocalSource = & $psgetModule Resolve-Location -Location $SourceUri -LocationParameterName 'SourceLocation'
+
+        if($ResolvedLocalSource -and 
+           $PSVersionTable.PSVersion -ge [Version]"5.0" -and 
+           [System.Environment]::OSVersion.Version -ge "6.2.9200.0" -and 
+           $PSCulture -eq 'en-US')
+        {
+            $SourceUri        = $SourceUri
+            $PublishUri       = "$SourceUri/package"
+            $ScriptSourceUri  = $SourceUri
+            $ScriptPublishUri = $PublishUri
+        }
+        else
+        {
+            $SourceUri        = 'https://dtlgalleryint.cloudapp.net/api/v2/'
+            $PublishUri       = 'https://dtlgalleryint.cloudapp.net/api/v2/package'
+            $ScriptSourceUri  = 'https://dtlgalleryint.cloudapp.net/api/v2/items/psscript/'
+            $ScriptPublishUri = $PublishUri
+        }
     }
 
     $params = @{
@@ -73,7 +87,7 @@ function GetAndSet-PSGetTestGalleryDetails
         $params['ScriptPublishLocation'] = $ScriptPublishUri
     }
 
-    $params.Keys | ForEach-Object {Write-Warning -Message "GetAndSet-PSGetTestGalleryDetails, $_ : $($params[$_])"}
+    #$params.Keys | ForEach-Object {Write-Warning -Message "GetAndSet-PSGetTestGalleryDetails, $_ : $($params[$_])"}
 
     if($SetPSGallery)
     {
@@ -360,6 +374,14 @@ function CreateAndPublishTestModule
         foreach($version in $Versions)
         {
             $tags = @('Tag1','Tag2', "Tag-$ModuleName-$version")
+            
+            $exportedFunctions = '*'
+            if($ModuleName -match "ModuleWithDependencies*")
+            {
+                # For module with NestedModule dependencies, it's exported functions include the ones from NestedModules too.
+                # To avoid that specifying the exported functions as empty list.
+                $exportedFunctions = ''
+            }
 
             $params = @{
                           Path = $ModuleBase
@@ -373,6 +395,7 @@ function CreateAndPublishTestModule
                 New-ModuleManifest -Path "$ModuleBase\$ModuleName.psd1" `
                                    -ModuleVersion $version `
                                    -Description "$ModuleName module" `
+                                   -FunctionsToExport $exportedFunctions `
                                    -NestedModules $NestedModules `
                                    -LicenseUri "http://$ModuleName.com/license" `
                                    -IconUri "http://$ModuleName.com/icon" `
@@ -386,6 +409,7 @@ function CreateAndPublishTestModule
                 New-ModuleManifest -Path "$ModuleBase\$ModuleName.psd1" `
                                    -ModuleVersion $version `
                                    -Description "$ModuleName module" `
+                                   -FunctionsToExport $exportedFunctions `
                                    -NestedModules $NestedModules `
                                    -RequiredModules $RequiredModules
 
@@ -498,7 +522,8 @@ function PublishDscTestModule
                                -Tags $tags `
                                -LicenseUri "http://$ModuleName.com/license" `
                                -IconUri "http://$ModuleName.com/icon" `
-                               -ProjectUri "http://$ModuleName.com"
+                               -ProjectUri "http://$ModuleName.com" `
+                               -WarningAction SilentlyContinue
     }
 }
 
@@ -1044,4 +1069,168 @@ function Set-PATHVariableForScriptsInstallLocation
     }
 
     return $AddedToPath
+}
+
+function Get-CodeSigningCert
+{
+    $cert = $null;
+    $scriptName = $env:Temp + "\" + [IO.Path]::GetRandomFileName + ".ps1"  
+    "get-date" >$scriptName  
+    $cert = @(get-childitem cert:\CurrentUser\My -codesigning | Where-Object {(Set-AuthenticodeSignature $scriptName -cert $_).Status -eq "Valid"})[0];  
+    del $scriptName
+    $cert
+}
+
+#cleanup all ca certs
+function Cleanup-CACert
+{
+    param
+    (
+        $CACert = 'PSCatalog Test Root Authority'
+    )
+
+    $CACertSubject = "CN=$CACert"
+
+    get-ChildItem Cert:\LocalMachine\My\ | ?{$_.Subject -eq $CACertSubject} | remove-item -Force -ErrorAction SilentlyContinue
+    get-ChildItem Cert:\CurrentUser\My\ | ?{$_.Subject -eq $CACertSubject} | remove-item -Force -ErrorAction SilentlyContinue
+    get-ChildItem Cert:\LocalMachine\Root\ | ?{$_.Subject -eq $CACertSubject} | remove-item -Force -ErrorAction SilentlyContinue
+    get-ChildItem Cert:\CurrentUser\Root\ | ?{$_.Subject -eq $CACertSubject} | remove-item -Force -ErrorAction SilentlyContinue
+    get-ChildItem Cert:\LocalMachine\CA\ | ?{$_.Subject -eq $CACertSubject} | remove-item -Force -ErrorAction SilentlyContinue
+    get-ChildItem Cert:\CurrentUser\CA\ | ?{$_.Subject -eq $CACertSubject} | remove-item -Force -ErrorAction SilentlyContinue
+}
+
+#creates a self signed ca cert
+function Create-CACert
+{
+    param
+    (
+        $CACert = 'PSCatalog Test Root Authority'
+    )
+
+    $cert = (dir Cert:\LocalMachine\Root | Where-Object {$_.Subject -imatch $CACert})
+    if ($cert -ne $null -and $cert.Thumbprint -ne $null)
+    {
+        Write-Verbose "Cert with subject name $CACert already found, attempting to use it"
+        return
+    }
+
+    remove-item ca.cer -Force -ErrorAction SilentlyContinue
+    remove-item ca.inf -Force -ErrorAction SilentlyContinue
+    remove-item ca.pfx -Force -ErrorAction SilentlyContinue
+    $certInf = @"
+[Version]
+Signature = "`$Windows NT`$"
+
+[Strings]
+szOID_BASIC_CONSTRAINTS = "2.5.29.19"
+
+[NewRequest]
+Subject = "cn=$CACert"
+MachineKeySet = true
+KeyLength = 2048
+HashAlgorithm = Sha256
+Exportable = true
+RequestType = Cert
+KeySpec = AT_SIGNATURE
+KeyUsage = "CERT_KEY_CERT_SIGN_KEY_USAGE | CERT_DIGITAL_SIGNATURE_KEY_USAGE | CERT_CRL_SIGN_KEY_USAGE"
+KeyUsageProperty = "NCRYPT_ALLOW_SIGNING_FLAG"
+ValidityPeriod = "Years"
+ValidityPeriodUnits = "1"
+
+[Extensions]
+%szOID_BASIC_CONSTRAINTS% = "{text}ca=1&pathlength=0"
+Critical = %szOID_BASIC_CONSTRAINTS%
+"@
+    $certInf | out-file ca.inf -force 
+    Cleanup-CACert -CACert $CACert
+    certreq -new .\ca.inf ca.cer
+    $mypwd = ConvertTo-SecureString -String "1234" -Force -AsPlainText
+    Get-ChildItem -Path Cert:\LocalMachine\My\ | ?{$_.Subject -eq "CN=$CACert"} | Export-PfxCertificate -FilePath .\ca.pfx -Password $mypwd
+    Import-PfxCertificate -FilePath .\ca.pfx -CertStoreLocation Cert:\LocalMachine\Root\ -Password $mypwd -Exportable
+    remove-item ca.cer -Force -ErrorAction SilentlyContinue
+    remove-item ca.inf -Force -ErrorAction SilentlyContinue
+    remove-item ca.pfx -Force -ErrorAction SilentlyContinue
+}
+
+#cleanup all code signing certs
+function Cleanup-CodeSigningCert
+{
+  Param
+  (
+    [string]
+    $Subject = 'PSCatalog Code Signing'
+  )
+
+  get-ChildItem Cert:\LocalMachine\My\ | ?{$_.Subject -eq "CN=$Subject"} | remove-item -Force -ErrorAction SilentlyContinue
+  get-ChildItem Cert:\CurrentUser\My\ | ?{$_.Subject -eq "CN=$Subject"} | remove-item -Force -ErrorAction SilentlyContinue
+  get-ChildItem Cert:\LocalMachine\TrustedPublisher\ | ?{$_.Subject -eq "CN=$Subject"} | remove-item -Force -ErrorAction SilentlyContinue
+  get-ChildItem Cert:\CurrentUser\TrustedPublisher\ | ?{$_.Subject -eq "CN=$Subject"} | remove-item -Force -ErrorAction SilentlyContinue
+}
+
+#creates a code signing cert
+function Create-CodeSigningCert
+{
+  Param
+    (
+        [string]
+        $storeName = "Cert:\LocalMachine\TrustedPublisher",
+
+        [string]
+        $subject = "PSCatalog Code Signing",
+
+        [string]
+        $CertRA = "PSCatalog Test Root Authority"
+    )
+    
+    if (!(Test-Path $storeName))
+    {
+       New-Item $storeName -Verbose -Force
+    }
+
+    $cert = (dir $storeName | where{$_.Subject -imatch $subject})
+    if ($cert -ne $null -and $cert.Thumbprint -ne $null)
+    {
+        Write-Verbose "Cert with subject name $subject already found, attempting to use it"
+        return
+    }
+
+    remove-item signing.cer -Force -ErrorAction SilentlyContinue
+    remove-item signing.inf -Force -ErrorAction SilentlyContinue
+    remove-item signing.pfx -Force -ErrorAction SilentlyContinue
+    $certInf = @"
+[Version]
+Signature = "`$Windows NT`$"
+
+[Strings]
+szOID_ENHANCED_KEY_USAGE = "2.5.29.37"
+szOID_CODE_SIGNING = "1.3.6.1.5.5.7.3.3"
+szOID_BASIC_CONSTRAINTS = "2.5.29.19"
+
+[NewRequest]
+Subject = "cn=$subject"
+MachineKeySet = true
+KeyLength = 2048
+HashAlgorithm = Sha256
+Exportable = true
+RequestType = Cert
+KeySpec = AT_SIGNATURE
+KeyUsage = "CERT_KEY_CERT_SIGN_KEY_USAGE | CERT_DIGITAL_SIGNATURE_KEY_USAGE | CERT_CRL_SIGN_KEY_USAGE"
+KeyUsageProperty = "NCRYPT_ALLOW_SIGNING_FLAG"
+ValidityPeriod = "Years"
+ValidityPeriodUnits = "1"
+
+[Extensions]
+%szOID_BASIC_CONSTRAINTS% = "{text}ca=0"
+%szOID_ENHANCED_KEY_USAGE% = "{text}%szOID_CODE_SIGNING%"
+"@
+    $certInf | out-file signing.inf -force 
+    [void](Cleanup-CodeSigningCert -Subject $subject)
+    Create-CACert -CACert $CertRA
+    certreq -new -q -cert $CertRA .\signing.inf signing.cer
+    $mypwd = ConvertTo-SecureString -String "1234" -Force -AsPlainText
+    Get-ChildItem -Path Cert:\LocalMachine\My\ | ?{$_.Subject -eq "CN=$subject"} | Export-PfxCertificate -FilePath .\signing.pfx -Password $mypwd
+    Import-PfxCertificate -FilePath .\signing.pfx -CertStoreLocation "$storeName\" -Password $mypwd -Exportable
+    remove-item signing.cer -Force -ErrorAction SilentlyContinue
+    remove-item signing.inf -Force -ErrorAction SilentlyContinue
+    remove-item signing.pfx -Force -ErrorAction SilentlyContinue
 }

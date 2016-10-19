@@ -44,7 +44,6 @@ branches:
 
 # Run Pester tests and store the results
 test_script:
-    - SET PATH=c:\Program Files\WindowsPowerShell\Modules\;%PATH%;
     - ps: |
         $ModuleVersion = '1.1.2.0'
         $InstallLocation = "$Env:ProgramFiles\WindowsPowerShell\Modules\PowerShellGet"
@@ -54,6 +53,25 @@ test_script:
         }
         $null = New-Item -Path $InstallLocation -ItemType Directory -Force
         copy "C:\projects\powershellget\powershellget\*" $InstallLocation -Recurse -Force -Verbose
+
+        Write-Verbose -Message "env:PSModulePath value $($env:PSModulePath)"
+        Write-Verbose -Message "PSVersionTable value $($PSVersionTable | Out-String)"
+
+        # Download the NuGet.exe from http://nuget.org/NuGet.exe
+        $PSGetProgramDataPath = "$env:LOCALAPPDATA\Microsoft\Windows\PowerShell\PowerShellGet"
+        $NuGetExeName = 'NuGet.exe'
+        if(-not (Microsoft.PowerShell.Management\Test-Path -Path $PSGetProgramDataPath))
+        {
+            $null = Microsoft.PowerShell.Management\New-Item -Path $PSGetProgramDataPath -ItemType Directory -Force
+        }
+        $NugetExeFilePath = Microsoft.PowerShell.Management\Join-Path -Path $PSGetProgramDataPath -ChildPath $NuGetExeName
+        Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri http://nuget.org/NuGet.exe -OutFile $NugetExeFilePath
+        Get-ChildItem $NugetExeFilePath -File
+
+        Get-PSRepository
+        Get-PackageProvider
+        Get-Module
+
         Push-Location C:\projects\powershellget\Tests\
         try {
             $TestResultsFile = ".\TestResults.xml"

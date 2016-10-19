@@ -4,6 +4,9 @@ os:
 # clone directory
 clone_folder: c:\projects\powershellget
 
+init:
+  - ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+
 # Install Pester and PackageManagement modules
 install:
     - ps: | 
@@ -54,8 +57,8 @@ test_script:
         $null = New-Item -Path $InstallLocation -ItemType Directory -Force
         copy "C:\projects\powershellget\powershellget\*" $InstallLocation -Recurse -Force -Verbose
 
-        Write-Verbose -Message "env:PSModulePath value $($env:PSModulePath)"
-        Write-Verbose -Message "PSVersionTable value $($PSVersionTable | Out-String)"
+        "env:PSModulePath value $($env:PSModulePath)"
+        "PSVersionTable value $($PSVersionTable | Out-String)"
 
         # Download the NuGet.exe from http://nuget.org/NuGet.exe
         $PSGetProgramDataPath = "$env:LOCALAPPDATA\Microsoft\Windows\PowerShell\PowerShellGet"
@@ -80,6 +83,7 @@ test_script:
             (New-Object 'System.Net.WebClient').UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path $TestResultsFile))
             if ($TestResults.FailedCount -gt 0) {
                 throw "$($TestResults.FailedCount) tests failed."
+                $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
             }
         }
         finally {

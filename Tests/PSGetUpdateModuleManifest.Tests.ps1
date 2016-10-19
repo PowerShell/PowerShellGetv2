@@ -151,7 +151,7 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         $PowerShellVersion = "3.0"
         $ClrVersion = "2.0"
         $DotNetFrameworkVersion = "2.0"
-        $PowerShellHostVersion = "1.0"
+        $PowerShellHostVersion = "0.1"
         $TypesToProcess = "types","typesTwo"
         $FormatsToPorcess = "formats","formatsTwo"
         $RequiredAssemblies = "system.management.automation"
@@ -274,7 +274,7 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         $PowerShellVersion = "3.0"
         $ClrVersion = "2.0"
         $DotNetFrameworkVersion = "2.0"
-        $PowerShellHostVersion = "3.0"
+        $PowerShellHostVersion = "0.1"
         $TypesToProcess = "types","typesTwo"
         $FormatsToPorcess = "formats","formatsTwo"
         $RequiredAssemblies = "system.management.automation"
@@ -847,7 +847,7 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
 
     # Expected Result: Update-ModuleManifest should update the manifest with correct ReleaseNotes 
     #
-    It UpdateModuleManifestWithMultipleLinesReleaseNotes2 {
+    It UpdateModuleManifestWithMultipleLinesReleaseNotes2 -skip:($env:APPVEYOR_TEST_PASS) {
 
         if($PSVersionTable.PSVersion -lt '5.0.0')
         {            

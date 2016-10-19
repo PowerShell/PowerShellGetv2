@@ -72,6 +72,7 @@ test_script:
         Get-PackageProvider
         Get-Module
 
+        $env:APPVEYOR_TEST_PASS = $true
         Push-Location C:\projects\powershellget\Tests\
         try {
             $TestResultsFile = ".\TestResults.xml"

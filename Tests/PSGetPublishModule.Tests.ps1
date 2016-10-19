@@ -1179,7 +1179,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
         Assert ($psgetItemInfo.Name -eq $script:PublishModuleName) "Publish-Module should publish a module with valid module path, $($psgetItemInfo.Name)"
     }
 
-    It "PublishModuleWithoutNugetExeAndNoToPrompt" {
+    It "PublishModuleWithoutNugetExeAndNoToPrompt" -skip:($env:APPVEYOR_TEST_PASS) {
 
         if(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
         {            
@@ -1240,7 +1240,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
         }
     }
 	
-    It "PublishModuleWithoutNugetExeAndYesToPrompt" {
+    It "PublishModuleWithoutNugetExeAndYesToPrompt" -skip:($env:APPVEYOR_TEST_PASS) {
 
         if(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
         {            

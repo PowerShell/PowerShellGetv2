@@ -6,7 +6,12 @@ Import-Module "$PSScriptRoot\PSGetTestUtils.psm1" -WarningAction SilentlyContinu
 
 $Script:RepositoryName = 'Local'
 $SourceLocation = "$PSScriptRoot\PSGalleryTestRepo"
+$Script:RegisteredLocalRepo = $false
+
+$Script:INTRepositoryName = 'DTLGalleryINT'
+$Script:INTRepoLocation = 'https://dtlgalleryint.cloudapp.net/api/v2'
 $Script:RegisteredINTRepo = $false
+
 $MicrosoftPowerShellArchive = 'Microsoft.PowerShell.Archive'
 $TestArchiveModule = 'TestArchiveModule'
 $ContosoServer = 'ContosoServer'
@@ -87,11 +92,22 @@ function SuiteSetup {
     else
     {
         Register-PSRepository -Name $Script:RepositoryName -SourceLocation $SourceLocation -InstallationPolicy Trusted
+        $Script:RegisteredLocalRepo = $true
+    }
+
+    $INTRepo = Get-PSRepository -ErrorAction SilentlyContinue | 
+                   Where-Object {$_.SourceLocation.StartsWith($Script:INTRepoLocation, [System.StringComparison]::OrdinalIgnoreCase)}
+    if($INTRepo)
+    {
+        $Script:INTRepositoryName = $INTRepo.Name
+    }
+    else
+    {
+        Register-PSRepository -Name $Script:INTRepositoryName -SourceLocation $Script:INTRepoLocation -InstallationPolicy Trusted
         $Script:RegisteredINTRepo = $true
     }
 
     # Publish test modules to the repository
-    @('1.0.1.0','1.0.1.1','1.0.1.2','1.0.1.3','1.0.1.4','1.0.1.11') | ForEach-Object { Publish-TestModule -Name $MicrosoftPowerShellArchive -Version $_ }
     @('1.0.1.3','1.0.1.4') | ForEach-Object { Publish-TestModule -Name $TestArchiveModule -Version $_ }
     @('1.0','1.5','2.0','2.5') | ForEach-Object { Publish-TestModule -Name $ContosoServer -Version $_ }
     Publish-TestModule -Name $SmallContosoServer -Version 1.0
@@ -322,11 +338,9 @@ Describe 'Install-Module --- Microsoft signed versions of Microsoft.PowerShell.A
 
     BeforeEach {
         if($PSVersionTable.PSVersion -lt '5.0.0') {
-            #Install-Module -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.1 -Repository $Script:RepositoryName
-
             # Install a module to the system modules path to mock it as a system module
             Install-Package -ProviderName NuGet `
-                            -Source $SourceLocation `
+                            -Source $Script:INTRepoLocation `
                             -Name $MicrosoftPowerShellArchive `
                             -RequiredVersion 1.0.1.0 `
                             -Destination $SystemModulesPath `
@@ -347,7 +361,7 @@ Describe 'Install-Module --- Microsoft signed versions of Microsoft.PowerShell.A
     }
 
     It 'Install-Module Microsoft.PowerShell.Archive -- valid catalog signed module version with a previous version under System32 path: Should work' {
-        Install-Module -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.1 -Repository $Script:RepositoryName -Force
+        Install-Module -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.1 -Repository $Script:INTRepositoryName -Force
         Get-InstalledModule -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.1 -ErrorAction SilentlyContinue | Should Not BeNullOrEmpty
     }
 
@@ -355,7 +369,7 @@ Describe 'Install-Module --- Microsoft signed versions of Microsoft.PowerShell.A
         
         if(([System.Environment]::OSVersion.Version -le '6.1.7601.65536') -or ($PSVersionTable.PSVersion -lt '5.1.0') ) { return }
 
-        Install-Module -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.1 -Repository $Script:RepositoryName
+        Install-Module -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.1 -Repository $Script:INTRepositoryName
         Get-InstalledModule -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.1 | Should Not BeNullOrEmpty
 
         Install-Module -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.5 -Repository $Script:RepositoryName -ErrorVariable ev -ErrorAction SilentlyContinue
@@ -366,7 +380,7 @@ Describe 'Install-Module --- Microsoft signed versions of Microsoft.PowerShell.A
 
         if(([System.Environment]::OSVersion.Version -le '6.1.7601.65536') -or ($PSVersionTable.PSVersion -lt '5.0.0') ) { return }
 
-        Install-Module -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.4 -Repository $Script:RepositoryName -ErrorVariable ev -ErrorAction SilentlyContinue
+        Install-Module -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.4 -Repository $Script:INTRepositoryName -ErrorVariable ev -ErrorAction SilentlyContinue
         $ev[0].FullyQualifiedErrorId | Should be 'ModuleIsNotCatalogSigned,Validate-ModuleAuthenticodeSignature,Microsoft.PowerShell.PackageManagement.Cmdlets.InstallPackage'
         Get-InstalledModule -Name $MicrosoftPowerShellArchive -ErrorAction SilentlyContinue | Should BeNullOrEmpty
     }
@@ -375,13 +389,13 @@ Describe 'Install-Module --- Microsoft signed versions of Microsoft.PowerShell.A
         
         if(([System.Environment]::OSVersion.Version -le '6.1.7601.65536') -or ($PSVersionTable.PSVersion -lt '5.0.0') ) { return }
 
-        Install-Module -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.3 -Repository $Script:RepositoryName -ErrorVariable ev -ErrorAction SilentlyContinue -Force
+        Install-Module -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.3 -Repository $Script:INTRepositoryName -ErrorVariable ev -ErrorAction SilentlyContinue -Force
         $ev[0].FullyQualifiedErrorId | Should be 'InvalidAuthenticodeSignature,ValidateAndGet-AuthenticodeSignature,Microsoft.PowerShell.PackageManagement.Cmdlets.InstallPackage'
         Get-InstalledModule -Name $MicrosoftPowerShellArchive -ErrorAction SilentlyContinue | Should BeNullOrEmpty
     }
 
     It 'Install-Module Microsoft.PowerShell.Archive -- catalog file is invalid: Should fail' {
-        Install-Module -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.2 -Repository $Script:RepositoryName -ErrorVariable ev -ErrorAction SilentlyContinue -Force
+        Install-Module -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.2 -Repository $Script:INTRepositoryName -ErrorVariable ev -ErrorAction SilentlyContinue -Force
 
         if($PSVersionTable.PSVersion -lt '5.1.0') {
             Get-InstalledModule -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.2 -ErrorAction SilentlyContinue | Should Not BeNullOrEmpty
@@ -392,17 +406,17 @@ Describe 'Install-Module --- Microsoft signed versions of Microsoft.PowerShell.A
     }
 
     It 'Install-Module Microsoft.PowerShell.Archive -SkipPublisherCheck -- Catalog authenticode signature is missing in the version: Should work' {
-        Install-Module -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.4 -Repository $Script:RepositoryName -SkipPublisherCheck -Force
+        Install-Module -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.4 -Repository $Script:INTRepositoryName -SkipPublisherCheck -Force
         Get-InstalledModule -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.4 | Should Not BeNullOrEmpty
     }
 
     It 'Install-Module Microsoft.PowerShell.Archive -SkipPublisherCheck -- catalog authenticode signature is invalid: Should work' {
-        Install-Module -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.3 -Repository $Script:RepositoryName -SkipPublisherCheck -Force
+        Install-Module -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.3 -Repository $Script:INTRepositoryName -SkipPublisherCheck -Force
         Get-InstalledModule -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.3 | Should Not BeNullOrEmpty
     }
 
     It 'Install-Module Microsoft.PowerShell.Archive -SkipPublisherCheck -- catalog file is invalid: Should work' {
-        Install-Module -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.2 -Repository $Script:RepositoryName -SkipPublisherCheck -Force
+        Install-Module -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.2 -Repository $Script:INTRepositoryName -SkipPublisherCheck -Force
         Get-InstalledModule -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.2 | Should Not BeNullOrEmpty
     }   
 }
@@ -412,7 +426,7 @@ Describe 'Update-Module --- Microsoft signed versions of Microsoft.PowerShell.Ar
     BeforeAll {        
         SuiteSetup
 
-        Install-Module -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.1 -Repository $Script:RepositoryName
+        Install-Module -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.1 -Repository $Script:INTRepositoryName
         
         if([System.Environment]::OSVersion.Version -gt '6.1.7601.65536') {
             Install-Module -Name $TestArchiveModule -RequiredVersion 1.0.1.1 -Repository $Script:RepositoryName
@@ -426,7 +440,7 @@ Describe 'Update-Module --- Microsoft signed versions of Microsoft.PowerShell.Ar
 
     BeforeEach {
         if($PSVersionTable.PSVersion -lt '5.0.0') {
-            Install-Module -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.1 -Repository $Script:RepositoryName -Force
+            Install-Module -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.1 -Repository $Script:INTRepositoryName -Force
         }
 
         Get-InstalledModule -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.3 -ErrorAction SilentlyContinue | PowerShellGet\Uninstall-Module
@@ -485,7 +499,12 @@ Describe 'Update-Module --- Microsoft signed versions of Microsoft.PowerShell.Ar
     }
 }
 
-if($Script:RegisteredINTRepo)
+if($Script:RegisteredLocalRepo)
 {
     Get-PSRepository -Name $Script:RepositoryName -ErrorAction SilentlyContinue | Unregister-PSRepository
+}
+
+if($Script:RegisteredINTRepo)
+{
+    Get-PSRepository -Name $Script:INTRepositoryName -ErrorAction SilentlyContinue | Unregister-PSRepository
 }

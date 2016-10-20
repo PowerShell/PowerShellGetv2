@@ -984,7 +984,7 @@ Describe PowerShell.PSGet.PublishScriptTests.P1 -Tags 'P1','OuterLoop' {
         Assert ($psgetItemInfo.Name -eq $script:PublishScriptName) "Publish-Script should publish a script with valid script path, $($psgetItemInfo.Name)"
     }
     
-    It "PublishScriptWithoutNugetExeAndNoToPrompt" {
+    It "PublishScriptWithoutNugetExeAndNoToPrompt" -skip:($env:APPVEYOR_TEST_PASS -eq 'True') {
 
         if(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
         {            
@@ -1646,7 +1646,7 @@ Describe PowerShell.PSGet.PublishScriptTests.P2 -Tags 'P2','OuterLoop' {
         Assert ($res2.Dependencies.Name.Count -ge ($DepencyModuleNames.Count+$RequiredScripts.Count+1)) "Find-Script with -IncludeDependencies returned wrong results, $res4"
     }
 
-    It "PublishScriptWithoutNugetExeAndYesToPrompt" {
+    It "PublishScriptWithoutNugetExeAndYesToPrompt" -skip:($env:APPVEYOR_TEST_PASS -eq 'True') {
 
         if(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
         {            

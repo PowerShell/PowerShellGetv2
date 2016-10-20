@@ -2730,7 +2730,8 @@ function Publish-Script
         {
             $ev = $null
             $repo = Get-PSRepository -Name $Repository -ErrorVariable ev
-            if($ev) { return }
+            # Checking for the $repo object as well as terminating errors are not captured into ev on downlevel PowerShell versions.
+            if($ev -or (-not $repo)) { return }
         }
 
         $DestinationLocation = $null
@@ -4688,7 +4689,7 @@ function Test-ScriptFileInfo
 
             # $psscriptInfoComments.Text will have the multiline PSScriptInfo comment, 
             # split them into multiple lines to parse for the PSScriptInfo metadata properties.
-            $commentLines = $psscriptInfoComments.Text -split "`r`n"
+            $commentLines = [System.Text.RegularExpressions.Regex]::Split($psscriptInfoComments.Text, "[\r\n]")
 
             $KeyName = $null
             $Value = ""

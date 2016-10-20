@@ -847,7 +847,7 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
 
     # Expected Result: Update-ModuleManifest should update the manifest with correct ReleaseNotes 
     #
-    It UpdateModuleManifestWithMultipleLinesReleaseNotes2 -skip:($env:APPVEYOR_TEST_PASS) {
+    It UpdateModuleManifestWithMultipleLinesReleaseNotes2 -skip:($env:APPVEYOR_TEST_PASS -eq 'True') {
 
         if($PSVersionTable.PSVersion -lt '5.0.0')
         {            

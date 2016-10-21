@@ -433,7 +433,9 @@ Microsoft.PowerShell.Utility\Import-LocalizedData  LocalizedData -filename PSGet
 # This code is required to add a .Net type and call the Telemetry APIs 
 # This is required since PowerShell does not support generation of .Net Anonymous types
 #
-$requiredAssembly = @( [System.Management.Automation.PSCmdlet].Assembly.FullName )
+$requiredAssembly = @( [System.Management.Automation.PSCmdlet].Assembly.FullName,
+                       [System.Net.IWebProxy].Assembly.FullName, 
+                       [System.Uri].Assembly.FullName )
 
 $script:IsSafeX509ChainHandleAvailable = ($null -ne ('Microsoft.Win32.SafeHandles.SafeX509ChainHandle' -as [Type]))
 
@@ -482,6 +484,47 @@ namespace Microsoft.PowerShell.Commands.PowerShellGet
         }         
         
     }
+    
+    /// <summary>
+    /// Used by Ping-Endpoint function to supply webproxy to HttpClient
+    /// We cannot use System.Net.WebProxy because this is not available on CoreClr
+    /// </summary>
+    public class InternalWebProxy : IWebProxy
+    {
+        Uri _proxyUri;
+        ICredentials _credentials;
+
+        public InternalWebProxy(Uri uri, ICredentials credentials)
+        {
+            Credentials = credentials;
+            _proxyUri = uri;
+        }
+
+        /// <summary>
+        /// Credentials used by WebProxy
+        /// </summary>
+        public ICredentials Credentials
+        {
+            get
+            {
+                return _credentials;
+            }
+            set
+            {
+                _credentials = value;
+            }
+        }
+
+        public Uri GetProxy(Uri destination)
+        {
+            return _proxyUri;
+        }
+
+        public bool IsBypassed(Uri host)
+        {
+            return false;
+        }
+    } 
 
     [StructLayout(LayoutKind.Sequential, CharSet=CharSet.Unicode)]
     public struct CERT_CHAIN_POLICY_PARA {
@@ -702,66 +745,6 @@ if(-not $script:TelemetryEnabled -and $script:IsWindows)
         # Disable Telemetry if there are any issues finding/loading the Telemetry infrastructure
         $script:TelemetryEnabled = $false
     }
-}
-
-$RequiredAssembliesForInternalWebProxy = @( [System.Net.IWebProxy].Assembly.FullName, 
-                                            [System.Uri].Assembly.FullName )
-
-$SourceForInternalWebProxy = @" 
-using System; 
-using System.Net;
-
-namespace Microsoft.PowerShell.Commands.PowerShellGet 
-{ 
-    /// <summary>
-    /// Used by Ping-Endpoint function to supply webproxy to HttpClient
-    /// We cannot use System.Net.WebProxy because this is not available on CoreClr
-    /// </summary>
-    public class InternalWebProxy : IWebProxy
-    {
-        Uri _proxyUri;
-        ICredentials _credentials;
-
-        public InternalWebProxy(Uri uri, ICredentials credentials)
-        {
-            Credentials = credentials;
-            _proxyUri = uri;
-        }
-
-        /// <summary>
-        /// Credentials used by WebProxy
-        /// </summary>
-        public ICredentials Credentials
-        {
-            get
-            {
-                return _credentials;
-            }
-            set
-            {
-                _credentials = value;
-            }
-        }
-
-        public Uri GetProxy(Uri destination)
-        {
-            return _proxyUri;
-        }
-
-        public bool IsBypassed(Uri host)
-        {
-            return false;
-        }
-    }
-} 
-"@ 
-
-if(-not ('Microsoft.PowerShell.Commands.PowerShellGet.InternalWebProxy' -as [Type]))
-{
-    Add-Type -ReferencedAssemblies $RequiredAssembliesForInternalWebProxy `
-             -TypeDefinition $SourceForInternalWebProxy `
-             -Language CSharp `
-             -ErrorAction SilentlyContinue
 }
 
 #endregion
@@ -2730,7 +2713,8 @@ function Publish-Script
         {
             $ev = $null
             $repo = Get-PSRepository -Name $Repository -ErrorVariable ev
-            if($ev) { return }
+            # Checking for the $repo object as well as terminating errors are not captured into ev on downlevel PowerShell versions.
+            if($ev -or (-not $repo)) { return }
         }
 
         $DestinationLocation = $null
@@ -4688,7 +4672,7 @@ function Test-ScriptFileInfo
 
             # $psscriptInfoComments.Text will have the multiline PSScriptInfo comment, 
             # split them into multiple lines to parse for the PSScriptInfo metadata properties.
-            $commentLines = $psscriptInfoComments.Text -split "`r`n"
+            $commentLines = [System.Text.RegularExpressions.Regex]::Split($psscriptInfoComments.Text, "[\r\n]")
 
             $KeyName = $null
             $Value = ""

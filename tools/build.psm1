@@ -43,8 +43,14 @@ if($script:IsWindows) {
     $script:PSGetAppLocalPath = "$HOME/.config/powershell/powershellget"
 }
 
+$script:PowerShellEdition = [System.Environment]::GetEnvironmentVariable("PowerShellEdition")
+if($script:IsWindows)
+{
+    Write-Host "PowerShellEdition value: $script:PowerShellEdition"
+}
+
 function Install-Dependencies {
-    if($env:PowerShellEdition -eq 'Desktop') {
+    if($script:PowerShellEdition -eq 'Desktop') {
         # Download the NuGet.exe from http://nuget.org/NuGet.exe
         $NuGetExeName = 'NuGet.exe'
         if(-not (Microsoft.PowerShell.Management\Test-Path -Path $script:PSGetProgramDataPath))
@@ -62,7 +68,7 @@ function Install-Dependencies {
 
         $AllUsersModulesPath = $script:ProgramFilesModulesPath
         <# TODO: Install latest version of OneGet on PSCore
-        if(($env:PowerShellEdition -eq 'Core') -and $script:IsWindows)
+        if(($script:PowerShellEdition -eq 'Core') -and $script:IsWindows)
         {
             $AllUsersModulesPath = Microsoft.PowerShell.Management\Join-Path -Path (Get-PSHome) -ChildPath 'Modules'
         }
@@ -99,7 +105,7 @@ function Get-PSHome {
     $PowerShellFolder = $PSHOME
 
     # install powershell core if test framework is coreclr
-    if(($env:PowerShellEdition -eq 'Core') -and $script:IsWindows)
+    if(($script:PowerShellEdition -eq 'Core') -and $script:IsWindows)
     {
         if(-not (Get-PackageProvider -Name PSL -ErrorAction Ignore)) {
             $null = Install-PackageProvider -Name PSL -Force
@@ -133,7 +139,7 @@ function Invoke-PowerShellGetTest {
     $PowerShellExePath = "$PowerShellHome\PowerShell.exe"
 
     $AllUsersModulesPath = $script:ProgramFilesModulesPath
-    if(($env:PowerShellEdition -eq 'Core') -and $script:IsWindows)
+    if(($script:PowerShellEdition -eq 'Core') -and $script:IsWindows)
     {
         $AllUsersModulesPath = Microsoft.PowerShell.Management\Join-Path -Path $PowerShellHome -ChildPath 'Modules'
     }
@@ -155,8 +161,8 @@ function Invoke-PowerShellGetTest {
     & $PowerShellExePath -Command @'
         $env:PSModulePath;
         $PSVersionTable;
-        Get-PSRepository;
         Get-PackageProvider;
+        Get-PSRepository -Verbose;
         Get-Module;
 '@
 

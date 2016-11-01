@@ -2633,7 +2633,7 @@ function Publish-Script
             $message = $LocalizedData.PublishPSArtifactUnsupportedOnNano -f "Script"
             ThrowError -ExceptionName "System.InvalidOperationException" `
                         -ExceptionMessage $message `
-                        -ErrorId 'PublishScriptIsNotSupportedOnPowerShellCoreEdition `
+                        -ErrorId 'PublishScriptIsNotSupportedOnPowerShellCoreEdition' `
                         -CallerPSCmdlet $PSCmdlet `
                         -ExceptionObject $PSCmdlet `
                         -ErrorCategory InvalidOperation

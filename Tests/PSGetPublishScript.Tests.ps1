@@ -13,12 +13,17 @@
 #>
 
 function SuiteSetup {
+    if($PSEdition -eq 'Core') {
+        return
+    }
+
     Import-Module "$PSScriptRoot\PSGetTestUtils.psm1" -WarningAction SilentlyContinue
     Import-Module "$PSScriptRoot\Asserts.psm1" -WarningAction SilentlyContinue
     
-    $script:PSGetLocalAppDataPath="$env:LOCALAPPDATA\Microsoft\Windows\PowerShell\PowerShellGet"
-    $script:ProgramFilesScriptsPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramFiles -ChildPath "WindowsPowerShell\Scripts"
-    $script:MyDocumentsScriptsPath = Microsoft.PowerShell.Management\Join-Path -Path ([Environment]::GetFolderPath("MyDocuments")) -ChildPath "WindowsPowerShell\Scripts"
+    $script:ProgramFilesScriptsPath = Get-AllUsersScriptsPath 
+    $script:MyDocumentsScriptsPath = Get-CurrentUserScriptsPath 
+    $script:PSGetLocalAppDataPath = Get-PSGetLocalAppDataPath
+    $script:TempPath = Get-TempPath
     $script:CurrentPSGetFormatVersion = "1.0"
 
     #Bootstrap NuGet binaries
@@ -62,6 +67,10 @@ function SuiteSetup {
 }
 
 function SuiteCleanup {
+    if($PSEdition -eq 'Core') {
+        return
+    }
+
     if(Test-Path $script:moduleSourcesBackupFilePath)
     {
         Move-Item $script:moduleSourcesBackupFilePath $script:moduleSourcesFilePath -Force
@@ -79,6 +88,11 @@ function SuiteCleanup {
 }
 
 Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
+
+    if($PSEdition -eq 'Core') {
+        Write-Verbose 'Skipping Publish Tests on PowerShell Core Edition'
+        return
+    }
 
     BeforeAll {
         SuiteSetup
@@ -170,14 +184,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
     # Expected Result: script should not be published after confirming NO
     #
     It "PublishScriptWithConfirmAndNoToPrompt" {
-
-        if(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
-        {            
-            Write-Warning -Message "Skipped on OSVersion: $([System.Environment]::OSVersion.Version) with PSCulture: $PSCulture"
-            return
-        }
-
-        $outputPath = $env:temp
+        $outputPath = $script:TempPath
         $guid =  [system.guid]::newguid().tostring()
         $outputFilePath = Join-Path $outputPath "$guid"
         $runspace = CreateRunSpace $outputFilePath 1
@@ -208,7 +215,8 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
 
         AssertFullyQualifiedErrorIdEquals -scriptblock {Find-Script $script:PublishScriptName -RequiredVersion $script:PublishScriptVersion}`
                                           -expectedFullyQualifiedErrorId "NoMatchFoundForCriteria,Microsoft.PowerShell.PackageManagement.Cmdlets.FindPackage"
-    }
+    } `
+    -Skip:$(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core'))
 
     # Purpose: PublishScriptWithConfirmAndYesToPrompt
     #
@@ -217,14 +225,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
     # Expected Result: script should be published after confirming YES
     #
     It "PublishScriptWithConfirmAndYesToPrompt" {
-
-        if(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
-        {            
-            Write-Warning -Message "Skipped on OSVersion: $([System.Environment]::OSVersion.Version) with PSCulture: $PSCulture"
-            return
-        }
-
-        $outputPath = $env:temp
+        $outputPath = $script:TempPath
         $guid =  [system.guid]::newguid().tostring()
         $outputFilePath = Join-Path $outputPath "$guid"
         $runspace = CreateRunSpace $outputFilePath 1
@@ -256,7 +257,8 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
         $psgetItemInfo = Find-Script $script:PublishScriptName -RequiredVersion $script:PublishScriptVersion
         AssertEquals $psgetItemInfo.Name $script:PublishScriptName "Publish-Script should publish a valid script after confirming YES, $($psgetItemInfo.Name)"
         AssertEquals $psgetItemInfo.Version $script:PublishScriptVersion "Publish-Script should publish a valid script after confirming YES, $($psgetItemInfo.Version)"
-    }
+    } `
+    -Skip:$(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core'))
 
     # Purpose: PublishScriptWithWhatIf
     #
@@ -265,14 +267,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
     # Expected Result: script should not be published with -WhatIf
     #
     It "PublishScriptWithWhatIf" {
-
-        if(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
-        {            
-            Write-Warning -Message "Skipped on OSVersion: $([System.Environment]::OSVersion.Version) with PSCulture: $PSCulture"
-            return
-        }
-
-        $outputPath = $env:temp
+        $outputPath = $script:TempPath
         $guid =  [system.guid]::newguid().tostring()
         $outputFilePath = Join-Path $outputPath "$guid"
         $runspace = CreateRunSpace $outputFilePath 1
@@ -300,7 +295,8 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
 
         AssertFullyQualifiedErrorIdEquals -scriptblock {Find-Script $script:PublishScriptName -RequiredVersion $script:PublishScriptVersion}`
                                           -expectedFullyQualifiedErrorId "NoMatchFoundForCriteria,Microsoft.PowerShell.PackageManagement.Cmdlets.FindPackage"
-    }
+    } `
+    -Skip:$(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core'))
 
     # Purpose: Test xml special characters are escaped when publishing a script
     #
@@ -399,7 +395,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
                              'RequiredModule1',
                              @{ModuleName='RequiredModule2';ModuleVersion='1.0'},
                              'ExternalModule1')
-        if($PSVersionTable.PSVersion -gt [Version]'5.0')
+        if($PSVersionTable.PSVersion -gt '5.0.0')
         {
             $RequiredModules += @{ModuleName='RequiredModule3';RequiredVersion='2.0'}
         }
@@ -461,7 +457,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
         Assert ($scriptInfo.RequiredModules.Name -contains $RequiredModules[3].ModuleName) "RequiredModules should contain $($RequiredModules[3].ModuleName)"
         Assert ($scriptInfo.RequiredModules.Name -contains $RequiredModules[4]) "RequiredModules should contain $($RequiredModules[4])"
 
-        if($PSVersionTable.PSVersion -gt [Version]'5.0')
+        if($PSVersionTable.PSVersion -gt '5.0.0')
         {
             Assert ($scriptInfo.RequiredModules.Name -contains $RequiredModules[5].ModuleName) "RequiredModules should contain $($RequiredModules[5].ModuleName)"
         }
@@ -514,7 +510,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
                              'RequiredModule1',
                              @{ModuleName='RequiredModule2';ModuleVersion='1.0'},
                              'ExternalModule1')
-        if($PSVersionTable.PSVersion -gt [Version]'5.0')
+        if($PSVersionTable.PSVersion -gt '5.0.0')
         {
             $RequiredModules += @{ModuleName='RequiredModule3';RequiredVersion='2.0'}
         }
@@ -576,7 +572,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
         Assert ($scriptInfo.RequiredModules.Name -contains $RequiredModules[3].ModuleName) "RequiredModules should contain $($RequiredModules[3].ModuleName)"
         Assert ($scriptInfo.RequiredModules.Name -contains $RequiredModules[4]) "RequiredModules should contain $($RequiredModules[4])"
 
-        if($PSVersionTable.PSVersion -gt [Version]'5.0')
+        if($PSVersionTable.PSVersion -gt '5.0.0')
         {
             Assert ($scriptInfo.RequiredModules.Name -contains $RequiredModules[5].ModuleName) "RequiredModules should contain $($RequiredModules[5].ModuleName)"
         }
@@ -639,7 +635,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
         Assert ($scriptInfo.RequiredModules.Name -contains $RequiredModules[3].ModuleName) "RequiredModules should contain $($RequiredModules[3].ModuleName)"
         Assert ($scriptInfo.RequiredModules.Name -contains $RequiredModules[4]) "RequiredModules should contain $($RequiredModules[4])"
 
-        if($PSVersionTable.PSVersion -gt [Version]'5.0')
+        if($PSVersionTable.PSVersion -gt '5.0.0')
         {
             Assert ($scriptInfo.RequiredModules.Name -contains $RequiredModules[5].ModuleName) "RequiredModules should contain $($RequiredModules[5].ModuleName)"
         }
@@ -688,7 +684,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
                              'RequiredModule1',
                              @{ModuleName='RequiredModule2';ModuleVersion='1.0'},
                              'ExternalModule1')
-        if($PSVersionTable.PSVersion -gt [Version]'5.0')
+        if($PSVersionTable.PSVersion -gt '5.0.0')
         {
             $RequiredModules += @{ModuleName='RequiredModule3';RequiredVersion='2.0'}
         }
@@ -765,7 +761,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
         Assert ($scriptInfo.RequiredModules.Name -contains $RequiredModules[3].ModuleName) "RequiredModules should contain $($RequiredModules[3].ModuleName)"
         Assert ($scriptInfo.RequiredModules.Name -contains $RequiredModules[4]) "RequiredModules should contain $($RequiredModules[4])"
 
-        if($PSVersionTable.PSVersion -gt [Version]'5.0')
+        if($PSVersionTable.PSVersion -gt '5.0.0')
         {
             Assert ($scriptInfo.RequiredModules.Name -contains $RequiredModules[5].ModuleName) "RequiredModules should contain $($RequiredModules[5].ModuleName)"
         }
@@ -883,6 +879,11 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
 
 Describe PowerShell.PSGet.PublishScriptTests.P1 -Tags 'P1','OuterLoop' {
 
+    if($PSEdition -eq 'Core') {
+        Write-Verbose 'Skipping Publish Tests on PowerShell Core Edition'
+        return
+    }
+
     BeforeAll {
         SuiteSetup
     }
@@ -984,19 +985,12 @@ Describe PowerShell.PSGet.PublishScriptTests.P1 -Tags 'P1','OuterLoop' {
         Assert ($psgetItemInfo.Name -eq $script:PublishScriptName) "Publish-Script should publish a script with valid script path, $($psgetItemInfo.Name)"
     }
     
-    It "PublishScriptWithoutNugetExeAndNoToPrompt" -skip:($env:APPVEYOR_TEST_PASS -eq 'True') {
-
-        if(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
-        {            
-            Write-Warning -Message "Skipped on OSVersion: $([System.Environment]::OSVersion.Version) with PSCulture: $PSCulture"
-            return
-        }
-
+    It "PublishScriptWithoutNugetExeAndNoToPrompt" {
         try {
             # Delete nuget.exe to test the prompt for installing nuget binaries.
             Remove-NuGetExe
 
-            $outputPath = $env:temp
+            $outputPath = $script:TempPath
             $guid =  [system.guid]::newguid().tostring()
             $outputFilePath = Join-Path $outputPath "$guid"
             $runspace = CreateRunSpace $outputFilePath 1
@@ -1036,7 +1030,13 @@ Describe PowerShell.PSGet.PublishScriptTests.P1 -Tags 'P1','OuterLoop' {
         finally {
             Install-NuGetBinaries
         }
-    }
+    } `
+    -Skip:$(
+        ([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or 
+        ($PSCulture -ne 'en-US') -or 
+        ($PSEdition -eq 'Core') -or
+        ($env:APPVEYOR_TEST_PASS -eq 'True')
+    )
 	
     # Purpose: PublishNotAvailableScript
     #
@@ -1144,7 +1144,7 @@ Describe PowerShell.PSGet.PublishScriptTests.P1 -Tags 'P1','OuterLoop' {
                              @{ModuleName='RequiredModule1'; ModuleVersion='1.0'},
                              $RequiredModule2,
                              'ExternalModule1')
-        if($PSVersionTable.PSVersion -gt [Version]'5.0')
+        if($PSVersionTable.PSVersion -gt '5.0.0')
         {
             $RequiredModules += @{ModuleName='RequiredModule3';RequiredVersion='2.0'}
         }
@@ -1210,7 +1210,7 @@ Describe PowerShell.PSGet.PublishScriptTests.P1 -Tags 'P1','OuterLoop' {
         AssertEquals $scriptInfo.RequiredModules[3].Version $RequiredModule2.ModuleVersion "RequiredModules should contain $($RequiredModule2.ModuleVersion)"
         AssertEquals $scriptInfo.RequiredModules[3].Guid $RequiredModule2.Guid "RequiredModules should contain $($RequiredModule2.Guid)"
 
-        if($PSVersionTable.PSVersion -gt [Version]'5.0')
+        if($PSVersionTable.PSVersion -gt '5.0.0')
         {
             Assert ($scriptInfo.RequiredModules.Name -contains $RequiredModules[5].ModuleName) "RequiredModules should contain $($RequiredModules[5].ModuleName)"
         }
@@ -1261,7 +1261,7 @@ Describe PowerShell.PSGet.PublishScriptTests.P1 -Tags 'P1','OuterLoop' {
         AssertEquals $scriptInfo.RequiredModules[3].Version $RequiredModule2.ModuleVersion "RequiredModules should contain $($RequiredModule2.ModuleVersion)"
         AssertEquals $scriptInfo.RequiredModules[3].Guid $RequiredModule2.Guid "RequiredModules should contain $($RequiredModule2.Guid)"
 
-        if($PSVersionTable.PSVersion -gt [Version]'5.0')
+        if($PSVersionTable.PSVersion -gt '5.0.0')
         {
             Assert ($scriptInfo.RequiredModules.Name -contains $RequiredModules[5].ModuleName) "RequiredModules should contain $($RequiredModules[5].ModuleName)"
         }
@@ -1479,7 +1479,7 @@ Foo
     #
     It NewScriptFileInfoWithInvalidAuthor {
 
-        if($PSVersionTable.PSVersion -eq [Version]'3.0')
+        if($PSVersionTable.PSVersion -eq '3.0.0')
         {
             $ErrorId = 'InvalidParameterValue'
         }
@@ -1500,6 +1500,11 @@ Foo
 }
 
 Describe PowerShell.PSGet.PublishScriptTests.P2 -Tags 'P2','OuterLoop' {
+
+    if($PSEdition -eq 'Core') {
+        Write-Verbose 'Skipping Publish Tests on PowerShell Core Edition'
+        return
+    }
 
     BeforeAll {
         SuiteSetup
@@ -1561,7 +1566,7 @@ Describe PowerShell.PSGet.PublishScriptTests.P2 -Tags 'P2','OuterLoop' {
                               'ExternalRequiredModule2',
                               @{ModuleName = 'RequiredModule2'; ModuleVersion = '2.0'; })
 
-        if($PSVersionTable.PSVersion -ge [Version]"5.0")
+        if($PSVersionTable.PSVersion -ge '5.0.0')
         {
             $RequiredModuleNames += @("RequiredModule3")
 
@@ -1646,19 +1651,12 @@ Describe PowerShell.PSGet.PublishScriptTests.P2 -Tags 'P2','OuterLoop' {
         Assert ($res2.Dependencies.Name.Count -ge ($DepencyModuleNames.Count+$RequiredScripts.Count+1)) "Find-Script with -IncludeDependencies returned wrong results, $res4"
     }
 
-    It "PublishScriptWithoutNugetExeAndYesToPrompt" -skip:($env:APPVEYOR_TEST_PASS -eq 'True') {
-
-        if(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
-        {            
-            Write-Warning -Message "Skipped on OSVersion: $([System.Environment]::OSVersion.Version) with PSCulture: $PSCulture"
-            return
-        }
-
+    It "PublishScriptWithoutNugetExeAndYesToPrompt" {
         try {
             # Delete nuget.exe to test the prompt for installing nuget binaries.
             Remove-NuGetExe
 
-            $outputPath = $env:temp
+            $outputPath = $script:TempPath
             $guid =  [system.guid]::newguid().tostring()
             $outputFilePath = Join-Path $outputPath "$guid"
             $runspace = CreateRunSpace $outputFilePath 1
@@ -1690,7 +1688,13 @@ Describe PowerShell.PSGet.PublishScriptTests.P2 -Tags 'P2','OuterLoop' {
         finally {
             Install-NuGetBinaries
         }
-    }
+    } `
+    -Skip:$(
+        ([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or 
+        ($PSCulture -ne 'en-US') -or 
+        ($PSEdition -eq 'Core') -or
+        ($env:APPVEYOR_TEST_PASS -eq 'True')
+    )
 
     # Purpose: Validate Publish-Script cmdlet with script dependencies
     #
@@ -1712,7 +1716,7 @@ Describe PowerShell.PSGet.PublishScriptTests.P2 -Tags 'P2','OuterLoop' {
         $RequiredModules2 = @('RequiredModule1', 
                               @{ModuleName = 'RequiredModule2'; ModuleVersion = '2.0'; })
 
-        if($PSVersionTable.PSVersion -ge [Version]"5.0")
+        if($PSVersionTable.PSVersion -ge '5.0.0')
         {
             $RequiredModuleNames += @("RequiredModule3")
 

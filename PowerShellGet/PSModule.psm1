@@ -834,7 +834,7 @@ function Publish-Module
             $message = $LocalizedData.PublishPSArtifactUnsupportedOnNano -f "Module"
             ThrowError -ExceptionName "System.InvalidOperationException" `
                         -ExceptionMessage $message `
-                        -ErrorId "PublishModuleIsNotSupportedOnNanoServer" `
+                        -ErrorId 'PublishModuleIsNotSupportedOnPowerShellCoreEdition' `
                         -CallerPSCmdlet $PSCmdlet `
                         -ExceptionObject $PSCmdlet `
                         -ErrorCategory InvalidOperation
@@ -2047,7 +2047,6 @@ function Update-Module
 
 
         $PSBoundParameters["Provider"] = $script:PSModuleProviderName
-        $PSBoundParameters["MessageResolver"] = $script:PackageManagementUpdateModuleMessageResolverScriptBlock
         $PSBoundParameters[$script:PSArtifactType] = $script:PSArtifactTypeModule
 
         foreach($psgetItemInfo in $PSGetItemInfos)
@@ -2069,6 +2068,7 @@ function Update-Module
                 $providerName = $script:NuGetProviderName
             }
 
+            $PSBoundParameters["MessageResolver"] = $script:PackageManagementUpdateModuleMessageResolverScriptBlock
             $PSBoundParameters["Name"] = $psgetItemInfo.Name
             $PSBoundParameters['Source'] = $psgetItemInfo.Repository
 
@@ -2633,7 +2633,7 @@ function Publish-Script
             $message = $LocalizedData.PublishPSArtifactUnsupportedOnNano -f "Script"
             ThrowError -ExceptionName "System.InvalidOperationException" `
                         -ExceptionMessage $message `
-                        -ErrorId "PublishScriptIsNotSupportedOnNanoServer" `
+                        -ErrorId 'PublishScriptIsNotSupportedOnPowerShellCoreEdition `
                         -CallerPSCmdlet $PSCmdlet `
                         -ExceptionObject $PSCmdlet `
                         -ErrorCategory InvalidOperation
@@ -3775,7 +3775,6 @@ function Update-Script
 
         $PSBoundParameters["Provider"] = $script:PSModuleProviderName
         $PSBoundParameters[$script:PSArtifactType] = $script:PSArtifactTypeScript
-        $PSBoundParameters["MessageResolver"] = $script:PackageManagementUpdateScriptMessageResolverScriptBlock
         $PSBoundParameters["InstallUpdate"] = $true
 
         foreach($scriptFilePath in $scriptFilePathsToUpdate)
@@ -3834,6 +3833,7 @@ function Update-Script
                 $providerName = $script:NuGetProviderName
             }
 
+            $PSBoundParameters["MessageResolver"] = $script:PackageManagementUpdateScriptMessageResolverScriptBlock
             $PSBoundParameters["PackageManagementProvider"] = $providerName 
             $PSBoundParameters["Name"] = $psgetItemInfo.Name
             $PSBoundParameters['Source'] = $psgetItemInfo.Repository
@@ -12365,7 +12365,7 @@ function Test-ModuleInstalled
     # Check if module is already installed
     $availableModule = Microsoft.PowerShell.Core\Get-Module -ListAvailable -Name $Name -Verbose:$false | 
                            Microsoft.PowerShell.Core\Where-Object {-not (Test-ModuleSxSVersionSupport) -or -not $RequiredVersion -or ($RequiredVersion -eq $_.Version)} | 
-                               Microsoft.PowerShell.Utility\Select-Object -Unique -ErrorAction Ignore
+                               Microsoft.PowerShell.Utility\Select-Object -Unique -First 1 -ErrorAction Ignore
 
     return $availableModule
 }
@@ -14106,15 +14106,16 @@ function Validate-ModuleCommandAlreadyAvailable
             $CommandNames = $CurrentModuleInfo.ExportedCommands.Values.Name
             $CommandNamesWithWildcards = $CommandNames | Microsoft.PowerShell.Core\Foreach-Object { "$_*" }
 
-            $AvailableCommand = Microsoft.PowerShell.Core\Get-Command -Name $CommandNamesWithWildcards `
+            $AvailableCommands = Microsoft.PowerShell.Core\Get-Command -Name $CommandNamesWithWildcards `
                                                                       -ErrorAction Ignore `
                                                                       -WarningAction SilentlyContinue | 
                                     Microsoft.PowerShell.Core\Where-Object { ($CommandNames -contains $_.Name) -and 
-                                                                             ($_.ModuleName -ne $CurrentModuleInfo.Name) } |
-                                        Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
-            if($AvailableCommand)
+                                                                             ($_.ModuleName -ne $script:PSModuleProviderName) -and
+                                                                             ($_.ModuleName -ne $CurrentModuleInfo.Name) }
+            if($AvailableCommands)
             {
-                $message = $LocalizedData.ModuleCommandAlreadyAvailable -f ($AvailableCommand.Name, $CurrentModuleInfo.Name)
+                $AvailableCommandsList = ($AvailableCommands.Name | Microsoft.PowerShell.Utility\Select-Object -Unique -ErrorAction Ignore) -join ","
+                $message = $LocalizedData.ModuleCommandAlreadyAvailable -f ($AvailableCommandsList, $CurrentModuleInfo.Name)
                 ThrowError -ExceptionName 'System.InvalidOperationException' `
                            -ExceptionMessage $message `
                            -ErrorId 'CommandAlreadyAvailable' `

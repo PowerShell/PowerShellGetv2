@@ -107,48 +107,56 @@ function SuiteSetup {
         $Script:RegisteredINTRepo = $true
     }
 
-    # Publish test modules to the repository
-    @('1.0.1.3','1.0.1.4') | ForEach-Object { Publish-TestModule -Name $TestArchiveModule -Version $_ }
-    @('1.0','1.5','2.0','2.5') | ForEach-Object { Publish-TestModule -Name $ContosoServer -Version $_ }
-    Publish-TestModule -Name $SmallContosoServer -Version 1.0
+    if($PSEdition -ne 'Core') {    
+        # Publish test modules to the repository
+        @('1.0.1.3','1.0.1.4') | ForEach-Object { Publish-TestModule -Name $TestArchiveModule -Version $_ }
+        @('1.0','1.5','2.0','2.5') | ForEach-Object { Publish-TestModule -Name $ContosoServer -Version $_ }
+        Publish-TestModule -Name $SmallContosoServer -Version 1.0
 
-    if(([System.Environment]::OSVersion.Version -le '6.1.7601.65536') -or ($PSVersionTable.PSVersion -lt '5.1.0'))
-    {
-        @('1.0.1.1','1.0.1.2','1.0.1.5', '1.0.1.11') | ForEach-Object { Publish-TestModule -Name $TestArchiveModule -Version $_ }
-        Publish-TestModule -Name $MicrosoftPowerShellArchive -Version '1.0.1.5'
-    }
-    else
-    {
-        # Create certificate and publish the versions of TestArchiveModule
-        # Create a new test certificate if we are not able to find existing one
-        $CertSubject = 'CN=PSCatalog Code Signing'
-        $null = Create-CodeSigningCert
-        $cert = (Get-Childitem cert:\LocalMachine -recurse | Where-Object -FilterScript {$_.Subject -eq $CertSubject})[0]
-        if(-not $cert)
+        if(Test-SkipCondition)
         {
-            Throw "'$CertSubject' code signing certificate is not created properly."
+            @('1.0.1.1','1.0.1.2','1.0.1.5', '1.0.1.11') | ForEach-Object { Publish-TestModule -Name $TestArchiveModule -Version $_ }
+            Publish-TestModule -Name $MicrosoftPowerShellArchive -Version '1.0.1.5'
         }
-        '1.0.1.1','1.0.1.2','1.0.1.11' | ForEach-Object {SignAndPublish-TestModule -Name $TestArchiveModule -Version $_ -Certificate $cert}
-
-        $PSGetSubject = 'PowerShellGet Catalog Code Signing'
-        $null = Create-CodeSigningCert -Subject $PSGetSubject -CertRA "PowerShellGet Test Root Authority"
-        $PSGetCert = (Get-Childitem cert:\LocalMachine -recurse | Where-Object -FilterScript {$_.Subject -eq "CN=$PSGetSubject"})[0]
-        if(-not $PSGetCert)
+        else
         {
-            Throw "'$PSGetSubject' code signing certificate is not created properly."
-        }
+            # Create certificate and publish the versions of TestArchiveModule
+            # Create a new test certificate if we are not able to find existing one
+            $CertSubject = 'CN=PSCatalog Code Signing'
+            $null = Create-CodeSigningCert
+            $cert = (Get-Childitem cert:\LocalMachine -recurse | Where-Object -FilterScript {$_.Subject -eq $CertSubject})[0]
+            if(-not $cert)
+            {
+                Throw "'$CertSubject' code signing certificate is not created properly."
+            }
+            '1.0.1.1','1.0.1.2','1.0.1.11' | ForEach-Object {SignAndPublish-TestModule -Name $TestArchiveModule -Version $_ -Certificate $cert}
 
-        SignAndPublish-TestModule -Name $TestArchiveModule -Version '1.0.1.5' -Certificate $PSGetCert
-        SignAndPublish-TestModule -Name $MicrosoftPowerShellArchive -Version '1.0.1.5' -Certificate $Cert
+            $PSGetSubject = 'PowerShellGet Catalog Code Signing'
+            $null = Create-CodeSigningCert -Subject $PSGetSubject -CertRA "PowerShellGet Test Root Authority"
+            $PSGetCert = (Get-Childitem cert:\LocalMachine -recurse | Where-Object -FilterScript {$_.Subject -eq "CN=$PSGetSubject"})[0]
+            if(-not $PSGetCert)
+            {
+                Throw "'$PSGetSubject' code signing certificate is not created properly."
+            }
+
+            SignAndPublish-TestModule -Name $TestArchiveModule -Version '1.0.1.5' -Certificate $PSGetCert
+            SignAndPublish-TestModule -Name $MicrosoftPowerShellArchive -Version '1.0.1.5' -Certificate $Cert
+        }
     }
+}
+
+function Test-SkipCondition {
+    ([System.Environment]::OSVersion.Version -le '6.1.7601.65536') -or 
+    ($PSVersionTable.PSVersion -lt '5.1.0') -or 
+    ($PSEdition -ne 'Desktop')
 }
 
 Describe 'Test PowerShellGet cmdlets support for catalog signed modules with a system module' -tags 'P1','OuterLoop' {
 
-    if(([System.Environment]::OSVersion.Version -le '6.1.7601.65536') -or ($PSVersionTable.PSVersion -lt '5.1.0')) { return }
+    if(Test-SkipCondition) { return }
 
     BeforeAll {
-        if(([System.Environment]::OSVersion.Version -le '6.1.7601.65536') -or ($PSVersionTable.PSVersion -lt '5.1.0')) { return }
+        if(Test-SkipCondition) { return }
 
         SuiteSetup
 
@@ -197,10 +205,10 @@ Describe 'Test PowerShellGet cmdlets support for catalog signed modules with a s
 
 Describe 'Test PowerShellGet cmdlets support for catalog signed modules' -tags 'P1','OuterLoop' {
 
-    if(([System.Environment]::OSVersion.Version -le '6.1.7601.65536') -or ($PSVersionTable.PSVersion -lt '5.1.0')) { return }
+    if(Test-SkipCondition) { return }
 
     BeforeAll {        
-        if(([System.Environment]::OSVersion.Version -le '6.1.7601.65536') -or ($PSVersionTable.PSVersion -lt '5.1.0')) { return }
+        if(Test-SkipCondition) { return }
 
         SuiteSetup
     }
@@ -280,10 +288,10 @@ Describe 'Test PowerShellGet cmdlets support for catalog signed modules' -tags '
 
 Describe 'Test PowerShellGet\Update-Module cmdlet with catalog signed modules' -tags 'P1','OuterLoop' {
 
-    if(([System.Environment]::OSVersion.Version -le '6.1.7601.65536') -or ($PSVersionTable.PSVersion -lt '5.1.0')) { return }
+    if(Test-SkipCondition) { return }
 
     BeforeAll {        
-        if(([System.Environment]::OSVersion.Version -le '6.1.7601.65536') -or ($PSVersionTable.PSVersion -lt '5.1.0')){ return }
+        if(Test-SkipCondition){ return }
 
         SuiteSetup
 
@@ -366,33 +374,27 @@ Describe 'Install-Module --- Microsoft signed versions of Microsoft.PowerShell.A
     }
 
     It 'Install-Module Microsoft.PowerShell.Archive -- Authenticode publisher is different from the previously installed module version: Should fail' {        
-        
-        if(([System.Environment]::OSVersion.Version -le '6.1.7601.65536') -or ($PSVersionTable.PSVersion -lt '5.1.0') ) { return }
-
         Install-Module -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.1 -Repository $Script:INTRepositoryName
         Get-InstalledModule -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.1 | Should Not BeNullOrEmpty
 
         Install-Module -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.5 -Repository $Script:RepositoryName -ErrorVariable ev -ErrorAction SilentlyContinue
         $ev[0].FullyQualifiedErrorId | Should be 'PublishersMismatch,Validate-ModuleAuthenticodeSignature,Microsoft.PowerShell.PackageManagement.Cmdlets.InstallPackage'
-    }
+    } `
+    -Skip:$(Test-SkipCondition)
 
     It 'Install-Module Microsoft.PowerShell.Archive -- Catalog authenticode signature is missing in the version: Should fail' {
-
-        if(([System.Environment]::OSVersion.Version -le '6.1.7601.65536') -or ($PSVersionTable.PSVersion -lt '5.0.0') ) { return }
-
         Install-Module -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.4 -Repository $Script:INTRepositoryName -ErrorVariable ev -ErrorAction SilentlyContinue
         $ev[0].FullyQualifiedErrorId | Should be 'ModuleIsNotCatalogSigned,Validate-ModuleAuthenticodeSignature,Microsoft.PowerShell.PackageManagement.Cmdlets.InstallPackage'
         Get-InstalledModule -Name $MicrosoftPowerShellArchive -ErrorAction SilentlyContinue | Should BeNullOrEmpty
-    }
+    } `
+    -Skip:$(Test-SkipCondition)
 
     It 'Install-Module Microsoft.PowerShell.Archive -- catalog authenticode signature is invalid: Should fail' {
-        
-        if(([System.Environment]::OSVersion.Version -le '6.1.7601.65536') -or ($PSVersionTable.PSVersion -lt '5.0.0') ) { return }
-
         Install-Module -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.3 -Repository $Script:INTRepositoryName -ErrorVariable ev -ErrorAction SilentlyContinue -Force
         $ev[0].FullyQualifiedErrorId | Should be 'InvalidAuthenticodeSignature,ValidateAndGet-AuthenticodeSignature,Microsoft.PowerShell.PackageManagement.Cmdlets.InstallPackage'
         Get-InstalledModule -Name $MicrosoftPowerShellArchive -ErrorAction SilentlyContinue | Should BeNullOrEmpty
-    }
+    } `
+    -Skip:$(([System.Environment]::OSVersion.Version -le '6.1.7601.65536') -or ($PSVersionTable.PSVersion -lt '5.0.0') ) 
 
     It 'Install-Module Microsoft.PowerShell.Archive -- catalog file is invalid: Should fail' {
         Install-Module -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.2 -Repository $Script:INTRepositoryName -ErrorVariable ev -ErrorAction SilentlyContinue -Force
@@ -428,7 +430,7 @@ Describe 'Update-Module --- Microsoft signed versions of Microsoft.PowerShell.Ar
 
         Install-Module -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.1 -Repository $Script:INTRepositoryName
         
-        if([System.Environment]::OSVersion.Version -gt '6.1.7601.65536') {
+        if(([System.Environment]::OSVersion.Version -gt '6.1.7601.65536') -and ($PSEdition -ne 'Core')) {
             Install-Module -Name $TestArchiveModule -RequiredVersion 1.0.1.1 -Repository $Script:RepositoryName
         }
     }
@@ -467,7 +469,7 @@ Describe 'Update-Module --- Microsoft signed versions of Microsoft.PowerShell.Ar
             Get-InstalledModule -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.1 | Should Not BeNullOrEmpty
         }
 
-        if([System.Environment]::OSVersion.Version -gt '6.1.7601.65536') {
+        if(([System.Environment]::OSVersion.Version -gt '6.1.7601.65536') -and ($PSEdition -ne 'Core')) {
             Get-InstalledModule -Name $TestArchiveModule -RequiredVersion 1.0.1.11 | Should Not BeNullOrEmpty
 
             if($PSVersionTable.PSVersion -ge '5.0.0') {
@@ -477,16 +479,16 @@ Describe 'Update-Module --- Microsoft signed versions of Microsoft.PowerShell.Ar
     }
 
     It 'Update-Module Microsoft.PowerShell.Archive -- Catalog authenticode signature is missing in the version: Should fail' {
-        if(([System.Environment]::OSVersion.Version -le '6.1.7601.65536') -or ($PSVersionTable.PSVersion -lt '5.0.0') ) { return }
         Update-Module -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.4 -ErrorVariable ev -ErrorAction SilentlyContinue
         $ev[0].FullyQualifiedErrorId | Should be 'ModuleIsNotCatalogSigned,Validate-ModuleAuthenticodeSignature,Microsoft.PowerShell.PackageManagement.Cmdlets.InstallPackage'
-    }
+    } `
+    -Skip:$(([System.Environment]::OSVersion.Version -le '6.1.7601.65536') -or ($PSVersionTable.PSVersion -lt '5.0.0') )
 
     It 'Update-Module Microsoft.PowerShell.Archive -- catalog authenticode signature is invalid: Should fail' {
-        if(([System.Environment]::OSVersion.Version -le '6.1.7601.65536') -or ($PSVersionTable.PSVersion -lt '5.0.0') ) { return }
         Update-Module -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.3 -ErrorVariable ev -ErrorAction SilentlyContinue
         $ev[0].FullyQualifiedErrorId | Should be 'InvalidAuthenticodeSignature,ValidateAndGet-AuthenticodeSignature,Microsoft.PowerShell.PackageManagement.Cmdlets.InstallPackage'
-    }
+    } `
+    -Skip:$(([System.Environment]::OSVersion.Version -le '6.1.7601.65536') -or ($PSVersionTable.PSVersion -lt '5.0.0') )
 
     It 'Update-Module Microsoft.PowerShell.Archive -- catalog file is invalid: Should fail' {
         Update-Module -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.2 -ErrorVariable ev -ErrorAction SilentlyContinue

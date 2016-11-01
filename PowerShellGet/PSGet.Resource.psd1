@@ -220,7 +220,7 @@ ConvertFrom-StringData @'
         InvalidModuleAuthenticodeSignature=The module '{0}' cannot be installed or updated because the authenticode signature of the file '{1}' is not valid.
         InvalidCatalogSignature=The module '{0}' cannot be installed because the catalog signature in '{1}' does not match the hash generated from the module.
         AuthenticodeIssuerMismatch=Authenticode issuer '{0}' of the new module '{1}' with version '{2}' is not matching with the authenticode issuer '{3}' of the previously-installed module '{4}' with version '{5}'. If you still want to install or update, use -SkipPublisherCheck parameter.
-        ModuleCommandAlreadyAvailable=A command with name '{0}' is already available on this system. This module '{1}' may override the existing commands. If you still want to install this module '{1}', use -AllowClobber parameter.
+        ModuleCommandAlreadyAvailable=The following commands are already available on this system:'{0}'. This module '{1}' may override the existing commands. If you still want to install this module '{1}', use -AllowClobber parameter.
         CatalogFileFound=Found the catalog file '{0}' in the module '{1}' contents.        
         CatalogFileNotFoundInAvailableModule=Catalog file '{0}' is not found in the contents of the previously-installed module '{1}' with the same name.
         CatalogFileNotFoundInNewModule=Catalog file '{0}' is not found in the contents of the module '{1}' being installed.

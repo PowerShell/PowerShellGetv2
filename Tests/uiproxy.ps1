@@ -1,5 +1,11 @@
 #param($command)
 
+if($PSEdition -eq 'Core')
+{
+    Write-Verbose 'uiProxy is not supported on PowerShell Core Edition'
+    return
+}
+
 $source = @"
 using System;
 using System.Collections.Generic;

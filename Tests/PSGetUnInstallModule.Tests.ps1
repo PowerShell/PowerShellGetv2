@@ -18,9 +18,10 @@ function SuiteSetup {
     Import-Module "$PSScriptRoot\PSGetTestUtils.psm1" -WarningAction SilentlyContinue
     Import-Module "$PSScriptRoot\Asserts.psm1" -WarningAction SilentlyContinue
 
-    $script:MyDocumentsModulesPath = Join-Path -Path ([Environment]::GetFolderPath("MyDocuments")) -ChildPath "WindowsPowerShell\Modules"
-    $script:ProgramFilesModulesPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramFiles -ChildPath "WindowsPowerShell\Modules"
-    $script:PSGetLocalAppDataPath="$env:LOCALAPPDATA\Microsoft\Windows\PowerShell\PowerShellGet"
+    $script:ProgramFilesModulesPath = Get-AllUsersModulesPath
+    $script:MyDocumentsModulesPath = Get-CurrentUserModulesPath
+    $script:PSGetLocalAppDataPath = Get-PSGetLocalAppDataPath
+    $script:TempPath = Get-TempPath
 
     #Bootstrap NuGet binaries
     Install-NuGetBinaries
@@ -41,11 +42,6 @@ function SuiteSetup {
     PSGetTestUtils\Uninstall-Module ContosoServer
     PSGetTestUtils\Uninstall-Module ContosoClient
 
-    $script:userName = "PSGetUser"
-    $password = "Password1"
-    $null = net user $script:userName $password /add
-    $secstr = ConvertTo-SecureString $password -AsPlainText -Force
-    $script:credential = new-object -typename System.Management.Automation.PSCredential -argumentlist $script:userName, $secstr
     $script:assertTimeOutms = 20000
 }
 
@@ -61,15 +57,6 @@ function SuiteCleanup {
 
     # Import the PowerShellGet provider to reload the repositories.
     $null = Import-PackageProvider -Name PowerShellGet -Force
-
-    # Delete the user
-    net user $script:UserName /delete | Out-Null
-    # Delete the user profile
-    $userProfile = (Get-WmiObject -Class Win32_UserProfile | Where-Object {$_.LocalPath -match $script:UserName})
-	if($userProfile)
-	{
-		RemoveItem $userProfile.LocalPath
-	}
 }
 
 Describe 'PowerShell.PSGet.UnInstallModuleTests' -Tags 'BVT','InnerLoop' {
@@ -95,13 +82,7 @@ Describe 'PowerShell.PSGet.UnInstallModuleTests' -Tags 'BVT','InnerLoop' {
     # Expected Result: it should not uninstall the module
     #
     It "UnInstallModuleWithWhatIf" {
-        
-        if(([System.Environment]::OSVersion.Version -lt '6.2.9200.0') -or ($PSCulture -ne 'en-US')) { 
-            Write-Warning 'Skipped'
-            return
-        }
-
-        $outputPath = $env:temp
+        $outputPath = $script:TempPath
         $guid =  [system.guid]::newguid().tostring()
         $outputFilePath = Join-Path $outputPath "$guid"
         $runspace = CreateRunSpace $outputFilePath 1
@@ -131,7 +112,8 @@ Describe 'PowerShell.PSGet.UnInstallModuleTests' -Tags 'BVT','InnerLoop' {
 
         $mod = Get-InstalledModule ContosoServer
         Assert ($mod) "UnInstall-Module should not uninstall the module with -WhatIf option"
-    }
+    } `
+    -Skip:$(([System.Environment]::OSVersion.Version -lt '6.2.9200.0') -or ($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core'))
 
     # Purpose: UnInstallModuleWithConfirmAndNoToPrompt
     #
@@ -140,13 +122,7 @@ Describe 'PowerShell.PSGet.UnInstallModuleTests' -Tags 'BVT','InnerLoop' {
     # Expected Result: module should not be uninstalled after confirming NO
     #
     It 'UnInstallModuleWithConfirmAndNoToPrompt' {
-
-        if(([System.Environment]::OSVersion.Version -lt '6.2.9200.0') -or ($PSCulture -ne 'en-US')) { 
-            Write-Warning 'Skipped'
-            return
-        }
-
-        $outputPath = $env:temp
+        $outputPath = $script:TempPath
         $guid =  [system.guid]::newguid().tostring()
         $outputFilePath = Join-Path $outputPath "$guid"
         $runspace = CreateRunSpace $outputFilePath 1
@@ -180,7 +156,8 @@ Describe 'PowerShell.PSGet.UnInstallModuleTests' -Tags 'BVT','InnerLoop' {
 
         $mod = Get-InstalledModule ContosoServer
         Assert ($mod) "UnInstall-Module should not uninstall the module if confirm is not accepted"
-    }
+    } `
+    -Skip:$(([System.Environment]::OSVersion.Version -lt '6.2.9200.0') -or ($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core'))
 
     # Purpose: UnInstallModuleWithConfirmAndYesToPrompt
     #
@@ -189,13 +166,7 @@ Describe 'PowerShell.PSGet.UnInstallModuleTests' -Tags 'BVT','InnerLoop' {
     # Expected Result: module should be uninstalled after confirming YES
     #
     It "UnInstallModuleWithConfirmAndYesToPrompt" {
-
-        if(([System.Environment]::OSVersion.Version -lt '6.2.9200.0') -or ($PSCulture -ne 'en-US')) { 
-            Write-Warning 'Skipped'
-            return
-        }
-
-        $outputPath = $env:temp
+        $outputPath = $script:TempPath
         $guid =  [system.guid]::newguid().tostring()
         $outputFilePath = Join-Path $outputPath "$guid"
         $runspace = CreateRunSpace $outputFilePath 1
@@ -229,7 +200,8 @@ Describe 'PowerShell.PSGet.UnInstallModuleTests' -Tags 'BVT','InnerLoop' {
 
         $res = Get-InstalledModule ContosoServer -ErrorAction SilentlyContinue
         AssertNull $res "UnInstall-Module should uninstall a module if Confirm is not accepted"
-    }
+    } `
+    -Skip:$(([System.Environment]::OSVersion.Version -lt '6.2.9200.0') -or ($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core'))
 
     <#
     Purpose: Validate the -AllVersions parameter on Get-InstalledModule and Uninstall-Module cmdlets
@@ -254,7 +226,7 @@ Describe 'PowerShell.PSGet.UnInstallModuleTests' -Tags 'BVT','InnerLoop' {
 
         $modules2 = Get-InstalledModule -Name $ModuleName -AllVersions
 
-        if($PSVersionTable.PSVersion -gt [Version]"5.0")
+        if($PSVersionTable.PSVersion -gt '5.0.0')
         {
             AssertEquals $modules2.count 2 "Get-InstalledModule with all version is not working fine, $modules2"
         }
@@ -276,25 +248,16 @@ Describe 'PowerShell.PSGet.UnInstallModuleTests' -Tags 'BVT','InnerLoop' {
     # Expected Result: should fail with an error
     #
     It "ValidateModuleIsInUseErrorDuringUninstallModule" {
-        
-        $whoamiValue = (whoami)
-
-        if( ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
-            ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
-            ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
-            ($PSVersionTable.PSVersion -lt [Version]"4.0") -or
-            ($PSCulture -ne 'en-US') )
-        {
-            Write-Warning 'Skipped'
-            return
-        }
-
         $NonAdminConsoleOutput = Join-Path $TestDrive 'nonadminconsole-out.txt'
-        Start-Process "$PSHOME\PowerShell.exe" -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
-                                                              $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
-                                                              Install-Module -Name DscTestModule -Scope CurrentUser;
-                                                              Import-Module -Name DscTestModule;
-                                                              Uninstall-Module -Name DscTestModule' `
+        Start-Process "$PSHOME\PowerShell.exe" -ArgumentList @'
+                                                               if($PSEdition -ne 'Core') {
+                                                                    $null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
+                                                                    $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
+                                                               }
+                                                               Install-Module -Name DscTestModule -Scope CurrentUser;
+                                                               Import-Module -Name DscTestModule;
+                                                               Uninstall-Module -Name DscTestModule
+'@ `
                                                -Wait `
                                                -WorkingDirectory $PSHOME `
                                                -RedirectStandardOutput $NonAdminConsoleOutput
@@ -305,11 +268,21 @@ Describe 'PowerShell.PSGet.UnInstallModuleTests' -Tags 'BVT','InnerLoop' {
         $module = Get-InstalledModule -Name $moduleName
         AssertEquals $module.Name $moduleName "Uninstall-module should not uninstall when a module being uninstalled is in use. $content"
 
-        if($PSVersionTable.PSVersion -gt [Version]"5.0")
+        if($PSVersionTable.PSVersion -gt '5.0.0')
         {
             Assert ($content -and ($content -match 'ModuleIsInUse')) "Uninstall-module should fail when a module version being uninstalled is in use, $content."
         }
 
         RemoveItem $NonAdminConsoleOutput
-    }
+    } `
+    -Skip:$(
+            $whoamiValue = (whoami)
+
+            ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
+            ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
+            ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
+            ($PSVersionTable.PSVersion -lt '4.0.0') -or
+            ($PSEdition -eq 'Core') -or
+            ($PSCulture -ne 'en-US')
+        )
 }

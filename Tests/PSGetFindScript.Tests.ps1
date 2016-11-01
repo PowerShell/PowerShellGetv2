@@ -18,8 +18,7 @@ function SuiteSetup {
     Import-Module "$PSScriptRoot\PSGetTestUtils.psm1" -WarningAction SilentlyContinue
     Import-Module "$PSScriptRoot\Asserts.psm1" -WarningAction SilentlyContinue
     
-    $script:MyDocumentsScriptsPath = Join-Path -Path ([Environment]::GetFolderPath("MyDocuments")) -ChildPath "WindowsPowerShell\Scripts"
-    $script:PSGetLocalAppDataPath="$env:LOCALAPPDATA\Microsoft\Windows\PowerShell\PowerShellGet"
+    $script:PSGetLocalAppDataPath = Get-PSGetLocalAppDataPath
     $script:DscTestScript = "DscTestScript"
 
     #Bootstrap NuGet binaries

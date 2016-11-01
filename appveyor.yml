@@ -5,6 +5,8 @@ environment:
     matrix: 
     - PowerShellEdition: Desktop 
     - PowerShellEdition: Core
+configuration: Release
+platform: Any CPU
 
 # clone directory
 clone_folder: c:\projects\powershellget
@@ -15,7 +17,6 @@ init:
 # Install Pester and PackageManagement modules
 install:
     - ps: | 
-        $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
         Import-Module .\tools\build.psm1
         Install-Dependencies
 
@@ -35,7 +36,6 @@ branches:
 # Run Pester tests and store the results
 test_script:
     - ps: |
-        $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
         Import-Module .\tools\build.psm1
         Invoke-PowerShellGetTest
         $TestResultFilePath = Resolve-Path .\Tests\TestResults.xml

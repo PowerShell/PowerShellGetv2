@@ -136,7 +136,11 @@ function Invoke-PowerShellGetTest {
     $ClonedProjectPath = Resolve-Path "$PSScriptRoot\.."    
     $PowerShellGetTestsPath = "$ClonedProjectPath\Tests\"
     $PowerShellHome = Get-PSHome
-    $PowerShellExePath = "$PowerShellHome\PowerShell.exe"
+    if($script:IsWindows){
+        $PowerShellExePath = Join-Path -Path $PowerShellHome -ChildPath 'PowerShell.exe'
+    } else {
+        $PowerShellExePath = 'powershell'
+    }
 
     $AllUsersModulesPath = $script:ProgramFilesModulesPath
     if(($script:PowerShellEdition -eq 'Core') -and $script:IsWindows)
@@ -146,7 +150,7 @@ function Invoke-PowerShellGetTest {
 
     # Copy OneGet and PSGet modules to PSHOME    
     $PowerShellGetSourcePath = Microsoft.PowerShell.Management\Join-Path -Path $ClonedProjectPath -ChildPath $script:PowerShellGet
-    $PowerShellGetModuleInfo = Test-ModuleManifest "$PowerShellGetSourcePath\PowerShellGet.psd1"
+    $PowerShellGetModuleInfo = Test-ModuleManifest "$PowerShellGetSourcePath\PowerShellGet.psd1" -ErrorAction Ignore
     $ModuleVersion = "$($PowerShellGetModuleInfo.Version)"
 
     $InstallLocation =  Microsoft.PowerShell.Management\Join-Path -Path $AllUsersModulesPath -ChildPath 'PowerShellGet'
@@ -162,7 +166,7 @@ function Invoke-PowerShellGetTest {
         $env:PSModulePath;
         $PSVersionTable;
         Get-PackageProvider;
-        Get-PSRepository -Verbose;
+        Get-PSRepository;
         Get-Module;
 '@
 

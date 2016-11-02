@@ -100,25 +100,41 @@ function Get-PSHome {
     # install powershell core if test framework is coreclr
     if(($script:PowerShellEdition -eq 'Core') -and $script:IsWindows)
     {
-        if(-not (Get-PackageProvider -Name PSL -ErrorAction Ignore)) {
-            $null = Install-PackageProvider -Name PSL -Force
-        }
+        if($PSVersionTable.PSVersion -le '5.0.0') {
+            # PSL Provider is not available on PS 5.0 and older versions
+            $PowerShellMsiUrl = 'https://github.com/PowerShell/PowerShell/releases/download/v6.0.0-alpha.11/PowerShell_6.0.0.11-alpha.11-win81-x64.msi'
+            $PowerShellMsiName = 'PowerShell_6.msi'
+            $PowerShellMsiPath = Microsoft.PowerShell.Management\Join-Path -Path $PSScriptRoot -ChildPath $PowerShellMsiName
+            Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri $PowerShellMsiUrl -OutFile $PowerShellMsiPath
+            Start-Process -FilePath "$env:SystemRoot\System32\msiexec.exe" -ArgumentList "/qb /i $PowerShellMsiPath" -Wait
+            $PowerShellVersion = '6.0.0.11'
+        } else {
+            if(-not (Get-PackageProvider -Name PSL -ErrorAction Ignore)) {
+                $null = Install-PackageProvider -Name PSL -Force
+            }
 
-        $PowerShellCore = (Get-Package -Provider PSL -Name PowerShell -ErrorAction Ignore)
-        if ($PowerShellCore)
-        {
-            Write-Warning ("PowerShell already installed" -f $PowerShellCore.Name)
-        }
-        else
-        {   
-            $PowerShellCore = Install-Package PowerShell -Provider PSL -Force
-        }
+            $PowerShellCore = (Get-Package -Provider PSL -Name PowerShell -ErrorAction Ignore)
+            if ($PowerShellCore)
+            {
+                Write-Warning ("PowerShell already installed" -f $PowerShellCore.Name)
+            }
+            else
+            {   
+                $PowerShellCore = Install-Package PowerShell -Provider PSL -Force
+            }
 
-        $PowerShellVersion = $PowerShellCore.Version
+            $PowerShellVersion = $PowerShellCore.Version
+        }
+        
         Write-Host ("PowerShell Version '{0}'" -f $PowerShellVersion)
 
         $PowerShellFolder = "$Env:ProgramFiles\PowerShell\$PowerShellVersion"
         Write-Host ("PowerShell Folder '{0}'" -f $PowerShellFolder)
+
+        if(-not (Microsoft.PowerShell.Management\Test-Path -Path $PowerShellFolder -PathType Container))
+        {
+            Throw "$PowerShellFolder path is not available."        
+        }
     }
 
     return $PowerShellFolder
@@ -161,13 +177,37 @@ function Invoke-PowerShellGetTest {
         Get-PackageProvider;
         Get-PSRepository;
         Get-Module;
+
+        # WMF 4 appveyor OS Image has duplicate entries in $env:PSModulePath
+        if($PSVersionTable.PSVersion -le '5.0.0') {
+            Write-Host "PSModulePath value before removing the duplicate entries:"
+            $env:PSModulePath;
+
+            # Current Process
+            $ValueWithUniqueEntries = ([System.Environment]::GetEnvironmentVariable('PSModulePath', [System.EnvironmentVariableTarget]::Process) -split ';' | %{$_.Trim('\\')} | Select-Object -Unique) -join ';'
+            [System.Environment]::SetEnvironmentVariable('PSModulePath', $ValueWithUniqueEntries, [System.EnvironmentVariableTarget]::Process)
+
+            # Current User
+            $ValueWithUniqueEntries = ([System.Environment]::GetEnvironmentVariable('PSModulePath', [System.EnvironmentVariableTarget]::User) -split ';' | %{$_.Trim('\\')} | Select-Object -Unique) -join ';'
+            [System.Environment]::SetEnvironmentVariable('PSModulePath', $ValueWithUniqueEntries, [System.EnvironmentVariableTarget]::User)
+
+            # Current Machine
+            $ValueWithUniqueEntries = ([System.Environment]::GetEnvironmentVariable('PSModulePath', [System.EnvironmentVariableTarget]::Machine) -split ';' | %{$_.Trim('\\')} | Select-Object -Unique) -join ';'
+            [System.Environment]::SetEnvironmentVariable('PSModulePath', $ValueWithUniqueEntries, [System.EnvironmentVariableTarget]::Machine)
+
+            Write-Host "PSModulePath value after removing the duplicate entries:"
+            $env:PSModulePath;
+        }
 '@
 
     try {
         Push-Location $PowerShellGetTestsPath
 
         $TestResultsFile = Microsoft.PowerShell.Management\Join-Path -Path $PowerShellGetTestsPath -ChildPath 'TestResults.xml'
-        & $PowerShellExePath -Command "Invoke-Pester -Script $PowerShellGetTestsPath -OutputFormat NUnitXml -OutputFile $TestResultsFile -PassThru -Tag BVT"
+        & $PowerShellExePath -Command "`$env:PSModulePath = (`$env:PSModulePath -split ';' | %{`$_.Trim('\\')} | Select-Object -Unique) -join ';' ;
+                                       Write-Host 'After updating the PSModulePath value:' ;
+                                       `$env:PSModulePath ;
+                                       Invoke-Pester -Script $PowerShellGetTestsPath -OutputFormat NUnitXml -OutputFile $TestResultsFile -PassThru -Tag BVT"
 
         $TestResults = [xml](Get-Content -Raw -Path $TestResultsFile)
         if ([int]$TestResults.'test-results'.failures -gt 0)
@@ -183,7 +223,7 @@ function Invoke-PowerShellGetTest {
     $stagingDirectory = Microsoft.PowerShell.Management\Split-Path $ClonedProjectPath.Path -Parent
     $zipFile = Microsoft.PowerShell.Management\Join-Path $stagingDirectory "$(Split-Path $ClonedProjectPath.Path -Leaf).zip"
     
-    if($PSEdition -eq 'Desktop')
+    if($PSEdition -ne 'Core')
     {
         Add-Type -assemblyname System.IO.Compression.FileSystem
     }

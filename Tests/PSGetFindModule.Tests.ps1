@@ -507,11 +507,19 @@ Describe PowerShell.PSGet.FindModuleTests.P1 -Tags 'P1','OuterLoop' {
 Describe PowerShell.PSGet.FindModuleTests.P2 -Tags 'P2', 'OuterLoop' {
 
     BeforeAll {
+        if($PSEdition -eq 'Core') {
+            return 
+        }
+
         SuiteSetup
     }
 
     AfterAll {
         SuiteCleanup
+    }
+
+    if($PSEdition -eq 'Core') {
+        return 
     }
 
     <#
@@ -521,23 +529,22 @@ Describe PowerShell.PSGet.FindModuleTests.P2 -Tags 'P2', 'OuterLoop' {
 
     Expected Result: Module list or Error depending on the input variation
     #>
-    It FindModuleParameterCombinationsTests {
+    $ParameterSets = Get-FindModuleParameterSets
 
-        $ParameterSets = Get-FindModuleParameterSets
+    $ParameterSetCount = $ParameterSets.Count
+    $i = 1
+    foreach ($inputParameters in $ParameterSets)
+    {
+        Write-Verbose -Message "Combination #$i out of $ParameterSetCount"
+        Write-Verbose -Message "$($inputParameters | Out-String)"
+        Write-Progress -Activity "Combination $i out of $ParameterSetCount" -PercentComplete $(($i/$ParameterSetCount) * 100)
 
-        $ParameterSetCount = $ParameterSets.Count + 1
-        $i = 1
-        foreach ($inputParameters in $ParameterSets)
-        {
-            Write-Verbose -Message "Combination #$i out of $ParameterSetCount"
-            Write-Verbose -Message "$($inputParameters | Out-String)"
-            Write-Progress -Activity "Combination $i out of $ParameterSetCount" -PercentComplete $(($i/$ParameterSetCount) * 100)
-            $i = $i+1
+        $params = $inputParameters.FindModuleInputParameters
+        Write-Verbose -Message ($params | Out-String)
 
-            $params = $inputParameters.FindModuleInputParameters
-            Write-Verbose -Message ($params | Out-String)
+        $scriptBlock = { Find-Module @params }.GetNewClosure()
 
-            $scriptBlock = { Find-Module @params }.GetNewClosure()
+        It "FindModuleParameterCombinationsTests - Combination $i/$ParameterSetCount" {
 
             if($inputParameters.PositiveCase)
             {
@@ -557,6 +564,7 @@ Describe PowerShell.PSGet.FindModuleTests.P2 -Tags 'P2', 'OuterLoop' {
                 AssertFullyQualifiedErrorIdEquals -Scriptblock $scriptBlock -ExpectedFullyQualifiedErrorId $inputParameters.FullyQualifiedErrorId
             }
         }
-    } `
-    -Skip:$($PSEdition -eq 'Core') 
+
+        $i = $i+1
+    } 
 }

@@ -1,5 +1,9 @@
 
 [![Join the chat at https://gitter.im/PowerShell/PowerShellGet](https://badges.gitter.im/PowerShell/PowerShellGet.svg)](https://gitter.im/PowerShell/PowerShellGet?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/PowerShell/PowerShellGet/blob/development/LICENSE)
+[![Documentation - PowerShellGet](https://img.shields.io/badge/Documentation-PowerShellGet-blue.svg)](https://msdn.microsoft.com/en-us/powershell/gallery/psget)
+[![PowerShell Gallery - PowerShellGet](https://img.shields.io/badge/PowerShell%20Gallery-PowerShellGet-blue.svg)](https://www.powershellgallery.com/packages/PowerShellGet)
+[![Minimum Supported PowerShell Version](https://img.shields.io/badge/PowerShell-3.0-blue.svg)](https://github.com/PowerShell/PowerShellGet)
 
 Introduction
 ============
@@ -11,17 +15,25 @@ PowerShellGet module is also integrated with the PackageManagement module as a p
 
 Build status
 ============
-### development branch
 
-| AppVeyor (Windows - PS & PSCore)| Travis CI (Linux / macOS)    |
-|---------------------------------|------------------------------|
-| [![d-av-image][]][d-av-site]    | [![d-tv-image][]][d-tv-site] |
+## Development branch
 
-### master branch
+|         OS - PS Version             |          Build Status        |
+|-------------------------------------|------------------------------|
+| AppVeyor (Windows - PS 4.0)         | [![d-av-image][]][d-av-site] |
+| AppVeyor (Windows - PS 5.1)         | [![d-av-image][]][d-av-site] |
+| AppVeyor (Windows - PS 6.0.0-Alpha) | [![d-av-image][]][d-av-site] |
+| Travis CI (Linux - PS 6.0.0-Alpha)  | [![d-tv-image][]][d-tv-site] |
+| Travis CI (MacOS - PS 6.0.0-Alpha)  | [![d-tv-image][]][d-tv-site] |
 
-| AppVeyor (Windows - PS & PSCore)| Travis CI (Linux / macOS)    |
-|---------------------------------|------------------------------|
-| [![m-av-image][]][m-av-site]    | [![m-tv-image][]][m-tv-site] |
+## Master branch
+|         OS - PS Version             |          Build Status        |
+|-------------------------------------|------------------------------|
+| AppVeyor (Windows - PS 4.0)         | [![m-av-image][]][m-av-site] |
+| AppVeyor (Windows - PS 5.1)         | [![m-av-image][]][m-av-site] |
+| AppVeyor (Windows - PS 6.0.0-Alpha) | [![m-av-image][]][m-av-site] |
+| Travis CI (Linux - PS 6.0.0-Alpha)  | [![m-tv-image][]][m-tv-site] |
+| Travis CI (MacOS - PS 6.0.0-Alpha)  | [![m-tv-image][]][m-tv-site] |
 
 [d-av-image]: https://ci.appveyor.com/api/projects/status/91p7lpjoxit3gw72/branch/development?svg=true
 [d-av-site]: https://ci.appveyor.com/project/PowerShell/powershellget/branch/development
@@ -53,21 +65,34 @@ Module Dependencies
 Get PowerShellGet Module
 ========================
 
-### Windows 10 or newer
+### PowerShellGet is an in-box module in following releases
+- [Windows 10](https://www.microsoft.com/en-us/windows/get-windows-10) or newer
+- [Windows Server 2016](https://technet.microsoft.com/en-us/windows-server-docs/get-started/windows-server-2016) or newer
+- [Windows Management Framework (WMF) 5.0](https://www.microsoft.com/en-us/download/details.aspx?id=50395) or newer
+- [PowerShell 6.0.0-Alpha](https://github.com/PowerShell/PowerShell/releases)
 
-### Windows Server 2016 or newer
-
-### Windows Management Framework (WMF) 5.0 or newer
+### Get PowerShellGet module for PowerShell versions 3.0 and 4.0
+- [PackageManagement MSI](http://go.microsoft.com/fwlink/?LinkID=746217&clcid=0x409) 
 
 ### Get the latest version from PowerShell Gallery
 
+Before updating PowerShellGet, you should always install the latest Nuget provider. To do that, run the following in an elevated PowerShell session.
 ```powershell
-# On PowerShell 5.0 or newer, use the Install-Module with -Force to install the PowerShellGet module from the PowerShellGallery.
-Install-Module -Name PowerShellGet -Force
+Install-PackageProvider Nuget –force –verbose
+# exit the session
+```
 
-# Use Update-Module cmdlet to get the updated version
+For systems with PowerShell 5.0 (or greater) you can install both PowerShellGet. 
+To do this on Windows 10, Windows Server 2016, or any system with WMF 5.0 or 5.1 installed, run the following commands from an elevated PowerShell session.
+```powershell
+Install-Module –Name PowerShellGet –Force
+# exit the session
+```
+
+Use Update-Module to get the next updated versions.
+```powershell
 Update-Module -Name PowerShellGet
-
+# exit the session
 ```
 
 ### Source

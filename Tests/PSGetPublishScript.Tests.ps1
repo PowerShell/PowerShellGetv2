@@ -11,12 +11,11 @@
 
    The local directory based NuGet repository is used for publishing the modules.
 #>
+if($PSEdition -eq 'Core') {
+    return
+}
 
 function SuiteSetup {
-    if($PSEdition -eq 'Core') {
-        return
-    }
-
     Import-Module "$PSScriptRoot\PSGetTestUtils.psm1" -WarningAction SilentlyContinue
     Import-Module "$PSScriptRoot\Asserts.psm1" -WarningAction SilentlyContinue
     
@@ -67,10 +66,6 @@ function SuiteSetup {
 }
 
 function SuiteCleanup {
-    if($PSEdition -eq 'Core') {
-        return
-    }
-
     if(Test-Path $script:moduleSourcesBackupFilePath)
     {
         Move-Item $script:moduleSourcesBackupFilePath $script:moduleSourcesFilePath -Force
@@ -88,12 +83,6 @@ function SuiteCleanup {
 }
 
 Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
-
-    if($PSEdition -eq 'Core') {
-        Write-Verbose 'Skipping Publish Tests on PowerShell Core Edition'
-        return
-    }
-
     BeforeAll {
         SuiteSetup
     }
@@ -878,12 +867,6 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
 }
 
 Describe PowerShell.PSGet.PublishScriptTests.P1 -Tags 'P1','OuterLoop' {
-
-    if($PSEdition -eq 'Core') {
-        Write-Verbose 'Skipping Publish Tests on PowerShell Core Edition'
-        return
-    }
-
     BeforeAll {
         SuiteSetup
     }
@@ -1500,12 +1483,6 @@ Foo
 }
 
 Describe PowerShell.PSGet.PublishScriptTests.P2 -Tags 'P2','OuterLoop' {
-
-    if($PSEdition -eq 'Core') {
-        Write-Verbose 'Skipping Publish Tests on PowerShell Core Edition'
-        return
-    }
-
     BeforeAll {
         SuiteSetup
     }

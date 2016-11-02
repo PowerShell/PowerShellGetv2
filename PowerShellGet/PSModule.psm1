@@ -6141,7 +6141,7 @@ function Check-PSGalleryApiAvailability
     # check internet availability first
     $connected = $false
     $microsoftDomain = 'www.microsoft.com'
-    if(Get-Command Microsoft.PowerShell.Management\Test-Connection -ErrorAction Ignore)
+    if((-not $script:IsCoreCLR) -and (Get-Command Microsoft.PowerShell.Management\Test-Connection -ErrorAction Ignore))
     {        
         $connected = Microsoft.PowerShell.Management\Test-Connection -ComputerName $microsoftDomain -Count 1 -Quiet
     }

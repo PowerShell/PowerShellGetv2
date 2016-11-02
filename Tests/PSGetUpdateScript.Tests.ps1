@@ -544,7 +544,7 @@ Describe PowerShell.PSGet.UpdateScriptTests -Tags 'BVT','InnerLoop' {
     }
 }
 
-Describe PowerShell.PSGet.UpdateScriptTests -Tags 'P1','OuterLoop' {
+Describe PowerShell.PSGet.UpdateScriptTests.P1 -Tags 'P1','OuterLoop' {
 
     BeforeAll {
         SuiteSetup

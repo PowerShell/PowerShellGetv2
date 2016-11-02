@@ -836,7 +836,7 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         $moduleInfo = Test-ModuleManifest -Path $script:testManifestPath
         AssertEquals $moduleInfo.ReleaseNotes $ReleaseNotes "ReleaseNotes should be $($ReleaseNotes)"
     } `
-    -Skip:$(($PSVersionTable.PSVersion -lt '5.0.0') -and ($env:APPVEYOR_TEST_PASS -eq 'True'))
+    -Skip:$(($PSVersionTable.PSVersion -lt '5.0.0') -or ($env:APPVEYOR_TEST_PASS -eq 'True'))
 
     # Purpose: Validate Update-ModuleManifest cmdlet throw warnings when CompatiblePSEditions is specified for PowerShell version lower than 5.1
     #

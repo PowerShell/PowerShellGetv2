@@ -67,13 +67,6 @@ function Install-Dependencies {
         }
 
         $AllUsersModulesPath = $script:ProgramFilesModulesPath
-        <# TODO: Install latest version of OneGet on PSCore
-        if(($script:PowerShellEdition -eq 'Core') -and $script:IsWindows)
-        {
-            $AllUsersModulesPath = Microsoft.PowerShell.Management\Join-Path -Path (Get-PSHome) -ChildPath 'Modules'
-        }
-        #>
-
         # Install latest PackageManagement module from PSGallery
         $TempModulePath = Microsoft.PowerShell.Management\Join-Path -Path $script:TempPath -ChildPath "$(Get-Random)"
         $null = Microsoft.PowerShell.Management\New-Item -Path $TempModulePath -Force -ItemType Directory

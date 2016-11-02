@@ -434,14 +434,18 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
         Find-Script $scriptName | Install-Script -Scope AllUsers
         $res = Get-InstalledScript $scriptName
         AssertEquals $res.InstalledLocation $script:ProgramFilesScriptsPath "Install-Script with AllUsers scope did not install Fabrikam-ServerScript to program files scripts folder, $script:ProgramFilesScriptsPath"
-        $cmdInfo = Get-Command -Name $scriptName
-        AssertNotNull $cmdInfo "Script installed to the current user scope is not found by the Get-Command cmdlet" 
-        AssertEquals $cmdInfo.Name "$scriptName.ps1" "Script installed to the current user scope is not found by the Get-Command cmdlet, $cmdlInfo" 
-        
-        # CommandInfo.Source is not available on 3.0 and 4.0 downlevel PS versions
-        if($PSVersionTable.PSVersion -ge '5.0.0')
+
+        if($IsWindows -ne $False)
         {
-            AssertEquals $cmdInfo.Source "$($res.InstalledLocation)\$scriptName.ps1" "Script installed to the current user scope is not found by the Get-Command cmdlet, $($cmdlInfo.Source)"
+            $cmdInfo = Get-Command -Name $scriptName
+            AssertNotNull $cmdInfo "Script installed to the current user scope is not found by the Get-Command cmdlet" 
+            AssertEquals $cmdInfo.Name "$scriptName.ps1" "Script installed to the current user scope is not found by the Get-Command cmdlet, $cmdlInfo" 
+            
+            # CommandInfo.Source is not available on 3.0 and 4.0 downlevel PS versions
+            if($PSVersionTable.PSVersion -ge '5.0.0')
+            {
+                AssertEquals $cmdInfo.Source "$($res.InstalledLocation)\$scriptName.ps1" "Script installed to the current user scope is not found by the Get-Command cmdlet, $($cmdlInfo.Source)"
+            }
         }
     }
 
@@ -456,14 +460,17 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
         Install-Script $scriptName -Scope CurrentUser
         $res = Get-InstalledScript $scriptName
         AssertEquals $res.InstalledLocation $script:MyDocumentsScriptsPath "Install-Script with CurrentUser scope did not install Fabrikam-ServerScript to user documents folder, $script:MyDocumentsScriptsPath"
-        $cmdInfo = Get-Command -Name $scriptName
-        AssertNotNull $cmdInfo "Script installed to the current user scope is not found by the Get-Command cmdlet" 
-        AssertEquals $cmdInfo.Name "$scriptName.ps1" "Script installed to the current user scope is not found by the Get-Command cmdlet, $cmdlInfo" 
-
-        # CommandInfo.Source is not available on 3.0 and 4.0 downlevel PS versions
-        if($PSVersionTable.PSVersion -ge '5.0.0')
+        if($IsWindows -ne $False)
         {
-            AssertEquals $cmdInfo.Source "$($res.InstalledLocation)\$scriptName.ps1" "Script installed to the current user scope is not found by the Get-Command cmdlet, $($cmdlInfo.Source)"
+            $cmdInfo = Get-Command -Name $scriptName
+            AssertNotNull $cmdInfo "Script installed to the current user scope is not found by the Get-Command cmdlet" 
+            AssertEquals $cmdInfo.Name "$scriptName.ps1" "Script installed to the current user scope is not found by the Get-Command cmdlet, $cmdlInfo" 
+
+            # CommandInfo.Source is not available on 3.0 and 4.0 downlevel PS versions
+            if($PSVersionTable.PSVersion -ge '5.0.0')
+            {
+                AssertEquals $cmdInfo.Source "$($res.InstalledLocation)\$scriptName.ps1" "Script installed to the current user scope is not found by the Get-Command cmdlet, $($cmdlInfo.Source)"
+            }
         }
     }
 
@@ -574,7 +581,7 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
             Get-InstalledScript -Name Fabrikam-ServerScript -ErrorAction SilentlyContinue | Uninstall-Script -Force
         }
     } `
-    -Skip:$(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core'))
+    -Skip:$(($PSEdition -eq 'Core') -or ([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
 
     # Purpose: InstallScript_AllUsers_YES_toThePromptForAddingtoPATHVariable
     #
@@ -632,7 +639,7 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
             Get-InstalledScript -Name Fabrikam-ServerScript -ErrorAction SilentlyContinue | Uninstall-Script -Force
         }
     } `
-    -Skip:$(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core'))
+    -Skip:$(($PSEdition -eq 'Core') -or ([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
 
     # Purpose: InstallScript_CurrentUser_NoPathUpdate_NoPromptForAddingtoPATHVariable
     #
@@ -757,7 +764,7 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
             Get-InstalledScript -Name Fabrikam-ServerScript -ErrorAction SilentlyContinue | Uninstall-Script -Force
         }
     } `
-    -Skip:$(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core'))
+    -Skip:$(($PSEdition -eq 'Core') -or ([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
 
     # Purpose: InstallScript_CurrentUser_YES_toThePromptForAddingtoPATHVariable
     #
@@ -814,7 +821,7 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
             Get-InstalledScript -Name Fabrikam-ServerScript -ErrorAction SilentlyContinue | Uninstall-Script -Force
         }
     } `
-    -Skip:$(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core'))
+    -Skip:$(($PSEdition -eq 'Core') -or ([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
 
     # Purpose: InstallScriptWithWhatIf
     #
@@ -853,7 +860,7 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
         $res = Get-InstalledScript Fabrikam-ServerScript -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
         Assert (-not $res) "Install-Script should not install the script with -WhatIf option"
     } `
-    -Skip:$(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core'))
+    -Skip:$(($PSEdition -eq 'Core') -or ([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
 
     # Purpose: InstallScriptWithConfirmAndNoToPrompt
     #
@@ -896,7 +903,7 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
         $res = Get-InstalledScript Fabrikam-ServerScript -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
         AssertNull $res "Install-Script should not install a script if Confirm is not accepted"
     } `
-    -Skip:$(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core'))
+    -Skip:$(($PSEdition -eq 'Core') -or ([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
 
     # Purpose: InstallScriptWithConfirmAndYesToPrompt
     #
@@ -939,7 +946,7 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
         $res = Get-InstalledScript Fabrikam-ServerScript
         AssertEquals $res.Name 'Fabrikam-ServerScript' "Install-Script should install a script if Confirm is accepted, $res"
     } `
-    -Skip:$(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core'))
+    -Skip:$(($PSEdition -eq 'Core') -or ([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
 
     <#
     Purpose: Validate the Get-InstalledScript
@@ -1163,7 +1170,7 @@ Describe PowerShell.PSGet.InstallScriptTests.P1 -Tags 'P1','OuterLoop' {
             Get-InstalledScript -Name Fabrikam-ServerScript -ErrorAction SilentlyContinue | Uninstall-Script -Force
         }
     } `
-    -Skip:$(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core'))
+    -Skip:$(($PSEdition -eq 'Core') -or ([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
 
     # Purpose: InstallPackage_Script_AllUsers_YES_toThePromptForAddingtoPATHVariable
     #
@@ -1223,7 +1230,7 @@ Describe PowerShell.PSGet.InstallScriptTests.P1 -Tags 'P1','OuterLoop' {
             Get-InstalledScript -Name Fabrikam-ServerScript -ErrorAction SilentlyContinue | Uninstall-Script -Force
         }
     } `
-    -Skip:$(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core'))
+    -Skip:$(($PSEdition -eq 'Core') -or ([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
 
     # Purpose: InstallPackage_Script_AllUsers_NoPathUpdate_NoPromptForAddingtoPATHVariable
     #
@@ -1342,7 +1349,7 @@ Describe PowerShell.PSGet.InstallScriptTests.P1 -Tags 'P1','OuterLoop' {
             Get-InstalledScript -Name Fabrikam-ServerScript -ErrorAction SilentlyContinue | Uninstall-Script -Force
         }
     } `
-    -Skip:$(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core'))
+    -Skip:$(($PSEdition -eq 'Core') -or ([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
 
     # Purpose: InstallPackage_Script_CurrentUser_YES_toThePromptForAddingtoPATHVariable
     #
@@ -1400,7 +1407,7 @@ Describe PowerShell.PSGet.InstallScriptTests.P1 -Tags 'P1','OuterLoop' {
             Get-InstalledScript -Name Fabrikam-ServerScript -ErrorAction SilentlyContinue | Uninstall-Script -Force
         }
     } `
-    -Skip:$(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core'))
+    -Skip:$(($PSEdition -eq 'Core') -or ([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
 
     # Purpose: Install a script from an untrusted repository and press No to the prompt
     #

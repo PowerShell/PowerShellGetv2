@@ -22,7 +22,7 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
 
     BeforeEach {
         # Create temp moduleManifest to be updated
-        $script:TempModulesPath="$script:TempPath\PSGet_$(Get-Random)"
+        $script:TempModulesPath = Join-Path $script:TempPath "PSGet_$(Get-Random)"
         $null = New-Item -Path $script:TempModulesPath -ItemType Directory -Force
 
         $script:UpdateModuleManifestName = "ContosoPublishModule"
@@ -99,7 +99,8 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         #Make sure the additioanl properties inside PrivateData remain the same
         AssertEquals $newModuleInfo.PrivateData.PackageManagementProviders $oldModuleInfo.PrivateData.PackageManagementProviders "PackageManagement Providers should be $($oldModuleInfo.PrivateData.PackageManagementProviders)"
         AssertEquals $newModuleInfo.PrivateData.SupportedPowerShellGetFormatVersions $oldModuleInfo.PrivateData.SupportedPowerShellGetFormatVersions "SupportedPowerShellGetFormatVersions should be $($oldModuleInfo.PrivateData.SupportedPowerShellGetFormatVersions)"
-    } 
+    } `
+    -Skip:$($IsWindows -eq $False)
 
     # Purpose: Validate Update-ModuleManifest will keep the original property values DefaultCommandPrefix
     #
@@ -246,9 +247,8 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
       
         Assert ($newModuleInfo.Scripts -contains $ScriptsToProcessFilePath) "ScriptsToProcess should include $($ScriptsToProcess)"
         AssertEquals $newModuleInfo.HelpInfoUri $HelpInfoURI "HelpInfoURI should be $($HelpInfoURI)"
-    } 
-
-
+    } `
+    -Skip:$($IsWindows -eq $False)
 
     # Purpose: Update a module manifest with all parameters
     #
@@ -368,8 +368,8 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         AssertEquals $newModuleInfo.HelpInfoUri $HelpInfoURI "HelpInfoURI should be $($HelpInfoURI)"
         Assert ($newModuleInfo.PrivateData.PSData.ExternalModuleDependencies -contains $ExternalModuleDependencies[0]) "ExternalModuleDependencies should include $($ExternalModuleDependencies[0])"
         Assert ($newModuleInfo.PrivateData.PSData.ExternalModuleDependencies -contains $ExternalModuleDependencies[1]) "ExternalModuleDependencies should include $($ExternalModuleDependencies[1])"
-    } 
-
+    } `
+    -Skip:$($IsWindows -eq $False) 
     
     # Purpose: Validate Update-ModuleManifest cmdlet with PrivateData
     #

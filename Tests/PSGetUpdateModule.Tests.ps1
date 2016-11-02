@@ -133,7 +133,7 @@ Describe PowerShell.PSGet.UpdateModuleTests -Tags 'BVT','InnerLoop' {
         $res = Get-Module ContosoServer -ListAvailable
         Assert (($res.Count -eq 1) -and ($res.Name -eq "ContosoServer") -and ($res.Version -eq [Version]"1.0")) "Update-Module should not update the module with -WhatIf option"
     } `
-    -Skip:$(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core'))
+    -Skip:$(($PSEdition -eq 'Core') -or ($PSCulture -ne 'en-US') -or ([System.Environment]::OSVersion.Version -lt '6.2.9200.0'))
 
     # Purpose: UpdateModuleWithFalseConfirm
     #
@@ -510,7 +510,7 @@ Describe PowerShell.PSGet.UpdateModuleTests.P2 -Tags 'P2','OuterLoop' {
         $res = Get-InstalledModule -Name ContosoServer
         Assert (($res.Name -eq "ContosoServer") -and ($res.Version -eq ([Version]$installedVersion))) "Update-Module should not update the ContosoServer module when pressed NO to Confirm."
     } `
-    -Skip:$(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core'))
+    -Skip:$(($PSEdition -eq 'Core') -or ($PSCulture -ne 'en-US') -or ([System.Environment]::OSVersion.Version -lt '6.2.9200.0'))
 
     # Purpose: UpdateModuleWithConfirmAndYesToPrompt
     #
@@ -563,7 +563,7 @@ Describe PowerShell.PSGet.UpdateModuleTests.P2 -Tags 'P2','OuterLoop' {
 
         Assert (($res.Count -eq 1) -and ($res.Name -eq "ContosoServer") -and ($res.Version -gt [Version]"1.0")) "Update-Module should not update the ContosoServer module when pressed NO to Confirm."
     } `
-    -Skip:$(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core'))
+    -Skip:$(($PSEdition -eq 'Core') -or ($PSCulture -ne 'en-US') -or ([System.Environment]::OSVersion.Version -lt '6.2.9200.0'))
 
     # Purpose: AdminPrivilegesAreRequiredForUpdatingAllUsersModule
     #

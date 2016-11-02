@@ -342,7 +342,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         AssertFullyQualifiedErrorIdEquals -scriptblock {Find-Module $script:PublishModuleName -RequiredVersion $version}`
                                           -expectedFullyQualifiedErrorId "NoMatchFoundForCriteria,Microsoft.PowerShell.PackageManagement.Cmdlets.FindPackage"
     } `
-    -Skip:$(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core'))
+    -Skip:$(($PSEdition -eq 'Core') -or ([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
 
     # Purpose: PublishModuleWithConfirmAndYesToPrompt
     #
@@ -389,7 +389,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $version
         Assert (($psgetItemInfo.Name -eq $script:PublishModuleName) -or (($psgetItemInfo.Version.ToString() -eq $version))) "Publish-Module should publish a module with valid module name after confirming YES, $($psgetItemInfo.Name)"
     } `
-    -Skip:$(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core'))
+    -Skip:$(($PSEdition -eq 'Core') -or ([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
 
     # Purpose: PublishModuleWithWhatIf
     #
@@ -433,7 +433,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         AssertFullyQualifiedErrorIdEquals -scriptblock {Find-Module $script:PublishModuleName -RequiredVersion $version}`
                                           -expectedFullyQualifiedErrorId "NoMatchFoundForCriteria,Microsoft.PowerShell.PackageManagement.Cmdlets.FindPackage"
     } `
-    -Skip:$(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core'))
+    -Skip:$(($PSEdition -eq 'Core') -or ([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
 
     # Purpose: Publish multiple versions of a module
     #
@@ -932,7 +932,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     #
     It PublishModuleWithAsteriskInExportedProperties  {
         $ModuleName = "DscTestModule"
-        $TempModulesPath = "$script:TempPath\$(Get-Random)"
+        $TempModulesPath = Join-Path $script:TempPath "$(Get-Random)"
         $null = New-Item -Path $TempModulesPath -ItemType Directory -Force
     
 
@@ -1161,7 +1161,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
             Install-NuGetBinaries
         }
     } `
-    -Skip:$(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core') -or ($env:APPVEYOR_TEST_PASS -eq 'True'))
+    -Skip:$(($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core') -or ($env:APPVEYOR_TEST_PASS -eq 'True') -or ([System.Environment]::OSVersion.Version -lt "6.2.9200.0"))
 	
     It "PublishModuleWithoutNugetExeAndYesToPrompt" {
         try {
@@ -1207,7 +1207,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
             Install-NuGetBinaries
         }
     } `
-    -Skip:$(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core') -or ($env:APPVEYOR_TEST_PASS -eq 'True'))
+    -Skip:$(($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core') -or ($env:APPVEYOR_TEST_PASS -eq 'True') -or ([System.Environment]::OSVersion.Version -lt "6.2.9200.0"))
 
     # Purpose: PublishNotAvailableModule
     #
@@ -1247,7 +1247,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
     # Expected Result: should fail
     #
     It "PublishInvalidModule" {
-        $tempmodulebase = "$script:TempPath\$(Get-Random)\InvalidModule"
+        $tempmodulebase = Join-Path (Join-Path $script:TempPath "$(Get-Random)") "InvalidModule"
         $null = New-Item $tempmodulebase -Force -ItemType Directory        
 
         try
@@ -1283,7 +1283,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
     # Expected Result: should fail
     #
     It "PublishInvalidModuleFilePath" {
-        $tempmodulebase = "$script:TempPath\$(Get-Random)\InvalidModule\"
+        $tempmodulebase = Join-Path (Join-Path $script:TempPath "$(Get-Random)") "InvalidModule"
         $null = New-Item $tempmodulebase -Force -ItemType Directory
         $moduleFilePath = Join-Path $tempmodulebase "InvalidModule.psm1"
         Set-Content $moduleFilePath -Value "function foo {'foo'}"

@@ -64,7 +64,7 @@ function SuiteSetup {
     AssertEquals $modSource.SourceLocation $script:TestModuleSourceUri "Test module source is not set properly"
 
     # Create a temp folder
-    $script:TempModulesPath="$env:LocalAppData\temp\PSGet_$(Get-Random)"
+    $script:TempModulesPath= Join-Path $script:TempPath "PSGet_$(Get-Random)"
     $null = New-Item -Path $script:TempModulesPath -ItemType Directory -Force
 }
 
@@ -404,7 +404,7 @@ Describe PowerShell.PSGet.ModuleSourceTests.P1 -Tags 'P1','OuterLoop' {
     It RegisterPSRepositoryWithInvalidSMBShareSourceLocation {
 
         $Name='MyTestModSource'
-        $Location="$script:TempPath\DirNotAvailable"
+        $Location = Join-Path $script:TempPath 'DirNotAvailable'
         AssertFullyQualifiedErrorIdEquals -scriptblock {Register-PSRepository -Name $Name -SourceLocation $Location} `
                                           -expectedFullyQualifiedErrorId "PathNotFound,Register-PSRepository"
     }
@@ -420,7 +420,7 @@ Describe PowerShell.PSGet.ModuleSourceTests.P1 -Tags 'P1','OuterLoop' {
 
         $Name='MyTestModSource'
         $Location=$script:TempModulesPath
-        $PublishLocation="$script:TempPath\DirNotAvailable"
+        $PublishLocation = Join-Path $script:TempPath 'DirNotAvailable'
         AssertFullyQualifiedErrorIdEquals -scriptblock {Register-PSRepository -Name $Name -SourceLocation $Location -PublishLocation $PublishLocation} `
                                           -expectedFullyQualifiedErrorId "PathNotFound,Add-PackageSource,Microsoft.PowerShell.PackageManagement.Cmdlets.RegisterPackageSource"
     }
@@ -436,7 +436,7 @@ Describe PowerShell.PSGet.ModuleSourceTests.P1 -Tags 'P1','OuterLoop' {
 
         $Name='MyTestModSource'
         $Location=$script:TempModulesPath
-        $Location2="$script:TempPath\DirNotAvailable"
+        $Location2 = Join-Path $script:TempPath 'DirNotAvailable'
         try
         {
             Register-PSRepository -Name $Name -SourceLocation $Location
@@ -460,7 +460,7 @@ Describe PowerShell.PSGet.ModuleSourceTests.P1 -Tags 'P1','OuterLoop' {
 
         $Name='MyTestModSource'
         $Location=$script:TempModulesPath
-        $Location2="$script:TempPath\DirNotAvailable"
+        $Location2 = Join-Path $script:TempPath 'DirNotAvailable'
         try
         {
             Register-PSRepository -Name $Name -SourceLocation $Location -PublishLocation $Location

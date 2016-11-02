@@ -157,7 +157,7 @@ Describe PowerShell.PSGet.UpdateScriptTests -Tags 'BVT','InnerLoop' {
         AssertEquals $res.Name 'Fabrikam-ServerScript' "Update-Script should not update the Fabrikam-ServerScript script when pressed NO to Confirm."
         AssertEquals $res.Version $installedVersion "Update-Script should not update the Fabrikam-ServerScript script when pressed NO to Confirm."
     } `
-    -Skip:$(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core'))
+    -Skip:$(($PSEdition -eq 'Core') -or ($PSCulture -ne 'en-US') -or ([System.Environment]::OSVersion.Version -lt '6.2.9200.0'))
 
     # Purpose: UpdateScriptWithConfirmAndYesToPrompt
     #
@@ -203,7 +203,7 @@ Describe PowerShell.PSGet.UpdateScriptTests -Tags 'BVT','InnerLoop' {
         AssertEquals $res.Name 'Fabrikam-ServerScript' "Update-Script should not update the Fabrikam-ServerScript script when pressed NO to Confirm, $res"
         Assert ($res.Version -gt [Version]"1.0") "Update-Script should not update the Fabrikam-ServerScript script when pressed NO to Confirm, $res"
     } `
-    -Skip:$(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core'))
+    -Skip:$(($PSEdition -eq 'Core') -or ($PSCulture -ne 'en-US') -or ([System.Environment]::OSVersion.Version -lt '6.2.9200.0'))
 
     # Purpose: UpdateScriptWithWhatIf
     #
@@ -247,7 +247,7 @@ Describe PowerShell.PSGet.UpdateScriptTests -Tags 'BVT','InnerLoop' {
         AssertEquals $res.Name 'Fabrikam-ServerScript' "Update-Script should not update the script with -WhatIf option, $res"
         Assert ($res.Version -eq [Version]"1.0") "Update-Script should not update the script with -WhatIf option, $res"
     } `
-    -Skip:$(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core'))
+    -Skip:$(($PSEdition -eq 'Core') -or ($PSCulture -ne 'en-US') -or ([System.Environment]::OSVersion.Version -lt '6.2.9200.0'))
 
     # Purpose: UpdateScriptWithFalseConfirm
     #

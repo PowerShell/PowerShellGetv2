@@ -520,7 +520,7 @@ function PublishDscTestModule
         $TestModulesBase
     )
 
-    $TempModulesPath = "$script:TempPath\$(Get-Random)"
+    $TempModulesPath = Join-Path $script:TempPath "$(Get-Random)"
     $null = New-Item -Path $TempModulesPath -ItemType Directory -Force
 
     Copy-Item -Path "$TestModulesBase\$ModuleName" -Destination $TempModulesPath -Recurse -Force
@@ -1149,7 +1149,7 @@ function Set-PATHVariableForScriptsInstallLocation
 function Get-CodeSigningCert
 {
     $cert = $null;
-    $scriptName = $script:TempPath + "\" + [IO.Path]::GetRandomFileName + ".ps1"  
+    $scriptName = Join-Path $script:TempPath  "$([IO.Path]::GetRandomFileName()).ps1"  
     "get-date" >$scriptName  
     $cert = @(get-childitem cert:\CurrentUser\My -codesigning | Where-Object {(Set-AuthenticodeSignature $scriptName -cert $_).Status -eq "Valid"})[0];  
     del $scriptName

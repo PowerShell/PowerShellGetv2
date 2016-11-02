@@ -201,7 +201,7 @@ Describe PowerShell.PSGet.UninstallScriptTests -Tags 'BVT','InnerLoop' {
         $res = Get-InstalledScript Fabrikam-ServerScript
         Assert ($res) "Uninstall-Script should not uninstall the script with -WhatIf option"
     } `
-    -Skip:$(([System.Environment]::OSVersion.Version -lt '6.2.9200.0') -or ($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core'))
+    -Skip:$(($PSEdition -eq 'Core') -or ($PSCulture -ne 'en-US') -or ([System.Environment]::OSVersion.Version -lt '6.2.9200.0'))
 
     # Purpose: UninstallScriptWithConfirmAndNoToPrompt
     #
@@ -245,7 +245,7 @@ Describe PowerShell.PSGet.UninstallScriptTests -Tags 'BVT','InnerLoop' {
         $res = Get-InstalledScript Fabrikam-ServerScript
         Assert ($res) "Uninstall-Script should not uninstall the script if confirm is not accepted"
     } `
-    -Skip:$(([System.Environment]::OSVersion.Version -lt '6.2.9200.0') -or ($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core'))
+    -Skip:$(($PSEdition -eq 'Core') -or ($PSCulture -ne 'en-US') -or ([System.Environment]::OSVersion.Version -lt '6.2.9200.0'))
 
     # Purpose: UninstallScriptWithConfirmAndYesToPrompt
     #
@@ -289,7 +289,7 @@ Describe PowerShell.PSGet.UninstallScriptTests -Tags 'BVT','InnerLoop' {
         $res = Get-InstalledScript Fabrikam-ServerScript -ErrorAction SilentlyContinue
         AssertNull $res "Uninstall-Script should uninstall a script if Confirm is not accepted"
     } `
-    -Skip:$(([System.Environment]::OSVersion.Version -lt '6.2.9200.0') -or ($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core'))
+    -Skip:$(($PSEdition -eq 'Core') -or ($PSCulture -ne 'en-US') -or ([System.Environment]::OSVersion.Version -lt '6.2.9200.0'))
 }
 
 Describe PowerShell.PSGet.UninstallScriptTests.ErrorCases -Tags 'P1','InnerLoop','RI' {

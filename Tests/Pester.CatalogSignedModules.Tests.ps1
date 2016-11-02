@@ -2,6 +2,10 @@
 #
 # Copyright (c) Microsoft Corporation, 2016
 
+if($IsWindows -eq $false) {
+    return
+}
+
 Import-Module "$PSScriptRoot\PSGetTestUtils.psm1" -WarningAction SilentlyContinue
 
 $Script:RepositoryName = 'Local'

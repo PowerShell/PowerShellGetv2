@@ -205,7 +205,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
         AssertFullyQualifiedErrorIdEquals -scriptblock {Find-Script $script:PublishScriptName -RequiredVersion $script:PublishScriptVersion}`
                                           -expectedFullyQualifiedErrorId "NoMatchFoundForCriteria,Microsoft.PowerShell.PackageManagement.Cmdlets.FindPackage"
     } `
-    -Skip:$(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core'))
+    -Skip:$(($PSEdition -eq 'Core') -or ($PSCulture -ne 'en-US') -or ([System.Environment]::OSVersion.Version -lt '6.2.9200.0'))
 
     # Purpose: PublishScriptWithConfirmAndYesToPrompt
     #
@@ -247,7 +247,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
         AssertEquals $psgetItemInfo.Name $script:PublishScriptName "Publish-Script should publish a valid script after confirming YES, $($psgetItemInfo.Name)"
         AssertEquals $psgetItemInfo.Version $script:PublishScriptVersion "Publish-Script should publish a valid script after confirming YES, $($psgetItemInfo.Version)"
     } `
-    -Skip:$(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core'))
+    -Skip:$(($PSEdition -eq 'Core') -or ($PSCulture -ne 'en-US') -or ([System.Environment]::OSVersion.Version -lt '6.2.9200.0'))
 
     # Purpose: PublishScriptWithWhatIf
     #
@@ -285,7 +285,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
         AssertFullyQualifiedErrorIdEquals -scriptblock {Find-Script $script:PublishScriptName -RequiredVersion $script:PublishScriptVersion}`
                                           -expectedFullyQualifiedErrorId "NoMatchFoundForCriteria,Microsoft.PowerShell.PackageManagement.Cmdlets.FindPackage"
     } `
-    -Skip:$(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core'))
+    -Skip:$(($PSEdition -eq 'Core') -or ($PSCulture -ne 'en-US') -or ([System.Environment]::OSVersion.Version -lt '6.2.9200.0'))
 
     # Purpose: Test xml special characters are escaped when publishing a script
     #
@@ -1015,10 +1015,10 @@ Describe PowerShell.PSGet.PublishScriptTests.P1 -Tags 'P1','OuterLoop' {
         }
     } `
     -Skip:$(
-        ([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or 
         ($PSCulture -ne 'en-US') -or 
         ($PSEdition -eq 'Core') -or
-        ($env:APPVEYOR_TEST_PASS -eq 'True')
+        ($env:APPVEYOR_TEST_PASS -eq 'True') -or
+        ([System.Environment]::OSVersion.Version -lt "6.2.9200.0") 
     )
 	
     # Purpose: PublishNotAvailableScript
@@ -1667,10 +1667,10 @@ Describe PowerShell.PSGet.PublishScriptTests.P2 -Tags 'P2','OuterLoop' {
         }
     } `
     -Skip:$(
-        ([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or 
         ($PSCulture -ne 'en-US') -or 
         ($PSEdition -eq 'Core') -or
-        ($env:APPVEYOR_TEST_PASS -eq 'True')
+        ($env:APPVEYOR_TEST_PASS -eq 'True') -or
+        ([System.Environment]::OSVersion.Version -lt "6.2.9200.0") 
     )
 
     # Purpose: Validate Publish-Script cmdlet with script dependencies

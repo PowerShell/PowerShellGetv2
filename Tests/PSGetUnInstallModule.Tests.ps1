@@ -113,7 +113,7 @@ Describe 'PowerShell.PSGet.UnInstallModuleTests' -Tags 'BVT','InnerLoop' {
         $mod = Get-InstalledModule ContosoServer
         Assert ($mod) "UnInstall-Module should not uninstall the module with -WhatIf option"
     } `
-    -Skip:$(([System.Environment]::OSVersion.Version -lt '6.2.9200.0') -or ($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core'))
+    -Skip:$(($PSEdition -eq 'Core') -or ($PSCulture -ne 'en-US') -or ([System.Environment]::OSVersion.Version -lt '6.2.9200.0'))
 
     # Purpose: UnInstallModuleWithConfirmAndNoToPrompt
     #
@@ -157,7 +157,7 @@ Describe 'PowerShell.PSGet.UnInstallModuleTests' -Tags 'BVT','InnerLoop' {
         $mod = Get-InstalledModule ContosoServer
         Assert ($mod) "UnInstall-Module should not uninstall the module if confirm is not accepted"
     } `
-    -Skip:$(([System.Environment]::OSVersion.Version -lt '6.2.9200.0') -or ($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core'))
+    -Skip:$(($PSEdition -eq 'Core') -or ($PSCulture -ne 'en-US') -or ([System.Environment]::OSVersion.Version -lt '6.2.9200.0'))
 
     # Purpose: UnInstallModuleWithConfirmAndYesToPrompt
     #
@@ -201,7 +201,7 @@ Describe 'PowerShell.PSGet.UnInstallModuleTests' -Tags 'BVT','InnerLoop' {
         $res = Get-InstalledModule ContosoServer -ErrorAction SilentlyContinue
         AssertNull $res "UnInstall-Module should uninstall a module if Confirm is not accepted"
     } `
-    -Skip:$(([System.Environment]::OSVersion.Version -lt '6.2.9200.0') -or ($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core'))
+    -Skip:$(($PSEdition -eq 'Core') -or ($PSCulture -ne 'en-US') -or ([System.Environment]::OSVersion.Version -lt '6.2.9200.0'))
 
     <#
     Purpose: Validate the -AllVersions parameter on Get-InstalledModule and Uninstall-Module cmdlets

@@ -474,11 +474,11 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
     -Skip:$(
         $whoamiValue = (whoami)
 
+        ($PSEdition -eq 'Core') -or
         ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
         ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
         ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
         ($env:APPVEYOR_TEST_PASS -eq 'True') -or
-        ($PSEdition -eq 'Core') -or
         ($PSVersionTable.PSVersion -lt '4.0.0')
     )
 
@@ -507,10 +507,10 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
     -Skip:$(
         $whoamiValue = (whoami)
 
+        ($PSEdition -eq 'Core') -or
         ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
         ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
         ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
-        ($PSEdition -eq 'Core') -or
         ($PSCulture -ne 'en-US') -or
         ($PSVersionTable.PSVersion -lt '5.0.0')
     )
@@ -552,7 +552,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         $mod = Get-Module ContosoServer -ListAvailable
         Assert (-not $mod) "Install-Module should not install the module with -WhatIf option"
     } `
-    -Skip:$(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core'))
+    -Skip:$(($PSEdition -eq 'Core') -or ([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
 
     # Purpose: InstallModuleWithConfirmAndNoToPrompt
     #
@@ -595,7 +595,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         $res = Get-Module ContosoServer -ListAvailable
         AssertNull $res "Install-Module should not install a module if Confirm is not accepted"
     } `
-    -Skip:$(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core'))
+    -Skip:$(($PSEdition -eq 'Core') -or ([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
 
     # Purpose: InstallModuleWithConfirmAndYesToPrompt
     #
@@ -638,7 +638,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         $res = Get-Module ContosoServer -ListAvailable
         Assert (($res.Count -eq 1) -and ($res.Name -eq "ContosoServer")) "Install-Module should install a module if Confirm is accepted"
     } `
-    -Skip:$(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core'))
+    -Skip:$(($PSEdition -eq 'Core') -or ([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
 
     # Purpose: Validate PowerShellGet related properties on PSModuleInfo
     #

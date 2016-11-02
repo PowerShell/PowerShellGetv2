@@ -669,7 +669,8 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
             Set-PATHVariableForScriptsInstallLocation -Scope CurrentUser
             Get-InstalledScript -Name Fabrikam-ServerScript -ErrorAction SilentlyContinue | Uninstall-Script -Force
         }
-    }
+    } `
+    -Skip:$($IsWindows -eq $false)
 
     # Purpose: InstallScript_CurrentUser_Force_NoPromptForAddingtoPATHVariable
     #
@@ -709,7 +710,8 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
            
             $script:psgetModuleInfo = Import-Module -Name PowerShellGet -Force -PassThru
         }
-    }
+    } `
+    -Skip:$($IsWindows -eq $false)
 
     # Purpose: InstallScript_CurrentUser_NO_toThePromptForAddingtoPATHVariable
     #
@@ -1262,7 +1264,8 @@ Describe PowerShell.PSGet.InstallScriptTests.P1 -Tags 'P1','OuterLoop' {
 
             Get-InstalledScript -Name Fabrikam-ServerScript -ErrorAction SilentlyContinue | Uninstall-Script -Force
         }
-    }
+    } `
+    -Skip:$($IsWindows -eq $false)
 
     # Purpose: InstallPackage_Script_AllUsers_Force_NoPromptForAddingtoPATHVariable
     #
@@ -1293,7 +1296,8 @@ Describe PowerShell.PSGet.InstallScriptTests.P1 -Tags 'P1','OuterLoop' {
 
             Get-InstalledScript -Name Fabrikam-ServerScript -ErrorAction SilentlyContinue | Uninstall-Script -Force
         }
-    }
+    } `
+    -Skip:$($IsWindows -eq $false)
 
     # Purpose: InstallPackage_Script_CurrentUser_NO_toThePromptForAddingtoPATHVariable
     #

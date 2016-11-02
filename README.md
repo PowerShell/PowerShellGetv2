@@ -1,4 +1,3 @@
-[![Build status](https://ci.appveyor.com/api/projects/status/91p7lpjoxit3gw72/branch/master?svg=true)](https://ci.appveyor.com/project/PowerShell/powershellget/branch/master)
 
 [![Join the chat at https://gitter.im/PowerShell/PowerShellGet](https://badges.gitter.im/PowerShell/PowerShellGet.svg)](https://gitter.im/PowerShell/PowerShellGet?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
@@ -8,6 +7,31 @@ Introduction
 PowerShellGet is a PowerShell module with commands for discovering, installing, updating and publishing the PowerShell artifacts like Modules, DSC Resources, Role Capabilities and Scripts.
 
 PowerShellGet module is also integrated with the PackageManagement module as a provider, users can also use the PackageManagement cmdlets for discovering, installing and updating the PowerShell artifacts like Modules and Scripts.
+
+
+Build status
+============
+### development branch
+
+| AppVeyor (Windows - PS & PSCore)| Travis CI (Linux / macOS)    |
+|---------------------------------|------------------------------|
+| [![d-av-image][]][d-av-site]    | [![d-tv-image][]][d-tv-site] |
+
+### master branch
+
+| AppVeyor (Windows - PS & PSCore)| Travis CI (Linux / macOS)    |
+|---------------------------------|------------------------------|
+| [![m-av-image][]][m-av-site]    | [![m-tv-image][]][m-tv-site] |
+
+[d-av-image]: https://ci.appveyor.com/api/projects/status/91p7lpjoxit3gw72/branch/development?svg=true
+[d-av-site]: https://ci.appveyor.com/project/PowerShell/powershellget/branch/development
+[d-tv-image]: https://travis-ci.org/PowerShell/PowerShellGet.svg?branch=development
+[d-tv-site]: https://travis-ci.org/PowerShell/PowerShellGet/branches
+
+[m-av-image]: https://ci.appveyor.com/api/projects/status/91p7lpjoxit3gw72/branch/master?svg=true
+[m-av-site]: https://ci.appveyor.com/project/PowerShell/powershellget/branch/master
+[m-tv-image]: https://travis-ci.org/PowerShell/PowerShellGet.svg?branch=master
+[m-tv-site]: https://travis-ci.org/PowerShell/PowerShellGet/branches
 
 Documentation
 =============

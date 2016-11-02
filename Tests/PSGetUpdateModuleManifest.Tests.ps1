@@ -16,13 +16,13 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
     BeforeAll {
         Import-Module "$PSScriptRoot\PSGetTestUtils.psm1" -WarningAction SilentlyContinue
         Import-Module "$PSScriptRoot\Asserts.psm1" -WarningAction SilentlyContinue
-
+        $script:TempPath = Get-TempPath
         $script:psgetModuleInfo = Import-Module PowerShellGet -Global -Force -Passthru
     }
 
     BeforeEach {
         # Create temp moduleManifest to be updated
-        $script:TempModulesPath="$env:LocalAppData\temp\PSGet_$(Get-Random)"
+        $script:TempModulesPath = Join-Path $script:TempPath "PSGet_$(Get-Random)"
         $null = New-Item -Path $script:TempModulesPath -ItemType Directory -Force
 
         $script:UpdateModuleManifestName = "ContosoPublishModule"
@@ -89,7 +89,7 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         Assert ($newModuleInfo.ExportedAliases.Keys -contains "fimo") "ExportedAliases should include 'fimo')"
         Assert ($newModuleInfo.ExportedAliases.Keys -contains "upmo") "ExportedAliases should include 'upmo')"
         Assert ($newModuleInfo.ExportedAliases.Keys -contains "pumo") "ExportedAliases should include 'pumo')"
-        if($PSVersionTable.Version -ge [Version]"5.0")
+        if($PSVersionTable.Version -ge '5.0.0')
         {
             AssertEquals $newModuleInfo.Tags.Count $oldModuleInfo.Tags.Count "Tags count should be $($oldModuleInfo.Tags.Count)"
         }
@@ -99,7 +99,8 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         #Make sure the additioanl properties inside PrivateData remain the same
         AssertEquals $newModuleInfo.PrivateData.PackageManagementProviders $oldModuleInfo.PrivateData.PackageManagementProviders "PackageManagement Providers should be $($oldModuleInfo.PrivateData.PackageManagementProviders)"
         AssertEquals $newModuleInfo.PrivateData.SupportedPowerShellGetFormatVersions $oldModuleInfo.PrivateData.SupportedPowerShellGetFormatVersions "SupportedPowerShellGetFormatVersions should be $($oldModuleInfo.PrivateData.SupportedPowerShellGetFormatVersions)"
-    } 
+    } `
+    -Skip:$($IsWindows -eq $False)
 
     # Purpose: Validate Update-ModuleManifest will keep the original property values DefaultCommandPrefix
     #
@@ -162,7 +163,7 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         $VariablesToExport = "var1","var2"
         $CmdletsToExport="get-test1","get-test2"
         $HelpInfoURI = "$script:PublishModuleName URL"
-        $RequiredModules = @("BitsTransfer",@{ModuleName='PSScheduledJob';ModuleVersion='1.0.0.0';GUID='50cdb55f-5ab7-489f-9e94-4ec21ff51e59'})
+        $RequiredModules = @('Microsoft.PowerShell.Management',@{ModuleName='Microsoft.PowerShell.Utility';ModuleVersion='1.0.0.0';GUID='1da87e53-152b-403e-98dc-74d7b4d63d59'})
         $NestedModules = "Microsoft.PowerShell.Management","Microsoft.PowerShell.Utility"
         $ScriptsToProcess = "$script:UpdateModuleManifestName.ps1"
         $ParamsV3 = @{}
@@ -198,12 +199,12 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         $ParamsV5.Add("ReleaseNotes",$ReleaseNotes)
 
 
-        if($PSVersionTable.PSVersion -ge [Version]"3.0" -and $PSVersionTable.Version -le [Version]"4.0")
+        if($PSVersionTable.PSVersion -ge '3.0.0' -and $PSVersionTable.Version -le '4.0.0')
         {
             New-ModuleManifest  @ParamsV3 -Confirm:$false 
             Update-ModuleManifest @ParamsV3 -Confirm:$false
         }
-        elseif($PSVersionTable.PSVersion -ge [Version]"5.0")
+        elseif($PSVersionTable.PSVersion -ge '5.0.0')
         {
             New-ModuleManifest  @ParamsV5 -Confirm:$false 
             Update-ModuleManifest @ParamsV5 -Confirm:$false
@@ -234,7 +235,7 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         Assert ($newModuleInfo.ExportedVariables.Keys -contains $VariablesToExport[1]) "ExportedVariables should include $($VariablesToExport[1])"
         Assert ($newModuleInfo.ExportedCmdlets.Keys -contains ($CmdletsToExport[0])) "CmdletsToExport should contain $($CmdletsToExport[0])"
         Assert ($newModuleInfo.ExportedCmdlets.Keys -contains ($CmdletsToExport[1])) "CmdletsToExport should contain $($CmdletsToExport[1])"
-        if($PSVersionTable.Version -gt [Version]"5.0")
+        if($PSVersionTable.Version -gt '5.0.0')
         {
             Assert ($newModuleInfo.Tags -contains $Tags[0]) "Tags should include $($Tags[0])"
             Assert ($newModuleInfo.Tags -contains $Tags[1]) "Tags should include $($Tags[1])"
@@ -246,9 +247,8 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
       
         Assert ($newModuleInfo.Scripts -contains $ScriptsToProcessFilePath) "ScriptsToProcess should include $($ScriptsToProcess)"
         AssertEquals $newModuleInfo.HelpInfoUri $HelpInfoURI "HelpInfoURI should be $($HelpInfoURI)"
-    } 
-
-
+    } `
+    -Skip:$($IsWindows -eq $False)
 
     # Purpose: Update a module manifest with all parameters
     #
@@ -285,9 +285,9 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         $VariablesToExport = "var1","var2"
         $CmdletsToExport="get-test1","get-test2"
         $HelpInfoURI = "$script:PublishModuleName URL"
-        $RequiredModules = @("BitsTransfer",@{ModuleName='PSScheduledJob';ModuleVersion='1.0.0.0';GUID='50cdb55f-5ab7-489f-9e94-4ec21ff51e59'})
+        $RequiredModules = @('Microsoft.PowerShell.Management',@{ModuleName='Microsoft.PowerShell.Utility';ModuleVersion='1.0.0.0';GUID='1da87e53-152b-403e-98dc-74d7b4d63d59'})
         $NestedModules = "Microsoft.PowerShell.Management","Microsoft.PowerShell.Utility"
-        $ExternalModuleDependencies = "Microsoft.PowerShell.Management","PSScheduledJob"
+        $ExternalModuleDependencies = "Microsoft.PowerShell.Management","Microsoft.PowerShell.Utility"
 
         $ParamsV3 = @{}
         $ParamsV3.Add("Guid",$Guid)
@@ -321,12 +321,12 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         $ParamsV5.Add("IconUri",$IconUri)
         $ParamsV5.Add("ReleaseNotes",$ReleaseNotes)
 
-        if($PSVersionTable.PSVersion -ge [Version]"3.0" -or $PSVersionTable.Version -le [Version]"4.0")
+        if(($PSVersionTable.PSVersion -ge '3.0.0') -or ($PSVersionTable.Version -le '4.0.0'))
         {
             New-ModuleManifest  -path $script:testManifestPath -Confirm:$false 
             Update-ModuleManifest @ParamsV3 -Confirm:$false
         }
-        elseif($PSVersionTable.PSVersion -ge [Version]"5.0")
+        elseif($PSVersionTable.PSVersion -ge '5.0.0')
         {
             New-ModuleManifest  -path $script:testManifestPath -Confirm:$false 
             Update-ModuleManifest @ParamsV5 -Confirm:$false
@@ -355,7 +355,7 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         Assert ($newModuleInfo.ExportedVariables.Keys -contains $VariablesToExport[1]) "ExportedVariables should include $($VariablesToExport[1])"
         Assert ($newModuleInfo.ExportedCmdlets.Keys -contains ($CmdletsToExport[0])) "CmdletsToExport should contain $($CmdletsToExport[0])"
         Assert ($newModuleInfo.ExportedCmdlets.Keys -contains ($CmdletsToExport[1])) "CmdletsToExport should contain $($CmdletsToExport[1])"
-        if($PSVersionTable.Version -gt [Version]"5.0")
+        if($PSVersionTable.Version -gt '5.0.0')
         {
             Assert ($newModuleInfo.Tags -contains $Tags[0]) "Tags should include $($Tags[0])"
             Assert ($newModuleInfo.Tags -contains $Tags[1]) "Tags should include $($Tags[1])"
@@ -368,8 +368,8 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         AssertEquals $newModuleInfo.HelpInfoUri $HelpInfoURI "HelpInfoURI should be $($HelpInfoURI)"
         Assert ($newModuleInfo.PrivateData.PSData.ExternalModuleDependencies -contains $ExternalModuleDependencies[0]) "ExternalModuleDependencies should include $($ExternalModuleDependencies[0])"
         Assert ($newModuleInfo.PrivateData.PSData.ExternalModuleDependencies -contains $ExternalModuleDependencies[1]) "ExternalModuleDependencies should include $($ExternalModuleDependencies[1])"
-    } 
-
+    } `
+    -Skip:$($IsWindows -eq $False) 
     
     # Purpose: Validate Update-ModuleManifest cmdlet with PrivateData
     #
@@ -400,7 +400,7 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         
         $newModuleInfo = Test-ModuleManifest -Path $script:testManifestPath
 
-        if($PSVersionTable.PSVersion -ge [Version]"5.0")
+        if($PSVersionTable.PSVersion -ge '5.0.0')
         {
             Assert ($newModuleInfo.Tags -contains $Tags[0]) "Tags should include $($Tags[0])"
             Assert ($newModuleInfo.Tags -contains $Tags[1]) "Tags should include $($Tags[1])"
@@ -451,7 +451,7 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
     #
      It UpdateModuleManifesWithExportedDSCResourcesInLowerPowerShellVersion {
         #When running on lower versin of PowerShell
-        if($PSVersionTable.PSVersion -lt [Version]"5.0")
+        if($PSVersionTable.PSVersion -lt '5.0.0')
         {
             $DscResourcesToExport = "ExportedDscResource1"
 
@@ -485,7 +485,7 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
     # Expected Result: Update-ModuleManifest should update the field "DscResourcesToExport" in module manifest file.
     #
     It UpdateModuleManifestWithValidExportedDSCResources {
-        if($PSVersionTable.PSVersion -ge [Version]"5.0")
+        if($PSVersionTable.PSVersion -ge '5.0.0')
         {
             $DscResourcesToExport = "ExportedDscResource1","ExportedDscResources2"
 
@@ -546,7 +546,7 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         New-ModuleManifest -path $script:testManifestPath -FileList $FilePath
 
         # When running on lower versin of PowerShell
-        if($PSVersionTable.PSVersion -lt [Version]'5.1')
+        if($PSVersionTable.PSVersion -lt '5.1.0')
         {
             AssertFullyQualifiedErrorIdEquals -scriptblock {Update-ModuleManifest -Path $script:testManifestPath} `
                                           -expectedFullyQualifiedErrorId "FilePathInFileListNotWithinModuleBase,Update-ModuleManifest"
@@ -633,14 +633,7 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
     # Expected Result: Manifest contents should not be updated
     #
     It UpdateModuleManifestWithWhatIf {
-
-        if($PSCulture -ne 'en-US')
-        {
-            Write-Warning -Message "Skipped on PSCulture: $PSCulture"
-            return
-        }
-
-        $outputPath = $env:temp
+        $outputPath = $script:TempPath
         $guid =  [system.guid]::newguid().tostring()
         $outputFilePath = Join-Path $outputPath "$guid"
         $runspace = CreateRunSpace $outputFilePath 1
@@ -674,7 +667,8 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         Assert ($content -and $content.Contains("Update manifest file with new content")) "Update-ModouleManifest whatif message missing, $content"
         Assert $content.Contains("Author = 'NewAuthor'") "Update-ModuleManifest whatif message missing changing value, $content"
         AssertEquals $moduleInfo.Author $Author "Author name should be $($Author)"
-    }
+    } `
+    -Skip:$(($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core'))
 
 
     # Purpose: Validate Update-ModuleManifest will update the content if -Confirm:$false is used
@@ -700,8 +694,8 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
     #
     # Expected Result: Manifest file should be updated
     #
-    It "UpdateModuleManifestWithConfirmAndYesToPrompt" {
-        $outputPath = $env:temp
+    It "UpdateModuleManifestWithConfirmAndYesToPrompt" -Test {
+        $outputPath = $script:TempPath
         $guid =  [system.guid]::newguid().tostring()
         $outputFilePath = Join-Path $outputPath "$guid"
         $runspace = CreateRunSpace $outputFilePath 1
@@ -733,8 +727,8 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
 
         $newModuleInfo = Test-ModuleManifest -Path $script:testManifestPath
         AssertEquals $newModuleInfo.Author $newAuthor "Author name should be $($newAuthor)"
-    } 
-
+    } `
+    -Skip:$($PSEdition -eq 'Core')
     
     # Purpose: Validate Update-ModuleManifest will throw errors if current user does not have read-write permission 
     #
@@ -776,20 +770,14 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
     # Expected Result: Update-ModuleManifest should update the manifest with correct ReleaseNotes with escape characters
     #
     It UpdateModuleManifestWithSingleQuoteInReleaseNotes {
-
-        if($PSVersionTable.PSVersion -lt '5.0.0')
-        {            
-            Write-Warning -Message "Skipped on PSVersion: $($PSVersionTable.PSVersion)"
-            return
-        }
-
         New-ModuleManifest -path $script:testManifestPath 
         $ReleaseNotes = "I'm a test"
         Update-ModuleManifest -Path $script:testManifestPath -ReleaseNotes $ReleaseNotes
         
         $moduleInfo = Test-ModuleManifest -Path $script:testManifestPath
         AssertEquals $moduleInfo.ReleaseNotes "I'm a test" "ReleaseNotes should be $($ReleaseNotes)"
-    } 
+    } `
+    -Skip:$($PSVersionTable.PSVersion -lt '5.0.0') 
 
     # Purpose: Validate Update-ModuleManifest have proper ReleaseNotes field when there are existing releaseNotes value
     # with single quotes
@@ -800,13 +788,6 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
     # Expected Result: Update-ModuleManifest should update the manifest with correct ReleaseNotes with escape characters
     #
     It UpdateModuleManifestWithSingleQuoteInExistingReleaseNotes {
-
-        if($PSVersionTable.PSVersion -lt '5.0.0')
-        {            
-            Write-Warning -Message "Skipped on PSVersion: $($PSVersionTable.PSVersion)"
-            return
-        }
-
         $ReleaseNotes = "I'm a test"
         New-ModuleManifest -path $script:testManifestPath -ReleaseNotes $ReleaseNotes
         
@@ -814,7 +795,8 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         
         $moduleInfo = Test-ModuleManifest -Path $script:testManifestPath
         AssertEquals $moduleInfo.ReleaseNotes "I'm a test" "ReleaseNotes should be $($ReleaseNotes)"
-    }
+    } `
+    -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
 
     # Purpose: Validate Update-ModuleManifest have proper ReleaseNotes field when there are multiple lines of ReleaseNotes
     #
@@ -824,13 +806,6 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
     # Expected Result: Update-ModuleManifest should update the manifest with correct ReleaseNotes 
     #
     It UpdateModuleManifestWithMultipleLinesReleaseNotes {
-
-        if($PSVersionTable.PSVersion -lt '5.0.0')
-        {            
-            Write-Warning -Message "Skipped on PSVersion: $($PSVersionTable.PSVersion)"
-            return
-        }
-
         $ReleaseNotes = "I'm a test. \nThis is multiple lines.\n\r Try testing"
         New-ModuleManifest -path $script:testManifestPath -ReleaseNotes $ReleaseNotes
         
@@ -838,7 +813,8 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         
         $moduleInfo = Test-ModuleManifest -Path $script:testManifestPath
         AssertEquals $moduleInfo.ReleaseNotes $ReleaseNotes "ReleaseNotes should be $($ReleaseNotes)"
-    }
+    } `
+    -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
 
     # Purpose: Validate Update-ModuleManifest have proper ReleaseNotes field when there are multiple lines of ReleaseNotes
     #
@@ -847,14 +823,7 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
 
     # Expected Result: Update-ModuleManifest should update the manifest with correct ReleaseNotes 
     #
-    It UpdateModuleManifestWithMultipleLinesReleaseNotes2 -skip:($env:APPVEYOR_TEST_PASS -eq 'True') {
-
-        if($PSVersionTable.PSVersion -lt '5.0.0')
-        {            
-            Write-Warning -Message "Skipped on PSVersion: $($PSVersionTable.PSVersion)"
-            return
-        }
-
+    It UpdateModuleManifestWithMultipleLinesReleaseNotes2 {
         $ReleaseNotes = @"
         I'm a test.
         This is multiple lines.
@@ -866,7 +835,8 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         
         $moduleInfo = Test-ModuleManifest -Path $script:testManifestPath
         AssertEquals $moduleInfo.ReleaseNotes $ReleaseNotes "ReleaseNotes should be $($ReleaseNotes)"
-    }
+    } `
+    -Skip:$(($PSVersionTable.PSVersion -lt '5.0.0') -or ($env:APPVEYOR_TEST_PASS -eq 'True'))
 
     # Purpose: Validate Update-ModuleManifest cmdlet throw warnings when CompatiblePSEditions is specified for PowerShell version lower than 5.1
     #
@@ -880,7 +850,7 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         New-ModuleManifest -path $script:testManifestPath
 
         # When running on lower versin of PowerShell
-        if($PSVersionTable.PSVersion -lt [Version]'5.1')
+        if($PSVersionTable.PSVersion -lt '5.1.0')
         {
             AssertFullyQualifiedErrorIdEquals -scriptblock {
                                                                 Update-ModuleManifest -Path $script:testManifestPath `
@@ -909,13 +879,6 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
     # Expected Result: Update-ModuleManifest should update the field "CompatiblePSEditions" in module manifest file.
     #
     It UpdateModuleManifestWithValidCompatiblePSEditions {
-
-        if($PSVersionTable.PSVersion -lt '5.1.0')
-        {            
-            Write-Warning -Message "Skipped on PSVersion: $($PSVersionTable.PSVersion)"
-            return
-        }
-
         New-ModuleManifest -path $script:testManifestPath -PowerShellVersion 5.1 -CompatiblePSEditions 'Desktop'
         $moduleInfo = Test-ModuleManifest -Path $script:testManifestPath
         AssertEquals $moduleInfo.CompatiblePSEditions.Count 1 'CompatiblePSEditions should be Desktop'
@@ -927,5 +890,6 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
 
         Assert ($newModuleInfo.CompatiblePSEditions -contains $CompatiblePSEditions[0]) "CompatiblePSEditions should include $($CompatiblePSEditions[0])"
         Assert ($newModuleInfo.CompatiblePSEditions -contains $CompatiblePSEditions[1]) "CompatiblePSEditions should include $($CompatiblePSEditions[1])"
-    }
+    } `
+    -Skip:$($PSVersionTable.PSVersion -lt '5.1.0')
 }

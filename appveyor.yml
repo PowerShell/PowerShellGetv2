@@ -1,6 +1,13 @@
 os:
     - "WMF 5"
 
+environment: 
+    matrix: 
+    - PowerShellEdition: Desktop 
+    - PowerShellEdition: Core
+configuration: Release
+platform: Any CPU
+
 # clone directory
 clone_folder: c:\projects\powershellget
 
@@ -10,27 +17,8 @@ init:
 # Install Pester and PackageManagement modules
 install:
     - ps: | 
-        nuget install pester -source https://www.powershellgallery.com/api/v2 -outputDirectory "$Env:ProgramFiles\WindowsPowerShell\Modules\." -ExcludeVersion
-        
-        # Install latest PackageManagement module from PSGallery
-        $TempModulePath = Microsoft.PowerShell.Management\Join-Path -Path $env:TEMP -ChildPath "$(Get-Random)"
-        $null = Microsoft.PowerShell.Management\New-Item -Path $TempModulePath -Force -ItemType Directory
-        $OneGetModuleName = 'PackageManagement'
-        try
-        {
-            nuget install $OneGetModuleName -source https://dtlgalleryint.cloudapp.net/api/v2 -outputDirectory $TempModulePath -verbosity detailed
-            $OneGetWithVersion = Microsoft.PowerShell.Management\Get-ChildItem -Path $TempModulePath -Directory
-            $OneGetVersion = ($OneGetWithVersion.Name.Split('.',2))[1]
-            $OneGetProgramFilesPath = "$Env:ProgramFiles\WindowsPowerShell\Modules\$OneGetModuleName\$OneGetVersion"
-            $null = Microsoft.PowerShell.Management\New-Item -Path $OneGetProgramFilesPath -Force -ItemType Directory
-            Microsoft.PowerShell.Management\Copy-Item -Path "$($OneGetWithVersion.FullName)\*" -Destination "$OneGetProgramFilesPath\" -Recurse -Force -Verbose
-            Get-Module -ListAvailable -Name $OneGetModuleName | Microsoft.PowerShell.Core\Where-Object {$_.Version -eq $OneGetVersion}
-        }
-        finally
-        {
-            Remove-Item -Path $TempModulePath -Recurse -Force
-        }
-
+        Import-Module .\tools\build.psm1
+        Install-Dependencies
 
 # to run your custom scripts instead of automatic MSBuild
 #build_script:
@@ -48,46 +36,13 @@ branches:
 # Run Pester tests and store the results
 test_script:
     - ps: |
-        $ModuleVersion = '1.1.2.0'
-        $InstallLocation = "$Env:ProgramFiles\WindowsPowerShell\Modules\PowerShellGet"
-        if($PSVersionTable.PSVersion -ge '5.0.0')
-        {
-            $InstallLocation = Join-Path -Path $InstallLocation -ChildPath $ModuleVersion
+        Import-Module .\tools\build.psm1
+        Invoke-PowerShellGetTest
+        $TestResultFilePath = Resolve-Path .\Tests\TestResults.xml
+        if(Microsoft.PowerShell.Management\Test-Path -Path $TestResultFilePath -PathType Leaf) {
+            (New-Object 'System.Net.WebClient').UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", $TestResultFilePath)
         }
-        $null = New-Item -Path $InstallLocation -ItemType Directory -Force
-        copy "C:\projects\powershellget\powershellget\*" $InstallLocation -Recurse -Force -Verbose
 
-        "env:PSModulePath value $($env:PSModulePath)"
-        "PSVersionTable value $($PSVersionTable | Out-String)"
-
-        # Download the NuGet.exe from http://nuget.org/NuGet.exe
-        $PSGetProgramDataPath = "$env:LOCALAPPDATA\Microsoft\Windows\PowerShell\PowerShellGet"
-        $NuGetExeName = 'NuGet.exe'
-        if(-not (Microsoft.PowerShell.Management\Test-Path -Path $PSGetProgramDataPath))
-        {
-            $null = Microsoft.PowerShell.Management\New-Item -Path $PSGetProgramDataPath -ItemType Directory -Force
-        }
-        $NugetExeFilePath = Microsoft.PowerShell.Management\Join-Path -Path $PSGetProgramDataPath -ChildPath $NuGetExeName
-        Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri http://nuget.org/NuGet.exe -OutFile $NugetExeFilePath
-        Get-ChildItem $NugetExeFilePath -File
-
-        Get-PSRepository
-        Get-PackageProvider
-        Get-Module
-
-        $env:APPVEYOR_TEST_PASS = $true
-        Push-Location C:\projects\powershellget\Tests\
-        try {
-            $TestResultsFile = ".\TestResults.xml"
-            $TestResults = Invoke-Pester -Script "C:\projects\powershellget\Tests\" -OutputFormat NUnitXml -OutputFile $TestResultsFile -PassThru -Tag BVT  
-            (New-Object 'System.Net.WebClient').UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path $TestResultsFile))
-            if ($TestResults.FailedCount -gt 0) {
-                throw "$($TestResults.FailedCount) tests failed."
-            }
-        }
-        finally {
-            Pop-Location
-        }
 
 # Upload the project along with TestResults as a zip archive
 on_finish:

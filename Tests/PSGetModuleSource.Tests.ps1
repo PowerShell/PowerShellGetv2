@@ -19,9 +19,10 @@ function SuiteSetup {
     Import-Module "$PSScriptRoot\PSGetTestUtils.psm1" -WarningAction SilentlyContinue
     Import-Module "$PSScriptRoot\Asserts.psm1" -WarningAction SilentlyContinue
     
-    $script:PSGetLocalAppDataPath="$env:LOCALAPPDATA\Microsoft\Windows\PowerShell\PowerShellGet"
-    $script:ProgramFilesModulesPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramFiles -ChildPath "WindowsPowerShell\Modules"
-    $script:MyDocumentsModulesPath = Microsoft.PowerShell.Management\Join-Path -Path ([Environment]::GetFolderPath("MyDocuments")) -ChildPath "WindowsPowerShell\Modules"
+    $script:ProgramFilesModulesPath = Get-AllUsersModulesPath
+    $script:MyDocumentsModulesPath = Get-CurrentUserModulesPath
+    $script:PSGetLocalAppDataPath = Get-PSGetLocalAppDataPath
+    $script:TempPath = Get-TempPath
     $script:BuiltInModuleSourceName = "PSGallery"
 
     $script:URI200OK = "http://go.microsoft.com/fwlink/?LinkID=533903&clcid=0x409"
@@ -63,7 +64,7 @@ function SuiteSetup {
     AssertEquals $modSource.SourceLocation $script:TestModuleSourceUri "Test module source is not set properly"
 
     # Create a temp folder
-    $script:TempModulesPath="$env:LocalAppData\temp\PSGet_$(Get-Random)"
+    $script:TempModulesPath= Join-Path $script:TempPath "PSGet_$(Get-Random)"
     $null = New-Item -Path $script:TempModulesPath -ItemType Directory -Force
 }
 
@@ -403,7 +404,7 @@ Describe PowerShell.PSGet.ModuleSourceTests.P1 -Tags 'P1','OuterLoop' {
     It RegisterPSRepositoryWithInvalidSMBShareSourceLocation {
 
         $Name='MyTestModSource'
-        $Location="$env:Temp\DirNotAvailable"
+        $Location = Join-Path $script:TempPath 'DirNotAvailable'
         AssertFullyQualifiedErrorIdEquals -scriptblock {Register-PSRepository -Name $Name -SourceLocation $Location} `
                                           -expectedFullyQualifiedErrorId "PathNotFound,Register-PSRepository"
     }
@@ -419,7 +420,7 @@ Describe PowerShell.PSGet.ModuleSourceTests.P1 -Tags 'P1','OuterLoop' {
 
         $Name='MyTestModSource'
         $Location=$script:TempModulesPath
-        $PublishLocation="$env:Temp\DirNotAvailable"
+        $PublishLocation = Join-Path $script:TempPath 'DirNotAvailable'
         AssertFullyQualifiedErrorIdEquals -scriptblock {Register-PSRepository -Name $Name -SourceLocation $Location -PublishLocation $PublishLocation} `
                                           -expectedFullyQualifiedErrorId "PathNotFound,Add-PackageSource,Microsoft.PowerShell.PackageManagement.Cmdlets.RegisterPackageSource"
     }
@@ -435,7 +436,7 @@ Describe PowerShell.PSGet.ModuleSourceTests.P1 -Tags 'P1','OuterLoop' {
 
         $Name='MyTestModSource'
         $Location=$script:TempModulesPath
-        $Location2="$env:Temp\DirNotAvailable"
+        $Location2 = Join-Path $script:TempPath 'DirNotAvailable'
         try
         {
             Register-PSRepository -Name $Name -SourceLocation $Location
@@ -459,7 +460,7 @@ Describe PowerShell.PSGet.ModuleSourceTests.P1 -Tags 'P1','OuterLoop' {
 
         $Name='MyTestModSource'
         $Location=$script:TempModulesPath
-        $Location2="$env:Temp\DirNotAvailable"
+        $Location2 = Join-Path $script:TempPath 'DirNotAvailable'
         try
         {
             Register-PSRepository -Name $Name -SourceLocation $Location -PublishLocation $Location
@@ -678,7 +679,8 @@ Describe PowerShell.PSGet.ModuleSourceTests.P1 -Tags 'P1','OuterLoop' {
         finally {
             Register-PSRepository -Default -InstallationPolicy Trusted
         }
-    }
+    } `
+    -Skip:$($PSEdition -eq 'Core')
 
     <#
     Purpose: Validate the Unregister-PSRepository functionality with non-registered module source name
@@ -801,7 +803,7 @@ Describe PowerShell.PSGet.ModuleSourceTests.P1 -Tags 'P1','OuterLoop' {
     }
 
     It RegisterPSRepositoryShouldFailWithPSModuleAsPMProviderName {        
-        AssertFullyQualifiedErrorIdEquals -scriptblock {Register-PSRepository -Name Foo -SourceLocation $env:TEMP -PackageManagementProvider PowerShellGet} `
+        AssertFullyQualifiedErrorIdEquals -scriptblock {Register-PSRepository -Name Foo -SourceLocation $script:TempPath -PackageManagementProvider PowerShellGet} `
                                           -expectedFullyQualifiedErrorId "InvalidPackageManagementProviderValue,Register-PSRepository"
     }
 
@@ -811,7 +813,7 @@ Describe PowerShell.PSGet.ModuleSourceTests.P1 -Tags 'P1','OuterLoop' {
     }
 
     It RegisterPackageSourceShouldFailWithPSModuleAsPMProviderName {        
-        AssertFullyQualifiedErrorIdEquals -scriptblock {Register-PackageSource -ProviderName PowerShellGet -Name Foo -Location $env:TEMP -PackageManagementProvider PowerShellGet} `
+        AssertFullyQualifiedErrorIdEquals -scriptblock {Register-PackageSource -ProviderName PowerShellGet -Name Foo -Location $script:TempPath -PackageManagementProvider PowerShellGet} `
                                           -expectedFullyQualifiedErrorId "InvalidPackageManagementProviderValue,Add-PackageSource,Microsoft.PowerShell.PackageManagement.Cmdlets.RegisterPackageSource"
     }
 }

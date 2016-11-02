@@ -18,9 +18,8 @@ function SuiteSetup {
     Import-Module "$PSScriptRoot\PSGetTestUtils.psm1" -WarningAction SilentlyContinue
     Import-Module "$PSScriptRoot\Asserts.psm1" -WarningAction SilentlyContinue
 
-    $script:MyDocumentsModulesPath = Join-Path -Path ([Environment]::GetFolderPath("MyDocuments")) -ChildPath "WindowsPowerShell\Modules"
-    $script:ProgramFilesModulesPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramFiles -ChildPath "WindowsPowerShell\Modules"
-    $script:PSGetLocalAppDataPath="$env:LOCALAPPDATA\Microsoft\Windows\PowerShell\PowerShellGet"
+    $script:PSGetLocalAppDataPath = Get-PSGetLocalAppDataPath
+    $script:TempPath = Get-TempPath
 
     #Bootstrap NuGet binaries
     Install-NuGetBinaries
@@ -41,13 +40,6 @@ function SuiteSetup {
     Get-InstalledScript -Name Fabrikam-ServerScript -ErrorAction SilentlyContinue | Uninstall-Script -Force
     Get-InstalledScript -Name Fabrikam-ClientScript -ErrorAction SilentlyContinue | Uninstall-Script -Force
 
-    $script:userName = "PSGetUser"
-    $password = "Password1"
-    $null = net user $script:userName $password /add
-    $secstr = ConvertTo-SecureString $password -AsPlainText -Force
-    $script:credential = new-object -typename System.Management.Automation.PSCredential -argumentlist $script:userName, $secstr
-    $script:assertTimeOutms = 20000
-
     $script:AddedAllUsersInstallPath    = Set-PATHVariableForScriptsInstallLocation -Scope AllUsers
     $script:AddedCurrentUserInstallPath = Set-PATHVariableForScriptsInstallLocation -Scope CurrentUser
 }
@@ -64,15 +56,6 @@ function SuiteCleanup {
 
     # Import the PowerShellGet provider to reload the repositories.
     $null = Import-PackageProvider -Name PowerShellGet -Force
-
-    # Delete the user
-    net user $script:UserName /delete | Out-Null
-    # Delete the user profile
-    $userProfile = (Get-WmiObject -Class Win32_UserProfile | Where-Object {$_.LocalPath -match $script:UserName})
-    if($userProfile)
-    {
-	    RemoveItem $userProfile.LocalPath
-    }
 
     if($script:AddedAllUsersInstallPath)
     {
@@ -187,13 +170,7 @@ Describe PowerShell.PSGet.UninstallScriptTests -Tags 'BVT','InnerLoop' {
     # Expected Result: it should not uninstall the script
     #
     It "UninstallScriptWithWhatIf" {
-        
-        if(([System.Environment]::OSVersion.Version -lt '6.2.9200.0') -or ($PSCulture -ne 'en-US')) { 
-            Write-Warning 'Skipped'
-            return
-        }
-
-        $outputPath = $env:temp
+        $outputPath = $script:TempPath
         $guid =  [system.guid]::newguid().tostring()
         $outputFilePath = Join-Path $outputPath "$guid"
         $runspace = CreateRunSpace $outputFilePath 1
@@ -223,7 +200,8 @@ Describe PowerShell.PSGet.UninstallScriptTests -Tags 'BVT','InnerLoop' {
 
         $res = Get-InstalledScript Fabrikam-ServerScript
         Assert ($res) "Uninstall-Script should not uninstall the script with -WhatIf option"
-    }
+    } `
+    -Skip:$(($PSEdition -eq 'Core') -or ($PSCulture -ne 'en-US') -or ([System.Environment]::OSVersion.Version -lt '6.2.9200.0'))
 
     # Purpose: UninstallScriptWithConfirmAndNoToPrompt
     #
@@ -232,13 +210,7 @@ Describe PowerShell.PSGet.UninstallScriptTests -Tags 'BVT','InnerLoop' {
     # Expected Result: script should not be uninstalled after confirming NO
     #
     It "UninstallScriptWithConfirmAndNoToPrompt" {
-        
-        if(([System.Environment]::OSVersion.Version -lt '6.2.9200.0') -or ($PSCulture -ne 'en-US')) { 
-            Write-Warning 'Skipped'
-            return
-        }
-        
-        $outputPath = $env:temp
+        $outputPath = $script:TempPath
         $guid =  [system.guid]::newguid().tostring()
         $outputFilePath = Join-Path $outputPath "$guid"
         $runspace = CreateRunSpace $outputFilePath 1
@@ -272,7 +244,8 @@ Describe PowerShell.PSGet.UninstallScriptTests -Tags 'BVT','InnerLoop' {
 
         $res = Get-InstalledScript Fabrikam-ServerScript
         Assert ($res) "Uninstall-Script should not uninstall the script if confirm is not accepted"
-    }
+    } `
+    -Skip:$(($PSEdition -eq 'Core') -or ($PSCulture -ne 'en-US') -or ([System.Environment]::OSVersion.Version -lt '6.2.9200.0'))
 
     # Purpose: UninstallScriptWithConfirmAndYesToPrompt
     #
@@ -281,13 +254,7 @@ Describe PowerShell.PSGet.UninstallScriptTests -Tags 'BVT','InnerLoop' {
     # Expected Result: script should be uninstalled after confirming YES
     #
     It "UninstallScriptWithConfirmAndYesToPrompt" {
-        
-        if(([System.Environment]::OSVersion.Version -lt '6.2.9200.0') -or ($PSCulture -ne 'en-US')) { 
-            Write-Warning 'Skipped'
-            return
-        }
-
-        $outputPath = $env:temp
+        $outputPath = $script:TempPath
         $guid =  [system.guid]::newguid().tostring()
         $outputFilePath = Join-Path $outputPath "$guid"
         $runspace = CreateRunSpace $outputFilePath 1
@@ -321,7 +288,8 @@ Describe PowerShell.PSGet.UninstallScriptTests -Tags 'BVT','InnerLoop' {
 
         $res = Get-InstalledScript Fabrikam-ServerScript -ErrorAction SilentlyContinue
         AssertNull $res "Uninstall-Script should uninstall a script if Confirm is not accepted"
-    }
+    } `
+    -Skip:$(($PSEdition -eq 'Core') -or ($PSCulture -ne 'en-US') -or ([System.Environment]::OSVersion.Version -lt '6.2.9200.0'))
 }
 
 Describe PowerShell.PSGet.UninstallScriptTests.ErrorCases -Tags 'P1','InnerLoop','RI' {

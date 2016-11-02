@@ -278,6 +278,7 @@ Describe 'PowerShell.PSGet.UnInstallModuleTests' -Tags 'BVT','InnerLoop' {
             ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
             ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
             ($PSVersionTable.PSVersion -lt '4.0.0') -or
+            ($env:APPVEYOR_TEST_PASS -eq 'True') -or
             ($PSEdition -eq 'Core') -or
             ($PSCulture -ne 'en-US')
         )

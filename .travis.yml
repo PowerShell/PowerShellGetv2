@@ -1,4 +1,6 @@
 
+language: cpp
+
 git:
   depth: 1000
 
@@ -33,3 +35,13 @@ install:
 
 script: 
   - ./tools/travis.sh
+
+
+
+
+
+
+
+
+
+

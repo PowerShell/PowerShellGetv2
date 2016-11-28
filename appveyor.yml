@@ -1,5 +1,8 @@
+version: 1.1.2.{build}
+
 os:
     - "WMF 5"
+    - "WMF 4"
 
 environment: 
     matrix: 
@@ -49,8 +52,6 @@ on_finish:
     - ps: |
         $stagingDirectory = (Resolve-Path ..).Path
         $zipFile = Join-Path $stagingDirectory "$(Split-Path $pwd -Leaf).zip"
-        Add-Type -assemblyname System.IO.Compression.FileSystem
-        [System.IO.Compression.ZipFile]::CreateFromDirectory($pwd, $zipFile)
         @(
             # You can add other artifacts here
             (ls $zipFile)

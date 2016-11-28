@@ -67,14 +67,21 @@ function SignAndPublish-TestModule
 
         $null = Set-AuthenticodeSignature -Certificate $Certificate -FilePath "$SourceModulePath\$Name.psd1"
 
-        if(($version -ne [Version]'1.0.1.2') -and 
-           (Get-Command -Name New-FileCatalog -Module Microsoft.PowerShell.Security -ErrorAction SilentlyContinue))
+        if(-not (Get-Command -Name New-FileCatalog -Module Microsoft.PowerShell.Security -ErrorAction SilentlyContinue))
         {
-            Remove-Item -Path $catalogFilePath -Force -ErrorAction SilentlyContinue
-            $null = New-FileCatalog -Path $SourceModulePath -CatalogFilePath $catalogFilePath
+            Remove-Item -Path $catalogFilePath -Force -Verbose
+        }
+        else
+        {
+            if($version -ne [Version]'1.0.1.2')
+            {
+                Remove-Item -Path $catalogFilePath -Force -ErrorAction SilentlyContinue
+                $null = New-FileCatalog -Path $SourceModulePath -CatalogFilePath $catalogFilePath
+            }
+
+            $null = Set-AuthenticodeSignature -Certificate $Certificate -FilePath $catalogFilePath
         }
 
-        $null = Set-AuthenticodeSignature -Certificate $Certificate -FilePath $catalogFilePath
         Publish-Module -Path $SourceModulePath -Repository $Script:RepositoryName -Force -WarningAction SilentlyContinue
     }
 }
@@ -356,6 +363,7 @@ Describe 'Install-Module --- Microsoft signed versions of Microsoft.PowerShell.A
                             -Name $MicrosoftPowerShellArchive `
                             -RequiredVersion 1.0.1.0 `
                             -Destination $SystemModulesPath `
+                            -Force `
                             -ExcludeVersion
         }
     }
@@ -434,7 +442,7 @@ Describe 'Update-Module --- Microsoft signed versions of Microsoft.PowerShell.Ar
 
         Install-Module -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.1 -Repository $Script:INTRepositoryName
         
-        if(([System.Environment]::OSVersion.Version -gt '6.1.7601.65536') -and ($PSEdition -ne 'Core')) {
+        if(-not (Test-SkipCondition)) {
             Install-Module -Name $TestArchiveModule -RequiredVersion 1.0.1.1 -Repository $Script:RepositoryName
         }
     }
@@ -473,7 +481,7 @@ Describe 'Update-Module --- Microsoft signed versions of Microsoft.PowerShell.Ar
             Get-InstalledModule -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.1 | Should Not BeNullOrEmpty
         }
 
-        if(([System.Environment]::OSVersion.Version -gt '6.1.7601.65536') -and ($PSEdition -ne 'Core')) {
+        if(-not (Test-SkipCondition)) {
             Get-InstalledModule -Name $TestArchiveModule -RequiredVersion 1.0.1.11 | Should Not BeNullOrEmpty
 
             if($PSVersionTable.PSVersion -ge '5.0.0') {

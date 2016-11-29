@@ -97,35 +97,15 @@ function Install-Dependencies {
 function Get-PSHome {
     $PowerShellFolder = $PSHOME
 
-    # install powershell core if test framework is coreclr
+    # Install PowerShell Core MSI on Windows.
     if(($script:PowerShellEdition -eq 'Core') -and $script:IsWindows)
     {
-        if($PSVersionTable.PSVersion -le '5.0.0') {
-            # PSL Provider is not available on PS 5.0 and older versions
-            $PowerShellMsiUrl = 'https://github.com/PowerShell/PowerShell/releases/download/v6.0.0-alpha.11/PowerShell_6.0.0.11-alpha.11-win81-x64.msi'
-            $PowerShellMsiName = 'PowerShell_6.msi'
-            $PowerShellMsiPath = Microsoft.PowerShell.Management\Join-Path -Path $PSScriptRoot -ChildPath $PowerShellMsiName
-            Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri $PowerShellMsiUrl -OutFile $PowerShellMsiPath
-            Start-Process -FilePath "$env:SystemRoot\System32\msiexec.exe" -ArgumentList "/qb /i $PowerShellMsiPath" -Wait
-            $PowerShellVersion = '6.0.0.11'
-        } else {
-            if(-not (Get-PackageProvider -Name PSL -ErrorAction Ignore)) {
-                $null = Install-PackageProvider -Name PSL -Force
-            }
-
-            $PowerShellCore = (Get-Package -Provider PSL -Name PowerShell -ErrorAction Ignore)
-            if ($PowerShellCore)
-            {
-                Write-Warning ("PowerShell already installed" -f $PowerShellCore.Name)
-            }
-            else
-            {   
-                $PowerShellCore = Install-Package PowerShell -Provider PSL -Force
-            }
-
-            $PowerShellVersion = $PowerShellCore.Version
-        }
-        
+        $PowerShellVersion = '6.0.0.11'        
+        $PowerShellMsiUrl = 'https://github.com/PowerShell/PowerShell/releases/download/v6.0.0-alpha.11/PowerShell_6.0.0.11-alpha.11-win81-x64.msi'
+        $PowerShellMsiName = 'PowerShell_6.msi'
+        $PowerShellMsiPath = Microsoft.PowerShell.Management\Join-Path -Path $PSScriptRoot -ChildPath $PowerShellMsiName
+        Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri $PowerShellMsiUrl -OutFile $PowerShellMsiPath
+        Start-Process -FilePath "$env:SystemRoot\System32\msiexec.exe" -ArgumentList "/qb /i $PowerShellMsiPath" -Wait
         Write-Host ("PowerShell Version '{0}'" -f $PowerShellVersion)
 
         $PowerShellFolder = "$Env:ProgramFiles\PowerShell\$PowerShellVersion"

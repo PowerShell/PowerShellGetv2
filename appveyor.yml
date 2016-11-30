@@ -1,13 +1,13 @@
 version: 1.1.2.{build}
 
-os:
-    - "WMF 5"
-    - "WMF 4"
-
-environment: 
-    matrix: 
-    - PowerShellEdition: Desktop 
-    - PowerShellEdition: Core
+environment:
+  matrix:
+  - image: WMF 5
+    PowerShellEdition: Desktop
+  - image: WMF 4
+    PowerShellEdition: Desktop
+  - image: WMF 4
+    PowerShellEdition: Core
 configuration: Release
 platform: Any CPU
 

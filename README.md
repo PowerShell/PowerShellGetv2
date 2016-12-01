@@ -45,6 +45,21 @@ Build status
 [m-tv-image]: https://travis-ci.org/PowerShell/PowerShellGet.svg?branch=master
 [m-tv-site]: https://travis-ci.org/PowerShell/PowerShellGet/branches
 
+
+Nightly Build status
+====================
+
+## Development branch
+
+|         OS - PS Version             |          Build Status        |
+|-------------------------------------|------------------------------|
+| AppVeyor (Windows - PS 4.0)         | [![d-n-av-image][]][d-n-av-site] |
+| AppVeyor (Windows - PS 5.1)         | [![d-n-av-image][]][d-n-av-site] |
+| AppVeyor (Windows - PS 6.0.0-Alpha) | [![d-n-av-image][]][d-n-av-site] |
+
+[d-n-av-image]: https://ci.appveyor.com/api/projects/status/58muo6i0x8n38pd3/branch/development?svg=true
+[d-n-av-site]: https://ci.appveyor.com/project/PowerShell/powershellget-0lib3/branch/development
+
 Documentation
 =============
 

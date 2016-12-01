@@ -42,9 +42,8 @@ test_script:
     - ps: |
         Import-Module .\tools\build.psm1
         Invoke-PowerShellGetTest
-        $TestResultFilePath = Resolve-Path .\Tests\TestResults.xml
-        if(Microsoft.PowerShell.Management\Test-Path -Path $TestResultFilePath -PathType Leaf) {
-            (New-Object 'System.Net.WebClient').UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", $TestResultFilePath)
+        Get-ChildItem -Path .\Tests\ -Filter 'TestResults*.xml' -File | ForEach-Object {
+            (New-Object 'System.Net.WebClient').UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", "$($_.FullName)")
         }
 
 

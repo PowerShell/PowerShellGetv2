@@ -1,3 +1,4 @@
+#region script variables
 $script:PowerShellGet = 'PowerShellGet'
 $script:IsInbox = $PSHOME.EndsWith('\WindowsPowerShell\v1.0', [System.StringComparison]::OrdinalIgnoreCase)
 $script:IsWindows = (-not (Get-Variable -Name IsWindows -ErrorAction Ignore)) -or $IsWindows
@@ -48,6 +49,7 @@ if($script:IsWindows)
 {
     Write-Host "PowerShellEdition value: $script:PowerShellEdition"
 }
+#endregion script variables
 
 function Install-Dependencies {
     if($script:PowerShellEdition -eq 'Desktop') {
@@ -92,6 +94,21 @@ function Install-Dependencies {
             Remove-Item -Path $TempModulePath -Recurse -Force
         }
     }
+
+    # Update build title for daily builds
+    if($script:IsWindows -and (Test-DailyBuild)) {
+        $buildName = "[Daily]"
+        if($env:APPVEYOR_PULL_REQUEST_TITLE)
+        {
+            $buildName += $env:APPVEYOR_PULL_REQUEST_TITLE
+        }
+        else
+        {
+            $buildName += $env:APPVEYOR_REPO_COMMIT_MESSAGE
+        }
+
+        Update-AppveyorBuild -message $buildName
+    }
 }
 
 function Get-PSHome {
@@ -100,11 +117,18 @@ function Get-PSHome {
     # Install PowerShell Core MSI on Windows.
     if(($script:PowerShellEdition -eq 'Core') -and $script:IsWindows)
     {
-        $PowerShellVersion = '6.0.0.11'        
-        $PowerShellMsiUrl = 'https://github.com/PowerShell/PowerShell/releases/download/v6.0.0-alpha.11/PowerShell_6.0.0.11-alpha.11-win81-x64.msi'
-        $PowerShellMsiName = 'PowerShell_6.msi'
-        $PowerShellMsiPath = Microsoft.PowerShell.Management\Join-Path -Path $PSScriptRoot -ChildPath $PowerShellMsiName
-        Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri $PowerShellMsiUrl -OutFile $PowerShellMsiPath
+        if(Test-DailyBuild){
+            $PowerShellMsiPath = Get-PowerShellCoreBuild -AppVeyorProjectName 'PowerShell-f975h'
+        } else {
+            # $PowerShellMsiUrl = Get-PowerShellCoreBuild -AppVeyorProjectName 'PowerShell'            
+            # TODO: remove below once PowerShelGet works fine on latest PowerShell Core build
+            $PowerShellMsiUrl = 'https://github.com/PowerShell/PowerShell/releases/download/v6.0.0-alpha.11/PowerShell_6.0.0.11-alpha.11-win81-x64.msi'
+            $PowerShellMsiName = 'PowerShell_6.0.0.11-alpha.11-win81-x64.msi'
+            $PowerShellMsiPath = Microsoft.PowerShell.Management\Join-Path -Path $PSScriptRoot -ChildPath $PowerShellMsiName
+            Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri $PowerShellMsiUrl -OutFile $PowerShellMsiPath
+        }
+
+        $PowerShellVersion = ((Split-Path $PowerShellMsiPath -Leaf) -split '[_-]',3)[1]
         Start-Process -FilePath "$env:SystemRoot\System32\msiexec.exe" -ArgumentList "/qb /i $PowerShellMsiPath" -Wait
         Write-Host ("PowerShell Version '{0}'" -f $PowerShellVersion)
 
@@ -120,7 +144,7 @@ function Get-PSHome {
     return $PowerShellFolder
 }
 
-function Invoke-PowerShellGetTest {
+function Invoke-PowerShellGetTest {    
     $env:APPVEYOR_TEST_PASS = $true
     $ClonedProjectPath = Resolve-Path "$PSScriptRoot\.."    
     $PowerShellGetTestsPath = "$ClonedProjectPath\Tests\"
@@ -131,72 +155,93 @@ function Invoke-PowerShellGetTest {
         $PowerShellExePath = 'powershell'
     }
 
-    $AllUsersModulesPath = $script:ProgramFilesModulesPath
-    if(($script:PowerShellEdition -eq 'Core') -and $script:IsWindows)
-    {
-        $AllUsersModulesPath = Microsoft.PowerShell.Management\Join-Path -Path $PowerShellHome -ChildPath 'Modules'
+    # Test Environment
+    # - PowerShellGet from Current branch 
+    # - PowerShellGet packaged with PowerShellCore build: 
+    #   -- Where PowerShellGet module was installed from MyGet feed https://powershell.myget.org/F/powershellmodule/api/v2/
+    #   -- This option is used only for Daily builds
+    $TestScenarios = @()
+    if(($script:PowerShellEdition -eq 'Core') -and (Test-DailyBuild)){
+        $TestScenarios += 'NoUpdate'
     }
+    # We should run PSCore_PSGet_TestRun first before updating the PowerShellGet module from current branch.
+    $TestScenarios = @('Current')
 
-    # Copy OneGet and PSGet modules to PSHOME    
-    $PowerShellGetSourcePath = Microsoft.PowerShell.Management\Join-Path -Path $ClonedProjectPath -ChildPath $script:PowerShellGet
-    $PowerShellGetModuleInfo = Test-ModuleManifest "$PowerShellGetSourcePath\PowerShellGet.psd1" -ErrorAction Ignore
-    $ModuleVersion = "$($PowerShellGetModuleInfo.Version)"
+    foreach ($TestScenario in $TestScenarios){    
+        if($TestScenario -eq 'Current') {
+            $AllUsersModulesPath = $script:ProgramFilesModulesPath
+            if(($script:PowerShellEdition -eq 'Core') -and $script:IsWindows)
+            {
+                $AllUsersModulesPath = Microsoft.PowerShell.Management\Join-Path -Path $PowerShellHome -ChildPath 'Modules'
+            }
 
-    $InstallLocation =  Microsoft.PowerShell.Management\Join-Path -Path $AllUsersModulesPath -ChildPath 'PowerShellGet'
+            # Copy OneGet and PSGet modules to PSHOME    
+            $PowerShellGetSourcePath = Microsoft.PowerShell.Management\Join-Path -Path $ClonedProjectPath -ChildPath $script:PowerShellGet
+            $PowerShellGetModuleInfo = Test-ModuleManifest "$PowerShellGetSourcePath\PowerShellGet.psd1" -ErrorAction Ignore
+            $ModuleVersion = "$($PowerShellGetModuleInfo.Version)"
 
-    if($PSVersionTable.PSVersion -ge '5.0.0')
-    {
-        $InstallLocation = Microsoft.PowerShell.Management\Join-Path -Path $InstallLocation -ChildPath $ModuleVersion
-    }
-    $null = New-Item -Path $InstallLocation -ItemType Directory -Force
-    Microsoft.PowerShell.Management\Copy-Item -Path "$PowerShellGetSourcePath\*" -Destination $InstallLocation -Recurse -Force
+            $InstallLocation =  Microsoft.PowerShell.Management\Join-Path -Path $AllUsersModulesPath -ChildPath 'PowerShellGet'
 
-    & $PowerShellExePath -Command @'
-        $env:PSModulePath;
-        $PSVersionTable;
-        Get-PackageProvider;
-        Get-PSRepository;
-        Get-Module;
-
-        # WMF 4 appveyor OS Image has duplicate entries in $env:PSModulePath
-        if($PSVersionTable.PSVersion -le '5.0.0') {
-            Write-Host "PSModulePath value before removing the duplicate entries:"
-            $env:PSModulePath;
-
-            # Current Process
-            $ValueWithUniqueEntries = ([System.Environment]::GetEnvironmentVariable('PSModulePath', [System.EnvironmentVariableTarget]::Process) -split ';' | %{$_.Trim('\\')} | Select-Object -Unique) -join ';'
-            [System.Environment]::SetEnvironmentVariable('PSModulePath', $ValueWithUniqueEntries, [System.EnvironmentVariableTarget]::Process)
-
-            # Current User
-            $ValueWithUniqueEntries = ([System.Environment]::GetEnvironmentVariable('PSModulePath', [System.EnvironmentVariableTarget]::User) -split ';' | %{$_.Trim('\\')} | Select-Object -Unique) -join ';'
-            [System.Environment]::SetEnvironmentVariable('PSModulePath', $ValueWithUniqueEntries, [System.EnvironmentVariableTarget]::User)
-
-            # Current Machine
-            $ValueWithUniqueEntries = ([System.Environment]::GetEnvironmentVariable('PSModulePath', [System.EnvironmentVariableTarget]::Machine) -split ';' | %{$_.Trim('\\')} | Select-Object -Unique) -join ';'
-            [System.Environment]::SetEnvironmentVariable('PSModulePath', $ValueWithUniqueEntries, [System.EnvironmentVariableTarget]::Machine)
-
-            Write-Host "PSModulePath value after removing the duplicate entries:"
-            $env:PSModulePath;
+            if($PSVersionTable.PSVersion -ge '5.0.0')
+            {
+                $InstallLocation = Microsoft.PowerShell.Management\Join-Path -Path $InstallLocation -ChildPath $ModuleVersion
+            }
+            $null = New-Item -Path $InstallLocation -ItemType Directory -Force
+            Microsoft.PowerShell.Management\Copy-Item -Path "$PowerShellGetSourcePath\*" -Destination $InstallLocation -Recurse -Force
         }
+
+        & $PowerShellExePath -Command @'
+            $env:PSModulePath;
+            $PSVersionTable;
+            Get-PackageProvider;
+            Get-PSRepository;
+            Get-Module;
+
+            # WMF 4 appveyor OS Image has duplicate entries in $env:PSModulePath
+            if($PSVersionTable.PSVersion -le '5.0.0') {
+                Write-Host "PSModulePath value before removing the duplicate entries:"
+                $env:PSModulePath;
+
+                # Current Process
+                $ValueWithUniqueEntries = ([System.Environment]::GetEnvironmentVariable('PSModulePath', [System.EnvironmentVariableTarget]::Process) -split ';' | %{$_.Trim('\\')} | Select-Object -Unique) -join ';'
+                [System.Environment]::SetEnvironmentVariable('PSModulePath', $ValueWithUniqueEntries, [System.EnvironmentVariableTarget]::Process)
+
+                # Current User
+                $ValueWithUniqueEntries = ([System.Environment]::GetEnvironmentVariable('PSModulePath', [System.EnvironmentVariableTarget]::User) -split ';' | %{$_.Trim('\\')} | Select-Object -Unique) -join ';'
+                [System.Environment]::SetEnvironmentVariable('PSModulePath', $ValueWithUniqueEntries, [System.EnvironmentVariableTarget]::User)
+
+                # Current Machine
+                $ValueWithUniqueEntries = ([System.Environment]::GetEnvironmentVariable('PSModulePath', [System.EnvironmentVariableTarget]::Machine) -split ';' | %{$_.Trim('\\')} | Select-Object -Unique) -join ';'
+                [System.Environment]::SetEnvironmentVariable('PSModulePath', $ValueWithUniqueEntries, [System.EnvironmentVariableTarget]::Machine)
+
+                Write-Host "PSModulePath value after removing the duplicate entries:"
+                $env:PSModulePath;
+            }
 '@
 
-    try {
-        Push-Location $PowerShellGetTestsPath
+        try {
+            Push-Location $PowerShellGetTestsPath
 
-        $TestResultsFile = Microsoft.PowerShell.Management\Join-Path -Path $PowerShellGetTestsPath -ChildPath 'TestResults.xml'
-        & $PowerShellExePath -Command "`$env:PSModulePath = (`$env:PSModulePath -split ';' | %{`$_.Trim('\\')} | Select-Object -Unique) -join ';' ;
-                                       Write-Host 'After updating the PSModulePath value:' ;
-                                       `$env:PSModulePath ;
-                                       Invoke-Pester -Script $PowerShellGetTestsPath -OutputFormat NUnitXml -OutputFile $TestResultsFile -PassThru -Tag BVT"
+            $PesterTag = '' # Conveys all test priorities
+            if(-not (Test-DailyBuild)){
+                $PesterTag = 'BVT' # Only BVTs
+            }
 
-        $TestResults = [xml](Get-Content -Raw -Path $TestResultsFile)
-        if ([int]$TestResults.'test-results'.failures -gt 0)
-        {
-            throw "$($TestResults.'test-results'.failures) tests failed"
+            $TestResultsFile = Microsoft.PowerShell.Management\Join-Path -Path $PowerShellGetTestsPath -ChildPath "TestResults$TestScenario.xml"
+            & $PowerShellExePath -Command "`$env:PSModulePath = (`$env:PSModulePath -split ';' | %{`$_.Trim('\\')} | Select-Object -Unique) -join ';' ;
+                                        Write-Host 'After updating the PSModulePath value:' ;
+                                        `$env:PSModulePath ;
+                                        Invoke-Pester -Script $PowerShellGetTestsPath -OutputFormat NUnitXml -OutputFile $TestResultsFile -PassThru -Tag @('" + (${PesterTag} -join "','") + "')"
+
+            $TestResults = [xml](Get-Content -Raw -Path $TestResultsFile)
+            if ([int]$TestResults.'test-results'.failures -gt 0)
+            {
+                throw "$($TestResults.'test-results'.failures) tests failed in $TestScenario"
+            }
         }
-    }
-    finally {
-        Pop-Location
+        finally {
+            Pop-Location
+        }
     }
 
     # Packing
@@ -210,4 +255,145 @@ function Invoke-PowerShellGetTest {
 
     Write-Verbose "Zipping $ClonedProjectPath into $zipFile" -verbose
     [System.IO.Compression.ZipFile]::CreateFromDirectory($ClonedProjectPath.Path, $zipFile)
+}
+
+# tests if we should run a daily build
+# returns true if the build is scheduled
+# or is a pushed tag
+function Test-DailyBuild
+{
+    Write-Host "Test-DailyBuild -- env:PS_DAILY_BUILD value $env:PS_DAILY_BUILD"
+    Write-Host "Test-DailyBuild -- env:APPVEYOR_SCHEDULED_BUILD value $env:APPVEYOR_SCHEDULED_BUILD"
+    Write-Host "Test-DailyBuild -- env:APPVEYOR_REPO_TAG_NAME value $env:APPVEYOR_REPO_TAG_NAME"
+
+    if(($env:PS_DAILY_BUILD -eq 'True') -or 
+       ($env:APPVEYOR_SCHEDULED_BUILD -eq 'True') -or 
+       ($env:APPVEYOR_REPO_TAG_NAME))
+    {
+        return $true
+    }
+
+    return $false
+}
+
+function Get-PowerShellCoreBuild {
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string]
+        $AppVeyorProjectName = 'powershell-f975h',
+
+        [Parameter()]
+        [string]
+        $GitHubBranchName = 'master',
+
+        [Parameter()]
+        [string]
+        $Destination = 'C:\projects'
+    )
+
+    $appVeyorConstants =  @{ 
+        AccountName = 'powershell'
+        ApiUrl = 'https://ci.appveyor.com/api'
+    }
+
+    $foundGood = $false
+    $records = 20
+    $lastBuildId = $null
+    $project = $null
+
+    while(!$foundGood)
+    {
+        $startBuildIdString = [string]::Empty
+        if($lastBuildId)
+        {
+            $startBuildIdString = "&startBuildId=$lastBuildId"
+        }
+
+
+        $project = Invoke-RestMethod -Method Get -Uri "$($appVeyorConstants.ApiUrl)/projects/$($appVeyorConstants.AccountName)/$AppVeyorProjectName/history?recordsNumber=$records$startBuildIdString&branch=$GitHubBranchName"
+
+        foreach($build in $project.builds)
+        {
+            $version = $build.version
+            $status = $build.status
+            if($status -ieq 'success')
+            {
+                Write-Verbose "Using PowerShell Version: $version"
+
+                $foundGood = $true
+
+                Write-Verbose "Uri = $($appVeyorConstants.ApiUrl)/projects/$($appVeyorConstants.AccountName)/$AppVeyorProjectName/build/$version"
+                $project = Invoke-RestMethod -Method Get -Uri "$($appVeyorConstants.ApiUrl)/projects/$($appVeyorConstants.AccountName)/$AppVeyorProjectName/build/$version" 
+                break
+            }
+            else 
+            {
+                Write-Warning "There is a newer SDK build, $version, which is in status: $status"
+            }
+        }
+    }
+
+    # get project with last build details
+    if (-not $project) {
+
+        throw "Cannot find a good build for $GitHubBranchName"
+    }
+
+    # we assume here that build has a single job
+    # get this job id
+
+    $jobId = $project.build.jobs[0].jobId
+    Write-Verbose "jobId=$jobId"
+    
+    Write-Verbose "$project.build.jobs[0]"
+
+    $artifactsUrl = "$($appVeyorConstants.ApiUrl)/buildjobs/$jobId/artifacts"
+
+    Write-Verbose "Uri=$artifactsUrl"
+    $artifacts = Invoke-RestMethod -Method Get -Uri $artifactsUrl 
+
+    if (-not $artifacts) {
+        throw "Cannot find artifacts in $artifactsUrl"
+    }
+
+    # Get PowerShellCore.msi artifacts for Windows
+    $artifacts = $artifacts | where-object { $_.filename -like '*powershell*.msi'}
+    $returnArtifactsLocation = @{}
+
+    #download artifacts to a temp location
+    foreach($artifact in $artifacts)
+    {
+        $artifactPath = $artifact[0].fileName
+        $artifactFileName = Split-Path -Path $artifactPath -Leaf
+
+        # artifact will be downloaded as 
+        $tempLocalArtifactPath = "$Destination\Temp-$artifactFileName-$jobId.msi"
+        $localArtifactPath = "$Destination\$artifactFileName-$jobId.msi"
+        if(!(Test-Path $localArtifactPath))
+        {
+            # download artifact
+            # -OutFile - is local file name where artifact will be downloaded into
+
+            try 
+            {
+                $ProgressPreference = 'SilentlyContinue'
+                Invoke-WebRequest -Method Get -Uri "$($appVeyorConstants.ApiUrl)/buildjobs/$jobId/artifacts/$artifactPath" `
+                    -OutFile $tempLocalArtifactPath  -UseBasicParsing -DisableKeepAlive
+
+                Move-Item -Path $tempLocalArtifactPath -Destination $localArtifactPath   
+            } 
+            finally
+            {
+                $ProgressPreference = 'Continue'
+                if(test-path $tempLocalArtifactPath)
+                {
+                    remove-item $tempLocalArtifactPath
+                }
+            } 
+        }
+    }
+
+    Write-Verbose $localArtifactPath
+    return $localArtifactPath
 }

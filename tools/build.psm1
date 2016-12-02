@@ -96,18 +96,17 @@ function Install-Dependencies {
     }
 
     # Update build title for daily builds
-    if($script:IsWindows -and (Test-DailyBuild)) {
-        $buildName = "[Daily]"
+    if($script:IsWindows -and (Test-DailyBuild)) {        
         if($env:APPVEYOR_PULL_REQUEST_TITLE)
         {
             $buildName += $env:APPVEYOR_PULL_REQUEST_TITLE
-        }
-        else
-        {
+        } else {
             $buildName += $env:APPVEYOR_REPO_COMMIT_MESSAGE
         }
 
-        Update-AppveyorBuild -message $buildName
+        if(-not ($buildName.StartsWith("[Daily]", [System.StringComparison]::OrdinalIgnoreCase))) {
+            Update-AppveyorBuild -message "[Daily] $buildName"
+        }
     }
 }
 
@@ -165,8 +164,13 @@ function Invoke-PowerShellGetTest {
         $TestScenarios += 'NoUpdate'
     }
     # We should run PSCore_PSGet_TestRun first before updating the PowerShellGet module from current branch.
-    $TestScenarios = @('Current')
+    $TestScenarios += 'Current'
 
+    $PesterTag = '' # Conveys all test priorities
+    if(-not (Test-DailyBuild)){
+        $PesterTag = 'BVT' # Only BVTs
+    }
+    
     foreach ($TestScenario in $TestScenarios){    
         if($TestScenario -eq 'Current') {
             $AllUsersModulesPath = $script:ProgramFilesModulesPath
@@ -222,16 +226,11 @@ function Invoke-PowerShellGetTest {
         try {
             Push-Location $PowerShellGetTestsPath
 
-            $PesterTag = '' # Conveys all test priorities
-            if(-not (Test-DailyBuild)){
-                $PesterTag = 'BVT' # Only BVTs
-            }
-
             $TestResultsFile = Microsoft.PowerShell.Management\Join-Path -Path $PowerShellGetTestsPath -ChildPath "TestResults$TestScenario.xml"
             & $PowerShellExePath -Command "`$env:PSModulePath = (`$env:PSModulePath -split ';' | %{`$_.Trim('\\')} | Select-Object -Unique) -join ';' ;
                                         Write-Host 'After updating the PSModulePath value:' ;
                                         `$env:PSModulePath ;
-                                        Invoke-Pester -Script $PowerShellGetTestsPath -OutputFormat NUnitXml -OutputFile $TestResultsFile -PassThru -Tag @('" + (${PesterTag} -join "','") + "')"
+                                        Invoke-Pester -Script $PowerShellGetTestsPath -OutputFormat NUnitXml -OutputFile $TestResultsFile -PassThru $(if($PesterTag){"-Tag @('" + ($PesterTag -join "','") + "')"})"
 
             $TestResults = [xml](Get-Content -Raw -Path $TestResultsFile)
             if ([int]$TestResults.'test-results'.failures -gt 0)

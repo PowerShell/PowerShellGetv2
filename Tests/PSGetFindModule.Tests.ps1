@@ -507,7 +507,7 @@ Describe PowerShell.PSGet.FindModuleTests.P1 -Tags 'P1','OuterLoop' {
 Describe PowerShell.PSGet.FindModuleTests.P2 -Tags 'P2', 'OuterLoop' {
 
     BeforeAll {
-        if($PSEdition -eq 'Core') {
+        if(($PSEdition -eq 'Core') -or ($env:APPVEYOR_TEST_PASS -eq 'True')) {
             return 
         }
 
@@ -518,7 +518,7 @@ Describe PowerShell.PSGet.FindModuleTests.P2 -Tags 'P2', 'OuterLoop' {
         SuiteCleanup
     }
 
-    if($PSEdition -eq 'Core') {
+    if(($PSEdition -eq 'Core') -or ($env:APPVEYOR_TEST_PASS -eq 'True')) {
         return 
     }
 

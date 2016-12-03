@@ -170,7 +170,9 @@ function Invoke-PowerShellGetTest {
     if(-not (Test-DailyBuild)){
         $PesterTag = 'BVT' # Only BVTs
     }
-    
+
+    $TestResults = @()
+
     foreach ($TestScenario in $TestScenarios){    
         if($TestScenario -eq 'Current') {
             $AllUsersModulesPath = $script:ProgramFilesModulesPath
@@ -232,11 +234,7 @@ function Invoke-PowerShellGetTest {
                                         `$env:PSModulePath ;
                                         Invoke-Pester -Script $PowerShellGetTestsPath -OutputFormat NUnitXml -OutputFile $TestResultsFile -PassThru $(if($PesterTag){"-Tag @('" + ($PesterTag -join "','") + "')"})"
 
-            $TestResults = [xml](Get-Content -Raw -Path $TestResultsFile)
-            if ([int]$TestResults.'test-results'.failures -gt 0)
-            {
-                throw "$($TestResults.'test-results'.failures) tests failed in $TestScenario"
-            }
+            $TestResults += [xml](Get-Content -Raw -Path $TestResultsFile)
         }
         finally {
             Pop-Location
@@ -252,8 +250,15 @@ function Invoke-PowerShellGetTest {
         Add-Type -assemblyname System.IO.Compression.FileSystem
     }
 
-    Write-Verbose "Zipping $ClonedProjectPath into $zipFile" -verbose
+    Write-Verbose "Zipping $ClonedProjectPath into $zipFile"
     [System.IO.Compression.ZipFile]::CreateFromDirectory($ClonedProjectPath.Path, $zipFile)
+
+    $FailedTestCount = 0
+    $TestResults | ForEach-Object { $FailedTestCount += ([int]$_.'test-results'.failures) }
+    if ($FailedTestCount)
+    {
+        throw "$FailedTestCount tests failed"
+    }
 }
 
 # tests if we should run a daily build
@@ -265,9 +270,18 @@ function Test-DailyBuild
     Write-Host "Test-DailyBuild -- env:APPVEYOR_SCHEDULED_BUILD value $env:APPVEYOR_SCHEDULED_BUILD"
     Write-Host "Test-DailyBuild -- env:APPVEYOR_REPO_TAG_NAME value $env:APPVEYOR_REPO_TAG_NAME"
 
+# https://docs.travis-ci.com/user/environment-variables/
+# TRAVIS_EVENT_TYPE: Indicates how the build was triggered.
+# One of push, pull_request, api, cron.
+$isPR = $env:TRAVIS_EVENT_TYPE -eq 'pull_request'
+$isFullBuild = $env:TRAVIS_EVENT_TYPE -eq 'cron' -or $env:TRAVIS_EVENT_TYPE -eq 'api'
+
+
     if(($env:PS_DAILY_BUILD -eq 'True') -or 
        ($env:APPVEYOR_SCHEDULED_BUILD -eq 'True') -or 
-       ($env:APPVEYOR_REPO_TAG_NAME))
+       ($env:APPVEYOR_REPO_TAG_NAME) -or 
+       ($env:TRAVIS_EVENT_TYPE -eq 'cron') -or 
+       ($env:TRAVIS_EVENT_TYPE -eq 'api'))
     {
         return $true
     }

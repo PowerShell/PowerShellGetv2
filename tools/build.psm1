@@ -116,17 +116,13 @@ function Get-PSHome {
     # Install PowerShell Core MSI on Windows.
     if(($script:PowerShellEdition -eq 'Core') -and $script:IsWindows)
     {
-        if(Test-DailyBuild){
-            $PowerShellMsiPath = Get-PowerShellCoreBuild -AppVeyorProjectName 'PowerShell-f975h'
-        } else {
-            # $PowerShellMsiUrl = Get-PowerShellCoreBuild -AppVeyorProjectName 'PowerShell'            
-            # TODO: remove below once PowerShelGet works fine on latest PowerShell Core build
-            $PowerShellMsiUrl = 'https://github.com/PowerShell/PowerShell/releases/download/v6.0.0-alpha.11/PowerShell_6.0.0.11-alpha.11-win81-x64.msi'
-            $PowerShellMsiName = 'PowerShell_6.0.0.11-alpha.11-win81-x64.msi'
-            $PowerShellMsiPath = Microsoft.PowerShell.Management\Join-Path -Path $PSScriptRoot -ChildPath $PowerShellMsiName
-            Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri $PowerShellMsiUrl -OutFile $PowerShellMsiPath
-        }
-
+        $PowerShellMsiPath = Get-PowerShellCoreBuild -AppVeyorProjectName 'PowerShell'
+        <#
+        $PowerShellMsiUrl = 'https://github.com/PowerShell/PowerShell/releases/download/v6.0.0-alpha.11/PowerShell_6.0.0.11-alpha.11-win81-x64.msi'
+        $PowerShellMsiName = 'PowerShell_6.0.0.11-alpha.11-win81-x64.msi'
+        $PowerShellMsiPath = Microsoft.PowerShell.Management\Join-Path -Path $PSScriptRoot -ChildPath $PowerShellMsiName
+        Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri $PowerShellMsiUrl -OutFile $PowerShellMsiPath
+        #>
         $PowerShellVersion = ((Split-Path $PowerShellMsiPath -Leaf) -split '[_-]',3)[1]
         Start-Process -FilePath "$env:SystemRoot\System32\msiexec.exe" -ArgumentList "/qb /i $PowerShellMsiPath" -Wait
         Write-Host ("PowerShell Version '{0}'" -f $PowerShellVersion)
@@ -144,6 +140,11 @@ function Get-PSHome {
 }
 
 function Invoke-PowerShellGetTest {    
+    Write-Host "env:PS_DAILY_BUILD value $env:PS_DAILY_BUILD"
+    Write-Host "env:APPVEYOR_SCHEDULED_BUILD value $env:APPVEYOR_SCHEDULED_BUILD"
+    Write-Host "env:APPVEYOR_REPO_TAG_NAME value $env:APPVEYOR_REPO_TAG_NAME"
+    Write-Host "env:TRAVIS_EVENT_TYPE value $env:TRAVIS_EVENT_TYPE"
+
     $env:APPVEYOR_TEST_PASS = $true
     $ClonedProjectPath = Resolve-Path "$PSScriptRoot\.."    
     $PowerShellGetTestsPath = "$ClonedProjectPath\Tests\"
@@ -174,6 +175,9 @@ function Invoke-PowerShellGetTest {
     $TestResults = @()
 
     foreach ($TestScenario in $TestScenarios){    
+        
+        Write-Host "TestScenario: $TestScenario"
+
         if($TestScenario -eq 'Current') {
             $AllUsersModulesPath = $script:ProgramFilesModulesPath
             if(($script:PowerShellEdition -eq 'Core') -and $script:IsWindows)
@@ -188,12 +192,14 @@ function Invoke-PowerShellGetTest {
 
             $InstallLocation =  Microsoft.PowerShell.Management\Join-Path -Path $AllUsersModulesPath -ChildPath 'PowerShellGet'
 
-            if($PSVersionTable.PSVersion -ge '5.0.0')
+            if(($script:PowerShellEdition -eq 'Core') -or ($PSVersionTable.PSVersion -ge '5.0.0'))
             {
                 $InstallLocation = Microsoft.PowerShell.Management\Join-Path -Path $InstallLocation -ChildPath $ModuleVersion
             }
             $null = New-Item -Path $InstallLocation -ItemType Directory -Force
             Microsoft.PowerShell.Management\Copy-Item -Path "$PowerShellGetSourcePath\*" -Destination $InstallLocation -Recurse -Force
+
+            Write-Host "Copied latest PowerShellGet to $InstallLocation"
         }
 
         & $PowerShellExePath -Command @'
@@ -232,6 +238,7 @@ function Invoke-PowerShellGetTest {
             & $PowerShellExePath -Command "`$env:PSModulePath = (`$env:PSModulePath -split ';' | %{`$_.Trim('\\')} | Select-Object -Unique) -join ';' ;
                                         Write-Host 'After updating the PSModulePath value:' ;
                                         `$env:PSModulePath ;
+                                        `$ProgressPreference = 'SilentlyContinue'
                                         Invoke-Pester -Script $PowerShellGetTestsPath -OutputFormat NUnitXml -OutputFile $TestResultsFile -PassThru $(if($PesterTag){"-Tag @('" + ($PesterTag -join "','") + "')"})"
 
             $TestResults += [xml](Get-Content -Raw -Path $TestResultsFile)
@@ -266,17 +273,9 @@ function Invoke-PowerShellGetTest {
 # or is a pushed tag
 function Test-DailyBuild
 {
-    Write-Host "Test-DailyBuild -- env:PS_DAILY_BUILD value $env:PS_DAILY_BUILD"
-    Write-Host "Test-DailyBuild -- env:APPVEYOR_SCHEDULED_BUILD value $env:APPVEYOR_SCHEDULED_BUILD"
-    Write-Host "Test-DailyBuild -- env:APPVEYOR_REPO_TAG_NAME value $env:APPVEYOR_REPO_TAG_NAME"
-
-# https://docs.travis-ci.com/user/environment-variables/
-# TRAVIS_EVENT_TYPE: Indicates how the build was triggered.
-# One of push, pull_request, api, cron.
-$isPR = $env:TRAVIS_EVENT_TYPE -eq 'pull_request'
-$isFullBuild = $env:TRAVIS_EVENT_TYPE -eq 'cron' -or $env:TRAVIS_EVENT_TYPE -eq 'api'
-
-
+    # https://docs.travis-ci.com/user/environment-variables/
+    # TRAVIS_EVENT_TYPE: Indicates how the build was triggered.
+    # One of push, pull_request, api, cron.    
     if(($env:PS_DAILY_BUILD -eq 'True') -or 
        ($env:APPVEYOR_SCHEDULED_BUILD -eq 'True') -or 
        ($env:APPVEYOR_REPO_TAG_NAME) -or 
@@ -336,13 +335,13 @@ function Get-PowerShellCoreBuild {
 
                 $foundGood = $true
 
-                Write-Verbose "Uri = $($appVeyorConstants.ApiUrl)/projects/$($appVeyorConstants.AccountName)/$AppVeyorProjectName/build/$version"
+                Write-Host "Uri = $($appVeyorConstants.ApiUrl)/projects/$($appVeyorConstants.AccountName)/$AppVeyorProjectName/build/$version"
                 $project = Invoke-RestMethod -Method Get -Uri "$($appVeyorConstants.ApiUrl)/projects/$($appVeyorConstants.AccountName)/$AppVeyorProjectName/build/$version" 
                 break
             }
             else 
             {
-                Write-Warning "There is a newer SDK build, $version, which is in status: $status"
+                Write-Warning "There is a newer PowerShell build, $version, which is in status: $status"
             }
         }
     }
@@ -390,6 +389,7 @@ function Get-PowerShellCoreBuild {
 
             try 
             {
+                Write-Host "PowerShell MSI URL: $($appVeyorConstants.ApiUrl)/buildjobs/$jobId/artifacts/$artifactPath"
                 $ProgressPreference = 'SilentlyContinue'
                 Invoke-WebRequest -Method Get -Uri "$($appVeyorConstants.ApiUrl)/buildjobs/$jobId/artifacts/$artifactPath" `
                     -OutFile $tempLocalArtifactPath  -UseBasicParsing -DisableKeepAlive

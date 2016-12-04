@@ -42,9 +42,6 @@ test_script:
     - ps: |
         Import-Module .\tools\build.psm1
         Invoke-PowerShellGetTest
-        Get-ChildItem -Path .\Tests\ -Filter 'TestResults*.xml' -File | ForEach-Object {
-            (New-Object 'System.Net.WebClient').UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", "$($_.FullName)")
-        }
 
 
 # Upload the project along with TestResults as a zip archive
@@ -56,3 +53,7 @@ on_finish:
             # You can add other artifacts here
             (ls $zipFile)
         ) | % { Push-AppveyorArtifact $_.FullName }
+
+        Get-ChildItem -Path .\Tests\ -Filter 'TestResults*.xml' -File | ForEach-Object {
+            (New-Object 'System.Net.WebClient').UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", "$($_.FullName)")
+        }

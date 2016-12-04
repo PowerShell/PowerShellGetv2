@@ -44,11 +44,17 @@ if($script:IsWindows) {
     $script:PSGetAppLocalPath = "$HOME/.config/powershell/powershellget"
 }
 
+# AppVeyor.yml sets a value to $env:PowerShellEdition variable, 
+# otherwise set $script:PowerShellEdition value based on the current PowerShell Edition.
 $script:PowerShellEdition = [System.Environment]::GetEnvironmentVariable("PowerShellEdition")
-if($script:IsWindows)
-{
-    Write-Host "PowerShellEdition value: $script:PowerShellEdition"
+if(-not $script:PowerShellEdition) {
+    if($script:IsCoreCLR) { 
+        $script:PowerShellEdition = 'Core'
+    } else { 
+        $script:PowerShellEdition = 'Desktop'
+    }
 }
+Write-Host "PowerShellEdition value: $script:PowerShellEdition"
 #endregion script variables
 
 function Install-Dependencies {

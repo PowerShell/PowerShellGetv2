@@ -46,7 +46,7 @@ Build status
 [m-tv-site]: https://travis-ci.org/PowerShell/PowerShellGet/branches
 
 
-Nightly Build status
+Daily Build status
 ====================
 
 ## Development branch
@@ -56,6 +56,8 @@ Nightly Build status
 | AppVeyor (Windows - PS 4.0)         | [![d-n-av-image][]][d-n-av-site] |
 | AppVeyor (Windows - PS 5.1)         | [![d-n-av-image][]][d-n-av-site] |
 | AppVeyor (Windows - PS 6.0.0-Alpha) | [![d-n-av-image][]][d-n-av-site] |
+| Travis CI (Linux - PS 6.0.0-Alpha)  | [![d-tv-image][]][d-tv-site] |
+| Travis CI (MacOS - PS 6.0.0-Alpha)  | [![d-tv-image][]][d-tv-site] |
 
 [d-n-av-image]: https://ci.appveyor.com/api/projects/status/58muo6i0x8n38pd3/branch/development?svg=true
 [d-n-av-site]: https://ci.appveyor.com/project/PowerShell/powershellget-0lib3/branch/development

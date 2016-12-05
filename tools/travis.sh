@@ -1,5 +1,10 @@
 set -x
 ulimit -n 4096
 
-sudo powershell -c "Import-Module ./tools/build.psm1; Install-Dependencies; Invoke-PowerShellGetTest;"
-    
+echo "TRAVIS_EVENT_TYPE value $TRAVIS_EVENT_TYPE"
+
+if [ $TRAVIS_EVENT_TYPE = cron ] || [ $TRAVIS_EVENT_TYPE = api ]; then
+    sudo powershell -c "Import-Module ./tools/build.psm1; Install-Dependencies; Invoke-PowerShellGetTest -IsFullTestPass;"
+else
+    sudo powershell -c "Import-Module ./tools/build.psm1; Install-Dependencies; Invoke-PowerShellGetTest;"
+fi

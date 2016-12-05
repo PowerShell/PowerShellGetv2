@@ -146,10 +146,23 @@ function Get-PSHome {
 }
 
 function Invoke-PowerShellGetTest {    
-    Write-Host "env:PS_DAILY_BUILD value $env:PS_DAILY_BUILD"
-    Write-Host "env:APPVEYOR_SCHEDULED_BUILD value $env:APPVEYOR_SCHEDULED_BUILD"
-    Write-Host "env:APPVEYOR_REPO_TAG_NAME value $env:APPVEYOR_REPO_TAG_NAME"
-    Write-Host "env:TRAVIS_EVENT_TYPE value $env:TRAVIS_EVENT_TYPE"
+
+    Param(
+        [Parameter()]
+        [Switch]
+        $IsFullTestPass
+    )
+
+    Write-Host -ForegroundColor Green "`$env:PS_DAILY_BUILD value $env:PS_DAILY_BUILD"
+    Write-Host -ForegroundColor Green "`$env:APPVEYOR_SCHEDULED_BUILD value $env:APPVEYOR_SCHEDULED_BUILD"
+    Write-Host -ForegroundColor Green "`$env:APPVEYOR_REPO_TAG_NAME value $env:APPVEYOR_REPO_TAG_NAME"    
+    Write-Host -ForegroundColor Green "TRAVIS_EVENT_TYPE environment variable value $([System.Environment]::GetEnvironmentVariable('TRAVIS_EVENT_TYPE'))"
+
+    if(-not $IsFullTestPass){
+        $IsFullTestPass = Test-DailyBuild
+    }
+    Write-Host -ForegroundColor Green "`$IsFullTestPass value $IsFullTestPass"
+    Write-Host -ForegroundColor Green "Test-DailyBuild: $(Test-DailyBuild)"
 
     $env:APPVEYOR_TEST_PASS = $true
     $ClonedProjectPath = Resolve-Path "$PSScriptRoot\.."    
@@ -167,14 +180,14 @@ function Invoke-PowerShellGetTest {
     #   -- Where PowerShellGet module was installed from MyGet feed https://powershell.myget.org/F/powershellmodule/api/v2/
     #   -- This option is used only for Daily builds
     $TestScenarios = @()
-    if(($script:PowerShellEdition -eq 'Core') -and (Test-DailyBuild)){
+    if(($script:PowerShellEdition -eq 'Core') -and $IsFullTestPass){
         $TestScenarios += 'NoUpdate'
     }
     # We should run PSCore_PSGet_TestRun first before updating the PowerShellGet module from current branch.
     $TestScenarios += 'Current'
 
     $PesterTag = '' # Conveys all test priorities
-    if(-not (Test-DailyBuild)){
+    if(-not $IsFullTestPass){
         $PesterTag = 'BVT' # Only BVTs
     }
 
@@ -281,12 +294,13 @@ function Test-DailyBuild
 {
     # https://docs.travis-ci.com/user/environment-variables/
     # TRAVIS_EVENT_TYPE: Indicates how the build was triggered.
-    # One of push, pull_request, api, cron.    
+    # One of push, pull_request, api, cron.
+    $TRAVIS_EVENT_TYPE = [System.Environment]::GetEnvironmentVariable('TRAVIS_EVENT_TYPE')    
     if(($env:PS_DAILY_BUILD -eq 'True') -or 
        ($env:APPVEYOR_SCHEDULED_BUILD -eq 'True') -or 
-       ($env:APPVEYOR_REPO_TAG_NAME) -or 
-       ($env:TRAVIS_EVENT_TYPE -eq 'cron') -or 
-       ($env:TRAVIS_EVENT_TYPE -eq 'api'))
+       ($env:APPVEYOR_REPO_TAG_NAME) -or
+       ($TRAVIS_EVENT_TYPE -eq 'cron') -or 
+       ($TRAVIS_EVENT_TYPE -eq 'api'))
     {
         return $true
     }

@@ -18,9 +18,10 @@ function SuiteSetup {
     Import-Module "$PSScriptRoot\PSGetTestUtils.psm1" -WarningAction SilentlyContinue
     Import-Module "$PSScriptRoot\Asserts.psm1" -WarningAction SilentlyContinue
 
-    $script:MyDocumentsScriptsPath = Join-Path -Path ([Environment]::GetFolderPath("MyDocuments")) -ChildPath "WindowsPowerShell\Scripts"
-    $script:ProgramFilesScriptsPath = Join-Path -Path $env:ProgramFiles -ChildPath "WindowsPowerShell\Scripts"
-    $script:PSGetLocalAppDataPath="$env:LOCALAPPDATA\Microsoft\Windows\PowerShell\PowerShellGet"
+    $script:ProgramFilesScriptsPath = Get-AllUsersScriptsPath 
+    $script:MyDocumentsScriptsPath = Get-CurrentUserScriptsPath 
+    $script:PSGetLocalAppDataPath = Get-PSGetLocalAppDataPath
+    $script:TempPath = Get-TempPath
 
     #Bootstrap NuGet binaries
     Install-NuGetBinaries
@@ -40,11 +41,15 @@ function SuiteSetup {
     Get-InstalledScript -Name Fabrikam-ServerScript -ErrorAction SilentlyContinue | Uninstall-Script -Force
     Get-InstalledScript -Name Fabrikam-ClientScript -ErrorAction SilentlyContinue | Uninstall-Script -Force
 
-    $script:userName = "PSGetUser"
-    $password = "Password1"
-    $null = net user $script:userName $password /add
-    $secstr = ConvertTo-SecureString $password -AsPlainText -Force
-    $script:credential = new-object -typename System.Management.Automation.PSCredential -argumentlist $script:userName, $secstr
+    if($PSEdition -ne 'Core')
+    {
+        $script:userName = "PSGetUser"
+        $password = "Password1"
+        $null = net user $script:userName $password /add
+        $secstr = ConvertTo-SecureString $password -AsPlainText -Force
+        $script:credential = new-object -typename System.Management.Automation.PSCredential -argumentlist $script:userName, $secstr
+    }
+
     $script:assertTimeOutms = 20000
     
     # Create temp folder for saving the scripts
@@ -68,14 +73,17 @@ function SuiteCleanup {
     # Import the PowerShellGet provider to reload the repositories.
     $null = Import-PackageProvider -Name PowerShellGet -Force
 
-    # Delete the user
-    net user $script:UserName /delete | Out-Null
-    # Delete the user profile
-    $userProfile = (Get-WmiObject -Class Win32_UserProfile | Where-Object {$_.LocalPath -match $script:UserName})
-	if($userProfile)
-	{
-		RemoveItem $userProfile.LocalPath
-	}
+    if($PSEdition -ne 'Core')
+    {
+        # Delete the user
+        net user $script:UserName /delete | Out-Null
+        # Delete the user profile
+        $userProfile = (Get-WmiObject -Class Win32_UserProfile | Where-Object {$_.LocalPath -match $script:UserName})
+        if($userProfile)
+        {
+            RemoveItem $userProfile.LocalPath
+        }
+    }
     RemoveItem $script:TempSavePath
 
 
@@ -112,16 +120,9 @@ Describe PowerShell.PSGet.UpdateScriptTests -Tags 'BVT','InnerLoop' {
     # Expected Result: script should not be updated after confirming NO
     #
     It "UpdateScriptWithConfirmAndNoToPrompt" {
-
-        if(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
-        {            
-            Write-Warning -Message "Skipped on OSVersion: $([System.Environment]::OSVersion.Version) with PSCulture: $PSCulture"
-            return
-        }
-
         $installedVersion = "1.0"
         Install-Script Fabrikam-ServerScript -RequiredVersion $installedVersion
-        $outputPath = $env:temp
+        $outputPath = $script:TempPath
         $guid =  [system.guid]::newguid().tostring()
         $outputFilePath = Join-Path $outputPath "$guid"
         $runspace = CreateRunSpace $outputFilePath 1
@@ -155,7 +156,8 @@ Describe PowerShell.PSGet.UpdateScriptTests -Tags 'BVT','InnerLoop' {
         $res = Get-InstalledScript Fabrikam-ServerScript
         AssertEquals $res.Name 'Fabrikam-ServerScript' "Update-Script should not update the Fabrikam-ServerScript script when pressed NO to Confirm."
         AssertEquals $res.Version $installedVersion "Update-Script should not update the Fabrikam-ServerScript script when pressed NO to Confirm."
-    }
+    } `
+    -Skip:$(($PSEdition -eq 'Core') -or ($PSCulture -ne 'en-US') -or ([System.Environment]::OSVersion.Version -lt '6.2.9200.0'))
 
     # Purpose: UpdateScriptWithConfirmAndYesToPrompt
     #
@@ -164,16 +166,9 @@ Describe PowerShell.PSGet.UpdateScriptTests -Tags 'BVT','InnerLoop' {
     # Expected Result: script should be updated after confirming YES
     #
     It "UpdateScriptWithConfirmAndYesToPrompt" {
-        
-        if(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
-        {            
-            Write-Warning -Message "Skipped on OSVersion: $([System.Environment]::OSVersion.Version) with PSCulture: $PSCulture"
-            return
-        }
-
         $installedVersion = '1.0'
         Install-Script Fabrikam-ServerScript -RequiredVersion $installedVersion
-        $outputPath = $env:temp
+        $outputPath = $script:TempPath
         $guid =  [system.guid]::newguid().tostring()
         $outputFilePath = Join-Path $outputPath "$guid"
         $runspace = CreateRunSpace $outputFilePath 1
@@ -207,7 +202,8 @@ Describe PowerShell.PSGet.UpdateScriptTests -Tags 'BVT','InnerLoop' {
         $res = Get-InstalledScript Fabrikam-ServerScript
         AssertEquals $res.Name 'Fabrikam-ServerScript' "Update-Script should not update the Fabrikam-ServerScript script when pressed NO to Confirm, $res"
         Assert ($res.Version -gt [Version]"1.0") "Update-Script should not update the Fabrikam-ServerScript script when pressed NO to Confirm, $res"
-    }
+    } `
+    -Skip:$(($PSEdition -eq 'Core') -or ($PSCulture -ne 'en-US') -or ([System.Environment]::OSVersion.Version -lt '6.2.9200.0'))
 
     # Purpose: UpdateScriptWithWhatIf
     #
@@ -216,17 +212,10 @@ Describe PowerShell.PSGet.UpdateScriptTests -Tags 'BVT','InnerLoop' {
     # Expected Result: script should not be updated -WhatIf
     #
     It "UpdateScriptWithWhatIf" {
-
-        if(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
-        {            
-            Write-Warning -Message "Skipped on OSVersion: $([System.Environment]::OSVersion.Version) with PSCulture: $PSCulture"
-            return
-        }
-
         $installedVersion = "1.0"
         Install-Script Fabrikam-ServerScript -RequiredVersion $installedVersion
 
-        $outputPath = $env:temp
+        $outputPath = $script:TempPath
         $guid =  [system.guid]::newguid().tostring()
         $outputFilePath = Join-Path $outputPath "$guid"
         $runspace = CreateRunSpace $outputFilePath 1
@@ -257,7 +246,8 @@ Describe PowerShell.PSGet.UpdateScriptTests -Tags 'BVT','InnerLoop' {
         $res = Get-InstalledScript Fabrikam-ServerScript
         AssertEquals $res.Name 'Fabrikam-ServerScript' "Update-Script should not update the script with -WhatIf option, $res"
         Assert ($res.Version -eq [Version]"1.0") "Update-Script should not update the script with -WhatIf option, $res"
-    }
+    } `
+    -Skip:$(($PSEdition -eq 'Core') -or ($PSCulture -ne 'en-US') -or ([System.Environment]::OSVersion.Version -lt '6.2.9200.0'))
 
     # Purpose: UpdateScriptWithFalseConfirm
     #
@@ -428,18 +418,6 @@ Describe PowerShell.PSGet.UpdateScriptTests -Tags 'BVT','InnerLoop' {
     # Expected Result: should fail with an error
     #
     It "AdminPrivilegesAreRequiredForUpdatingAllUsersScript" {
-
-        $whoamiValue = (whoami)
-
-        if( ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
-            ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
-            ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
-            ($PSVersionTable.PSVersion -lt [Version]"4.0") )
-        {
-            Write-Warning -Message "Skipped on PSVersion: $($PSVersionTable.PSVersion) for user $whoamiValue"
-            return
-        }
-
         Install-Script -Name Fabrikam-ServerScript -RequiredVersion 1.0 -Scope AllUsers
         $NonAdminConsoleOutput = Join-Path $TestDrive 'nonadminconsole-out.txt'
         Start-Process "$PSHOME\PowerShell.exe" -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
@@ -454,7 +432,17 @@ Describe PowerShell.PSGet.UpdateScriptTests -Tags 'BVT','InnerLoop' {
         $content = Get-Content $NonAdminConsoleOutput
         Assert ($content -match 'AdminPrivilegesAreRequiredForUpdate') "Update-Script should fail when non-admin user is trying to update a script installed to allusers scope, $content"
         RemoveItem $NonAdminConsoleOutput
-    }
+    } `
+    -Skip:$(
+        $whoamiValue = (whoami)
+
+        ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
+        ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
+        ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
+        ($env:APPVEYOR_TEST_PASS -eq 'True') -or
+        ($PSEdition -eq 'Core') -or
+        ($PSVersionTable.PSVersion -lt '4.0.0') 
+    )
 
     # Purpose: UpdateScriptWithLowerReqVersionShouldNotUpdate
     #
@@ -557,7 +545,7 @@ Describe PowerShell.PSGet.UpdateScriptTests -Tags 'BVT','InnerLoop' {
     }
 }
 
-Describe PowerShell.PSGet.UpdateScriptTests -Tags 'P1','OuterLoop' {
+Describe PowerShell.PSGet.UpdateScriptTests.P1 -Tags 'P1','OuterLoop' {
 
     BeforeAll {
         SuiteSetup
@@ -579,13 +567,6 @@ Describe PowerShell.PSGet.UpdateScriptTests -Tags 'P1','OuterLoop' {
     # Expected Result: Should update the script along with its dependencies
     #
     It UpdateScriptWithIncludeDependencies {
-
-        if($PSVersionTable.PSVersion -lt '5.0.0')
-        {            
-            Write-Warning -Message "Skipped on PSVersion: $($PSVersionTable.PSVersion)"
-            return
-        }
-
         $ScriptName = 'Script-WithDependencies2'
         $NamesToUninstall = @()
 
@@ -635,5 +616,5 @@ Describe PowerShell.PSGet.UpdateScriptTests -Tags 'P1','OuterLoop' {
                                     PowerShellGet\Uninstall-Module $_ -Force -ErrorAction SilentlyContinue
                                 }
         }
-    }    
+    }  -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')  
 }

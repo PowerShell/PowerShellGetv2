@@ -18,9 +18,10 @@ function SuiteSetup {
     Import-Module "$PSScriptRoot\PSGetTestUtils.psm1" -WarningAction SilentlyContinue
     Import-Module "$PSScriptRoot\Asserts.psm1" -WarningAction SilentlyContinue
 
-    $script:MyDocumentsModulesPath = Join-Path -Path ([Environment]::GetFolderPath("MyDocuments")) -ChildPath "WindowsPowerShell\Modules"
-    $script:PSGetLocalAppDataPath="$env:LOCALAPPDATA\Microsoft\Windows\PowerShell\PowerShellGet"
-        
+    $script:MyDocumentsModulesPath = Get-CurrentUserModulesPath
+    $script:PSGetLocalAppDataPath = Get-PSGetLocalAppDataPath
+    $script:TempPath = Get-TempPath
+
     #Bootstrap NuGet binaries
     Install-NuGetBinaries
 
@@ -39,11 +40,14 @@ function SuiteSetup {
     PSGetTestUtils\Uninstall-Module ContosoServer
     PSGetTestUtils\Uninstall-Module ContosoClient
 
-    $script:userName = "PSGetUser"
-    $password = "Password1"
-    $null = net user $script:userName $password /add
-    $secstr = ConvertTo-SecureString $password -AsPlainText -Force
-    $script:credential = new-object -typename System.Management.Automation.PSCredential -argumentlist $script:userName, $secstr
+    if($PSEdition -ne 'Core')
+    {
+        $script:userName = "PSGetUser"
+        $password = "Password1"
+        $null = net user $script:userName $password /add
+        $secstr = ConvertTo-SecureString $password -AsPlainText -Force
+        $script:credential = new-object -typename System.Management.Automation.PSCredential -argumentlist $script:userName, $secstr
+    }
     $script:assertTimeOutms = 20000
 }
 
@@ -60,13 +64,16 @@ function SuiteCleanup {
     # Import the PowerShellGet provider to reload the repositories.
     $null = Import-PackageProvider -Name PowerShellGet -Force
 
-    # Delete the user
-    net user $script:UserName /delete | Out-Null
-    # Delete the user profile
-    $userProfile = (Get-WmiObject -Class Win32_UserProfile | Where-Object {$_.LocalPath -match $script:UserName})
-    if($userProfile)
+    if($PSEdition -ne 'Core')
     {
-	    RemoveItem $userProfile.LocalPath
+        # Delete the user
+        net user $script:UserName /delete | Out-Null
+        # Delete the user profile
+        $userProfile = (Get-WmiObject -Class Win32_UserProfile | Where-Object {$_.LocalPath -match $script:UserName})
+        if($userProfile)
+        {
+            RemoveItem $userProfile.LocalPath
+        }
     }
 }
 
@@ -92,17 +99,10 @@ Describe PowerShell.PSGet.UpdateModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: module should not be updated -WhatIf
     #
     It "UpdateModuleWithWhatIf" {
-
-        if(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
-        {            
-            Write-Warning -Message "Skipped on OSVersion: $([System.Environment]::OSVersion.Version) with PSCulture: $PSCulture"
-            return
-        }
-
         $installedVersion = "1.0"
         Install-Module ContosoServer -RequiredVersion $installedVersion
 
-        $outputPath = $env:temp
+        $outputPath = $script:TempPath
         $guid =  [system.guid]::newguid().tostring()
         $outputFilePath = Join-Path $outputPath "$guid"
         $runspace = CreateRunSpace $outputFilePath 1
@@ -132,7 +132,8 @@ Describe PowerShell.PSGet.UpdateModuleTests -Tags 'BVT','InnerLoop' {
 
         $res = Get-Module ContosoServer -ListAvailable
         Assert (($res.Count -eq 1) -and ($res.Name -eq "ContosoServer") -and ($res.Version -eq [Version]"1.0")) "Update-Module should not update the module with -WhatIf option"
-    }
+    } `
+    -Skip:$(($PSEdition -eq 'Core') -or ($PSCulture -ne 'en-US') -or ([System.Environment]::OSVersion.Version -lt '6.2.9200.0'))
 
     # Purpose: UpdateModuleWithFalseConfirm
     #
@@ -471,18 +472,11 @@ Describe PowerShell.PSGet.UpdateModuleTests.P2 -Tags 'P2','OuterLoop' {
     # Expected Result: module should not be updated after confirming NO
     #
     It "UpdateModuleWithConfirmAndNoToPrompt" {
-
-        if(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
-        {            
-            Write-Warning -Message "Skipped on OSVersion: $([System.Environment]::OSVersion.Version) with PSCulture: $PSCulture"
-            return
-        }
-
         $installedVersion = "1.0"
         Install-Module ContosoServer -RequiredVersion $installedVersion
         $installedVersion = "1.5"
         Install-Module ContosoServer -RequiredVersion $installedVersion -Force
-        $outputPath = $env:temp
+        $outputPath = $script:TempPath
         $guid =  [system.guid]::newguid().tostring()
         $outputFilePath = Join-Path $outputPath "$guid"
         $runspace = CreateRunSpace $outputFilePath 1
@@ -515,7 +509,8 @@ Describe PowerShell.PSGet.UpdateModuleTests.P2 -Tags 'P2','OuterLoop' {
 
         $res = Get-InstalledModule -Name ContosoServer
         Assert (($res.Name -eq "ContosoServer") -and ($res.Version -eq ([Version]$installedVersion))) "Update-Module should not update the ContosoServer module when pressed NO to Confirm."
-    }
+    } `
+    -Skip:$(($PSEdition -eq 'Core') -or ($PSCulture -ne 'en-US') -or ([System.Environment]::OSVersion.Version -lt '6.2.9200.0'))
 
     # Purpose: UpdateModuleWithConfirmAndYesToPrompt
     #
@@ -524,16 +519,9 @@ Describe PowerShell.PSGet.UpdateModuleTests.P2 -Tags 'P2','OuterLoop' {
     # Expected Result: module should be updated after confirming YES
     #
     It "UpdateModuleWithConfirmAndYesToPrompt" {
-
-        if(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
-        {            
-            Write-Warning -Message "Skipped on OSVersion: $([System.Environment]::OSVersion.Version) with PSCulture: $PSCulture"
-            return
-        }
-
         $installedVersion = "1.0"
         Install-Module ContosoServer -RequiredVersion $installedVersion
-        $outputPath = $env:temp
+        $outputPath = $script:TempPath
         $guid =  [system.guid]::newguid().tostring()
         $outputFilePath = Join-Path $outputPath "$guid"
         $runspace = CreateRunSpace $outputFilePath 1
@@ -574,7 +562,8 @@ Describe PowerShell.PSGet.UpdateModuleTests.P2 -Tags 'P2','OuterLoop' {
         }
 
         Assert (($res.Count -eq 1) -and ($res.Name -eq "ContosoServer") -and ($res.Version -gt [Version]"1.0")) "Update-Module should not update the ContosoServer module when pressed NO to Confirm."
-    }
+    } `
+    -Skip:$(($PSEdition -eq 'Core') -or ($PSCulture -ne 'en-US') -or ([System.Environment]::OSVersion.Version -lt '6.2.9200.0'))
 
     # Purpose: AdminPrivilegesAreRequiredForUpdatingAllUsersModule
     #
@@ -583,19 +572,6 @@ Describe PowerShell.PSGet.UpdateModuleTests.P2 -Tags 'P2','OuterLoop' {
     # Expected Result: should fail with an error
     #
     It "AdminPrivilegesAreRequiredForUpdatingAllUsersModule" {
-    
-        $whoamiValue = (whoami)
-
-        if( ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
-            ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
-            ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
-            ($PSVersionTable.PSVersion -lt [Version]"4.0") )
-        {
-
-            Write-Warning -Message "Skipped on PSVersion: $($PSVersionTable.PSVersion) for user $whoamiValue"
-            return
-        }
-
         Install-Module -Name ContosoServer -RequiredVersion 1.0
         $NonAdminConsoleOutput = Join-Path $TestDrive 'nonadminconsole-out.txt'
         Start-Process "$PSHOME\PowerShell.exe" -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
@@ -609,7 +585,17 @@ Describe PowerShell.PSGet.UpdateModuleTests.P2 -Tags 'P2','OuterLoop' {
         $content = Get-Content $NonAdminConsoleOutput
         Assert ($content -match "AdminPrivilegesAreRequiredForUpdate") "update-module should fail when non-admin user is trying to update a module installed to alluser scope, $content"
         RemoveItem $NonAdminConsoleOutput
-    }
+    } `
+    -Skip:$(
+        $whoamiValue = (whoami)
+
+        ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
+        ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
+        ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
+        ($env:APPVEYOR_TEST_PASS -eq 'True') -or
+        ($PSEdition -eq 'Core') -or
+        ($PSVersionTable.PSVersion -lt '4.0.0')
+    )
 
     # Purpose: Validate Update-Module cmdlet with a module with dependencies
     #
@@ -640,7 +626,7 @@ Describe PowerShell.PSGet.UpdateModuleTests.P2 -Tags 'P2','OuterLoop' {
             Assert ($DepModuleDetails.Count -ge $DepencyModuleNames.Count)  "$DepencyModuleNames dependencies is not installed properly"
 
 
-            if($PSVersionTable.PSVersion -ge [Version]"5.0")
+            if($PSVersionTable.PSVersion -ge '5.0.0')
             {
                 $res2 | ForEach-Object {
                     $mod = Get-InstalledModule -Name $_.Name -MinimumVersion $_.Version
@@ -708,7 +694,7 @@ Describe PowerShell.PSGet.UpdateModuleTests.P2 -Tags 'P2','OuterLoop' {
             AssertNotNull $DepModuleDetails "$DepencyModuleNames dependencies is not updated properly"
             Assert ($DepModuleDetails.Count -ge $DepencyModuleNames.Count)  "$DepencyModuleNames dependencies is not installed properly"
 
-            if($PSVersionTable.PSVersion -ge [Version]"5.0")
+            if($PSVersionTable.PSVersion -ge '5.0.0')
             {
                 $depModuleDetails = $res3.Dependencies | Where-Object {$_.Name -eq 'NestedRequiredModule2'}
                 $mod = Get-InstalledModule -Name $depModuleDetails.Name `

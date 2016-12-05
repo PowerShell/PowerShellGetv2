@@ -18,11 +18,11 @@ function SuiteSetup {
     Import-Module "$PSScriptRoot\PSGetTestUtils.psm1" -WarningAction SilentlyContinue
     Import-Module "$PSScriptRoot\Asserts.psm1" -WarningAction SilentlyContinue
     
-    $script:MyDocumentsModulesPath = Join-Path -Path ([Environment]::GetFolderPath("MyDocuments")) -ChildPath "WindowsPowerShell\Modules"
-    New-Item -Path $script:MyDocumentsModulesPath -ItemType Directory -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
-    $script:ProgramFilesModulesPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramFiles -ChildPath "WindowsPowerShell\Modules"
-    $script:PSGetLocalAppDataPath="$env:LOCALAPPDATA\Microsoft\Windows\PowerShell\PowerShellGet"
-
+    $script:ProgramFilesModulesPath = Get-AllUsersModulesPath
+    $script:MyDocumentsModulesPath = Get-CurrentUserModulesPath
+    $script:PSGetLocalAppDataPath = Get-PSGetLocalAppDataPath
+    $script:TempPath = Get-TempPath
+    $null = New-Item -Path $script:MyDocumentsModulesPath -ItemType Directory -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
     #Bootstrap NuGet binaries
     Install-NuGetBinaries
 
@@ -42,11 +42,15 @@ function SuiteSetup {
     PSGetTestUtils\Uninstall-Module ContosoServer
     PSGetTestUtils\Uninstall-Module ContosoClient
 
-    $script:userName = "PSGetUser"
-    $password = "Password1"
-    $null = net user $script:userName $password /add
-    $secstr = ConvertTo-SecureString $password -AsPlainText -Force
-    $script:credential = new-object -typename System.Management.Automation.PSCredential -argumentlist $script:userName, $secstr
+    if($PSEdition -ne 'Core')
+    {
+        $script:userName = "PSGetUser"
+        $password = "Password1"
+        $null = net user $script:userName $password /add
+        $secstr = ConvertTo-SecureString $password -AsPlainText -Force
+        $script:credential = new-object -typename System.Management.Automation.PSCredential -argumentlist $script:userName, $secstr
+    }
+
     $script:assertTimeOutms = 20000
     $script:UntrustedRepoSourceLocation = 'https://powershell.myget.org/F/powershellget-test-items/api/v2/'
     $script:UntrustedRepoPublishLocation = 'https://powershell.myget.org/F/powershellget-test-items/api/v2/package'
@@ -65,13 +69,16 @@ function SuiteCleanup {
     # Import the PowerShellGet provider to reload the repositories.
     $null = Import-PackageProvider -Name PowerShellGet -Force
 
-    # Delete the user
-    net user $script:UserName /delete | Out-Null
-    # Delete the user profile
-    $userProfile = (Get-WmiObject -Class Win32_UserProfile | Where-Object {$_.LocalPath -match $script:UserName})
-    if($userProfile)
+    if($PSEdition -ne 'Core')
     {
-	    RemoveItem $userProfile.LocalPath
+        # Delete the user
+        net user $script:UserName /delete | Out-Null
+        # Delete the user profile
+        $userProfile = (Get-WmiObject -Class Win32_UserProfile | Where-Object {$_.LocalPath -match $script:UserName})
+        if($userProfile)
+        {
+            RemoveItem $userProfile.LocalPath
+        }
     }
 }
 
@@ -447,20 +454,9 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: it should fail with an error
     #
     It "InstallModuleNeedsCurrentUserScopeParameterForNonAdminUser" {
-        $whoamiValue = (whoami)
-
-        if( ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
-            ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
-            ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
-            ($PSVersionTable.PSVersion -lt [Version]"4.0") )
-        {            
-            Write-Warning -Message "Skipped on PSVersion: $($PSVersionTable.PSVersion) for user $whoamiValue"
-            return
-        }
-
         $NonAdminConsoleOutput = Join-Path $TestDrive 'nonadminconsole-out.txt'
 
-        Start-Process "$PSHOME\PowerShell.exe" -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
+        Start-Process "$PSHOME\PowerShell.exe" -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
                                                               $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
                                                               Install-Module -Name ContosoServer' `
                                                -Credential $script:credential `
@@ -474,7 +470,17 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         Assert ($content -match "InstallModuleNeedsCurrentUserScopeParameter") "Install module without currentuser scope on non-admin user console should fail, $content"
         $mod = Get-Module ContosoServer -ListAvailable
         Assert (-not $mod) "Install module without currentuser scope on non-admin user console should not install"
-    }
+    } `
+    -Skip:$(
+        $whoamiValue = (whoami)
+
+        ($PSEdition -eq 'Core') -or
+        ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
+        ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
+        ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
+        ($env:APPVEYOR_TEST_PASS -eq 'True') -or
+        ($PSVersionTable.PSVersion -lt '4.0.0')
+    )
 
     # Purpose: ValidateModuleIsInUseError
     #
@@ -483,19 +489,6 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: should fail with an error
     #
     It "ValidateModuleIsInUseError" {
-        
-        $whoamiValue = (whoami)
-
-        if( ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
-            ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
-            ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
-            ($PSVersionTable.PSVersion -lt '5.0.0') -or
-            ($PSCulture -ne 'en-US') )
-        {            
-            Write-Warning -Message "Skipped on PSVersion: $($PSVersionTable.PSVersion) for user $whoamiValue"
-            return
-        }
-
         $NonAdminConsoleOutput = Join-Path $TestDrive 'nonadminconsole-out.txt'
         Start-Process "$PSHOME\PowerShell.exe" -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
                                                               $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
@@ -510,7 +503,17 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         
         Assert ($content -and ($content -match 'DscTestModule')) "Install-module with -force should fail when a module version being installed is in use, $content."
         RemoveItem $NonAdminConsoleOutput
-    }
+    } `
+    -Skip:$(
+        $whoamiValue = (whoami)
+
+        ($PSEdition -eq 'Core') -or
+        ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
+        ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
+        ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
+        ($PSCulture -ne 'en-US') -or
+        ($PSVersionTable.PSVersion -lt '5.0.0')
+    )
 
     # Purpose: InstallModuleWithWhatIf
     #
@@ -519,13 +522,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: it should not install the module
     #
     It "InstallModuleWithWhatIf" {
-        if(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
-        {            
-            Write-Warning -Message "Skipped on OSVersion: $([System.Environment]::OSVersion.Version) with PSCulture: $PSCulture"
-            return
-        }
-
-        $outputPath = $env:temp
+        $outputPath = $script:TempPath
         $guid =  [system.guid]::newguid().tostring()
         $outputFilePath = Join-Path $outputPath "$guid"
         $runspace = CreateRunSpace $outputFilePath 1
@@ -554,7 +551,8 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
 
         $mod = Get-Module ContosoServer -ListAvailable
         Assert (-not $mod) "Install-Module should not install the module with -WhatIf option"
-    }
+    } `
+    -Skip:$(($PSEdition -eq 'Core') -or ([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
 
     # Purpose: InstallModuleWithConfirmAndNoToPrompt
     #
@@ -563,14 +561,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: module should not be installed after confirming NO
     #
     It "InstallModuleWithConfirmAndNoToPrompt" {
-
-        if(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
-        {            
-            Write-Warning -Message "Skipped on OSVersion: $([System.Environment]::OSVersion.Version) with PSCulture: $PSCulture"
-            return
-        }
-
-        $outputPath = $env:temp
+        $outputPath = $script:TempPath
         $guid =  [system.guid]::newguid().tostring()
         $outputFilePath = Join-Path $outputPath "$guid"
         $runspace = CreateRunSpace $outputFilePath 1
@@ -603,7 +594,8 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
 
         $res = Get-Module ContosoServer -ListAvailable
         AssertNull $res "Install-Module should not install a module if Confirm is not accepted"
-    }
+    } `
+    -Skip:$(($PSEdition -eq 'Core') -or ([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
 
     # Purpose: InstallModuleWithConfirmAndYesToPrompt
     #
@@ -612,13 +604,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: module should be installed after confirming YES
     #
     It "InstallModuleWithConfirmAndYesToPrompt" {
-        if(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
-        {            
-            Write-Warning -Message "Skipped on OSVersion: $([System.Environment]::OSVersion.Version) with PSCulture: $PSCulture"
-            return
-        }
-
-        $outputPath = $env:temp
+        $outputPath = $script:TempPath
         $guid =  [system.guid]::newguid().tostring()
         $outputFilePath = Join-Path $outputPath "$guid"
         $runspace = CreateRunSpace $outputFilePath 1
@@ -651,7 +637,8 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
 
         $res = Get-Module ContosoServer -ListAvailable
         Assert (($res.Count -eq 1) -and ($res.Name -eq "ContosoServer")) "Install-Module should install a module if Confirm is accepted"
-    }
+    } `
+    -Skip:$(($PSEdition -eq 'Core') -or ([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
 
     # Purpose: Validate PowerShellGet related properties on PSModuleInfo
     #
@@ -660,12 +647,6 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: PSModuleInfo should have Tags, LicenseUri, ProjectUri, IconUri, ReleaseNotes, SourceName, SourceLocation, DateUpdated properties
     #
     It ValidatePSGetPropertiesOnPSModuleInfoFromGetModule {
-        if($PSVersionTable.PSVersion -lt '5.0.0')
-        {            
-            Write-Warning -Message "Skipped on PSVersion: $($PSVersionTable.PSVersion)"
-            return
-        }
-
         Install-Module ContosoServer -Repository PSGallery
         $res = Get-Module ContosoServer -ListAvailable
         Assert (($res.Count -eq 1) -and ($res.Name -eq "ContosoServer") -and ($res.Version -ge [Version]"2.5")) "Install-Module failed to install ContosoServer"
@@ -675,7 +656,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         AssertNotNull $res.IconUri "IconUri value is missing on PSModuleInfo"
         AssertNotNull $res.ReleaseNotes "ReleaseNotes value is missing on PSModuleInfo"
         AssertNotNull $res.RepositorySourceLocation "RepositorySourceLocation value is missing on PSModuleInfo"
-    }
+    } -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
 
     # Purpose: Install a module with Find-RoleCapability output
     #
@@ -912,12 +893,6 @@ Describe PowerShell.PSGet.InstallModuleTests.P1 -Tags 'P1','OuterLoop' {
     # Expected Result: PSModuleInfo should have Tags, LicenseUri, ProjectUri, IconUri, ReleaseNotes, SourceName, SourceLocation, DateUpdated properties
     #
     It ValidatePSGetPropertiesOnPSModuleInfoFromImportModule {
-        
-        if($PSVersionTable.PSVersion -lt '5.0.0') {
-            Write-Warning -Message "Skipped on PSVersion: $($PSVersionTable.PSVersion)"
-            return
-        }
-
         Install-Module ContosoServer -Repository PSGallery
         $res = Import-Module ContosoServer -PassThru -Force
         $res | Remove-Module -Force
@@ -928,7 +903,7 @@ Describe PowerShell.PSGet.InstallModuleTests.P1 -Tags 'P1','OuterLoop' {
         AssertNotNull $res.IconUri "IconUri value is missing on PSModuleInfo"
         AssertNotNull $res.ReleaseNotes "ReleaseNotes value is missing on PSModuleInfo"
         AssertNotNull $res.RepositorySourceLocation "RepositorySourceLocation value is missing on PSModuleInfo"
-    }
+    } -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
 
     # Purpose: Install a modul from an untrusted repository and press No to the prompt
     #
@@ -937,25 +912,18 @@ Describe PowerShell.PSGet.InstallModuleTests.P1 -Tags 'P1','OuterLoop' {
     # Expected Result: module should not be installed
     #
     It InstallAModulFromUntrustedRepositoryAndNoToPrompt {
-
-        if(($PSCulture -ne 'en-US') -or ($PSVersionTable.PSVersion -lt '4.0.0'))
-        {
-            Write-Warning -Message "Skipped on PSVersion: $($PSVersionTable.PSVersion) and PSCulture: $PSCulture"
-            return
-        }
-
         try {
             #Register an untrusted test repository
             Register-PSRepository -Name UntrustedTestRepo -SourceLocation $script:UntrustedRepoSourceLocation -PublishLocation $script:UntrustedRepoPublishLocation
             $moduleRepo = Get-PSRepository -Name UntrustedTestRepo
             AssertEqualsCaseInsensitive $moduleRepo.SourceLocation $script:UntrustedRepoSourceLocation "Test repository 'UntrustedTestRepo' is not registered properly"
 
-            $outputPath = $env:temp
+            $outputPath = $script:TempPath
             $guid =  [system.guid]::newguid().tostring()
             $outputFilePath = Join-Path $outputPath "$guid"
             $runspace = CreateRunSpace $outputFilePath 1
 
-            if($PSVersionTable.PSVersion -ge [Version]"4.0")
+            if($PSVersionTable.PSVersion -ge '4.0.0')
             {
                 # 2 is mapped to NO in ShouldProcess prompt
                 $Global:proxy.UI.ChoiceToMake=2
@@ -993,7 +961,7 @@ Describe PowerShell.PSGet.InstallModuleTests.P1 -Tags 'P1','OuterLoop' {
         finally {
             Get-PSRepository -Name UntrustedTestRepo -ErrorAction SilentlyContinue | Unregister-PSRepository -ErrorAction SilentlyContinue
         }
-    }
+    } -Skip:$(($PSCulture -ne 'en-US') -or ($PSVersionTable.PSVersion -lt '4.0.0') -or ($PSEdition -eq 'Core'))
 
     # Purpose: Install a modul from an untrusted repository and press YES to the prompt
     #
@@ -1002,19 +970,13 @@ Describe PowerShell.PSGet.InstallModuleTests.P1 -Tags 'P1','OuterLoop' {
     # Expected Result: module should be installed
     #
     It InstallAModulFromUntrustedRepositoryAndYesToPrompt {
-        if(($PSCulture -ne 'en-US') -or ($PSVersionTable.PSVersion -lt '4.0.0'))
-        {
-            Write-Warning -Message "Skipped on PSVersion: $($PSVersionTable.PSVersion) and PSCulture: $PSCulture"
-            return
-        }
-
         try {
             #Register an untrusted test repository
             Register-PSRepository -Name UntrustedTestRepo -SourceLocation $script:UntrustedRepoSourceLocation -PublishLocation $script:UntrustedRepoPublishLocation
             $moduleRepo = Get-PSRepository -Name UntrustedTestRepo
             AssertEqualsCaseInsensitive $moduleRepo.SourceLocation $script:UntrustedRepoSourceLocation "Test repository 'UntrustedTestRepo' is not registered properly"
 
-            $outputPath = $env:temp
+            $outputPath = $script:TempPath
             $guid =  [system.guid]::newguid().tostring()
             $outputFilePath = Join-Path $outputPath "$guid"
             $runspace = CreateRunSpace $outputFilePath 1
@@ -1048,7 +1010,7 @@ Describe PowerShell.PSGet.InstallModuleTests.P1 -Tags 'P1','OuterLoop' {
         finally {
             Get-PSRepository -Name UntrustedTestRepo -ErrorAction SilentlyContinue | Unregister-PSRepository -ErrorAction SilentlyContinue
         }
-    }
+    } -Skip:$(($PSCulture -ne 'en-US') -or ($PSVersionTable.PSVersion -lt '4.0.0') -or ($PSEdition -eq 'Core'))
 
     # Get-InstalledModule error cases
     It ValidateGetInstalledModuleWithMultiNamesAndRequiredVersion {
@@ -1225,7 +1187,7 @@ Describe PowerShell.PSGet.InstallModuleTests.P1 -Tags 'P1','OuterLoop' {
             AssertEquals $res1.Repository $RepositoryName "PSGetItemInfo object was created with wrong repository name"
 
             $expectedInstalledLocation = Join-Path $script:ProgramFilesModulesPath -ChildPath $res1.Name
-            if($PSVersionTable.PSVersion -ge [Version]"5.0")
+            if($PSVersionTable.PSVersion -ge '5.0.0')
             {
                 $expectedInstalledLocation = Join-Path -Path $expectedInstalledLocation -ChildPath $res1.Version
             }
@@ -1310,7 +1272,7 @@ Describe PowerShell.PSGet.InstallModuleTests.P2 -Tags 'P2','OuterLoop' {
             AssertNotNull $DepModuleDetails "$DepencyModuleNames dependencies is not installed properly"
             Assert ($DepModuleDetails.Count -ge $DepencyModuleNames.Count)  "$DepencyModuleNames dependencies is not installed properly"
 
-            if($PSVersionTable.PSVersion -ge [Version]"5.0")
+            if($PSVersionTable.PSVersion -ge '5.0.0')
             {
                 $res2 | ForEach-Object {
                     $mod = Get-InstalledModule -Name $_.Name -MinimumVersion $_.Version

@@ -19,9 +19,10 @@ function SuiteSetup {
     Import-Module "$PSScriptRoot\PSGetTestUtils.psm1" -WarningAction SilentlyContinue
     Import-Module "$PSScriptRoot\Asserts.psm1" -WarningAction SilentlyContinue
     
-    $script:PSGetLocalAppDataPath="$env:LOCALAPPDATA\Microsoft\Windows\PowerShell\PowerShellGet"
-    $script:ProgramFilesModulesPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramFiles -ChildPath "WindowsPowerShell\Modules"
-    $script:MyDocumentsModulesPath = Microsoft.PowerShell.Management\Join-Path -Path ([Environment]::GetFolderPath("MyDocuments")) -ChildPath "WindowsPowerShell\Modules"
+    $script:ProgramFilesModulesPath = Get-AllUsersModulesPath
+    $script:MyDocumentsModulesPath = Get-CurrentUserModulesPath
+    $script:PSGetLocalAppDataPath = Get-PSGetLocalAppDataPath
+    $script:TempPath = Get-TempPath
     $script:BuiltInModuleSourceName = "PSGallery"
 
     $script:URI200OK = "http://go.microsoft.com/fwlink/?LinkID=533903&clcid=0x409"
@@ -63,7 +64,7 @@ function SuiteSetup {
     AssertEquals $modSource.SourceLocation $script:TestModuleSourceUri "Test module source is not set properly"
 
     # Create a temp folder
-    $script:TempModulesPath="$env:LocalAppData\temp\PSGet_$(Get-Random)"
+    $script:TempModulesPath= Join-Path $script:TempPath "PSGet_$(Get-Random)"
     $null = New-Item -Path $script:TempModulesPath -ItemType Directory -Force
 }
 
@@ -403,7 +404,7 @@ Describe PowerShell.PSGet.ModuleSourceTests.P1 -Tags 'P1','OuterLoop' {
     It RegisterPSRepositoryWithInvalidSMBShareSourceLocation {
 
         $Name='MyTestModSource'
-        $Location="$env:Temp\DirNotAvailable"
+        $Location = Join-Path $script:TempPath 'DirNotAvailable'
         AssertFullyQualifiedErrorIdEquals -scriptblock {Register-PSRepository -Name $Name -SourceLocation $Location} `
                                           -expectedFullyQualifiedErrorId "PathNotFound,Register-PSRepository"
     }
@@ -419,7 +420,7 @@ Describe PowerShell.PSGet.ModuleSourceTests.P1 -Tags 'P1','OuterLoop' {
 
         $Name='MyTestModSource'
         $Location=$script:TempModulesPath
-        $PublishLocation="$env:Temp\DirNotAvailable"
+        $PublishLocation = Join-Path $script:TempPath 'DirNotAvailable'
         AssertFullyQualifiedErrorIdEquals -scriptblock {Register-PSRepository -Name $Name -SourceLocation $Location -PublishLocation $PublishLocation} `
                                           -expectedFullyQualifiedErrorId "PathNotFound,Add-PackageSource,Microsoft.PowerShell.PackageManagement.Cmdlets.RegisterPackageSource"
     }
@@ -435,7 +436,7 @@ Describe PowerShell.PSGet.ModuleSourceTests.P1 -Tags 'P1','OuterLoop' {
 
         $Name='MyTestModSource'
         $Location=$script:TempModulesPath
-        $Location2="$env:Temp\DirNotAvailable"
+        $Location2 = Join-Path $script:TempPath 'DirNotAvailable'
         try
         {
             Register-PSRepository -Name $Name -SourceLocation $Location
@@ -459,7 +460,7 @@ Describe PowerShell.PSGet.ModuleSourceTests.P1 -Tags 'P1','OuterLoop' {
 
         $Name='MyTestModSource'
         $Location=$script:TempModulesPath
-        $Location2="$env:Temp\DirNotAvailable"
+        $Location2 = Join-Path $script:TempPath 'DirNotAvailable'
         try
         {
             Register-PSRepository -Name $Name -SourceLocation $Location -PublishLocation $Location
@@ -678,7 +679,8 @@ Describe PowerShell.PSGet.ModuleSourceTests.P1 -Tags 'P1','OuterLoop' {
         finally {
             Register-PSRepository -Default -InstallationPolicy Trusted
         }
-    }
+    } `
+    -Skip:$($PSEdition -eq 'Core')
 
     <#
     Purpose: Validate the Unregister-PSRepository functionality with non-registered module source name
@@ -695,6 +697,32 @@ Describe PowerShell.PSGet.ModuleSourceTests.P1 -Tags 'P1','OuterLoop' {
                                           -expectedFullyQualifiedErrorId $expectedFullyQualifiedErrorId
     }
 
+    It RegisterPSRepositoryShouldFailWithPSModuleAsPMProviderName {        
+        AssertFullyQualifiedErrorIdEquals -scriptblock {Register-PSRepository -Name Foo -SourceLocation $script:TempPath -PackageManagementProvider PowerShellGet} `
+                                          -expectedFullyQualifiedErrorId "InvalidPackageManagementProviderValue,Register-PSRepository"
+    }
+
+    It SetPSRepositoryShouldFailWithPSModuleAsPMProviderName {
+        AssertFullyQualifiedErrorIdEquals -scriptblock {Set-PSRepository -Name PSGallery -PackageManagementProvider PowerShellGet} `
+                                          -expectedFullyQualifiedErrorId "InvalidPackageManagementProviderValue,Set-PSRepository"
+    }
+
+    It RegisterPackageSourceShouldFailWithPSModuleAsPMProviderName {        
+        AssertFullyQualifiedErrorIdEquals -scriptblock {Register-PackageSource -ProviderName PowerShellGet -Name Foo -Location $script:TempPath -PackageManagementProvider PowerShellGet} `
+                                          -expectedFullyQualifiedErrorId "InvalidPackageManagementProviderValue,Add-PackageSource,Microsoft.PowerShell.PackageManagement.Cmdlets.RegisterPackageSource"
+    }
+}
+
+Describe PowerShell.PSGet.FindModule.ModuleSourceTests.P1 -Tags 'P1','OuterLoop' {
+
+    BeforeAll {
+        SuiteSetup
+    }
+
+    AfterAll {
+        SuiteCleanup
+    }
+
     <#
     Purpose: Verify the Find-Module functionality with different values for -Repository parameter.
 
@@ -702,36 +730,34 @@ Describe PowerShell.PSGet.ModuleSourceTests.P1 -Tags 'P1','OuterLoop' {
 
     Expected Result: Module list or Error depending on the input variation
     #>
-    It FindModuleWithModuleSourcesTests {
+    $ParameterSets = Get-FindModuleWithSourcesParameterSets
+    $ParameterSetCount = $ParameterSets.Count
+    $i = 1
+    foreach ($inputParameters in $ParameterSets)
+    {
+        Write-Verbose -Message "Combination #$i out of $ParameterSetCount"
+        Write-Verbose -Message "$($inputParameters | Out-String)"
+        Write-Progress -Activity "Combination $i out of $ParameterSetCount" -PercentComplete $(($i/$ParameterSetCount) * 100)
 
-        $ParameterSets = Get-FindModuleWithSourcesParameterSets
-        $ParameterSetCount = $ParameterSets.Count + 1
-        $i = 1
-        foreach ($inputParameters in $ParameterSets)
+        $scriptBlock = $null
+        if($inputParameters.Name -and $inputParameters.Source)
         {
-            Write-Verbose -Message "Combination #$i out of $ParameterSetCount"
-            Write-Verbose -Message "$($inputParameters | Out-String)"
-            Write-Progress -Activity "Combination $i out of $ParameterSetCount" -PercentComplete $(($i/$ParameterSetCount) * 100)
-            $i = $i+1
+            $scriptBlock = { Find-Module -Name $inputParameters.Name -Repository $inputParameters.Source }.GetNewClosure()
+        }
+        elseif($inputParameters.Name)
+        {
+            $scriptBlock = { Find-Module -Name $inputParameters.Name }.GetNewClosure()
+        }
+        elseif($inputParameters.Source)
+        {
+            $scriptBlock = { Find-Module -Repository $inputParameters.Source }.GetNewClosure()
+        }
+        else
+        {
+            $scriptBlock = { Find-Module }
+        }
 
-            $scriptBlock = $null
-            if($inputParameters.Name -and $inputParameters.Source)
-            {
-                $scriptBlock = { Find-Module -Name $inputParameters.Name -Repository $inputParameters.Source }.GetNewClosure()
-            }
-            elseif($inputParameters.Name)
-            {
-                $scriptBlock = { Find-Module -Name $inputParameters.Name }.GetNewClosure()
-            }
-            elseif($inputParameters.Source)
-            {
-                $scriptBlock = { Find-Module -Repository $inputParameters.Source }.GetNewClosure()
-            }
-            else
-            {
-                $scriptBlock = { Find-Module }
-            }
-
+        It "FindModuleWithModuleSourcesTests - Combination $i/$ParameterSetCount" {
             if($inputParameters.PositiveCase)
             {
                 $res = Invoke-Command -ScriptBlock $scriptBlock
@@ -750,6 +776,19 @@ Describe PowerShell.PSGet.ModuleSourceTests.P1 -Tags 'P1','OuterLoop' {
                 AssertFullyQualifiedErrorIdEquals -scriptblock $scriptBlock -expectedFullyQualifiedErrorId $inputParameters.FullyQualifiedErrorID
             }
         }
+
+        $i = $i+1
+    }
+}
+
+Describe PowerShell.PSGet.InstallModule.ModuleSourceTests.P1 -Tags 'P1','OuterLoop' {
+
+    BeforeAll {
+        SuiteSetup
+    }
+
+    AfterAll {
+        SuiteCleanup
     }
 
     <#
@@ -759,28 +798,26 @@ Describe PowerShell.PSGet.ModuleSourceTests.P1 -Tags 'P1','OuterLoop' {
 
     Expected Result: The specified module should be installed or fail with an error depending on the input variation
     #>
-    It InstallModuleWithModuleSourcesTests {
+    $ParameterSets = Get-InstallModuleWithSourcesParameterSets
+    $ParameterSetCount = $ParameterSets.Count
+    $i = 1
+    foreach ($inputParameters in $ParameterSets)
+    {
+        Write-Verbose -Message "Combination #$i out of $ParameterSetCount"
+        Write-Verbose -Message "$($inputParameters | Out-String)"
+        Write-Progress -Activity "Combination $i out of $ParameterSetCount" -PercentComplete $(($i/$ParameterSetCount) * 100)
 
-        $ParameterSets = Get-InstallModuleWithSourcesParameterSets
-        $ParameterSetCount = $ParameterSets.Count + 1
-        $i = 1
-        foreach ($inputParameters in $ParameterSets)
+        $scriptBlock = $null
+        if($inputParameters.Source)
         {
-            Write-Verbose -Message "Combination #$i out of $ParameterSetCount"
-            Write-Verbose -Message "$($inputParameters | Out-String)"
-            Write-Progress -Activity "Combination $i out of $ParameterSetCount" -PercentComplete $(($i/$ParameterSetCount) * 100)
-            $i = $i+1
+            $scriptBlock = { Install-Module -Name $inputParameters.Name -Repository $inputParameters.Source }.GetNewClosure()
+        }
+        else
+        {
+            $scriptBlock = { Install-Module -Name $inputParameters.Name }.GetNewClosure()
+        }
 
-            $scriptBlock = $null
-            if($inputParameters.Source)
-            {
-                $scriptBlock = { Install-Module -Name $inputParameters.Name -Repository $inputParameters.Source }.GetNewClosure()
-            }
-            else
-            {
-                $scriptBlock = { Install-Module -Name $inputParameters.Name }.GetNewClosure()
-            }
-
+        It "InstallModuleWithModuleSourcesTests - Combination $i/$ParameterSetCount" {
             try {
                 if($inputParameters.PositiveCase)
                 {
@@ -798,20 +835,7 @@ Describe PowerShell.PSGet.ModuleSourceTests.P1 -Tags 'P1','OuterLoop' {
                 PSGetTestUtils\Uninstall-Module $inputParameters.Name
             }
         }
-    }
 
-    It RegisterPSRepositoryShouldFailWithPSModuleAsPMProviderName {        
-        AssertFullyQualifiedErrorIdEquals -scriptblock {Register-PSRepository -Name Foo -SourceLocation $env:TEMP -PackageManagementProvider PowerShellGet} `
-                                          -expectedFullyQualifiedErrorId "InvalidPackageManagementProviderValue,Register-PSRepository"
-    }
-
-    It SetPSRepositoryShouldFailWithPSModuleAsPMProviderName {
-        AssertFullyQualifiedErrorIdEquals -scriptblock {Set-PSRepository -Name PSGallery -PackageManagementProvider PowerShellGet} `
-                                          -expectedFullyQualifiedErrorId "InvalidPackageManagementProviderValue,Set-PSRepository"
-    }
-
-    It RegisterPackageSourceShouldFailWithPSModuleAsPMProviderName {        
-        AssertFullyQualifiedErrorIdEquals -scriptblock {Register-PackageSource -ProviderName PowerShellGet -Name Foo -Location $env:TEMP -PackageManagementProvider PowerShellGet} `
-                                          -expectedFullyQualifiedErrorId "InvalidPackageManagementProviderValue,Add-PackageSource,Microsoft.PowerShell.PackageManagement.Cmdlets.RegisterPackageSource"
+        $i = $i+1
     }
 }

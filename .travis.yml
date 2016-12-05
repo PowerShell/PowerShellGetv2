@@ -1,0 +1,47 @@
+
+language: cpp
+
+git:
+  depth: 1000
+
+os:
+  - linux
+  - osx
+sudo: required
+dist: trusty
+osx_image: xcode7.3
+
+matrix:
+  allow_failures:
+    - os: osx
+  fast_finish: true
+
+
+addons:
+  artifacts:
+    paths: $(ls ./../PowerShellGet.zip | tr "\n" ":")
+
+
+install:
+  - export PATH=~/.dotnet:$PATH
+  - pushd tools
+  - chmod +x download.sh
+  - chmod +x travis.sh
+  - ./download.sh
+  - popd
+  # Default 2.0.0 Ruby is buggy
+  # Default bundler version is buggy
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then rvm use 2.2.1; gem uninstall bundler -v1.13.1; fi
+
+script: 
+  - ./tools/travis.sh
+
+
+
+
+
+
+
+
+
+

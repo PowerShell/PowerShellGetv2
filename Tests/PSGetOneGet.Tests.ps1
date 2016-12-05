@@ -17,8 +17,8 @@ Describe PowerShell.PSGet.PackageManagementIntegrationTests -Tags 'P1','OuterLoo
         Import-Module "$PSScriptRoot\Asserts.psm1" -WarningAction SilentlyContinue
 
         $script:PSModuleSourcesPath="$env:LOCALAPPDATA\Microsoft\Windows\PowerShell\PowerShellGet"
-        $script:ProgramFilesModulesPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramFiles -ChildPath "WindowsPowerShell\Modules"
-        $script:MyDocumentsModulesPath = Microsoft.PowerShell.Management\Join-Path -Path ([Environment]::GetFolderPath("MyDocuments")) -ChildPath "WindowsPowerShell\Modules"
+        $script:ProgramFilesModulesPath = Get-AllUsersModulesPath
+        $script:MyDocumentsModulesPath = Get-CurrentUserModulesPath
         $script:BuiltInModuleSourceName = "PSGallery"
         $script:PSGetModuleProviderName = 'PowerShellGet'
 

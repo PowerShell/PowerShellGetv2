@@ -6,20 +6,61 @@
 
 . "$PSScriptRoot\uiproxy.ps1"
 
-$script:PSGetProgramDataPath ="$env:ProgramData\Microsoft\Windows\PowerShell\PowerShellGet"
-$script:PSGetLocalAppDataPath="$env:LOCALAPPDATA\Microsoft\Windows\PowerShell\PowerShellGet"
-$script:moduleSourcesFilePath="$script:PSGetLocalAppDataPath\PSRepositories.xml"
-$script:NuGetBinaryProgramDataPath="$env:ProgramFiles\PackageManagement\ProviderAssemblies"
 $script:NuGetClient = $null
 $script:NuGetExeName = 'NuGet.exe'
 $script:NuGetProvider = $null
 $script:NuGetProviderName = 'NuGet'
 $script:NuGetProviderVersion  = [Version]'2.8.5.201'
-$script:MyDocumentsModulesPath = Join-Path -Path ([Environment]::GetFolderPath("MyDocuments")) -ChildPath "WindowsPowerShell\Modules"
-$script:ProgramFilesModulesPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramFiles -ChildPath "WindowsPowerShell\Modules"
 $script:EnvironmentVariableTarget = @{ Process = 0; User = 1; Machine = 2 }
+
+$script:PowerShellGet = 'PowerShellGet'
+$script:IsInbox = $PSHOME.EndsWith('\WindowsPowerShell\v1.0', [System.StringComparison]::OrdinalIgnoreCase)
+$script:IsWindows = (-not (Get-Variable -Name IsWindows -ErrorAction Ignore)) -or $IsWindows
+$script:IsLinux = (Get-Variable -Name IsLinux -ErrorAction Ignore) -and $IsLinux
+$script:IsOSX = (Get-Variable -Name IsOSX -ErrorAction Ignore) -and $IsOSX
+$script:IsCoreCLR = (Get-Variable -Name IsCoreCLR -ErrorAction Ignore) -and $IsCoreCLR
+
+if($script:IsInbox) {
+    $script:ProgramFilesPSPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramFiles -ChildPath "WindowsPowerShell"
+} else {
+    $script:ProgramFilesPSPath = $PSHome
+}
+
+if($script:IsInbox) {
+    try {
+        $script:MyDocumentsFolderPath = [Environment]::GetFolderPath("MyDocuments")
+    } catch {
+        $script:MyDocumentsFolderPath = $null
+    }
+
+    $script:MyDocumentsPSPath = if($script:MyDocumentsFolderPath) {
+                                    Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsFolderPath -ChildPath "WindowsPowerShell"
+                                } else {
+                                    Microsoft.PowerShell.Management\Join-Path -Path $env:USERPROFILE -ChildPath "Documents\WindowsPowerShell"
+                                }
+} elseif($script:IsWindows) {
+    $script:MyDocumentsPSPath = Microsoft.PowerShell.Management\Join-Path -Path $HOME -ChildPath 'Documents\PowerShell'
+} else {
+    $script:MyDocumentsPSPath = Microsoft.PowerShell.Management\Join-Path -Path $HOME -ChildPath ".local/share/powershell"
+}
+
+$script:ProgramFilesModulesPath = Microsoft.PowerShell.Management\Join-Path -Path $script:ProgramFilesPSPath -ChildPath "Modules"
+$script:MyDocumentsModulesPath = Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsPSPath -ChildPath "Modules"
+$script:ProgramFilesScriptsPath = Microsoft.PowerShell.Management\Join-Path -Path $script:ProgramFilesPSPath -ChildPath "Scripts"
+$script:MyDocumentsScriptsPath = Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsPSPath -ChildPath "Scripts"
+$script:TempPath = if($script:IsWindows) { ([System.IO.DirectoryInfo]$env:TEMP).FullName } else { '/tmp' }
+
+if($script:IsWindows) {
+    $script:PSGetProgramDataPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramData -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
+    $script:PSGetAppLocalPath = Microsoft.PowerShell.Management\Join-Path -Path $env:LOCALAPPDATA -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
+} else {
+    $script:PSGetProgramDataPath = "$HOME/.config/powershell/powershellget"
+    $script:PSGetAppLocalPath = "$HOME/.config/powershell/powershellget"
+}
+
 $script:ProgramDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $script:NuGetExeName
-$script:ApplocalDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetLocalAppDataPath -ChildPath $script:NuGetExeName
+$script:ApplocalDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetAppLocalPath -ChildPath $script:NuGetExeName
+$script:moduleSourcesFilePath="$script:PSGetAppLocalPath\PSRepositories.xml"
 
 # PowerShellGetFormatVersion will be incremented when we change the .nupkg format structure. 
 # PowerShellGetFormatVersion is in the form of Major.Minor.  
@@ -27,6 +68,30 @@ $script:ApplocalDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $s
 # Major is incremented for the breaking change.
 $script:CurrentPSGetFormatVersion = "1.0"
 $script:PSGetFormatVersionPrefix = "PowerShellGetFormatVersion_"
+
+function Get-AllUsersModulesPath {
+    return $script:ProgramFilesModulesPath
+}
+
+function Get-CurrentUserModulesPath {
+    return $script:MyDocumentsModulesPath
+}
+
+function Get-AllUsersScriptsPath {
+    return $script:ProgramFilesScriptsPath
+}
+
+function Get-CurrentUserScriptsPath {
+    return $script:MyDocumentsScriptsPath
+}
+
+function Get-TempPath {
+    return $script:TempPath
+}
+
+function Get-PSGetLocalAppDataPath {
+    return $script:PSGetAppLocalPath
+}
 
 function GetAndSet-PSGetTestGalleryDetails
 {
@@ -58,7 +123,7 @@ function GetAndSet-PSGetTestGalleryDetails
         $ResolvedLocalSource = & $psgetModule Resolve-Location -Location $SourceUri -LocationParameterName 'SourceLocation'
 
         if($ResolvedLocalSource -and 
-           $PSVersionTable.PSVersion -ge [Version]"5.0" -and 
+           $PSVersionTable.PSVersion -ge '5.0.0' -and 
            [System.Environment]::OSVersion.Version -ge "6.2.9200.0" -and 
            $PSCulture -eq 'en-US')
         {
@@ -227,7 +292,7 @@ function CreateAndPublish-TestScript
 
         [Parameter()]
         [string]
-        $ScriptsPath = $env:TEMP
+        $ScriptsPath = $script:TempPath
     )
 
     $scriptFilePath = Join-Path -Path $ScriptsPath -ChildPath "$Name.ps1"
@@ -306,7 +371,7 @@ function CreateAndPublishTestModule
 
         [Parameter()]
         [string]
-        $ModulesPath = $env:TEMP       
+        $ModulesPath = $script:TempPath       
     )
 
     $ModuleBase = Join-Path $ModulesPath $ModuleName
@@ -390,7 +455,7 @@ function CreateAndPublishTestModule
                           WarningAction = 'SilentlyContinue'
                        }
 
-            if($PSVersionTable.PSVersion -ge [Version]"5.0")
+            if($PSVersionTable.PSVersion -ge '5.0.0')
             {
                 New-ModuleManifest -Path "$ModuleBase\$ModuleName.psd1" `
                                    -ModuleVersion $version `
@@ -455,7 +520,7 @@ function PublishDscTestModule
         $TestModulesBase
     )
 
-    $TempModulesPath = "$env:TEMP\$(Get-Random)"
+    $TempModulesPath = Join-Path $script:TempPath "$(Get-Random)"
     $null = New-Item -Path $TempModulesPath -ItemType Directory -Force
 
     Copy-Item -Path "$TestModulesBase\$ModuleName" -Destination $TempModulesPath -Recurse -Force
@@ -495,7 +560,7 @@ function PublishDscTestModule
 
         RemoveItem -path $manfiestFilePath
 
-        if($PSVersionTable.PSVersion -ge [Version]"5.0")
+        if($PSVersionTable.PSVersion -ge '5.0.0')
         {
             New-ModuleManifest -Path $manfiestFilePath `
                                -ModuleVersion $version  `
@@ -554,7 +619,7 @@ function CreateAndPublishTestModuleWithVersionFormat
 
         [Parameter()]
         [string]
-        $ModulesPath = $env:TEMP
+        $ModulesPath = $script:TempPath
     )
     
     $repo = Get-PSRepository -Name $Repository -ErrorVariable err
@@ -581,7 +646,7 @@ function CreateAndPublishTestModuleWithVersionFormat
 
     foreach($version in $Versions)
     {
-        if($PSVersionTable.PSVersion -ge [Version]"5.0")
+        if($PSVersionTable.PSVersion -ge '5.0.0')
         {
             New-ModuleManifest -Path "$ModuleBase\$ModuleName.psd1" `
                                -ModuleVersion $version `
@@ -876,9 +941,9 @@ function Set-PSGallerySourceLocation
     $moduleSource.PSTypeNames.Insert(0, "Microsoft.PowerShell.Commands.PSRepository")
     $PSGetModuleSources.Add("PSGallery", $moduleSource)
     
-    if(-not (Test-Path $script:PSGetLocalAppDataPath))
+    if(-not (Test-Path $script:PSGetAppLocalPath))
     {
-        $null = New-Item -Path $script:PSGetLocalAppDataPath `
+        $null = New-Item -Path $script:PSGetAppLocalPath `
                             -ItemType Directory -Force `
                             -ErrorAction SilentlyContinue `
                             -WarningAction SilentlyContinue `
@@ -897,7 +962,7 @@ function Test-ModuleSxSVersionSupport
 {
     # Side-by-Side module version is avialable on PowerShell 5.0 or later versions only
     # By default, PowerShell module versions will be installed/updated Side-by-Side.
-    $PSVersionTable.PSVersion -ge [Version]"5.0"
+    $PSVersionTable.PSVersion -ge '5.0.0'
 }
 
 function Reset-PATHVariableForScriptsInstallLocation
@@ -919,14 +984,19 @@ function Reset-PATHVariableForScriptsInstallLocation
         $WriteWarningMessages
     )
 
+    if(($PSEdition -eq 'Core') -and (-not $script:IsWindows)) {
+        Write-Verbose 'Set-PATHVariableForScriptsInstallLocation is not supported on Non-Windows platforms'
+        return
+    }
+
     if($Scope -eq 'AllUsers')
     {
-        $scopePath = "$env:ProgramFiles\WindowsPowerShell\Scripts"
+        $scopePath = $script:ProgramFilesScriptsPath
         $target = $script:EnvironmentVariableTarget.Machine
     }
     else
     {
-        $scopePath = "$HOME\Documents\WindowsPowerShell\Scripts"
+        $scopePath = $script:MyDocumentsScriptsPath
         $target = $script:EnvironmentVariableTarget.User
     }
     
@@ -1011,17 +1081,22 @@ function Set-PATHVariableForScriptsInstallLocation
         $OnlyProcessPathVariable
     )
 
+    if(($PSEdition -eq 'Core') -and (-not $script:IsWindows)) {
+        Write-Verbose 'Set-PATHVariableForScriptsInstallLocation is not supported on Non-Windows platforms'
+        return
+    }
+
     $psgetModule = Import-Module -Name PowerShellGet -PassThru -Scope Local -Verbose:$VerbosePreference
 
     # Check and add the scope path to PATH environment variable if USER accepts the prompt.
     if($Scope -eq 'AllUsers')
     {
-        $ScopePath = "$env:ProgramFiles\WindowsPowerShell\Scripts"
+        $ScopePath = $script:ProgramFilesScriptsPath
         $target = $script:EnvironmentVariableTarget.Machine
     }
     else
     {
-        $ScopePath = "$HOME\Documents\WindowsPowerShell\Scripts"
+        $ScopePath = $script:MyDocumentsScriptsPath
         $target = $script:EnvironmentVariableTarget.User
     }
 
@@ -1074,7 +1149,7 @@ function Set-PATHVariableForScriptsInstallLocation
 function Get-CodeSigningCert
 {
     $cert = $null;
-    $scriptName = $env:Temp + "\" + [IO.Path]::GetRandomFileName + ".ps1"  
+    $scriptName = Join-Path $script:TempPath  "$([IO.Path]::GetRandomFileName()).ps1"  
     "get-date" >$scriptName  
     $cert = @(get-childitem cert:\CurrentUser\My -codesigning | Where-Object {(Set-AuthenticodeSignature $scriptName -cert $_).Status -eq "Valid"})[0];  
     del $scriptName

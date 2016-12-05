@@ -41,7 +41,7 @@ AliasesToExport = @('inmo',
 FileList = @('PSModule.psm1',
              'PSGet.Format.ps1xml',
              'PSGet.Resource.psd1')
-RequiredModules = @(@{ModuleName='PackageManagement';ModuleVersion='1.1.0.0'})
+RequiredModules = @(@{ModuleName='PackageManagement';ModuleVersion='1.0.0.1'})
 PrivateData = @{
                 "PackageManagementProviders" = 'PSModule.psm1'
                 "SupportedPowerShellGetFormatVersions" = @('1.x')

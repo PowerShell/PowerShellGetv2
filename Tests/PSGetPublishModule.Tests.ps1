@@ -11,14 +11,18 @@
 
    The local directory based NuGet repository is used for publishing the modules.
 #>
+if($PSEdition -eq 'Core') {
+    return
+}
 
 function SuiteSetup {
     Import-Module "$PSScriptRoot\PSGetTestUtils.psm1" -WarningAction SilentlyContinue
     Import-Module "$PSScriptRoot\Asserts.psm1" -WarningAction SilentlyContinue
-    
-    $script:PSGetLocalAppDataPath="$env:LOCALAPPDATA\Microsoft\Windows\PowerShell\PowerShellGet"
-    $script:ProgramFilesModulesPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramFiles -ChildPath "WindowsPowerShell\Modules"
-    $script:MyDocumentsModulesPath = Microsoft.PowerShell.Management\Join-Path -Path ([Environment]::GetFolderPath("MyDocuments")) -ChildPath "WindowsPowerShell\Modules"
+
+    $script:ProgramFilesModulesPath = Get-AllUsersModulesPath
+    $script:MyDocumentsModulesPath = Get-CurrentUserModulesPath
+    $script:PSGetLocalAppDataPath = Get-PSGetLocalAppDataPath
+    $script:TempPath = Get-TempPath
     $script:CurrentPSGetFormatVersion = "1.0"
 
     #Bootstrap NuGet binaries
@@ -73,7 +77,6 @@ function SuiteCleanup {
 }
 
 Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
-
     BeforeAll {
         SuiteSetup
     }
@@ -118,15 +121,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: should be able to publish a module
     #
     It PublishModuleWithNameForSxSVersion {
-        
-        if(-not (Test-ModuleSxSVersionSupport))
-        {
-            Write-Warning -Message "Skipped on PSVersion: $($PSVersionTable.PSVersion) as Side-by-Side versioning is not supported."
-            return
-        }
-
         $version = "2.0"
-
         RemoveItem "$script:PublishModuleBase\*"
 
         $moduleBaseWithVersion = "$script:PublishModuleBase\$version"
@@ -142,7 +137,8 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
 
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $version
         Assert (($psgetItemInfo.Name -eq $script:PublishModuleName) -and (($psgetItemInfo.Version.ToString() -eq $version))) "Publish-Module should publish a module with valid module name, $($psgetItemInfo.Name)"
-    }
+    } `
+    -Skip:$(-not (Test-ModuleSxSVersionSupport))
 
     # Purpose: Publish a module with -Name & -RequiredVersion and Module is created with SxS multi version support
     #
@@ -151,15 +147,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: should be able to publish a module
     #
     It PublishModuleWithNameRequiredVersionForSxSVersion {
-        
-        if(-not (Test-ModuleSxSVersionSupport))
-        {
-            Write-Warning -Message "Skipped on PSVersion: $($PSVersionTable.PSVersion) as Side-by-Side versioning is not supported."
-            return
-        }
-
         $version = "2.0"
-
         $moduleBaseWithVersion = "$script:PublishModuleBase\$version"
         $null = New-Item -Path $moduleBaseWithVersion -ItemType Directory -Force
         Set-Content "$moduleBaseWithVersion\$script:PublishModuleName.psm1" -Value "function Get-$script:PublishModuleName { Get-Date }"
@@ -180,7 +168,8 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
 
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $version
         Assert (($psgetItemInfo.Name -eq $script:PublishModuleName) -and (($psgetItemInfo.Version.ToString() -eq $version))) "Publish-Module should publish a module with valid module name, $($psgetItemInfo.Name)"
-    }
+    } `
+    -Skip:$(-not (Test-ModuleSxSVersionSupport))
 
     # Purpose: Publish a module with -Path
     #
@@ -206,7 +195,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         $version = "1.0"
         $moduleBase = $script:PublishModuleBase
 
-        if($PSVersionTable.PSVersion -gt [Version]"5.0")
+        if($PSVersionTable.PSVersion -gt '5.0.0')
         {
             $moduleBase = "$script:PublishModuleBase\$version"
             $null = New-Item -ItemType Directory -Path $moduleBase -Force
@@ -241,7 +230,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         $moduleBase = Join-Path -Path $script:TempModulesPath -ChildPath $Name
         $moduleBaseWithoutVersion = $moduleBase
 
-        if($PSVersionTable.PSVersion -gt [Version]"5.0")
+        if($PSVersionTable.PSVersion -gt '5.0.0')
         {
             $moduleBase = "$moduleBase\$version"
         }
@@ -262,13 +251,6 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: should fail with AmbiguousModulePathToPublish error id
     #
     It "PublishModuleWithAmbiguousPathWithoutVersion" {
-        
-        if(-not (Test-ModuleSxSVersionSupport))
-        {
-            Write-Warning -Message "Skipped on PSVersion: $($PSVersionTable.PSVersion) as Side-by-Side versioning is not supported."
-            return
-        }
-
         $version1 = "1.0"
         $version2 = "2.0"
         $moduleBase = $script:PublishModuleBase
@@ -284,7 +266,8 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
 
         AssertFullyQualifiedErrorIdEquals -scriptblock {Publish-Module -Path $moduleBaseWithoutVersion -WarningAction SilentlyContinue}`
                                           -expectedFullyQualifiedErrorId 'AmbiguousModulePathToPublish,Publish-Module'
-    }
+    } `
+    -Skip:$(-not (Test-ModuleSxSVersionSupport))
 
     # Purpose: Publish a module with -Path and Module is created with SxS multi version support
     #
@@ -293,13 +276,6 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: should be able to publish a module
     #
     It PublishModuleWithPathForSxSVersion {
-        
-        if(-not (Test-ModuleSxSVersionSupport))
-        {
-            Write-Warning -Message "Skipped on PSVersion: $($PSVersionTable.PSVersion) as Side-by-Side versioning is not supported."
-            return
-        }
-
         $version = "2.0"
 
         $moduleBaseWithVersion = "$script:PublishModuleBase\$version"
@@ -318,7 +294,8 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
 
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $version
         Assert (($psgetItemInfo.Name -eq $script:PublishModuleName) -and (($psgetItemInfo.Version.ToString() -eq $version))) "Publish-Module should publish a module with valid module name, $($psgetItemInfo.Name)"
-    }
+    } `
+    -Skip:$(-not (Test-ModuleSxSVersionSupport))
 
     # Purpose: PublishModuleWithConfirmAndNoToPrompt
     #
@@ -327,14 +304,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: module should not be published after confirming NO
     #
     It "PublishModuleWithConfirmAndNoToPrompt" {
-
-        if(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
-        {            
-            Write-Warning -Message "Skipped on OSVersion: $([System.Environment]::OSVersion.Version) with PSCulture: $PSCulture"
-            return
-        }
-
-        $outputPath = $env:temp
+        $outputPath = $script:TempPath
         $guid =  [system.guid]::newguid().tostring()
         $outputFilePath = Join-Path $outputPath "$guid"
         $runspace = CreateRunSpace $outputFilePath 1
@@ -371,7 +341,8 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
 
         AssertFullyQualifiedErrorIdEquals -scriptblock {Find-Module $script:PublishModuleName -RequiredVersion $version}`
                                           -expectedFullyQualifiedErrorId "NoMatchFoundForCriteria,Microsoft.PowerShell.PackageManagement.Cmdlets.FindPackage"
-    }
+    } `
+    -Skip:$(($PSEdition -eq 'Core') -or ([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
 
     # Purpose: PublishModuleWithConfirmAndYesToPrompt
     #
@@ -380,14 +351,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: module should be published after confirming YES
     #
     It "PublishModuleWithConfirmAndYesToPrompt" {
-
-        if(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
-        {            
-            Write-Warning -Message "Skipped on OSVersion: $([System.Environment]::OSVersion.Version) with PSCulture: $PSCulture"
-            return
-        }
-
-        $outputPath = $env:temp
+        $outputPath = $script:TempPath
         $guid =  [system.guid]::newguid().tostring()
         $outputFilePath = Join-Path $outputPath "$guid"
         $runspace = CreateRunSpace $outputFilePath 1
@@ -424,7 +388,8 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
 
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $version
         Assert (($psgetItemInfo.Name -eq $script:PublishModuleName) -or (($psgetItemInfo.Version.ToString() -eq $version))) "Publish-Module should publish a module with valid module name after confirming YES, $($psgetItemInfo.Name)"
-    }
+    } `
+    -Skip:$(($PSEdition -eq 'Core') -or ([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
 
     # Purpose: PublishModuleWithWhatIf
     #
@@ -433,20 +398,13 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: module should not be published with -WhatIf
     #
     It "PublishModuleWithWhatIf" {
-
-        if(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
-        {            
-            Write-Warning -Message "Skipped on OSVersion: $([System.Environment]::OSVersion.Version) with PSCulture: $PSCulture"
-            return
-        }
-
         $version = "3.0"
         New-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
 
         #Copy module to $script:ProgramFilesModulesPath
         Copy-Item $script:PublishModuleBase $script:ProgramFilesModulesPath -Recurse -Force
 
-        $outputPath = $env:temp
+        $outputPath = $script:TempPath
         $guid =  [system.guid]::newguid().tostring()
         $outputFilePath = Join-Path $outputPath "$guid"
         $runspace = CreateRunSpace $outputFilePath 1
@@ -474,7 +432,8 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
 
         AssertFullyQualifiedErrorIdEquals -scriptblock {Find-Module $script:PublishModuleName -RequiredVersion $version}`
                                           -expectedFullyQualifiedErrorId "NoMatchFoundForCriteria,Microsoft.PowerShell.PackageManagement.Cmdlets.FindPackage"
-    }
+    } `
+    -Skip:$(($PSEdition -eq 'Core') -or ([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
 
     # Purpose: Publish multiple versions of a module
     #
@@ -566,7 +525,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     AliasesToExport = '*'
 }
 '@  
-        if($PSVersionTable.PSVersion -ge [Version]"5.1")
+        if($PSVersionTable.PSVersion -ge '5.1.0')
         {        
             Publish-Module -Path $script:PublishModuleBase -WarningAction SilentlyContinue
             $res = Find-Module -Name $script:PublishModuleName
@@ -712,13 +671,6 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: Publish operation should succeed and Find-Module should get the details as provided in PSData.
     #
     It PublishModulePSDataInManifestFile {
-
-        if($PSVersionTable.PSVersion -lt '5.0.0')
-        {            
-            Write-Warning -Message "Skipped on PSVersion: $($PSVersionTable.PSVersion)"
-            return
-        }
-
         $version = "1.0"
         $Description = "$script:PublishModuleName module"
         $ReleaseNotes = "$script:PublishModuleName release notes"
@@ -760,7 +712,8 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         Assert       ($psgetItemInfo.Tags -contains $Tags[0]) "Tags ($($psgetItemInfo.Tags)) should contain the published one ($($Tags[0]))"
         Assert       ($psgetItemInfo.Tags -contains $Tags[1]) "Tags ($($psgetItemInfo.Tags)) should contain the published one ($($Tags[1]))"
         AssertEqualsCaseInsensitive $psgetItemInfo.LicenseUri $LicenseUri "LicenseUri should be same as the published one"
-    }
+    } `
+    -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
 
     # Purpose: Test Publish-Module cmdlet gets the PSData properties from the module manifest file and also with Uri objects specified to the cmdlet
     #
@@ -769,13 +722,6 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: Publish operation should succeed and Find-Module should get the details as provided in PSData and *Uri parameters.
     #
     It PublishModuleWithUriObjectsAndPSDataInManifestFile {
-
-        if($PSVersionTable.PSVersion -lt '5.0.0')
-        {            
-            Write-Warning -Message "Skipped on PSVersion: $($PSVersionTable.PSVersion)"
-            return
-        }
-
         $version = "1.0"
         $Description = "$script:PublishModuleName module"
         $ReleaseNotes = "$script:PublishModuleName release notes"
@@ -817,7 +763,8 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         Assert       ($psgetItemInfo.Tags -contains $Tags[1]) "Tags ($($psgetItemInfo.Tags)) should contain the published one ($($Tags[1]))"
         AssertEquals $psgetItemInfo.LicenseUri $LicenseUri "LicenseUri should be same as the published one"
         Assert ($psgetItemInfo.PublishedDate -and ($psgetItemInfo.PublishedDate.GetType().Name -eq 'DateTime')) "PublishedDate is missing, $($psgetItemInfo.PublishedDate)"
-    }
+    } `
+    -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
 
     # Purpose: Validate *-Module cmdlets without PowerShellGetFormatVersion and old package format
     #
@@ -955,13 +902,6 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: Publish operation should succeed but throw warnings
     #
     It PublishModuleWithSupportedParameter {
-
-       if($PSCulture -ne 'en-US')
-       {
-           Write-Warning -Message "Skipped on PSCulture: $PSCulture"
-           return
-       }
-
        $version = "1.0"
        $Tags = "Tags"
        $LicenseUri = 'http://contoso.com/license'
@@ -981,7 +921,8 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
        Assert ("$wa".Contains("ProjectUri")) "Warning messages should include 'ProjectUri are now supported'"
        Assert ("$wa".Contains("IconUri")) "Warning messages should include 'IconUri is now supported'"
        Assert ("$wa".Contains("Tags")) "Warning messages should include 'Tags are now supported'"
-    }
+    } `
+    -Skip:$($PSCulture -ne 'en-US')
      
     # Purpose: Test Publish-Module cmdlet gives warnings if Cmdlets/Functions/DscResourcesToExport has "*" in manifest
     #
@@ -990,15 +931,8 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: Publish operation should succeed but throw warnings
     #
     It PublishModuleWithAsteriskInExportedProperties  {
-
-        if($PSCulture -ne 'en-US')
-        {
-            Write-Warning -Message "Skipped on PSCulture: $PSCulture"
-            return
-        }
-
         $ModuleName = "DscTestModule"
-        $TempModulesPath = "$env:TEMP\$(Get-Random)"
+        $TempModulesPath = Join-Path $script:TempPath "$(Get-Random)"
         $null = New-Item -Path $TempModulesPath -ItemType Directory -Force
     
 
@@ -1038,7 +972,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         $version = "2.0"
         RemoveItem -path $manfiestFilePath
 
-        if($PSVersionTable.PSVersion -ge [Version]"5.0")
+        if($PSVersionTable.PSVersion -ge '5.0.0')
         {
             New-ModuleManifest -Path $manfiestFilePath `
                            -ModuleVersion $version  `
@@ -1072,7 +1006,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         Assert ("$wa".Contains("exported cmdlets")) "Warning messages should include 'exported cmdlets'"
         Assert ("$wa".Contains("exported functions")) "Warning messages should include 'exported functions'"
         
-        if($PSVersionTable.PSVersion -ge [Version]"5.0")
+        if($PSVersionTable.PSVersion -ge '5.0.0')
         {
             Assert ("$wa".Contains("exported DscResources")) "Warning messages should include 'exported DscResources'"
         }
@@ -1082,7 +1016,8 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         AssertEquals $itemInfo.Name 'DscTestModule' "Publish-Module was not able to populate the RoleCapability Names."
         Assert ($itemInfo.Includes.RoleCapability -contains 'Lev1Maintenance') "Publish-Module was not able to populate the RoleCapability Names: $($itemInfo.Includes.RoleCapability)"
         Assert ($itemInfo.Includes.RoleCapability -contains 'Lev2Maintenance') "Publish-Module was not able to populate the RoleCapability Names: $($itemInfo.Includes.RoleCapability)"
-    }
+    } `
+    -Skip:$($PSCulture -ne 'en-US')
 }
 
 Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
@@ -1179,20 +1114,12 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
         Assert ($psgetItemInfo.Name -eq $script:PublishModuleName) "Publish-Module should publish a module with valid module path, $($psgetItemInfo.Name)"
     }
 
-    It "PublishModuleWithoutNugetExeAndNoToPrompt" -skip:($env:APPVEYOR_TEST_PASS -eq 'True') {
-
-        if(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
-        {            
-            Write-Warning -Message "Skipped on OSVersion: $([System.Environment]::OSVersion.Version) with PSCulture: $PSCulture"
-            return
-        }
-        
+    It "PublishModuleWithoutNugetExeAndNoToPrompt" {
         try {
-
             # Delete nuget.exe to test the prompt for installing nuget binaries.
             Remove-NuGetExe
 
-            $outputPath = $env:temp
+            $outputPath = $script:TempPath
             $guid =  [system.guid]::newguid().tostring()
             $outputFilePath = Join-Path $outputPath "$guid"
             $runspace = CreateRunSpace $outputFilePath 1
@@ -1208,26 +1135,21 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
             Copy-Item $script:PublishModuleBase $script:ProgramFilesModulesPath -Recurse -Force
             $err = $null
 	
-            try
-                    {
-            $result = ExecuteCommand $runspace "Publish-Module -Name $script:PublishModuleName"
-        }
-            catch
-                    {
-            $err = $_
-        }
-            finally
-                                                    {                        
-            $fileName = "PromptForChoice-0.txt"
-            $path = join-path $outputFilePath $fileName
-            if(Test-Path $path)
-            {
-                $content = get-content $path
+            try {
+                $result = ExecuteCommand $runspace "Publish-Module -Name $script:PublishModuleName"
+            } catch {
+                $err = $_
+            } finally {                        
+                $fileName = "PromptForChoice-0.txt"
+                $path = join-path $outputFilePath $fileName
+                if(Test-Path $path)
+                {
+                    $content = get-content $path
+                }
+        
+                CloseRunSpace $runspace
+                RemoveItem $outputFilePath
             }
-	
-            CloseRunSpace $runspace
-            RemoveItem $outputFilePath
-        }
 	
             Assert ($err -and $err.Exception.Message.Contains('NuGet.exe')) "Prompt for installing nuget binaries is not working, $err"
             Assert ($content -and $content.Contains('NuGet.exe')) "Prompt for installing nuget binaries is not working, $content"
@@ -1238,21 +1160,15 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
         finally {
             Install-NuGetBinaries
         }
-    }
+    } `
+    -Skip:$(($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core') -or ($env:APPVEYOR_TEST_PASS -eq 'True') -or ([System.Environment]::OSVersion.Version -lt "6.2.9200.0"))
 	
-    It "PublishModuleWithoutNugetExeAndYesToPrompt" -skip:($env:APPVEYOR_TEST_PASS -eq 'True') {
-
-        if(([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
-        {            
-            Write-Warning -Message "Skipped on OSVersion: $([System.Environment]::OSVersion.Version) with PSCulture: $PSCulture"
-            return
-        }
-
+    It "PublishModuleWithoutNugetExeAndYesToPrompt" {
         try {
             # Delete nuget.exe to test the prompt for installing nuget binaries.
             Remove-NuGetExe
 
-            $outputPath = $env:temp
+            $outputPath = $script:TempPath
             $guid =  [system.guid]::newguid().tostring()
             $outputFilePath = Join-Path $outputPath "$guid"
             $runspace = CreateRunSpace $outputFilePath 1
@@ -1290,7 +1206,8 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
         finally {
             Install-NuGetBinaries
         }
-    }
+    } `
+    -Skip:$(($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core') -or ($env:APPVEYOR_TEST_PASS -eq 'True') -or ([System.Environment]::OSVersion.Version -lt "6.2.9200.0"))
 
     # Purpose: PublishNotAvailableModule
     #
@@ -1330,7 +1247,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
     # Expected Result: should fail
     #
     It "PublishInvalidModule" {
-        $tempmodulebase = "$env:Temp\$(Get-Random)\InvalidModule"
+        $tempmodulebase = Join-Path (Join-Path $script:TempPath "$(Get-Random)") "InvalidModule"
         $null = New-Item $tempmodulebase -Force -ItemType Directory        
 
         try
@@ -1340,7 +1257,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
 
             Set-Content "$tempmodulebase\InvalidModule.psm1" -Value "function foo {'foo'}"
 
-            if($PSVersionTable.PSVersion -ge [Version]"5.0")
+            if($PSVersionTable.PSVersion -ge '5.0.0')
             {
                 $errorId = 'InvalidModuleToPublish,Publish-Module'
             }
@@ -1366,7 +1283,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
     # Expected Result: should fail
     #
     It "PublishInvalidModuleFilePath" {
-        $tempmodulebase = "$env:Temp\$(Get-Random)\InvalidModule\"
+        $tempmodulebase = Join-Path (Join-Path $script:TempPath "$(Get-Random)") "InvalidModule"
         $null = New-Item $tempmodulebase -Force -ItemType Directory
         $moduleFilePath = Join-Path $tempmodulebase "InvalidModule.psm1"
         Set-Content $moduleFilePath -Value "function foo {'foo'}"
@@ -1652,7 +1569,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P2 -Tags 'P2','OuterLoop' {
         $NestedRequiredModules2 = @('NestedRequiredModule1', 
                                     @{ModuleName = 'NestedRequiredModule2'; ModuleVersion = '2.0'; })
 
-        if($PSVersionTable.PSVersion -ge [Version]"5.0")
+        if($PSVersionTable.PSVersion -ge '5.0.0')
         {
             $DepencyModuleNames += @("RequiredModule3",
                                      "RequiredModule4",
@@ -1840,7 +1757,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P2 -Tags 'P2','OuterLoop' {
         }
 
         # WarningVariable value doesnt get the warning messages on PS 3.0 and 4.0, known issue.
-        if($PSVersionTable.PSVersion -ge [Version]"5.0")
+        if($PSVersionTable.PSVersion -ge '5.0.0')
         {
             try
             {

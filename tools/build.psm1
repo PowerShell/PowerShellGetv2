@@ -180,7 +180,7 @@ function Invoke-PowerShellGetTest {
     #   -- Where PowerShellGet module was installed from MyGet feed https://powershell.myget.org/F/powershellmodule/api/v2/
     #   -- This option is used only for Daily builds
     $TestScenarios = @()
-    if(($script:PowerShellEdition -eq 'Core') -and $IsFullTestPass){
+    if(($script:PowerShellEdition -eq 'Core') -and $IsFullTestPass -and $script:IsWindows){
         $TestScenarios += 'NoUpdate'
     }
     # We should run PSCore_PSGet_TestRun first before updating the PowerShellGet module from current branch.

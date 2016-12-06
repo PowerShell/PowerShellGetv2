@@ -34,6 +34,7 @@ install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then rvm use 2.2.1; gem uninstall bundler -v1.13.1; fi
 
 script: 
+  - echo "TRAVIS_EVENT_TYPE value $TRAVIS_EVENT_TYPE"
   - ./tools/travis.sh
 
 

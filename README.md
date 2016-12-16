@@ -93,24 +93,41 @@ Get PowerShellGet Module
 
 ### Get the latest version from PowerShell Gallery
 
-Before updating PowerShellGet, you should always install the latest Nuget provider. To do that, run the following in an elevated PowerShell session.
+- Before updating PowerShellGet, you should always install the latest Nuget provider. To do that, run the following in an elevated PowerShell session.
 ```powershell
-Install-PackageProvider Nuget –force –verbose
-# exit the session
+Install-PackageProvider Nuget –Force
+Exit
 ```
 
-For systems with PowerShell 5.0 (or greater) you can install both PowerShellGet. 
-To do this on Windows 10, Windows Server 2016, or any system with WMF 5.0 or 5.1 installed, run the following commands from an elevated PowerShell session.
+#### For systems with PowerShell 5.0 (or newer) you can install both PowerShellGet 
+- To do this on Windows 10, Windows Server 2016, or any system with WMF 5.0 or 5.1 installed, run the following commands from an elevated PowerShell session.
 ```powershell
 Install-Module –Name PowerShellGet –Force
-# exit the session
+Exit
 ```
 
-Use Update-Module to get the next updated versions.
+- Use Update-Module to get the next updated versions.
 ```powershell
 Update-Module -Name PowerShellGet
-# exit the session
+Exit
 ```
+
+#### For systems running PowerShell 3 or PowerShell 4, that have installed the [PackageManagement MSI](http://go.microsoft.com/fwlink/?LinkID=746217&clcid=0x409)
+
+- Use below PowerShellGet cmdlet to save the modules to a local directory
+
+```powershell
+Save-Module PowerShellGet -Path C:\LocalFolder
+Exit
+```
+
+- Re-open the PS Console then run the following commands
+
+```powershell
+Copy-Item "C:\LocalFolder\PowerShellGet\*" "$env:ProgramFiles\WindowsPowerShell\Modules\PowerShellGet\" -Recurse -Force
+Copy-Item "C:\LocalFolder\PackageManagement\*" "$env:ProgramFiles\WindowsPowerShell\Modules\PackageManagement\" -Recurse -Force
+```
+
 
 ### Source
 

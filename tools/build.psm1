@@ -117,32 +117,36 @@ function Install-Dependencies {
 }
 
 function Get-PSHome {
-    $PowerShellFolder = $PSHOME
+    $PowerShellHome = $PSHOME
 
     # Install PowerShell Core MSI on Windows.
     if(($script:PowerShellEdition -eq 'Core') -and $script:IsWindows)
     {
         $PowerShellMsiPath = Get-PowerShellCoreBuild -AppVeyorProjectName 'PowerShell'
+        $PowerShellInstallPath = "$env:SystemDrive\PowerShellCore"
         <#
         $PowerShellMsiUrl = 'https://github.com/PowerShell/PowerShell/releases/download/v6.0.0-alpha.11/PowerShell_6.0.0.11-alpha.11-win81-x64.msi'
         $PowerShellMsiName = 'PowerShell_6.0.0.11-alpha.11-win81-x64.msi'
         $PowerShellMsiPath = Microsoft.PowerShell.Management\Join-Path -Path $PSScriptRoot -ChildPath $PowerShellMsiName
         Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri $PowerShellMsiUrl -OutFile $PowerShellMsiPath
         #>
-        $PowerShellVersion = ((Split-Path $PowerShellMsiPath -Leaf) -split '[_-]',3)[1]
-        Start-Process -FilePath "$env:SystemRoot\System32\msiexec.exe" -ArgumentList "/qb /i $PowerShellMsiPath" -Wait
-        Write-Host ("PowerShell Version '{0}'" -f $PowerShellVersion)
-
-        $PowerShellFolder = "$Env:ProgramFiles\PowerShell\$PowerShellVersion"
-        Write-Host ("PowerShell Folder '{0}'" -f $PowerShellFolder)
-
-        if(-not (Microsoft.PowerShell.Management\Test-Path -Path $PowerShellFolder -PathType Container))
-        {
-            Throw "$PowerShellFolder path is not available."        
+        Start-Process -FilePath "$env:SystemRoot\System32\msiexec.exe" -ArgumentList "/qb INSTALLFOLDER=$PowerShellInstallPath /i $PowerShellMsiPath" -Wait
+        
+        $PowerShellVersionPath = Get-ChildItem -Path $PowerShellInstallPath -Attributes Directory | Select-Object -First 1 -ErrorAction Ignore
+        $PowerShellHome = $null
+        if ($PowerShellVersionPath) {
+            $PowerShellHome = $PowerShellVersionPath.FullName
         }
+        
+        if(-not $PowerShellHome -or -not (Microsoft.PowerShell.Management\Test-Path -Path $PowerShellHome -PathType Container))
+        {
+            Throw "$PowerShellHome path is not available."  
+        }
+
+        Write-Host ("PowerShell Home Path '{0}'" -f $PowerShellHome)
     }
 
-    return $PowerShellFolder
+    return $PowerShellHome
 }
 
 function Invoke-PowerShellGetTest {    

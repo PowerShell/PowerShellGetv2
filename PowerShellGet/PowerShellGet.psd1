@@ -64,5 +64,5 @@ PrivateData = @{
     }
 }
 
-HelpInfoURI = 'https://go.microsoft.com/fwlink/?LinkId=393271'
+HelpInfoURI = 'http://go.microsoft.com/fwlink/?LinkId=393271'
 }

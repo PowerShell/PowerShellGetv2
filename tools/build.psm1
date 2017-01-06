@@ -59,19 +59,24 @@ Write-Host "PowerShellEdition value: $script:PowerShellEdition"
 
 function Install-Dependencies {
     if($script:PowerShellEdition -eq 'Desktop') {
-        # Download the NuGet.exe from http://nuget.org/NuGet.exe
         $NuGetExeName = 'NuGet.exe'
-        if(-not (Microsoft.PowerShell.Management\Test-Path -Path $script:PSGetProgramDataPath))
-        {
-            $null = Microsoft.PowerShell.Management\New-Item -Path $script:PSGetProgramDataPath -ItemType Directory -Force
-        }
         $NugetExeFilePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $NuGetExeName
-        Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri http://nuget.org/NuGet.exe -OutFile $NugetExeFilePath
+        
+        if(-not (Test-Path -Path $NugetExeFilePath -PathType Leaf)) {
+            if(-not (Microsoft.PowerShell.Management\Test-Path -Path $script:PSGetProgramDataPath))
+            {
+                $null = Microsoft.PowerShell.Management\New-Item -Path $script:PSGetProgramDataPath -ItemType Directory -Force
+            }
+            
+            # Download the NuGet.exe from https://nuget.org/NuGet.exe
+            Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri https://nuget.org/NuGet.exe -OutFile $NugetExeFilePath
+        }
+
         Get-ChildItem $NugetExeFilePath -File
         
         if(-not (Get-Module -ListAvailable Pester))
         {
-            nuget install pester -source https://www.powershellgallery.com/api/v2 -outputDirectory $script:ProgramFilesModulesPath -ExcludeVersion
+            & $NugetExeFilePath install pester -source https://www.powershellgallery.com/api/v2 -outputDirectory $script:ProgramFilesModulesPath -ExcludeVersion
         }
 
         $AllUsersModulesPath = $script:ProgramFilesModulesPath
@@ -81,7 +86,7 @@ function Install-Dependencies {
         $OneGetModuleName = 'PackageManagement'
         try
         {
-            nuget install $OneGetModuleName -source https://dtlgalleryint.cloudapp.net/api/v2 -outputDirectory $TempModulePath -verbosity detailed
+            & $NugetExeFilePath install $OneGetModuleName -source https://dtlgalleryint.cloudapp.net/api/v2 -outputDirectory $TempModulePath -verbosity detailed
             $OneGetWithVersion = Microsoft.PowerShell.Management\Get-ChildItem -Path $TempModulePath -Directory
             $OneGetVersion = ($OneGetWithVersion.Name.Split('.',2))[1]
 

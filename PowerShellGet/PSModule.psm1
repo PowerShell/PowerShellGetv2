@@ -2621,7 +2621,7 @@ function Publish-Script
 
         [Parameter(ValueFromPipelineByPropertyName=$true)]
         [PSCredential]
-        $Credential,
+        $Credential = $null,
 
         [Parameter()]
         [switch]

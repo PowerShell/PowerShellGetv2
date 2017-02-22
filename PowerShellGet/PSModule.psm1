@@ -1335,7 +1335,7 @@ function Find-Module
 
         [Parameter(ValueFromPipelineByPropertyName=$true)]
         [PSCredential]
-        $Credential
+        $Credential = $null
     )
 
     Begin
@@ -7619,7 +7619,11 @@ function ValidateAndGet-ScriptDependencies
         [parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [System.Management.Automation.PSCmdlet]
-        $CallerPSCmdlet
+        $CallerPSCmdlet,
+
+        [Parameter()]
+        [PSCredential]
+        $Credential = $null
     )
 
     $DependenciesDetails = @()
@@ -7634,6 +7638,7 @@ function ValidateAndGet-ScriptDependencies
 
             $FindModuleArguments = @{
                                         Repository = $Repository
+                                        Credential = $Credential
                                         Verbose = $VerbosePreference
                                         ErrorAction = 'SilentlyContinue'
                                         WarningAction = 'SilentlyContinue'
@@ -7698,6 +7703,7 @@ function ValidateAndGet-ScriptDependencies
         {
             $FindScriptArguments = @{
                                         Repository = $Repository
+                                        Credential = $Credential
                                         Verbose = $VerbosePreference
                                         ErrorAction = 'SilentlyContinue'
                                         WarningAction = 'SilentlyContinue'
@@ -14623,6 +14629,7 @@ function Resolve-Location
         $LocationParameterName,
         
         [Parameter()]
+        [PSCredential]
         $Credential,
 
         [Parameter()]

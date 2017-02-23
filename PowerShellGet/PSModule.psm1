@@ -792,7 +792,7 @@ function Publish-Module
 
         [Parameter(ValueFromPipelineByPropertyName=$true)]
         [PSCredential]
-        $Credential = $null,
+        $Credential,
 
         [Parameter()] 
         [ValidateSet("1.0")]
@@ -1335,7 +1335,7 @@ function Find-Module
 
         [Parameter(ValueFromPipelineByPropertyName=$true)]
         [PSCredential]
-        $Credential = $null
+        $Credential
     )
 
     Begin
@@ -2621,7 +2621,7 @@ function Publish-Script
 
         [Parameter(ValueFromPipelineByPropertyName=$true)]
         [PSCredential]
-        $Credential = $null,
+        $Credential,
 
         [Parameter()]
         [switch]
@@ -7623,7 +7623,7 @@ function ValidateAndGet-ScriptDependencies
 
         [Parameter()]
         [PSCredential]
-        $Credential = $null
+        $Credential
     )
 
     $DependenciesDetails = @()
@@ -7767,7 +7767,7 @@ function ValidateAndGet-RequiredModuleDetails
 
         [Parameter()]
         [PSCredential]
-        $Credential = $null
+        $Credential
     )
 
     $RequiredModuleDetails = @()
@@ -7960,7 +7960,7 @@ function Get-ModuleDependencies
 
         [Parameter()]
         [PSCredential]
-        $Credential = $null
+        $Credential
     )
 
     $DependentModuleDetails = @()
@@ -8062,7 +8062,7 @@ function Publish-PSArtifactUtility
 
         [Parameter()]
         [PSCredential]
-        $Credential = $null,
+        $Credential,
 
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]

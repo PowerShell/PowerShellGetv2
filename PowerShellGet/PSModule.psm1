@@ -1236,6 +1236,7 @@ function Publish-Module
                                           -LicenseUri $LicenseUri `
                                           -IconUri $IconUri `
                                           -ProjectUri $ProjectUri `
+                                          -Credential $Credential `
                                           -Verbose:$VerbosePreference `
                                           -WarningAction $WarningPreference `
                                           -ErrorAction $ErrorActionPreference `
@@ -2877,6 +2878,7 @@ function Publish-Script
                                           -Destination $DestinationLocation `
                                           -Repository $Repository `
                                           -NugetPackageRoot $tempScriptPath `
+                                          -Credential $Credential `
                                           -Verbose:$VerbosePreference `
                                           -WarningAction $WarningPreference `
                                           -ErrorAction $ErrorActionPreference `
@@ -7617,7 +7619,11 @@ function ValidateAndGet-ScriptDependencies
         [parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [System.Management.Automation.PSCmdlet]
-        $CallerPSCmdlet
+        $CallerPSCmdlet,
+
+        [Parameter()]
+        [PSCredential]
+        $Credential
     )
 
     $DependenciesDetails = @()
@@ -7632,6 +7638,7 @@ function ValidateAndGet-ScriptDependencies
 
             $FindModuleArguments = @{
                                         Repository = $Repository
+                                        Credential = $Credential
                                         Verbose = $VerbosePreference
                                         ErrorAction = 'SilentlyContinue'
                                         WarningAction = 'SilentlyContinue'
@@ -7696,6 +7703,7 @@ function ValidateAndGet-ScriptDependencies
         {
             $FindScriptArguments = @{
                                         Repository = $Repository
+                                        Credential = $Credential
                                         Verbose = $VerbosePreference
                                         ErrorAction = 'SilentlyContinue'
                                         WarningAction = 'SilentlyContinue'
@@ -7755,7 +7763,11 @@ function ValidateAndGet-RequiredModuleDetails
         [parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [System.Management.Automation.PSCmdlet]
-        $CallerPSCmdlet
+        $CallerPSCmdlet,
+
+        [Parameter()]
+        [PSCredential]
+        $Credential
     )
 
     $RequiredModuleDetails = @()
@@ -7776,6 +7788,7 @@ function ValidateAndGet-RequiredModuleDetails
 
             $FindModuleArguments = @{
                                         Repository = $Repository
+                                        Credential = $Credential
                                         Verbose = $VerbosePreference
                                         ErrorAction = 'SilentlyContinue'
                                         WarningAction = 'SilentlyContinue'
@@ -7864,6 +7877,7 @@ function ValidateAndGet-RequiredModuleDetails
 
         $FindModuleArguments = @{
                                     Repository = $Repository
+                                    Credential = $Credential
                                     Verbose = $VerbosePreference
                                     ErrorAction = 'SilentlyContinue'
                                     WarningAction = 'SilentlyContinue'
@@ -7942,7 +7956,11 @@ function Get-ModuleDependencies
         [parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [System.Management.Automation.PSCmdlet]
-        $CallerPSCmdlet
+        $CallerPSCmdlet,
+
+        [Parameter()]
+        [PSCredential]
+        $Credential
     )
 
     $DependentModuleDetails = @()
@@ -7969,6 +7987,7 @@ function Get-ModuleDependencies
                                                                             -Repository $Repository `
                                                                             -DependentModuleInfo $PSModuleInfo `
                                                                             -CallerPSCmdlet $CallerPSCmdlet `
+                                                                            -Credential $Credential `
                                                                             -Verbose:$VerbosePreference `
                                                                             -Debug:$DebugPreference 
         }
@@ -7997,6 +8016,7 @@ function Get-ModuleDependencies
                                                                             -Repository $Repository `
                                                                             -DependentModuleInfo $PSModuleInfo `
                                                                             -CallerPSCmdlet $CallerPSCmdlet `
+                                                                            -Credential $Credential `
                                                                             -Verbose:$VerbosePreference `
                                                                             -Debug:$DebugPreference 
         }
@@ -8039,6 +8059,10 @@ function Publish-PSArtifactUtility
         [ValidateNotNullOrEmpty()]
         [string]
         $NugetApiKey,
+
+        [Parameter()]
+        [PSCredential]
+        $Credential,
 
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
@@ -8198,6 +8222,7 @@ function Publish-PSArtifactUtility
         $DependentModuleDetails += ValidateAndGet-ScriptDependencies -Repository $Repository `
                                                                      -DependentScriptInfo $PSScriptInfo `
                                                                      -CallerPSCmdlet $PSCmdlet `
+                                                                     -Credential $Credential `
                                                                      -Verbose:$VerbosePreference `
                                                                      -Debug:$DebugPreference
     }
@@ -8268,6 +8293,7 @@ function Publish-PSArtifactUtility
         $DependentModuleDetails = Get-ModuleDependencies -PSModuleInfo $PSModuleInfo `
                                                          -Repository $Repository `
                                                          -CallerPSCmdlet $PSCmdlet `
+                                                         -Credential $Credential `
                                                          -Verbose:$VerbosePreference `
                                                          -Debug:$DebugPreference 
     }
@@ -14603,6 +14629,7 @@ function Resolve-Location
         $LocationParameterName,
         
         [Parameter()]
+        [PSCredential]
         $Credential,
 
         [Parameter()]

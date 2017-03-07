@@ -234,7 +234,7 @@ ConvertFrom-StringData @'
         NewModuleVersionDetailsForPublisherValidation=For publisher validation, current module '{0}' with version '{1}' with publisher name '{2}'. Is this module signed by Microsoft: '{3}'.
         PublishersMatch=Publisher '{0}' of the new module '{1}' with version '{2}' matches with the publisher '{3}' of the previously-installed module '{4}' with version '{5}'. Both versions are signed with a Microsoft root certificate.        
         PublishersMismatch=A Microsoft-signed module named '{0}' with version '{1}' that was previously installed conflicts with the new module '{2}' from publisher '{3}' with version '{4}'. Installing the new module may result in system instability. If you still want to install or update, use -SkipPublisherCheck parameter.
-        ModuleIsNotCatalogSigned=The version '{0}' of the module '{1}' being installed is not catalog signed. Ensure that the version '{0}' of the module '{1}' has the catalog file '{2}' and signed with the same publisher '{3}' as the previously-installed module '{0}' with version '{4}' under the directory '{5}'. If you still want to install or update, use -SkipPublisherCheck parameter.
+        ModuleIsNotCatalogSigned=The version '{0}' of the module '{1}' being installed is not catalog signed. Ensure that the version '{0}' of the module '{1}' has the catalog file '{2}' and signed with the same publisher '{3}' as the previously-installed module '{1}' with version '{4}' under the directory '{5}'. If you still want to install or update, use -SkipPublisherCheck parameter.
 ###PSLOC
 '@
 

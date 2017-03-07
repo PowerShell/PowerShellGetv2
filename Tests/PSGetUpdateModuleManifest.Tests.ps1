@@ -258,6 +258,7 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
     #
     It "UpdateModuleManifestWithAllFields" {
 
+        Set-Content "$script:UpdateModuleManifestBase\$script:UpdateModuleManifestName.psm1" -Value "function Get-$script:UpdateModuleManifestName { Get-Date }"
         $Guid =  [System.Guid]::Newguid().ToString()
         $Version = "2.0"
         $Description = "$script:UpdateModuleManifestName module"
@@ -270,7 +271,7 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         $Author = "AuthorName"
         $CompanyName = "CompanyName"
         $CopyRight = "CopyRight"
-        $RootModule = "$script:UpdateModuleManifestName root module"
+        $RootModule = "$script:UpdateModuleManifestName.psm1"
         $PowerShellVersion = "3.0"
         $ClrVersion = "2.0"
         $DotNetFrameworkVersion = "2.0"
@@ -427,9 +428,10 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
     It UpdateModuleManifestWithExternalModuleDependenciesAndPackageManagementProviders {
 
         Set-Content "$script:UpdateModuleManifestBase\$script:UpdateModuleManifestName.psm1" -Value "function Get-$script:UpdateModuleManifestName { Get-Date }"
+        Set-Content "$script:UpdateModuleManifestBase\Dependency.psm1" -Value "function Get-$script:UpdateModuleManifestName { Get-Date }"
 
-        $NestedModules = "Dep"
-        $ExternalModuleDependencies = "Dep"
+        $NestedModules = "Dependency.psm1"
+        $ExternalModuleDependencies = "Dependency.psm1"
         $PackageManagementProviders = "ContosoPublishModule.psm1"
 
         New-ModuleManifest -path $script:testManifestPath -NestedModules $NestedModules

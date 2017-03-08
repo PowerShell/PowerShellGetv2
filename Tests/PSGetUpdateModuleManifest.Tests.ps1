@@ -135,6 +135,8 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
 
         $ScriptsToProcessFilePath = "$script:UpdateModuleManifestBase\$script:UpdateModuleManifestName.ps1"
         Set-Content $ScriptsToProcessFilePath -Value "function Get-$script:UpdateModuleManifestName { Get-Date }"
+
+        Set-Content "$script:UpdateModuleManifestBase\$script:UpdateModuleManifestName.psm1" -Value "function Get-$script:UpdateModuleManifestName { Get-Date }"
         
         $Guid =  [System.Guid]::Newguid().ToString()
         $Version = "2.0"
@@ -148,7 +150,7 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         $Author = "AuthorName"
         $CompanyName = "CompanyName"
         $CopyRight = "CopyRight"
-        $RootModule = "$script:UpdateModuleManifestName root module"
+        $RootModule = "$script:UpdateModuleManifestName.psm1"
         $PowerShellVersion = "3.0"
         $ClrVersion = "2.0"
         $DotNetFrameworkVersion = "2.0"

@@ -432,8 +432,8 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         Set-Content "$script:UpdateModuleManifestBase\$script:UpdateModuleManifestName.psm1" -Value "function Get-$script:UpdateModuleManifestName { Get-Date }"
         Set-Content "$script:UpdateModuleManifestBase\Dependency.psm1" -Value "function Get-$script:UpdateModuleManifestName { Get-Date }"
 
-        $NestedModules = "Dependency.psm1"
-        $ExternalModuleDependencies = "Dependency.psm1"
+        $NestedModules = "$script:UpdateModuleManifestBase\Dependency.psm1"
+        $ExternalModuleDependencies = "$script:UpdateModuleManifestBase\Dependency.psm1"
         $PackageManagementProviders = "ContosoPublishModule.psm1"
 
         New-ModuleManifest -path $script:testManifestPath -NestedModules $NestedModules

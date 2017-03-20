@@ -1224,23 +1224,29 @@ function Publish-Module
             $shouldProcessMessage = $LocalizedData.PublishModulewhatIfMessage -f ($moduleInfo.Version, $moduleInfo.Name)
             if($Force -or $PSCmdlet.ShouldProcess($shouldProcessMessage, "Publish-Module"))
             {
-                Publish-PSArtifactUtility -PSModuleInfo $moduleInfo `
-                                          -ManifestPath $manifestPath `
-                                          -NugetApiKey $NuGetApiKey `
-                                          -Destination $DestinationLocation `
-                                          -Repository $Repository `
-                                          -NugetPackageRoot $tempModulePath `
-                                          -FormatVersion $FormatVersion `
-                                          -ReleaseNotes $($ReleaseNotes -join "`r`n") `
-                                          -Tags $Tags `
-                                          -LicenseUri $LicenseUri `
-                                          -IconUri $IconUri `
-                                          -ProjectUri $ProjectUri `
-                                          -Credential $Credential `
-                                          -Verbose:$VerbosePreference `
-                                          -WarningAction $WarningPreference `
-                                          -ErrorAction $ErrorActionPreference `
-                                          -Debug:$DebugPreference
+                $PublishPSArtifactUtility_Params = @{
+                    PSModuleInfo=$moduleInfo 
+                    ManifestPath=$manifestPath
+                    NugetApiKey=$NuGetApiKey
+                    Destination=$DestinationLocation
+                    Repository=$Repository
+                    NugetPackageRoot=$tempModulePath
+                    FormatVersion=$FormatVersion
+                    ReleaseNotes=$($ReleaseNotes -join "`r`n")
+                    Tags=$Tags
+                    LicenseUri=$LicenseUri
+                    IconUri=$IconUri
+                    ProjectUri=$ProjectUri
+                    Verbose=$VerbosePreference
+                    WarningAction=$WarningPreference
+                    ErrorAction=$ErrorActionPreference
+                    Debug=$DebugPreference
+                }
+                if ($PSBoundParameters.Containskey('Credential'))
+                {
+                    $PublishPSArtifactUtility_Params.Add('Credential',$Credential)
+                }
+                Publish-PSArtifactUtility @PublishPSArtifactUtility_Params
             }
         }
         finally
@@ -2873,16 +2879,22 @@ function Publish-Script
             $shouldProcessMessage = $LocalizedData.PublishScriptwhatIfMessage -f ($PSScriptInfo.Version, $scriptName)
             if($Force -or $PSCmdlet.ShouldProcess($shouldProcessMessage, "Publish-Script"))
             {
-                Publish-PSArtifactUtility -PSScriptInfo $PSScriptInfo `
-                                          -NugetApiKey $NuGetApiKey `
-                                          -Destination $DestinationLocation `
-                                          -Repository $Repository `
-                                          -NugetPackageRoot $tempScriptPath `
-                                          -Credential $Credential `
-                                          -Verbose:$VerbosePreference `
-                                          -WarningAction $WarningPreference `
-                                          -ErrorAction $ErrorActionPreference `
-                                          -Debug:$DebugPreference
+                $PublishPSArtifactUtility_Params = @{
+                    PSScriptInfo=$PSScriptInfo
+                    NugetApiKey=$NuGetApiKey
+                    Destination=$DestinationLocation
+                    Repository=$Repository
+                    NugetPackageRoot=$tempScriptPath
+                    Verbose=$VerbosePreference
+                    WarningAction=$WarningPreference
+                    ErrorAction=$ErrorActionPreference
+                    Debug=$DebugPreference
+                }
+                if ($PSBoundParameters.ContainsKey('Credential'))
+                {
+                    $PublishPSArtifactUtility_Params.Add('Credential',$Credential)
+                }
+                Publish-PSArtifactUtility @PublishPSArtifactUtility_Params
             }
         }
         finally
@@ -7619,11 +7631,7 @@ function ValidateAndGet-ScriptDependencies
         [parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [System.Management.Automation.PSCmdlet]
-        $CallerPSCmdlet,
-
-        [Parameter()]
-        [PSCredential]
-        $Credential
+        $CallerPSCmdlet
     )
 
     $DependenciesDetails = @()
@@ -7638,7 +7646,6 @@ function ValidateAndGet-ScriptDependencies
 
             $FindModuleArguments = @{
                                         Repository = $Repository
-                                        Credential = $Credential
                                         Verbose = $VerbosePreference
                                         ErrorAction = 'SilentlyContinue'
                                         WarningAction = 'SilentlyContinue'
@@ -7703,7 +7710,6 @@ function ValidateAndGet-ScriptDependencies
         {
             $FindScriptArguments = @{
                                         Repository = $Repository
-                                        Credential = $Credential
                                         Verbose = $VerbosePreference
                                         ErrorAction = 'SilentlyContinue'
                                         WarningAction = 'SilentlyContinue'
@@ -7765,8 +7771,8 @@ function ValidateAndGet-RequiredModuleDetails
         [System.Management.Automation.PSCmdlet]
         $CallerPSCmdlet,
 
-        [Parameter()]
-        [PSCredential]
+        [Parameter(Mandatory = $false)]
+        [pscredential]
         $Credential
     )
 
@@ -7788,12 +7794,15 @@ function ValidateAndGet-RequiredModuleDetails
 
             $FindModuleArguments = @{
                                         Repository = $Repository
-                                        Credential = $Credential
                                         Verbose = $VerbosePreference
                                         ErrorAction = 'SilentlyContinue'
                                         WarningAction = 'SilentlyContinue'
                                         Debug = $DebugPreference
                                     }
+            if ($PSBoundParameters.ContainsKey('Credential'))
+            {
+                $FindModuleArguments.Add('Credential',$Credential)
+            }
 
             # ModuleSpecification case
             if($RequiredModule.GetType().ToString() -eq 'System.Collections.Hashtable')
@@ -7877,12 +7886,15 @@ function ValidateAndGet-RequiredModuleDetails
 
         $FindModuleArguments = @{
                                     Repository = $Repository
-                                    Credential = $Credential
                                     Verbose = $VerbosePreference
                                     ErrorAction = 'SilentlyContinue'
                                     WarningAction = 'SilentlyContinue'
                                     Debug = $DebugPreference
                                 }
+        if ($PSBoundParameters.ContainsKey('Credential'))
+        {
+            $FindModuleArguments.Add('Credential',$Credential)
+        }
 
         ForEach($RequiredModuleInfo in $RequiredPSModuleInfos)
         {
@@ -7898,7 +7910,7 @@ function ValidateAndGet-RequiredModuleDetails
             $FindModuleArguments['Name'] = $ModuleName
             $FindModuleArguments['MinimumVersion'] = $requiredModuleInfo.Version
 
-            $psgetItemInfo = Find-Module @FindModuleArguments  | 
+            $psgetItemInfo = Find-Module @FindModuleArguments | 
                                         Microsoft.PowerShell.Core\Where-Object {$_.Name -eq $ModuleName} | 
                                             Microsoft.PowerShell.Utility\Select-Object -Last 1 -ErrorAction Ignore
 
@@ -7957,9 +7969,9 @@ function Get-ModuleDependencies
         [ValidateNotNullOrEmpty()]
         [System.Management.Automation.PSCmdlet]
         $CallerPSCmdlet,
-
-        [Parameter()]
-        [PSCredential]
+        
+        [Parameter(Mandatory=$false)]
+        [pscredential]
         $Credential
     )
 
@@ -7981,15 +7993,21 @@ function Get-ModuleDependencies
                 $ModuleManifestRequiredModules = $ModuleManifestHashTable.RequiredModules
             }
            
+            $ValidateAndGetRequiredModuleDetails_Params = @{
+                ModuleManifestRequiredModules=$ModuleManifestRequiredModules
+                RequiredPSModuleInfos=$PSModuleInfo.RequiredModules
+                Repository=$Repository
+                DependentModuleInfo=$PSModuleInfo
+                CallerPSCmdlet=$CallerPSCmdlet
+                Verbose=$VerbosePreference
+                Debug=$DebugPreference 
+            }
+            if ($PSBoundParameters.ContainsKey('Credential'))
+            {
+                $ValidateAndGetRequiredModuleDetails_Params.Add('Credential',$Credential)
+            }
 
-            $DependentModuleDetails += ValidateAndGet-RequiredModuleDetails -ModuleManifestRequiredModules $ModuleManifestRequiredModules `
-                                                                            -RequiredPSModuleInfos $PSModuleInfo.RequiredModules `
-                                                                            -Repository $Repository `
-                                                                            -DependentModuleInfo $PSModuleInfo `
-                                                                            -CallerPSCmdlet $CallerPSCmdlet `
-                                                                            -Credential $Credential `
-                                                                            -Verbose:$VerbosePreference `
-                                                                            -Debug:$DebugPreference 
+            $DependentModuleDetails += ValidateAndGet-RequiredModuleDetails @ValidateAndGetRequiredModuleDetails_Params                                  
         }
 
         if($PSModuleInfo.NestedModules)
@@ -8011,14 +8029,20 @@ function Get-ModuleDependencies
                         -not (Microsoft.PowerShell.Management\Test-Path -LiteralPath $_.Path)
                     }
 
-            $DependentModuleDetails += ValidateAndGet-RequiredModuleDetails -ModuleManifestRequiredModules $ModuleManifestRequiredModules `
-                                                                            -RequiredPSModuleInfos $RequiredPSModuleInfos `
-                                                                            -Repository $Repository `
-                                                                            -DependentModuleInfo $PSModuleInfo `
-                                                                            -CallerPSCmdlet $CallerPSCmdlet `
-                                                                            -Credential $Credential `
-                                                                            -Verbose:$VerbosePreference `
-                                                                            -Debug:$DebugPreference 
+            $ValidateAndGetRequiredModuleDetails_Params = @{
+                ModuleManifestRequiredModules=$ModuleManifestRequiredModules
+                RequiredPSModuleInfos=$RequiredPSModuleInfos
+                Repository=$Repository
+                DependentModuleInfo=$PSModuleInfo
+                CallerPSCmdlet=$CallerPSCmdlet
+                Verbose=$VerbosePreference
+                Debug=$DebugPreference
+            }
+            if ($PSBoundParameters.ContainsKey('Credential'))
+            {
+                $ValidateAndGetRequiredModuleDetails_Params.Add('Credential',$Credential)
+            }
+            $DependentModuleDetails += ValidateAndGet-RequiredModuleDetails @ValidateAndGetRequiredModuleDetails_Params
         }
     }
 
@@ -8060,8 +8084,8 @@ function Publish-PSArtifactUtility
         [string]
         $NugetApiKey,
 
-        [Parameter()]
-        [PSCredential]
+        [Parameter(Mandatory=$false)]
+        [pscredential]
         $Credential,
 
         [Parameter(Mandatory=$true)]
@@ -8222,7 +8246,6 @@ function Publish-PSArtifactUtility
         $DependentModuleDetails += ValidateAndGet-ScriptDependencies -Repository $Repository `
                                                                      -DependentScriptInfo $PSScriptInfo `
                                                                      -CallerPSCmdlet $PSCmdlet `
-                                                                     -Credential $Credential `
                                                                      -Verbose:$VerbosePreference `
                                                                      -Debug:$DebugPreference
     }
@@ -8290,12 +8313,18 @@ function Publish-PSArtifactUtility
 
         # Populate the module dependencies elements from RequiredModules and 
         # NestedModules properties of the current PSModuleInfo
-        $DependentModuleDetails = Get-ModuleDependencies -PSModuleInfo $PSModuleInfo `
-                                                         -Repository $Repository `
-                                                         -CallerPSCmdlet $PSCmdlet `
-                                                         -Credential $Credential `
-                                                         -Verbose:$VerbosePreference `
-                                                         -Debug:$DebugPreference 
+        $GetModuleDependencies_Params = @{
+            PSModuleInfo=$PSModuleInfo
+            Repository=$Repository
+            CallerPSCmdlet=$PSCmdlet
+            Verbose=$VerbosePreference
+            Debug=$DebugPreference
+        }
+        if ($PSBoundParameters.ContainsKey('Credential'))
+        {
+            $GetModuleDependencies_Params.Add('Credential',$Credential)
+        }
+        $DependentModuleDetails = Get-ModuleDependencies @GetModuleDependencies_Params
     }
     
     $dependencies = @()
@@ -14629,7 +14658,6 @@ function Resolve-Location
         $LocationParameterName,
         
         [Parameter()]
-        [PSCredential]
         $Credential,
 
         [Parameter()]

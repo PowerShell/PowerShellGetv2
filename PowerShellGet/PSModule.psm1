@@ -8254,12 +8254,19 @@ function Publish-PSArtifactUtility
         }
 
         # Populate the dependencies elements from RequiredModules and RequiredScripts
-        # 
-        $DependentModuleDetails += ValidateAndGet-ScriptDependencies -Repository $Repository `
-                                                                     -DependentScriptInfo $PSScriptInfo `
-                                                                     -CallerPSCmdlet $PSCmdlet `
-                                                                     -Verbose:$VerbosePreference `
-                                                                     -Debug:$DebugPreference
+        #
+        $ValidateAndGetScriptDependencies_Params = @{
+            Repository=$Repository
+            DependentScriptInfo=$PSScriptInfo
+            CallerPSCmdlet=$PSCmdlet
+            Verbose=$VerbosePreference
+            Debug=$DebugPreference
+        }
+        if ($PSBoundParameters.ContainsKey('Credential'))
+        {
+            $ValidateAndGetScriptDependencies_Params.Add('Credential',$Credential)
+        }
+        $DependentModuleDetails += ValidateAndGet-ScriptDependencies @ValidateAndGetScriptDependencies_Params
     }
     else
     {

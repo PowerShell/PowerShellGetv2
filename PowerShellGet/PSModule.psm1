@@ -7631,7 +7631,11 @@ function ValidateAndGet-ScriptDependencies
         [parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [System.Management.Automation.PSCmdlet]
-        $CallerPSCmdlet
+        $CallerPSCmdlet,
+
+        [Parameter()]
+        [PSCredential]
+        $Credential
     )
 
     $DependenciesDetails = @()

@@ -7655,6 +7655,10 @@ function ValidateAndGet-ScriptDependencies
                                         WarningAction = 'SilentlyContinue'
                                         Debug = $DebugPreference
                                     }
+            if ($PSBoundParameters.ContainsKey('Credential'))
+            {
+                $FindModuleArguments.Add('Credential',$Credential)
+            }
 
             if($DependentScriptInfo.ExternalModuleDependencies -contains $ModuleName)
             {
@@ -7719,6 +7723,10 @@ function ValidateAndGet-ScriptDependencies
                                         WarningAction = 'SilentlyContinue'
                                         Debug = $DebugPreference
                                     }
+            if ($PSBoundParameters.ContainsKey('Credential'))
+            {
+                $FindScriptArguments.Add('Credential',$Credential)
+            }
 
             if($DependentScriptInfo.ExternalScriptDependencies -contains $requiredScript)
             {

@@ -12117,11 +12117,12 @@ function Get-EnvironmentVariable
         }
         else
         {
-        $itemPropertyValue = Microsoft.PowerShell.Management\Get-ItemProperty -Path $script:SystemEnvironmentKey -Name $Name -ErrorAction SilentlyContinue
+            $itemPropertyValue = Microsoft.PowerShell.Management\Get-ItemProperty -Path $script:SystemEnvironmentKey -Name $Name -ErrorAction SilentlyContinue
 
-        if($itemPropertyValue)
-        {
-            return $itemPropertyValue.$Name
+            if($itemPropertyValue)
+            {
+                return $itemPropertyValue.$Name
+            }
         }
     }
     elseif ($Target -eq $script:EnvironmentVariableTarget.User)

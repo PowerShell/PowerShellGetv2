@@ -183,6 +183,7 @@ $script:DefinedCommands  = 'DefinedCommands'
 $script:DefinedFunctions = 'DefinedFunctions'
 $script:DefinedWorkflows = 'DefinedWorkflows'
 $script:TextInfo = (Get-Culture).TextInfo
+$script:PrivateData = 'PrivateData'
 
 $script:PSScriptInfoProperties = @($script:Name
                                    $script:Version,
@@ -204,7 +205,8 @@ $script:PSScriptInfoProperties = @($script:Name
                                    $script:IconUri,
                                    $script:DefinedCommands,
                                    $script:DefinedFunctions,
-                                   $script:DefinedWorkflows
+                                   $script:DefinedWorkflows,
+								   $script:PrivateData
                                    )
 
 $script:SystemEnvironmentKey = 'HKLM:\System\CurrentControlSet\Control\Session Manager\Environment'
@@ -4553,6 +4555,8 @@ Feature 3
 Feature 4
 Feature 5
 
+.PRIVATEDATA Contoso private data
+
 #>
 
 <# #Requires -Module statements #>
@@ -4989,6 +4993,11 @@ function New-ScriptFileInfo
         [Parameter()]
         [string[]]
         $ReleaseNotes,
+
+		[Parameter()]
+		[ValidateNotNullOrEmpty()]
+        [string]
+        $PrivateData,
                 
         [Parameter()]
         [switch]
@@ -5073,6 +5082,7 @@ function New-ScriptFileInfo
             LicenseUri = $LicenseUri
             IconUri = $IconUri
             ReleaseNotes = $ReleaseNotes
+			PrivateData = $PrivateData
         }
 
         if(-not (Validate-ScriptFileInfoParameters -parameters $params))
@@ -5239,6 +5249,10 @@ function Update-ScriptFileInfo
         [Parameter()]
         [string[]]
         $ReleaseNotes,
+
+		[Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string]$PrivateData,
                 
         [Parameter()]
         [switch]
@@ -5435,6 +5449,7 @@ function Update-ScriptFileInfo
             LicenseUri = $LicenseUri
             IconUri = $IconUri
             ReleaseNotes = $ReleaseNotes
+			PrivateData = $PrivateData
         }
 
         if(-not (Validate-ScriptFileInfoParameters -parameters $params))
@@ -5802,7 +5817,11 @@ function Get-PSScriptInfoString
 
         [Parameter()]
         [string[]]
-        $ReleaseNotes
+        $ReleaseNotes,
+
+		[Parameter()]
+        [string]
+        $PrivateData
     )
 
     Process
@@ -5837,6 +5856,8 @@ function Get-PSScriptInfoString
 
 .RELEASENOTES
 $($ReleaseNotes -join "`r`n")
+
+.PRIVATEDATA $PrivateData
 
 #>
 "@
@@ -8685,6 +8706,8 @@ function ValidateAndAdd-PSScriptInfoEntry
         $script:DefinedFunctions { $KeyName = $script:DefinedFunctions }
 
         $script:DefinedWorkflows { $KeyName = $script:DefinedWorkflows }
+
+		$script:PrivateData { $KeyName = $script:PrivateData }
     }
 
     Microsoft.PowerShell.Utility\Add-Member -InputObject $PSScriptInfo `
@@ -12094,11 +12117,11 @@ function Get-EnvironmentVariable
         }
         else
         {
-            $itemPropertyValue = Microsoft.PowerShell.Management\Get-ItemProperty -Path $script:SystemEnvironmentKey -Name $Name -ErrorAction SilentlyContinue
-            if($itemPropertyValue)
-            {
-                return $itemPropertyValue.$Name
-            }
+        $itemPropertyValue = Microsoft.PowerShell.Management\Get-ItemProperty -Path $script:SystemEnvironmentKey -Name $Name -ErrorAction SilentlyContinue
+
+        if($itemPropertyValue)
+        {
+            return $itemPropertyValue.$Name
         }
     }
     elseif ($Target -eq $script:EnvironmentVariableTarget.User)
@@ -12578,6 +12601,7 @@ function Get-OrderedPSScriptInfoObject
                             $script:DefinedCommands = $PSScriptInfo.$script:DefinedCommands
                             $script:DefinedFunctions = $PSScriptInfo.$script:DefinedFunctions
                             $script:DefinedWorkflows = $PSScriptInfo.$script:DefinedWorkflows
+							$script:PrivateData = $PSScriptInfo.$script:PrivateData
                         })
 
     $NewPSScriptInfo.PSTypeNames.Insert(0, "Microsoft.PowerShell.Commands.PSScriptInfo")

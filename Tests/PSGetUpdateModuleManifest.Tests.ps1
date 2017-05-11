@@ -164,7 +164,7 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         $AliasesToExport = "alias1","alias2"
         $VariablesToExport = "var1","var2"
         $CmdletsToExport="get-test1","get-test2"
-        $HelpInfoURI = "$script:PublishModuleName URL"
+        $HelpInfoURI = "http://$script:UpdateModuleManifestName.com/HelpInfoURI"
         $RequiredModules = @('Microsoft.PowerShell.Management',@{ModuleName='Microsoft.PowerShell.Utility';ModuleVersion='1.0.0.0';GUID='1da87e53-152b-403e-98dc-74d7b4d63d59'})
         $NestedModules = "Microsoft.PowerShell.Management","Microsoft.PowerShell.Utility"
         $ScriptsToProcess = "$script:UpdateModuleManifestName.ps1"
@@ -248,7 +248,7 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         }
       
         Assert ($newModuleInfo.Scripts -contains $ScriptsToProcessFilePath) "ScriptsToProcess should include $($ScriptsToProcess)"
-        AssertEquals $newModuleInfo.HelpInfoUri $HelpInfoURI "HelpInfoURI should be $($HelpInfoURI)"
+        $newModuleInfo.HelpInfoUri | Should Be $HelpInfoURI
     } `
     -Skip:$($IsWindows -eq $False)
 
@@ -287,7 +287,7 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         $AliasesToExport = "alias1","alias2"
         $VariablesToExport = "var1","var2"
         $CmdletsToExport="get-test1","get-test2"
-        $HelpInfoURI = "$script:PublishModuleName URL"
+        $HelpInfoURI = "http://$script:UpdateModuleManifestName.com/HelpInfoURI"
         $RequiredModules = @('Microsoft.PowerShell.Management',@{ModuleName='Microsoft.PowerShell.Utility';ModuleVersion='1.0.0.0';GUID='1da87e53-152b-403e-98dc-74d7b4d63d59'})
         $NestedModules = "Microsoft.PowerShell.Management","Microsoft.PowerShell.Utility"
         $ExternalModuleDependencies = "Microsoft.PowerShell.Management","Microsoft.PowerShell.Utility"
@@ -368,7 +368,7 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
             AssertEquals $newModuleInfo.ReleaseNotes $ReleaseNotes "ReleaseNotes should be $($ReleaseNotes)"
         }
        
-        AssertEquals $newModuleInfo.HelpInfoUri $HelpInfoURI "HelpInfoURI should be $($HelpInfoURI)"
+        $newModuleInfo.HelpInfoUri | Should Be $HelpInfoURI
         Assert ($newModuleInfo.PrivateData.PSData.ExternalModuleDependencies -contains $ExternalModuleDependencies[0]) "ExternalModuleDependencies should include $($ExternalModuleDependencies[0])"
         Assert ($newModuleInfo.PrivateData.PSData.ExternalModuleDependencies -contains $ExternalModuleDependencies[1]) "ExternalModuleDependencies should include $($ExternalModuleDependencies[1])"
     } `

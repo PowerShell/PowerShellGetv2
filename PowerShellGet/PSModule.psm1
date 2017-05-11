@@ -731,7 +731,16 @@ if(-not $script:TelemetryEnabled -and $script:IsWindows)
 {
     try
     {
-        Add-Type -ReferencedAssemblies $requiredAssembly -TypeDefinition $source -Language CSharp -ErrorAction SilentlyContinue
+        $AddType_prams = @{
+            TypeDefinition = $source
+            Language = 'CSharp'            
+            ErrorAction = 'SilentlyContinue'
+        }
+        if (-not $script:IsCoreCLR)
+        {
+            $AddType_prams['ReferencedAssemblies'] = $requiredAssembly
+        }
+        Add-Type @AddType_prams 
     
         # If the telemetry namespace/methods are not found flow goes to the catch block where telemetry is disabled
         $telemetryMethods = ([Microsoft.PowerShell.Commands.PowerShellGet.Telemetry] | Get-Member -Static).Name

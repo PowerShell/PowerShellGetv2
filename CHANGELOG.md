@@ -6,6 +6,7 @@ New features
 * Added `PrivateData` field to ScriptFileInfo. (#119)
 
 Bug fixes
+* Fixed Add-Type issue in v6.0.0-beta.1 release of PowerShellCore. (#125, #124)
 * Install-Script -Scope CurrentUser PATH changes should not require a reboot for new PS processes. (#124)
     - Made changes to broadcast the Environment variable changes, so that other processes pick changes to Environment variables without having to reboot or logoff/logon.
 * Changed `Get-EnvironmentVariable` to get the unexpanded version of `%path%`. (#117)

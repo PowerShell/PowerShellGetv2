@@ -183,6 +183,7 @@ $script:DefinedCommands  = 'DefinedCommands'
 $script:DefinedFunctions = 'DefinedFunctions'
 $script:DefinedWorkflows = 'DefinedWorkflows'
 $script:TextInfo = (Get-Culture).TextInfo
+$script:PrivateData = 'PrivateData'
 
 $script:PSScriptInfoProperties = @($script:Name
                                    $script:Version,
@@ -204,7 +205,8 @@ $script:PSScriptInfoProperties = @($script:Name
                                    $script:IconUri,
                                    $script:DefinedCommands,
                                    $script:DefinedFunctions,
-                                   $script:DefinedWorkflows
+                                   $script:DefinedWorkflows,
+								   $script:PrivateData
                                    )
 
 $script:SystemEnvironmentKey = 'HKLM:\System\CurrentControlSet\Control\Session Manager\Environment'
@@ -729,7 +731,16 @@ if(-not $script:TelemetryEnabled -and $script:IsWindows)
 {
     try
     {
-        Add-Type -ReferencedAssemblies $requiredAssembly -TypeDefinition $source -Language CSharp -ErrorAction SilentlyContinue
+        $AddType_prams = @{
+            TypeDefinition = $source
+            Language = 'CSharp'            
+            ErrorAction = 'SilentlyContinue'
+        }
+        if (-not $script:IsCoreCLR)
+        {
+            $AddType_prams['ReferencedAssemblies'] = $requiredAssembly
+        }
+        Add-Type @AddType_prams 
     
         # If the telemetry namespace/methods are not found flow goes to the catch block where telemetry is disabled
         $telemetryMethods = ([Microsoft.PowerShell.Commands.PowerShellGet.Telemetry] | Get-Member -Static).Name
@@ -1224,22 +1235,29 @@ function Publish-Module
             $shouldProcessMessage = $LocalizedData.PublishModulewhatIfMessage -f ($moduleInfo.Version, $moduleInfo.Name)
             if($Force -or $PSCmdlet.ShouldProcess($shouldProcessMessage, "Publish-Module"))
             {
-                Publish-PSArtifactUtility -PSModuleInfo $moduleInfo `
-                                          -ManifestPath $manifestPath `
-                                          -NugetApiKey $NuGetApiKey `
-                                          -Destination $DestinationLocation `
-                                          -Repository $Repository `
-                                          -NugetPackageRoot $tempModulePath `
-                                          -FormatVersion $FormatVersion `
-                                          -ReleaseNotes $($ReleaseNotes -join "`r`n") `
-                                          -Tags $Tags `
-                                          -LicenseUri $LicenseUri `
-                                          -IconUri $IconUri `
-                                          -ProjectUri $ProjectUri `
-                                          -Verbose:$VerbosePreference `
-                                          -WarningAction $WarningPreference `
-                                          -ErrorAction $ErrorActionPreference `
-                                          -Debug:$DebugPreference
+                $PublishPSArtifactUtility_Params = @{
+                    PSModuleInfo=$moduleInfo 
+                    ManifestPath=$manifestPath
+                    NugetApiKey=$NuGetApiKey
+                    Destination=$DestinationLocation
+                    Repository=$Repository
+                    NugetPackageRoot=$tempModulePath
+                    FormatVersion=$FormatVersion
+                    ReleaseNotes=$($ReleaseNotes -join "`r`n")
+                    Tags=$Tags
+                    LicenseUri=$LicenseUri
+                    IconUri=$IconUri
+                    ProjectUri=$ProjectUri
+                    Verbose=$VerbosePreference
+                    WarningAction=$WarningPreference
+                    ErrorAction=$ErrorActionPreference
+                    Debug=$DebugPreference
+                }
+                if ($PSBoundParameters.Containskey('Credential'))
+                {
+                    $PublishPSArtifactUtility_Params.Add('Credential',$Credential)
+                }
+                Publish-PSArtifactUtility @PublishPSArtifactUtility_Params
             }
         }
         finally
@@ -2872,15 +2890,22 @@ function Publish-Script
             $shouldProcessMessage = $LocalizedData.PublishScriptwhatIfMessage -f ($PSScriptInfo.Version, $scriptName)
             if($Force -or $PSCmdlet.ShouldProcess($shouldProcessMessage, "Publish-Script"))
             {
-                Publish-PSArtifactUtility -PSScriptInfo $PSScriptInfo `
-                                          -NugetApiKey $NuGetApiKey `
-                                          -Destination $DestinationLocation `
-                                          -Repository $Repository `
-                                          -NugetPackageRoot $tempScriptPath `
-                                          -Verbose:$VerbosePreference `
-                                          -WarningAction $WarningPreference `
-                                          -ErrorAction $ErrorActionPreference `
-                                          -Debug:$DebugPreference
+                $PublishPSArtifactUtility_Params = @{
+                    PSScriptInfo=$PSScriptInfo
+                    NugetApiKey=$NuGetApiKey
+                    Destination=$DestinationLocation
+                    Repository=$Repository
+                    NugetPackageRoot=$tempScriptPath
+                    Verbose=$VerbosePreference
+                    WarningAction=$WarningPreference
+                    ErrorAction=$ErrorActionPreference
+                    Debug=$DebugPreference
+                }
+                if ($PSBoundParameters.ContainsKey('Credential'))
+                {
+                    $PublishPSArtifactUtility_Params.Add('Credential',$Credential)
+                }
+                Publish-PSArtifactUtility @PublishPSArtifactUtility_Params
             }
         }
         finally
@@ -4539,6 +4564,8 @@ Feature 3
 Feature 4
 Feature 5
 
+.PRIVATEDATA Contoso private data
+
 #>
 
 <# #Requires -Module statements #>
@@ -4975,6 +5002,11 @@ function New-ScriptFileInfo
         [Parameter()]
         [string[]]
         $ReleaseNotes,
+
+		[Parameter()]
+		[ValidateNotNullOrEmpty()]
+        [string]
+        $PrivateData,
                 
         [Parameter()]
         [switch]
@@ -5059,6 +5091,7 @@ function New-ScriptFileInfo
             LicenseUri = $LicenseUri
             IconUri = $IconUri
             ReleaseNotes = $ReleaseNotes
+			PrivateData = $PrivateData
         }
 
         if(-not (Validate-ScriptFileInfoParameters -parameters $params))
@@ -5225,6 +5258,10 @@ function Update-ScriptFileInfo
         [Parameter()]
         [string[]]
         $ReleaseNotes,
+
+		[Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string]$PrivateData,
                 
         [Parameter()]
         [switch]
@@ -5421,6 +5458,7 @@ function Update-ScriptFileInfo
             LicenseUri = $LicenseUri
             IconUri = $IconUri
             ReleaseNotes = $ReleaseNotes
+			PrivateData = $PrivateData
         }
 
         if(-not (Validate-ScriptFileInfoParameters -parameters $params))
@@ -5788,7 +5826,11 @@ function Get-PSScriptInfoString
 
         [Parameter()]
         [string[]]
-        $ReleaseNotes
+        $ReleaseNotes,
+
+		[Parameter()]
+        [string]
+        $PrivateData
     )
 
     Process
@@ -5823,6 +5865,8 @@ function Get-PSScriptInfoString
 
 .RELEASENOTES
 $($ReleaseNotes -join "`r`n")
+
+.PRIVATEDATA $PrivateData
 
 #>
 "@
@@ -7617,7 +7661,11 @@ function ValidateAndGet-ScriptDependencies
         [parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [System.Management.Automation.PSCmdlet]
-        $CallerPSCmdlet
+        $CallerPSCmdlet,
+
+        [Parameter()]
+        [PSCredential]
+        $Credential
     )
 
     $DependenciesDetails = @()
@@ -7637,6 +7685,10 @@ function ValidateAndGet-ScriptDependencies
                                         WarningAction = 'SilentlyContinue'
                                         Debug = $DebugPreference
                                     }
+            if ($PSBoundParameters.ContainsKey('Credential'))
+            {
+                $FindModuleArguments.Add('Credential',$Credential)
+            }
 
             if($DependentScriptInfo.ExternalModuleDependencies -contains $ModuleName)
             {
@@ -7701,6 +7753,10 @@ function ValidateAndGet-ScriptDependencies
                                         WarningAction = 'SilentlyContinue'
                                         Debug = $DebugPreference
                                     }
+            if ($PSBoundParameters.ContainsKey('Credential'))
+            {
+                $FindScriptArguments.Add('Credential',$Credential)
+            }
 
             if($DependentScriptInfo.ExternalScriptDependencies -contains $requiredScript)
             {
@@ -7755,7 +7811,11 @@ function ValidateAndGet-RequiredModuleDetails
         [parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [System.Management.Automation.PSCmdlet]
-        $CallerPSCmdlet
+        $CallerPSCmdlet,
+
+        [Parameter(Mandatory = $false)]
+        [pscredential]
+        $Credential
     )
 
     $RequiredModuleDetails = @()
@@ -7781,6 +7841,10 @@ function ValidateAndGet-RequiredModuleDetails
                                         WarningAction = 'SilentlyContinue'
                                         Debug = $DebugPreference
                                     }
+            if ($PSBoundParameters.ContainsKey('Credential'))
+            {
+                $FindModuleArguments.Add('Credential',$Credential)
+            }
 
             # ModuleSpecification case
             if($RequiredModule.GetType().ToString() -eq 'System.Collections.Hashtable')
@@ -7869,6 +7933,10 @@ function ValidateAndGet-RequiredModuleDetails
                                     WarningAction = 'SilentlyContinue'
                                     Debug = $DebugPreference
                                 }
+        if ($PSBoundParameters.ContainsKey('Credential'))
+        {
+            $FindModuleArguments.Add('Credential',$Credential)
+        }
 
         ForEach($RequiredModuleInfo in $RequiredPSModuleInfos)
         {
@@ -7884,7 +7952,7 @@ function ValidateAndGet-RequiredModuleDetails
             $FindModuleArguments['Name'] = $ModuleName
             $FindModuleArguments['MinimumVersion'] = $requiredModuleInfo.Version
 
-            $psgetItemInfo = Find-Module @FindModuleArguments  | 
+            $psgetItemInfo = Find-Module @FindModuleArguments | 
                                         Microsoft.PowerShell.Core\Where-Object {$_.Name -eq $ModuleName} | 
                                             Microsoft.PowerShell.Utility\Select-Object -Last 1 -ErrorAction Ignore
 
@@ -7942,7 +8010,11 @@ function Get-ModuleDependencies
         [parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [System.Management.Automation.PSCmdlet]
-        $CallerPSCmdlet
+        $CallerPSCmdlet,
+        
+        [Parameter(Mandatory=$false)]
+        [pscredential]
+        $Credential
     )
 
     $DependentModuleDetails = @()
@@ -7963,14 +8035,21 @@ function Get-ModuleDependencies
                 $ModuleManifestRequiredModules = $ModuleManifestHashTable.RequiredModules
             }
            
+            $ValidateAndGetRequiredModuleDetails_Params = @{
+                ModuleManifestRequiredModules=$ModuleManifestRequiredModules
+                RequiredPSModuleInfos=$PSModuleInfo.RequiredModules
+                Repository=$Repository
+                DependentModuleInfo=$PSModuleInfo
+                CallerPSCmdlet=$CallerPSCmdlet
+                Verbose=$VerbosePreference
+                Debug=$DebugPreference 
+            }
+            if ($PSBoundParameters.ContainsKey('Credential'))
+            {
+                $ValidateAndGetRequiredModuleDetails_Params.Add('Credential',$Credential)
+            }
 
-            $DependentModuleDetails += ValidateAndGet-RequiredModuleDetails -ModuleManifestRequiredModules $ModuleManifestRequiredModules `
-                                                                            -RequiredPSModuleInfos $PSModuleInfo.RequiredModules `
-                                                                            -Repository $Repository `
-                                                                            -DependentModuleInfo $PSModuleInfo `
-                                                                            -CallerPSCmdlet $CallerPSCmdlet `
-                                                                            -Verbose:$VerbosePreference `
-                                                                            -Debug:$DebugPreference 
+            $DependentModuleDetails += ValidateAndGet-RequiredModuleDetails @ValidateAndGetRequiredModuleDetails_Params                                  
         }
 
         if($PSModuleInfo.NestedModules)
@@ -7992,13 +8071,20 @@ function Get-ModuleDependencies
                         -not (Microsoft.PowerShell.Management\Test-Path -LiteralPath $_.Path)
                     }
 
-            $DependentModuleDetails += ValidateAndGet-RequiredModuleDetails -ModuleManifestRequiredModules $ModuleManifestRequiredModules `
-                                                                            -RequiredPSModuleInfos $RequiredPSModuleInfos `
-                                                                            -Repository $Repository `
-                                                                            -DependentModuleInfo $PSModuleInfo `
-                                                                            -CallerPSCmdlet $CallerPSCmdlet `
-                                                                            -Verbose:$VerbosePreference `
-                                                                            -Debug:$DebugPreference 
+            $ValidateAndGetRequiredModuleDetails_Params = @{
+                ModuleManifestRequiredModules=$ModuleManifestRequiredModules
+                RequiredPSModuleInfos=$RequiredPSModuleInfos
+                Repository=$Repository
+                DependentModuleInfo=$PSModuleInfo
+                CallerPSCmdlet=$CallerPSCmdlet
+                Verbose=$VerbosePreference
+                Debug=$DebugPreference
+            }
+            if ($PSBoundParameters.ContainsKey('Credential'))
+            {
+                $ValidateAndGetRequiredModuleDetails_Params.Add('Credential',$Credential)
+            }
+            $DependentModuleDetails += ValidateAndGet-RequiredModuleDetails @ValidateAndGetRequiredModuleDetails_Params
         }
     }
 
@@ -8039,6 +8125,10 @@ function Publish-PSArtifactUtility
         [ValidateNotNullOrEmpty()]
         [string]
         $NugetApiKey,
+
+        [Parameter(Mandatory=$false)]
+        [pscredential]
+        $Credential,
 
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
@@ -8194,12 +8284,19 @@ function Publish-PSArtifactUtility
         }
 
         # Populate the dependencies elements from RequiredModules and RequiredScripts
-        # 
-        $DependentModuleDetails += ValidateAndGet-ScriptDependencies -Repository $Repository `
-                                                                     -DependentScriptInfo $PSScriptInfo `
-                                                                     -CallerPSCmdlet $PSCmdlet `
-                                                                     -Verbose:$VerbosePreference `
-                                                                     -Debug:$DebugPreference
+        #
+        $ValidateAndGetScriptDependencies_Params = @{
+            Repository=$Repository
+            DependentScriptInfo=$PSScriptInfo
+            CallerPSCmdlet=$PSCmdlet
+            Verbose=$VerbosePreference
+            Debug=$DebugPreference
+        }
+        if ($PSBoundParameters.ContainsKey('Credential'))
+        {
+            $ValidateAndGetScriptDependencies_Params.Add('Credential',$Credential)
+        }
+        $DependentModuleDetails += ValidateAndGet-ScriptDependencies @ValidateAndGetScriptDependencies_Params
     }
     else
     {
@@ -8265,11 +8362,18 @@ function Publish-PSArtifactUtility
 
         # Populate the module dependencies elements from RequiredModules and 
         # NestedModules properties of the current PSModuleInfo
-        $DependentModuleDetails = Get-ModuleDependencies -PSModuleInfo $PSModuleInfo `
-                                                         -Repository $Repository `
-                                                         -CallerPSCmdlet $PSCmdlet `
-                                                         -Verbose:$VerbosePreference `
-                                                         -Debug:$DebugPreference 
+        $GetModuleDependencies_Params = @{
+            PSModuleInfo=$PSModuleInfo
+            Repository=$Repository
+            CallerPSCmdlet=$PSCmdlet
+            Verbose=$VerbosePreference
+            Debug=$DebugPreference
+        }
+        if ($PSBoundParameters.ContainsKey('Credential'))
+        {
+            $GetModuleDependencies_Params.Add('Credential',$Credential)
+        }
+        $DependentModuleDetails = Get-ModuleDependencies @GetModuleDependencies_Params
     }
     
     $dependencies = @()
@@ -8611,6 +8715,8 @@ function ValidateAndAdd-PSScriptInfoEntry
         $script:DefinedFunctions { $KeyName = $script:DefinedFunctions }
 
         $script:DefinedWorkflows { $KeyName = $script:DefinedWorkflows }
+
+		$script:PrivateData { $KeyName = $script:PrivateData }
     }
 
     Microsoft.PowerShell.Utility\Add-Member -InputObject $PSScriptInfo `
@@ -12004,11 +12110,28 @@ function Get-EnvironmentVariable
     }
     elseif ($Target -eq $script:EnvironmentVariableTarget.Machine)
     {
-        $itemPropertyValue = Microsoft.PowerShell.Management\Get-ItemProperty -Path $script:SystemEnvironmentKey -Name $Name -ErrorAction SilentlyContinue
-
-        if($itemPropertyValue)
+        if ($Name -eq "path")
         {
-            return $itemPropertyValue.$Name
+            # if we need the path environment variable, we need it un-expanded, otherwise
+            # when writing it back, we would loose all the variables like %systemroot% in it.
+            # We use the Win32 API directly using DoNotExpandEnvironmentNames
+            # It is unclear whether any code calling this function for %path% needs the expanded version of %path%
+            # There are currently no tests for this code
+            # Microsoft.PowerShell.Management\Get-ItemProperty is passed through to the PowerShell Registry provider
+            # which currently doesn't seem to support anything like: DoNotExpandEnvironmentNames
+            $hklmHive = [Microsoft.Win32.Registry]::LocalMachine
+            $EnvRegKey = $hklmHive.OpenSubKey("SYSTEM\CurrentControlSet\Control\Session Manager\Environment", $FALSE)
+            $itemPropertyValue = $EnvRegKey.GetValue($Name, "", [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames)
+            return $itemPropertyValue
+        }
+        else
+        {
+            $itemPropertyValue = Microsoft.PowerShell.Management\Get-ItemProperty -Path $script:SystemEnvironmentKey -Name $Name -ErrorAction SilentlyContinue
+
+            if($itemPropertyValue)
+            {
+                return $itemPropertyValue.$Name
+            }
         }
     }
     elseif ($Target -eq $script:EnvironmentVariableTarget.User)
@@ -12084,6 +12207,53 @@ function Set-EnvironmentVariable
     else 
     {
         Microsoft.PowerShell.Management\Set-ItemProperty $Path -Name $Name -Value $Value
+    }
+
+    # Broadcast the Environment variable changes, so that other processes pick changes to Environment variables without having to reboot or logoff/logon. 
+    Send-EnvironmentChangeMessage
+}
+
+# Broadcast the Environment variable changes, so that other processes pick changes to Environment variables without having to reboot or logoff/logon. 
+function Send-EnvironmentChangeMessage
+{
+    if($Script:IsWindows)
+    {
+        if (-not ('Microsoft.PowerShell.Commands.PowerShellGet.Win32.NativeMethods' -as [type]))
+        {
+            Add-Type -Namespace Microsoft.PowerShell.Commands.PowerShellGet.Win32 `
+                     -Name NativeMethods `
+                     -MemberDefinition @'
+                        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+                        public static extern IntPtr SendMessageTimeout(
+                            IntPtr hWnd,
+                            uint Msg,
+                            UIntPtr wParam,
+                            string lParam,
+                            uint fuFlags,
+                            uint uTimeout,
+                            out UIntPtr lpdwResult);
+'@
+        }
+
+        $HWND_BROADCAST = [System.IntPtr]0xffff
+        $WM_SETTINGCHANGE = 0x1a
+        $result = [System.UIntPtr]::zero
+
+        $returnValue = [Microsoft.PowerShell.Commands.PowerShellGet.Win32.NativeMethods]::SendMessageTimeout($HWND_BROADCAST, 
+                                                                                                            $WM_SETTINGCHANGE,
+                                                                                                            [System.UIntPtr]::Zero, 
+                                                                                                            'Environment',
+                                                                                                            2, 
+                                                                                                            5000,
+                                                                                                            [ref]$result)
+        if($returnValue)
+        {
+            Write-Verbose -Message $LocalizedData.SentEnvironmentVariableChangeMessage
+        }
+        else
+        {
+            Write-Warning -Message $LocalizedData.UnableToSendEnvironmentVariableChangeMessage
+        }
     }
 }
 
@@ -12488,6 +12658,7 @@ function Get-OrderedPSScriptInfoObject
                             $script:DefinedCommands = $PSScriptInfo.$script:DefinedCommands
                             $script:DefinedFunctions = $PSScriptInfo.$script:DefinedFunctions
                             $script:DefinedWorkflows = $PSScriptInfo.$script:DefinedWorkflows
+							$script:PrivateData = $PSScriptInfo.$script:PrivateData
                         })
 
     $NewPSScriptInfo.PSTypeNames.Insert(0, "Microsoft.PowerShell.Commands.PSScriptInfo")

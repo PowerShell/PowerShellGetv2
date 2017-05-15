@@ -59,19 +59,24 @@ Write-Host "PowerShellEdition value: $script:PowerShellEdition"
 
 function Install-Dependencies {
     if($script:PowerShellEdition -eq 'Desktop') {
-        # Download the NuGet.exe from http://nuget.org/NuGet.exe
         $NuGetExeName = 'NuGet.exe'
-        if(-not (Microsoft.PowerShell.Management\Test-Path -Path $script:PSGetProgramDataPath))
-        {
-            $null = Microsoft.PowerShell.Management\New-Item -Path $script:PSGetProgramDataPath -ItemType Directory -Force
-        }
         $NugetExeFilePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $NuGetExeName
-        Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri http://nuget.org/NuGet.exe -OutFile $NugetExeFilePath
+        
+        if(-not (Test-Path -Path $NugetExeFilePath -PathType Leaf)) {
+            if(-not (Microsoft.PowerShell.Management\Test-Path -Path $script:PSGetProgramDataPath))
+            {
+                $null = Microsoft.PowerShell.Management\New-Item -Path $script:PSGetProgramDataPath -ItemType Directory -Force
+            }
+            
+            # Download the NuGet.exe from https://nuget.org/NuGet.exe
+            Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri https://nuget.org/NuGet.exe -OutFile $NugetExeFilePath
+        }
+
         Get-ChildItem $NugetExeFilePath -File
         
         if(-not (Get-Module -ListAvailable Pester))
         {
-            nuget install pester -source https://www.powershellgallery.com/api/v2 -outputDirectory $script:ProgramFilesModulesPath -ExcludeVersion
+            & $NugetExeFilePath install pester -source https://www.powershellgallery.com/api/v2 -outputDirectory $script:ProgramFilesModulesPath -ExcludeVersion
         }
 
         $AllUsersModulesPath = $script:ProgramFilesModulesPath
@@ -81,7 +86,7 @@ function Install-Dependencies {
         $OneGetModuleName = 'PackageManagement'
         try
         {
-            nuget install $OneGetModuleName -source https://dtlgalleryint.cloudapp.net/api/v2 -outputDirectory $TempModulePath -verbosity detailed
+            & $NugetExeFilePath install $OneGetModuleName -source https://dtlgalleryint.cloudapp.net/api/v2 -outputDirectory $TempModulePath -verbosity detailed
             $OneGetWithVersion = Microsoft.PowerShell.Management\Get-ChildItem -Path $TempModulePath -Directory
             $OneGetVersion = ($OneGetWithVersion.Name.Split('.',2))[1]
 
@@ -117,39 +122,56 @@ function Install-Dependencies {
 }
 
 function Get-PSHome {
-    $PowerShellFolder = $PSHOME
+    $PowerShellHome = $PSHOME
 
     # Install PowerShell Core MSI on Windows.
     if(($script:PowerShellEdition -eq 'Core') -and $script:IsWindows)
     {
         $PowerShellMsiPath = Get-PowerShellCoreBuild -AppVeyorProjectName 'PowerShell'
+        $PowerShellInstallPath = "$env:SystemDrive\PowerShellCore"
         <#
         $PowerShellMsiUrl = 'https://github.com/PowerShell/PowerShell/releases/download/v6.0.0-alpha.11/PowerShell_6.0.0.11-alpha.11-win81-x64.msi'
         $PowerShellMsiName = 'PowerShell_6.0.0.11-alpha.11-win81-x64.msi'
         $PowerShellMsiPath = Microsoft.PowerShell.Management\Join-Path -Path $PSScriptRoot -ChildPath $PowerShellMsiName
         Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri $PowerShellMsiUrl -OutFile $PowerShellMsiPath
         #>
-        $PowerShellVersion = ((Split-Path $PowerShellMsiPath -Leaf) -split '[_-]',3)[1]
-        Start-Process -FilePath "$env:SystemRoot\System32\msiexec.exe" -ArgumentList "/qb /i $PowerShellMsiPath" -Wait
-        Write-Host ("PowerShell Version '{0}'" -f $PowerShellVersion)
-
-        $PowerShellFolder = "$Env:ProgramFiles\PowerShell\$PowerShellVersion"
-        Write-Host ("PowerShell Folder '{0}'" -f $PowerShellFolder)
-
-        if(-not (Microsoft.PowerShell.Management\Test-Path -Path $PowerShellFolder -PathType Container))
-        {
-            Throw "$PowerShellFolder path is not available."        
+        Start-Process -FilePath "$env:SystemRoot\System32\msiexec.exe" -ArgumentList "/qb INSTALLFOLDER=$PowerShellInstallPath /i $PowerShellMsiPath" -Wait
+        
+        $PowerShellVersionPath = Get-ChildItem -Path $PowerShellInstallPath -Attributes Directory | Select-Object -First 1 -ErrorAction Ignore
+        $PowerShellHome = $null
+        if ($PowerShellVersionPath) {
+            $PowerShellHome = $PowerShellVersionPath.FullName
         }
+        
+        if(-not $PowerShellHome -or -not (Microsoft.PowerShell.Management\Test-Path -Path $PowerShellHome -PathType Container))
+        {
+            Throw "$PowerShellHome path is not available."  
+        }
+
+        Write-Host ("PowerShell Home Path '{0}'" -f $PowerShellHome)
     }
 
-    return $PowerShellFolder
+    return $PowerShellHome
 }
 
 function Invoke-PowerShellGetTest {    
-    Write-Host "env:PS_DAILY_BUILD value $env:PS_DAILY_BUILD"
-    Write-Host "env:APPVEYOR_SCHEDULED_BUILD value $env:APPVEYOR_SCHEDULED_BUILD"
-    Write-Host "env:APPVEYOR_REPO_TAG_NAME value $env:APPVEYOR_REPO_TAG_NAME"
-    Write-Host "env:TRAVIS_EVENT_TYPE value $env:TRAVIS_EVENT_TYPE"
+
+    Param(
+        [Parameter()]
+        [Switch]
+        $IsFullTestPass
+    )
+
+    Write-Host -ForegroundColor Green "`$env:PS_DAILY_BUILD value $env:PS_DAILY_BUILD"
+    Write-Host -ForegroundColor Green "`$env:APPVEYOR_SCHEDULED_BUILD value $env:APPVEYOR_SCHEDULED_BUILD"
+    Write-Host -ForegroundColor Green "`$env:APPVEYOR_REPO_TAG_NAME value $env:APPVEYOR_REPO_TAG_NAME"    
+    Write-Host -ForegroundColor Green "TRAVIS_EVENT_TYPE environment variable value $([System.Environment]::GetEnvironmentVariable('TRAVIS_EVENT_TYPE'))"
+
+    if(-not $IsFullTestPass){
+        $IsFullTestPass = Test-DailyBuild
+    }
+    Write-Host -ForegroundColor Green "`$IsFullTestPass value $IsFullTestPass"
+    Write-Host -ForegroundColor Green "Test-DailyBuild: $(Test-DailyBuild)"
 
     $env:APPVEYOR_TEST_PASS = $true
     $ClonedProjectPath = Resolve-Path "$PSScriptRoot\.."    
@@ -167,14 +189,14 @@ function Invoke-PowerShellGetTest {
     #   -- Where PowerShellGet module was installed from MyGet feed https://powershell.myget.org/F/powershellmodule/api/v2/
     #   -- This option is used only for Daily builds
     $TestScenarios = @()
-    if(($script:PowerShellEdition -eq 'Core') -and (Test-DailyBuild)){
+    if(($script:PowerShellEdition -eq 'Core') -and $IsFullTestPass -and $script:IsWindows){
         $TestScenarios += 'NoUpdate'
     }
     # We should run PSCore_PSGet_TestRun first before updating the PowerShellGet module from current branch.
     $TestScenarios += 'Current'
 
     $PesterTag = '' # Conveys all test priorities
-    if(-not (Test-DailyBuild)){
+    if(-not $IsFullTestPass){
         $PesterTag = 'BVT' # Only BVTs
     }
 
@@ -281,12 +303,13 @@ function Test-DailyBuild
 {
     # https://docs.travis-ci.com/user/environment-variables/
     # TRAVIS_EVENT_TYPE: Indicates how the build was triggered.
-    # One of push, pull_request, api, cron.    
+    # One of push, pull_request, api, cron.
+    $TRAVIS_EVENT_TYPE = [System.Environment]::GetEnvironmentVariable('TRAVIS_EVENT_TYPE')    
     if(($env:PS_DAILY_BUILD -eq 'True') -or 
        ($env:APPVEYOR_SCHEDULED_BUILD -eq 'True') -or 
-       ($env:APPVEYOR_REPO_TAG_NAME) -or 
-       ($env:TRAVIS_EVENT_TYPE -eq 'cron') -or 
-       ($env:TRAVIS_EVENT_TYPE -eq 'api'))
+       ($env:APPVEYOR_REPO_TAG_NAME) -or
+       ($TRAVIS_EVENT_TYPE -eq 'cron') -or 
+       ($TRAVIS_EVENT_TYPE -eq 'api'))
     {
         return $true
     }

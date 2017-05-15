@@ -135,6 +135,8 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
 
         $ScriptsToProcessFilePath = "$script:UpdateModuleManifestBase\$script:UpdateModuleManifestName.ps1"
         Set-Content $ScriptsToProcessFilePath -Value "function Get-$script:UpdateModuleManifestName { Get-Date }"
+
+        Set-Content "$script:UpdateModuleManifestBase\$script:UpdateModuleManifestName.psm1" -Value "function Get-$script:UpdateModuleManifestName { Get-Date }"
         
         $Guid =  [System.Guid]::Newguid().ToString()
         $Version = "2.0"
@@ -148,7 +150,7 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         $Author = "AuthorName"
         $CompanyName = "CompanyName"
         $CopyRight = "CopyRight"
-        $RootModule = "$script:UpdateModuleManifestName root module"
+        $RootModule = "$script:UpdateModuleManifestName.psm1"
         $PowerShellVersion = "3.0"
         $ClrVersion = "2.0"
         $DotNetFrameworkVersion = "2.0"
@@ -162,7 +164,7 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         $AliasesToExport = "alias1","alias2"
         $VariablesToExport = "var1","var2"
         $CmdletsToExport="get-test1","get-test2"
-        $HelpInfoURI = "$script:PublishModuleName URL"
+        $HelpInfoURI = "http://$script:UpdateModuleManifestName.com/HelpInfoURI"
         $RequiredModules = @('Microsoft.PowerShell.Management',@{ModuleName='Microsoft.PowerShell.Utility';ModuleVersion='1.0.0.0';GUID='1da87e53-152b-403e-98dc-74d7b4d63d59'})
         $NestedModules = "Microsoft.PowerShell.Management","Microsoft.PowerShell.Utility"
         $ScriptsToProcess = "$script:UpdateModuleManifestName.ps1"
@@ -246,7 +248,7 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         }
       
         Assert ($newModuleInfo.Scripts -contains $ScriptsToProcessFilePath) "ScriptsToProcess should include $($ScriptsToProcess)"
-        AssertEquals $newModuleInfo.HelpInfoUri $HelpInfoURI "HelpInfoURI should be $($HelpInfoURI)"
+        $newModuleInfo.HelpInfoUri | Should Be $HelpInfoURI
     } `
     -Skip:$($IsWindows -eq $False)
 
@@ -258,6 +260,7 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
     #
     It "UpdateModuleManifestWithAllFields" {
 
+        Set-Content "$script:UpdateModuleManifestBase\$script:UpdateModuleManifestName.psm1" -Value "function Get-$script:UpdateModuleManifestName { Get-Date }"
         $Guid =  [System.Guid]::Newguid().ToString()
         $Version = "2.0"
         $Description = "$script:UpdateModuleManifestName module"
@@ -270,7 +273,7 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         $Author = "AuthorName"
         $CompanyName = "CompanyName"
         $CopyRight = "CopyRight"
-        $RootModule = "$script:UpdateModuleManifestName root module"
+        $RootModule = "$script:UpdateModuleManifestName.psm1"
         $PowerShellVersion = "3.0"
         $ClrVersion = "2.0"
         $DotNetFrameworkVersion = "2.0"
@@ -284,7 +287,7 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         $AliasesToExport = "alias1","alias2"
         $VariablesToExport = "var1","var2"
         $CmdletsToExport="get-test1","get-test2"
-        $HelpInfoURI = "$script:PublishModuleName URL"
+        $HelpInfoURI = "http://$script:UpdateModuleManifestName.com/HelpInfoURI"
         $RequiredModules = @('Microsoft.PowerShell.Management',@{ModuleName='Microsoft.PowerShell.Utility';ModuleVersion='1.0.0.0';GUID='1da87e53-152b-403e-98dc-74d7b4d63d59'})
         $NestedModules = "Microsoft.PowerShell.Management","Microsoft.PowerShell.Utility"
         $ExternalModuleDependencies = "Microsoft.PowerShell.Management","Microsoft.PowerShell.Utility"
@@ -365,7 +368,7 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
             AssertEquals $newModuleInfo.ReleaseNotes $ReleaseNotes "ReleaseNotes should be $($ReleaseNotes)"
         }
        
-        AssertEquals $newModuleInfo.HelpInfoUri $HelpInfoURI "HelpInfoURI should be $($HelpInfoURI)"
+        $newModuleInfo.HelpInfoUri | Should Be $HelpInfoURI
         Assert ($newModuleInfo.PrivateData.PSData.ExternalModuleDependencies -contains $ExternalModuleDependencies[0]) "ExternalModuleDependencies should include $($ExternalModuleDependencies[0])"
         Assert ($newModuleInfo.PrivateData.PSData.ExternalModuleDependencies -contains $ExternalModuleDependencies[1]) "ExternalModuleDependencies should include $($ExternalModuleDependencies[1])"
     } `
@@ -427,9 +430,10 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
     It UpdateModuleManifestWithExternalModuleDependenciesAndPackageManagementProviders {
 
         Set-Content "$script:UpdateModuleManifestBase\$script:UpdateModuleManifestName.psm1" -Value "function Get-$script:UpdateModuleManifestName { Get-Date }"
+        Set-Content "$script:UpdateModuleManifestBase/Dependency.psm1" -Value "function Get-$script:UpdateModuleManifestName { Get-Date }"
 
-        $NestedModules = "Dep"
-        $ExternalModuleDependencies = "Dep"
+        $NestedModules = "$script:UpdateModuleManifestBase/Dependency.psm1"
+        $ExternalModuleDependencies = "$script:UpdateModuleManifestBase/Dependency.psm1"
         $PackageManagementProviders = "ContosoPublishModule.psm1"
 
         New-ModuleManifest -path $script:testManifestPath -NestedModules $NestedModules

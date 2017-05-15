@@ -93,24 +93,41 @@ Get PowerShellGet Module
 
 ### Get the latest version from PowerShell Gallery
 
-Before updating PowerShellGet, you should always install the latest Nuget provider. To do that, run the following in an elevated PowerShell session.
+- Before updating PowerShellGet, you should always install the latest Nuget provider. To do that, run the following in an elevated PowerShell session.
 ```powershell
-Install-PackageProvider Nuget –force –verbose
-# exit the session
+Install-PackageProvider Nuget –Force
+Exit
 ```
 
-For systems with PowerShell 5.0 (or greater) you can install both PowerShellGet. 
-To do this on Windows 10, Windows Server 2016, or any system with WMF 5.0 or 5.1 installed, run the following commands from an elevated PowerShell session.
+#### For systems with PowerShell 5.0 (or newer) you can install both PowerShellGet 
+- To do this on Windows 10, Windows Server 2016, or any system with WMF 5.0 or 5.1 installed, run the following commands from an elevated PowerShell session.
 ```powershell
 Install-Module –Name PowerShellGet –Force
-# exit the session
+Exit
 ```
 
-Use Update-Module to get the next updated versions.
+- Use Update-Module to get the next updated versions.
 ```powershell
 Update-Module -Name PowerShellGet
-# exit the session
+Exit
 ```
+
+#### For systems running PowerShell 3 or PowerShell 4, that have installed the [PackageManagement MSI](http://go.microsoft.com/fwlink/?LinkID=746217&clcid=0x409)
+
+- Use below PowerShellGet cmdlet to save the modules to a local directory
+
+```powershell
+Save-Module PowerShellGet -Path C:\LocalFolder
+Exit
+```
+
+- Re-open the PS Console then run the following commands
+
+```powershell
+Copy-Item "C:\LocalFolder\PowerShellGet\*" "$env:ProgramFiles\WindowsPowerShell\Modules\PowerShellGet\" -Recurse -Force
+Copy-Item "C:\LocalFolder\PackageManagement\*" "$env:ProgramFiles\WindowsPowerShell\Modules\PackageManagement\" -Recurse -Force
+```
+
 
 ### Source
 
@@ -137,26 +154,33 @@ Running Tests
 
 Pester-based PowerShellGet Tests are located in `<branch>/PowerShellGet/Tests` folder.
 
-1. Ensure Pester is installed on the machine
-2. Go the Tests folder in your local repository
-3. Run the tests by calling Invoke-Pester.
+Run following commands in PowerShell Console with Administrator privileges.
+
+```powershell
+Import-Module "$ClonePath\tools\build.psm1"
+
+Install-Dependencies
+
+Invoke-PowerShellGetTest
+```
 
 Contributing to PowerShellGet
 ==============================
 You are welcome to contribute to this project. There are many ways to contribute:
 
-1. Submit a bug report via [Issues]( https://github.com/PowerShell/PowerShellGet/issues). For a guide to submitting good bug reports, please read [Painless Bug Tracking](http://www.joelonsoftware.com/articles/fog0000000029.html).
-2. Verify fixes for bugs.
-3. Submit your fixes for a bug. Before submitting, please make sure you have:
+- Submit a bug report via [Issues]( https://github.com/PowerShell/PowerShellGet/issues). For a guide to submitting good bug reports, please read [Painless Bug Tracking](http://www.joelonsoftware.com/articles/fog0000000029.html).
+- Read the documentation on [contributing to open source](https://guides.github.com/activities/contributing-to-open-source/) and [forking](https://guides.github.com/activities/forking/).
+- Verify fixes for bugs.
+- Submit your fixes for a bug. Before submitting, please make sure you have:
   * Performed code reviews of your own
   * Updated the test cases if needed
   * Run the test cases to ensure no feature breaks or test breaks
   * Added the test cases for new code
-4. Submit a feature request.
-5. Help answer questions in the discussions list.
-6. Submit test cases.
-7. Tell others about the project.
-8. Tell the developers how much you appreciate the product!
+- Submit a feature request.
+- Help answer questions in the discussions list.
+- Submit test cases.
+- Tell others about the project.
+- Tell the developers how much you appreciate the product!
 
 You might also read these two blog posts about contributing code: [Open Source Contribution Etiquette](http://tirania.org/blog/archive/2010/Dec-31.html) by Miguel de Icaza, and [Don’t “Push” Your Pull Requests](http://www.igvita.com/2011/12/19/dont-push-your-pull-requests/) by Ilya Grigorik.
 

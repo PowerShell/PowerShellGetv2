@@ -13735,10 +13735,10 @@ function Get-PrivateData
     {
         $ReleaseNotesLine = "ReleaseNotes = "+$ReleaseNotes
     }
-    $ExternalModuleDependenciesLine ="# ExternalModuleDependencies = ''"
+    $ExternalModuleDependenciesLine ="# ExternalModuleDependencies = @()"
     if($ExternalModuleDependencies -ne "''")
     {
-        $ExternalModuleDependenciesLine = "ExternalModuleDependencies = "+$ExternalModuleDependencies
+        $ExternalModuleDependenciesLine = "ExternalModuleDependencies = @($ExternalModuleDependencies)"
     }
 
     if(-not $ExtraPropertiesString -eq "")

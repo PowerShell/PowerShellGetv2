@@ -149,9 +149,7 @@ Describe "Update Existing Script Info" -tag CI {
 		$ScriptFileInfo = Test-ScriptFileInfo -Path $ScriptFilePath
 		foreach ($Prop in $ScriptFileInfoProperties.Keys)
 		{
-			It "Test $Prop" {
-				$ScriptFileInfo.$Prop | Should be $ScriptFileInfoProperties[$Prop]
-			}
+            $ScriptFileInfo.$Prop | Should be $ScriptFileInfoProperties[$Prop]
 		}
     }
 }

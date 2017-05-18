@@ -457,16 +457,13 @@ Describe 'Update-Module --- Microsoft signed versions of Microsoft.PowerShell.Ar
             Install-Module -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.1 -Repository $Script:INTRepositoryName -Force
         }
 
-        Get-InstalledModule -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.3 -ErrorAction SilentlyContinue | PowerShellGet\Uninstall-Module
-        Get-InstalledModule -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.4 -ErrorAction SilentlyContinue | PowerShellGet\Uninstall-Module
-        Get-InstalledModule -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.2 -ErrorAction SilentlyContinue | PowerShellGet\Uninstall-Module
-        Get-InstalledModule -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.11 -ErrorAction SilentlyContinue | PowerShellGet\Uninstall-Module
+        Get-InstalledModule -Name $MicrosoftPowerShellArchive -ErrorAction SilentlyContinue | Where-Object {$_.Version -gt "1.0.1.1" } | PowerShellGet\Uninstall-Module
         Get-InstalledModule -Name $TestArchiveModule -RequiredVersion 1.0.1.11 -ErrorAction SilentlyContinue | PowerShellGet\Uninstall-Module
     }
 
     It 'Update-Module Microsoft.PowerShell.Archive -- Update a catalog signed module: Should work' {
         Update-Module -Name $MicrosoftPowerShellArchive
-        Get-InstalledModule -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.11 | Should Not BeNullOrEmpty
+        Get-InstalledModule -Name $MicrosoftPowerShellArchive -MinimumVersion 1.0.1.11 | Should Not BeNullOrEmpty
         
         if($PSVersionTable.PSVersion -ge '5.0.0') {
             Get-InstalledModule -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.1 | Should Not BeNullOrEmpty
@@ -475,7 +472,7 @@ Describe 'Update-Module --- Microsoft signed versions of Microsoft.PowerShell.Ar
 
     It 'Update-Module Microsoft.PowerShell.Archive -- Update a catalog signed module without specifying a name: Should work' {
         Update-Module
-        Get-InstalledModule -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.11 | Should Not BeNullOrEmpty
+        Get-InstalledModule -Name $MicrosoftPowerShellArchive -MinimumVersion 1.0.1.11 | Should Not BeNullOrEmpty
         
         if($PSVersionTable.PSVersion -ge '5.0.0') {
             Get-InstalledModule -Name $MicrosoftPowerShellArchive -RequiredVersion 1.0.1.1 | Should Not BeNullOrEmpty

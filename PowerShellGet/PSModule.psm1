@@ -7055,7 +7055,8 @@ function New-PSGetItemInfo
         if(-not $InstalledDate -and $InstalledDateString)
         {
             $InstalledDate = New-Object System.DateTime
-            if(-not ([System.DateTime]::TryParse($InstalledDateString, ([ref]$InstalledDate))))
+            if(-not (([System.DateTime]::TryParse($InstalledDateString, [System.Globalization.DateTimeFormatInfo]::InvariantInfo, [System.Globalization.DateTimeStyles]::None, ([ref]$InstalledDate))) -or
+                     ([System.DateTime]::TryParse($InstalledDateString, ([ref]$InstalledDate)))))
             {
                 $InstalledDate = $null
             }
@@ -7065,7 +7066,8 @@ function New-PSGetItemInfo
         if(-not $UpdatedDate -and $UpdatedDateString)
         {
             $UpdatedDate = New-Object System.DateTime
-            if(-not ([System.DateTime]::TryParse($UpdatedDateString, ([ref]$UpdatedDate))))
+            if(-not (([System.DateTime]::TryParse($UpdatedDateString, [System.Globalization.DateTimeFormatInfo]::InvariantInfo, [System.Globalization.DateTimeStyles]::None, ([ref]$UpdatedDate))) -or
+                     ([System.DateTime]::TryParse($UpdatedDateString, ([ref]$UpdatedDate)))))
             {
                 $UpdatedDate = $null
             }
@@ -11748,12 +11750,12 @@ function New-SoftwareIdentityFromPackage
 
     if($InstalledDate)
     {
-        $details.Add( 'installeddate' , $InstalledDate.ToString() )
+        $details.Add( 'installeddate' , $InstalledDate.ToString('O', [System.Globalization.DateTimeFormatInfo]::InvariantInfo) )
     }
 
     if($UpdatedDate)
     {
-        $details.Add( 'updateddate' , $UpdatedDate.ToString() )
+        $details.Add( 'updateddate' , $UpdatedDate.ToString('O', [System.Globalization.DateTimeFormatInfo]::InvariantInfo) )
     }
 
     # Initialize package source name to the source location
@@ -12043,12 +12045,12 @@ function New-SoftwareIdentityFromPSGetItemInfo
 
     if((Get-Member -InputObject $psgetItemInfo -Name 'InstalledDate') -and $psgetItemInfo.InstalledDate)
     {
-        $details['installeddate'] = $psgetItemInfo.InstalledDate.ToString()
+        $details['installeddate'] = $psgetItemInfo.InstalledDate.ToString('O', [System.Globalization.DateTimeFormatInfo]::InvariantInfo)
     }
 
     if((Get-Member -InputObject $psgetItemInfo -Name 'UpdatedDate') -and $psgetItemInfo.UpdatedDate)
     {
-        $details['updateddate'] = $psgetItemInfo.UpdatedDate.ToString()
+        $details['updateddate'] = $psgetItemInfo.UpdatedDate.ToString('O', [System.Globalization.DateTimeFormatInfo]::InvariantInfo)
     }
 
     if(Get-Member -InputObject $psgetItemInfo -Name $script:InstalledLocation)

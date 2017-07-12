@@ -178,7 +178,7 @@ Describe PowerShell.PSGet.PackageManagementIntegrationTests -Tags 'P1','OuterLoo
     #>
     It ValidateSetModuleSourceWithNewLocationAndInstallationPolicyValues {
 
-        $Location1 = 'http://www.nuget.org/api/v2/'
+        $Location1 = 'https://www.nuget.org/api/v2/'
         $Location2 = $script:TestModuleSourceUri
 
         Register-PSRepository -Name $script:TestModuleSourceName -SourceLocation $Location1 -PackageManagementProvider "NuGet" -InstallationPolicy Trusted

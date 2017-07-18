@@ -44,7 +44,7 @@ FileList = @('PSModule.psm1',
 RequiredModules = @(@{ModuleName='PackageManagement';ModuleVersion='1.0.0.1'})
 PrivateData = @{
                 "PackageManagementProviders" = 'PSModule.psm1'
-                "SupportedPowerShellGetFormatVersions" = @('1.x')
+                 "SupportedPowerShellGetFormatVersions" = @('1.x','2.x')
     PSData = @{
         Tags = @('Packagemanagement',
                  'Provider',

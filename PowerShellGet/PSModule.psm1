@@ -139,7 +139,8 @@ $script:NuGetProvider = $null
 # Major is incremented for the breaking change.
 $script:CurrentPSGetFormatVersion = "1.0"
 $script:PSGetFormatVersion = "PowerShellGetFormatVersion"
-$script:SupportedPSGetFormatVersionMajors = @("1")
+$script:SupportedPSGetFormatVersionMajors = @("1","2")
+$script:PSGetRequireLicenseAcceptanceFormatVersion = [Version]'2.0'
 $script:ModuleReferences = 'Module References'
 $script:AllVersions = "AllVersions"
 $script:Filter      = "Filter"
@@ -806,7 +807,7 @@ function Publish-Module
         $Credential,
 
         [Parameter()] 
-        [ValidateSet("1.0")]
+        [ValidateSet("1.0","2.0")]
         [Version]
         $FormatVersion,
 
@@ -1124,13 +1125,14 @@ function Publish-Module
         $tempModulePath = Microsoft.PowerShell.Management\Join-Path -Path $script:TempPath `
                               -ChildPath "$(Microsoft.PowerShell.Utility\Get-Random)\$moduleName"
 
-        if(-not $FormatVersion)
-        {
-            $tempModulePathForFormatVersion = $tempModulePath
-        }
-        elseif ($FormatVersion -eq "1.0")
+
+        if ($FormatVersion -eq "1.0")
         {
             $tempModulePathForFormatVersion = Microsoft.PowerShell.Management\Join-Path $tempModulePath "Content\Deployment\$script:ModuleReferences\$moduleName"
+        }
+        else
+        {
+            $tempModulePathForFormatVersion = $tempModulePath
         }
 
         $null = Microsoft.PowerShell.Management\New-Item -Path $tempModulePathForFormatVersion -ItemType Directory -Force -ErrorAction SilentlyContinue -WarningAction SilentlyContinue -Confirm:$false -WhatIf:$false
@@ -1529,7 +1531,11 @@ function Save-Module
 
         [Parameter()]
         [switch]
-        $Force
+        $Force,
+
+        [Parameter()]
+        [switch]
+        $AcceptLicense
     )
 
     Begin
@@ -1758,7 +1764,11 @@ function Install-Module
 
         [Parameter()]
         [switch]
-        $Force
+        $Force,
+
+        [Parameter()]
+        [switch]
+        $AcceptLicense
     )
 
     Begin
@@ -1976,7 +1986,11 @@ function Update-Module
 
         [Parameter()]
         [Switch]
-        $Force
+        $Force,
+
+        [Parameter()]
+        [switch]
+        $AcceptLicense
     )
 
     Begin
@@ -3198,7 +3212,11 @@ function Save-Script
 
         [Parameter()]
         [switch]
-        $Force
+        $Force,
+
+        [Parameter()]
+        [switch]
+        $AcceptLicense
     )
 
     Begin
@@ -3427,7 +3445,11 @@ function Install-Script
 
         [Parameter()]
         [switch]
-        $Force
+        $Force,
+
+        [Parameter()]
+        [switch]
+        $AcceptLicense
     )
 
     Begin
@@ -3709,7 +3731,11 @@ function Update-Script
 
         [Parameter()]
         [Switch]
-        $Force
+        $Force,
+
+        [Parameter()]
+        [switch]
+        $AcceptLicense
     )
 
     Begin
@@ -8171,6 +8197,7 @@ function Publish-PSArtifactUtility
     $Author = $null
     $CompanyName = $null
     $Copyright = $null
+    $requireLicenseAcceptance = "false"
 
     if($PSModuleInfo)
     {
@@ -8210,6 +8237,64 @@ function Publish-PSArtifactUtility
             if( -not $ProjectUri -and $PSModuleInfo.PrivateData.PSData["ProjectUri"])
             { 
                 $ProjectUri = $PSModuleInfo.PrivateData.PSData.ProjectUri
+            }
+            if($PSModuleInfo.PrivateData.PSData["requireLicenseAcceptance"])
+            {
+                $requireLicenseAcceptance = $PSModuleInfo.PrivateData.PSData.requireLicenseAcceptance.ToString().ToLower()
+                if($requireLicenseAcceptance -eq "true")
+                {
+                    if($FormatVersion -and ($FormatVersion.Major -lt $script:PSGetRequireLicenseAcceptanceFormatVersion.Major))
+                    {
+                        $message = $LocalizedData.requireLicenseAcceptanceNotSupported -f($FormatVersion)
+                        ThrowError -ExceptionName "System.InvalidOperationException" `
+                        -ExceptionMessage $message `
+                        -ErrorId "requireLicenseAcceptanceNotSupported" `
+                        -CallerPSCmdlet $PSCmdlet `
+                        -ErrorCategory InvalidData
+                    }
+
+                    if(-not $LicenseUri)
+                    {
+                        $message = $LocalizedData.LicensUriNotSpecified
+                        ThrowError -ExceptionName "System.InvalidOperationException" `
+                            -ExceptionMessage $message `
+                            -ErrorId "LicensUriNotSpecified" `
+                            -CallerPSCmdlet $PSCmdlet `
+                            -ErrorCategory InvalidData
+                    }
+
+                    $licenseFile = Get-ChildItem -path $NugetPackageRoot -filter License.txt
+                    if(-not $licenseFile)
+                    {
+                        $message = $LocalizedData.LicensTxtNotFound
+                        ThrowError -ExceptionName "System.InvalidOperationException" `
+                        -ExceptionMessage $message `
+                        -ErrorId "LicensTxtNotFound" `
+                        -CallerPSCmdlet $PSCmdlet `
+                        -ErrorCategory InvalidData
+                    }
+
+                    if((Get-Content $licenseFile.FullName) -eq $null)
+                    {
+                        $message = $LocalizedData.LicenseTxtEmpty
+                        ThrowError -ExceptionName "System.InvalidOperationException" `
+                        -ExceptionMessage $message `
+                        -ErrorId "LicenseTxtEmpty" `
+                        -CallerPSCmdlet $PSCmdlet `
+                        -ErrorCategory InvalidData
+                    }
+
+                    #RequireLicenseAcceptance is true, License uri and license.txt exist. Bump Up the FormatVersion
+                    if(-not $FormatVersion)
+                    {
+                        $FormatVersion = $script:PSGetRequireLicenseAcceptanceFormatVersion
+                    }
+                }
+                elseif($requireLicenseAcceptance -ne "false")
+                {
+                    $InvalidValueForRequireLicenseAcceptance = $LocalizedData.InvalidValueBoolean -f ($requireLicenseAcceptance, "requireLicenseAcceptance")
+                    Write-Warning -Message $InvalidValueForRequireLicenseAcceptance
+                }                
             }
         }
     }
@@ -8425,11 +8510,11 @@ function Publish-PSArtifactUtility
         <owners>$(Get-EscapedString -ElementValue "$CompanyName")</owners>
         <description>$(Get-EscapedString -ElementValue "$Description")</description>
         <releaseNotes>$(Get-EscapedString -ElementValue "$ReleaseNotes")</releaseNotes>
+        <requireLicenseAcceptance>$($requireLicenseAcceptance.ToString())</requireLicenseAcceptance>
         <copyright>$(Get-EscapedString -ElementValue "$Copyright")</copyright>
         <tags>$(if($Tags){ Get-EscapedString -ElementValue ($Tags -join ' ')})</tags>
         $(if($LicenseUri){
-        "<licenseUrl>$(Get-EscapedString -ElementValue "$LicenseUri")</licenseUrl>
-        <requireLicenseAcceptance>true</requireLicenseAcceptance>"
+         "<licenseUrl>$(Get-EscapedString -ElementValue "$LicenseUri")</licenseUrl>"
         })
         $(if($ProjectUri){
         "<projectUrl>$(Get-EscapedString -ElementValue "$ProjectUri")</projectUrl>"
@@ -8875,6 +8960,7 @@ function Get-DynamicOptions
                     Write-Output -InputObject (New-DynamicOption -Category $category -Name DscResource -ExpectedType StringArray -IsRequired $false)
                     Write-Output -InputObject (New-DynamicOption -Category $category -Name RoleCapability -ExpectedType StringArray -IsRequired $false)
                     Write-Output -InputObject (New-DynamicOption -Category $category -Name Command -ExpectedType StringArray -IsRequired $false)
+                    Write-Output -InputObject (New-DynamicOption -Category $category -Name 'AcceptLicense' -ExpectedType Switch -IsRequired $false)
                 }
 
         Source  {
@@ -10349,6 +10435,7 @@ function Install-PackageUtility
     $IsSavePackage = $false
     $Scope = $null
     $NoPathUpdate = $false
+    $AcceptLicense = $false
 
     # take the fastPackageReference and get the package object again.
     $parts = $fastPackageReference -Split '[|]'
@@ -10479,6 +10566,23 @@ function Install-PackageUtility
                     elseif($Force -eq 'true')
                     {
                         $Force = $true
+                    }
+                }
+            }
+
+            if($options.ContainsKey('AcceptLicense'))
+            {
+                $AcceptLicense = $options['AcceptLicense']
+
+                if($AcceptLicense.GetType().ToString() -eq 'System.String')
+                {
+                    if($AcceptLicense -eq 'false')
+                    {
+                        $AcceptLicense = $false
+                    }
+                    elseif($AcceptLicense -eq 'true')
+                    {
+                        $AcceptLicense = $true
                     }
                 }
             }
@@ -10758,6 +10862,9 @@ function Install-PackageUtility
 
             $installedPkgs = $provider.InstallPackage($script:FastPackRefHashtable[$fastPackageReference], $newRequest)
 
+            $YesToAll = $false
+            $NoToAll = $false
+
             foreach($pkg in $installedPkgs)
             {
                 if($request.IsCanceled)
@@ -10856,14 +10963,66 @@ function Install-PackageUtility
                         Write-Error -Message $message -ErrorId "NotSupportedPowerShellGetFormatVersion" -Category InvalidOperation
                         continue
                     }
-                
-                    if(-not $psgItemInfo.PowerShellGetFormatVersion)
+
+                    if($psgItemInfo.PowerShellGetFormatVersion -eq "1.0")
                     {
-                        $sourceModulePath = Microsoft.PowerShell.Management\Join-Path $tempDestination $pkg.Name
+                        $sourceModulePath = Microsoft.PowerShell.Management\Join-Path $tempDestination "$($pkg.Name)\Content\*\$script:ModuleReferences\$($pkg.Name)"
                     }
                     else
                     {
-                        $sourceModulePath = Microsoft.PowerShell.Management\Join-Path $tempDestination "$($pkg.Name)\Content\*\$script:ModuleReferences\$($pkg.Name)"
+                        $sourceModulePath = Microsoft.PowerShell.Management\Join-Path $tempDestination $pkg.Name
+                    }
+                    
+                    #Prompt if module requires license Acceptance
+                    $requireLicenseAcceptance = $false
+                    if($psgItemInfo.PowerShellGetFormatVersion -and
+                       $psgItemInfo.PowerShellGetFormatVersion -ge $script:PSGetRequireLicenseAcceptanceFormatVersion)
+                     {
+                        if($psgItemInfo.AdditionalMetadata -and $psgItemInfo.AdditionalMetadata.requireLicenseAcceptance)
+                        {
+                              $requireLicenseAcceptance = $psgItemInfo.AdditionalMetadata.requireLicenseAcceptance
+                        }
+                    }
+
+                    if($requireLicenseAcceptance -eq $true)
+                    {
+                        if($Force -and -not($AcceptLicense))
+                        {
+                            $message = $LocalizedData.ForceAcceptLicense -f $pkg.Name
+
+                            ThrowError -ExceptionName "System.ArgumentException" `
+                                       -ExceptionMessage $message `
+                                       -ErrorId "ForceAcceptLicense" `
+                                       -CallerPSCmdlet $PSCmdlet `
+                                       -ErrorCategory InvalidArgument
+                        }
+
+                        If (-not ($YesToAll -or $NoToAll -or $AcceptLicense))
+                        {
+                            if(-not(Test-Path -path "$sourceModulePath\License.txt"))
+                            {
+                                $message = $LocalizedData.LicensTxtNotFound
+
+                                ThrowError -ExceptionName "System.ArgumentException" `
+                                           -ExceptionMessage $message `
+                                           -ErrorId "LicensTxtNotFound" `
+                                           -CallerPSCmdlet $PSCmdlet `
+                                           -ErrorCategory InvalidArgument
+                            }
+                            $EULA = Get-Content "$sourceModulePath\License.txt"
+                            $FormattedEula = ""
+                            foreach($line in $EULA)
+                            {
+                                $FormattedEula +=$line -join "`r`n"
+                                $FormattedEula +="`r`n"
+                            }
+                            $message = $LocalizedData.AcceptanceLicenseQuery -f $pkg.Name
+                            $result = $request.ShouldContinue($message, $FormattedEula, [ref]$yesToAll, [ref]$NoToAll)
+                            if(($result -eq $false) -or ($NoToAll -eq $true))
+                            {
+                                return
+                            }
+                        }
                     }
 
                     $CurrentModuleInfo = $null
@@ -12967,7 +13126,13 @@ function Update-ModuleManifest
         [Parameter()]
         [ValidateNotNullOrEmpty()]
         [String[]]
-        $PackageManagementProviders
+        $PackageManagementProviders,
+
+        [Parameter()]
+        [switch]
+        $RequireLicenseAcceptance
+
+
     )
 
     if(-not (Microsoft.PowerShell.Management\Test-Path -Path $Path -PathType Leaf))
@@ -13442,6 +13607,10 @@ function Update-ModuleManifest
         {
             $Data["IconUri"] = $IconUri
         }
+        if($RequireLicenseAcceptance)
+        {
+            $Data["RequireLicenseAcceptance"] = $RequireLicenseAcceptance
+        }
 
         if($ReleaseNotes)
         {
@@ -13664,6 +13833,9 @@ function Get-PrivateData
         # ReleaseNotes of this module
         # ReleaseNotes = ''
 
+        # Flag to indicate whether the module requires explicit user acceptance for install/update/save
+        # RequireLicenseAcceptance = $false
+
         # External dependent modules of this module
         # ExternalModuleDependencies = ''
 
@@ -13681,9 +13853,9 @@ function Get-PrivateData
     $IconUri = $PrivateData["IconUri"] | %{"'$_'"}
     $ReleaseNotesEscape = $PrivateData["ReleaseNotes"] -Replace "'","''"
     $ReleaseNotes = $ReleaseNotesEscape | %{"'$_'"}
-    $ExternalModuleDependencies = $PrivateData["ExternalModuleDependencies"] -join "','" | %{"'$_'"} 
-    
-    $DefaultProperties = @("Tags","LicenseUri","ProjectUri","IconUri","ReleaseNotes","ExternalModuleDependencies")
+    $ExternalModuleDependencies = $PrivateData["ExternalModuleDependencies"] -join "','" | %{"'$_'"}     
+
+    $DefaultProperties = @("Tags","LicenseUri","ProjectUri","IconUri","ReleaseNotes","ExternalModuleDependencies","RequireLicenseAcceptance")
 
     $ExtraProperties = @()
     foreach($key in $PrivateData.Keys)
@@ -13692,7 +13864,28 @@ function Get-PrivateData
         {
             $PropertyString = "#"+"$key"+ " of this module"
             $PropertyString += "`r`n    "
-            $PropertyString += $key +" = " + "'"+$PrivateData[$key]+"'"
+            if(($PrivateData[$key]).GetType().IsArray){
+                $PropertyString += $key +" = @(" 
+                $firstElement = $true
+                foreach($element in $PrivateData[$key]){
+                    if($firstElement)
+                    {
+                        $firstElement = $false
+                    }
+                    else
+                    {
+                        $PropertyString += ","
+                    }
+                    $PropertyString += "'"+$element+"'"
+
+                }                               
+                $PropertyString += ")" 
+            }
+            else
+            {
+                $PropertyString += $key +" = " + "'"+$PrivateData[$key]+"'"
+            }            
+
             $ExtraProperties += ,$PropertyString
         }
     }
@@ -13737,6 +13930,12 @@ function Get-PrivateData
     {
         $ReleaseNotesLine = "ReleaseNotes = "+$ReleaseNotes
     }
+    $RequireLicenseAcceptanceLine = "# RequireLicenseAcceptance = `$false"
+    if($RequireLicenseAcceptance)
+    {
+        $RequireLicenseAcceptanceLine = "RequireLicenseAcceptance = `$true"
+    }
+
     $ExternalModuleDependenciesLine ="# ExternalModuleDependencies = @()"
     if($ExternalModuleDependencies -ne "''")
     {
@@ -13764,6 +13963,9 @@ function Get-PrivateData
 
         # ReleaseNotes of this module
         $ReleaseNotesLine
+
+        # Flag to indicate whether the module requires explicit user acceptance for install/update/save
+        $RequireLicenseAcceptanceLine
 
         # External dependent modules of this module
         $ExternalModuleDependenciesLine
@@ -13794,6 +13996,9 @@ function Get-PrivateData
 
         # ReleaseNotes of this module
         $ReleaseNotesLine
+
+        # Flag to indicate whether the module requires explicit user acceptance for install/update
+        $RequireLicenseAcceptanceLine
 
         # External dependent modules of this module
         $ExternalModuleDependenciesLine

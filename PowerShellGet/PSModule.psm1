@@ -8255,10 +8255,10 @@ function Publish-PSArtifactUtility
 
                     if(-not $LicenseUri)
                     {
-                        $message = $LocalizedData.LicensUriNotSpecified
+                        $message = $LocalizedData.LicenseUriNotSpecified
                         ThrowError -ExceptionName "System.InvalidOperationException" `
                             -ExceptionMessage $message `
-                            -ErrorId "LicensUriNotSpecified" `
+                            -ErrorId "LicenseUriNotSpecified" `
                             -CallerPSCmdlet $PSCmdlet `
                             -ErrorCategory InvalidData
                     }
@@ -8266,10 +8266,10 @@ function Publish-PSArtifactUtility
                     $licenseFile = Get-ChildItem -path $NugetPackageRoot -filter License.txt
                     if(-not $licenseFile)
                     {
-                        $message = $LocalizedData.LicensTxtNotFound
+                        $message = $LocalizedData.LicenseTxtNotFound
                         ThrowError -ExceptionName "System.InvalidOperationException" `
                         -ExceptionMessage $message `
-                        -ErrorId "LicensTxtNotFound" `
+                        -ErrorId "LicenseTxtNotFound" `
                         -CallerPSCmdlet $PSCmdlet `
                         -ErrorCategory InvalidData
                     }
@@ -10999,13 +10999,13 @@ function Install-PackageUtility
 
                         If (-not ($YesToAll -or $NoToAll -or $AcceptLicense))
                         {
-                            if(-not(Test-Path -path "$sourceModulePath\License.txt"))
+                            if(-not(Test-Path -path "$sourceModulePath\License.txt" -PathType Leaf))
                             {
-                                $message = $LocalizedData.LicensTxtNotFound
+                                $message = $LocalizedData.LicenseTxtNotFound
 
                                 ThrowError -ExceptionName "System.ArgumentException" `
                                            -ExceptionMessage $message `
-                                           -ErrorId "LicensTxtNotFound" `
+                                           -ErrorId "LicenseTxtNotFound" `
                                            -CallerPSCmdlet $PSCmdlet `
                                            -ErrorCategory InvalidArgument
                             }
@@ -13854,7 +13854,7 @@ function Get-PrivateData
     $ReleaseNotesEscape = $PrivateData["ReleaseNotes"] -Replace "'","''"
     $ReleaseNotes = $ReleaseNotesEscape | %{"'$_'"}
     $ExternalModuleDependencies = $PrivateData["ExternalModuleDependencies"] -join "','" | %{"'$_'"}     
-
+    $RequireLicenseAcceptance = $PrivateData["RequireLicenseAcceptance"]
     $DefaultProperties = @("Tags","LicenseUri","ProjectUri","IconUri","ReleaseNotes","ExternalModuleDependencies","RequireLicenseAcceptance")
 
     $ExtraProperties = @()
@@ -13864,7 +13864,7 @@ function Get-PrivateData
         {
             $PropertyString = "#"+"$key"+ " of this module"
             $PropertyString += "`r`n    "
-            if(($PrivateData[$key]).GetType().IsArray){
+            if(($PrivateData[$key]).GetType().IsArray){                
                 $PropertyString += $key +" = @(" 
                 $firstElement = $true
                 foreach($element in $PrivateData[$key]){

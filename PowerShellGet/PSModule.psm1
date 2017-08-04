@@ -435,10 +435,13 @@ Microsoft.PowerShell.Utility\Import-LocalizedData  LocalizedData -filename PSGet
 # This code is required to add a .Net type and call the Telemetry APIs 
 # This is required since PowerShell does not support generation of .Net Anonymous types
 #
-$requiredAssembly = @( [System.Management.Automation.PSCmdlet].Assembly.FullName,
-                       [System.Net.IWebProxy].Assembly.FullName, 
+$requiredAssembly = @( [System.Net.IWebProxy].Assembly.FullName, 
                        [System.Uri].Assembly.FullName )
 
+if(-not $script:IsCoreCLR) {
+    $requiredAssembly += [System.Management.Automation.PSCmdlet].Assembly.FullName
+}
+                       
 $script:IsSafeX509ChainHandleAvailable = ($null -ne ('Microsoft.Win32.SafeHandles.SafeX509ChainHandle' -as [Type]))
 
 if($script:IsSafeX509ChainHandleAvailable)
@@ -473,20 +476,22 @@ using System.Security;
 
 namespace Microsoft.PowerShell.Commands.PowerShellGet 
 { 
+$(if(-not $script:IsCoreCLR) {
+    '
     public static class Telemetry  
     { 
         public static void TraceMessageArtifactsNotFound(string[] artifactsNotFound, string operationName) 
         { 
             Microsoft.PowerShell.Telemetry.Internal.TelemetryAPI.TraceMessage(operationName, new { ArtifactsNotFound = artifactsNotFound });
-        }         
+        }
         
         public static void TraceMessageNonPSGalleryRegistration(string sourceLocationType, string sourceLocationHash, string installationPolicy, string packageManagementProvider, string publishLocationHash, string scriptSourceLocationHash, string scriptPublishLocationHash, string operationName) 
         { 
             Microsoft.PowerShell.Telemetry.Internal.TelemetryAPI.TraceMessage(operationName, new { SourceLocationType = sourceLocationType, SourceLocationHash = sourceLocationHash, InstallationPolicy = installationPolicy, PackageManagementProvider = packageManagementProvider, PublishLocationHash = publishLocationHash, ScriptSourceLocationHash = scriptSourceLocationHash, ScriptPublishLocationHash = scriptPublishLocationHash });
-        }         
-        
+        }        
     }
-    
+    '
+})
     /// <summary>
     /// Used by Ping-Endpoint function to supply webproxy to HttpClient
     /// We cannot use System.Net.WebProxy because this is not available on CoreClr
@@ -708,26 +713,8 @@ $(if($script:IsSafeX509ChainHandleAvailable)
 } 
 "@ 
 
-# Telemetry is turned off by default.
-$script:TelemetryEnabled = $false
-
-try
-{
-    # If the telemetry namespace/methods are not found flow goes to the catch block where telemetry is disabled
-    $telemetryMethods = ([Microsoft.PowerShell.Commands.PowerShellGet.Telemetry] | Get-Member -Static).Name
-
-    if ($telemetryMethods.Contains("TraceMessageArtifactsNotFound") -and $telemetryMethods.Contains("TraceMessageNonPSGalleryRegistration"))
-    {
-        # Turn ON Telemetry if the infrastructure is present on the machine
-        $script:TelemetryEnabled = $true
-    }
-}
-catch
-{
-    # Ignore the error and try adding the type below
-}
-
-if(-not $script:TelemetryEnabled -and $script:IsWindows)
+if( -not ('Microsoft.PowerShell.Commands.PowerShellGet.InternalWebProxy' -as [Type]) -and
+    $script:IsWindows)
 {
     try
     {
@@ -741,20 +728,22 @@ if(-not $script:TelemetryEnabled -and $script:IsWindows)
             $AddType_prams['ReferencedAssemblies'] = $requiredAssembly
         }
         Add-Type @AddType_prams 
-    
-        # If the telemetry namespace/methods are not found flow goes to the catch block where telemetry is disabled
-        $telemetryMethods = ([Microsoft.PowerShell.Commands.PowerShellGet.Telemetry] | Get-Member -Static).Name
-
-        if ($telemetryMethods.Contains("TraceMessageArtifactsNotFound") -and $telemetryMethods.Contains("TraceMessageNonPSGalleryRegistration"))
-        {
-            # Turn ON Telemetry if the infrastructure is present on the machine
-            $script:TelemetryEnabled = $true
-        }
     }
     catch
     {
-        # Disable Telemetry if there are any issues finding/loading the Telemetry infrastructure
-        $script:TelemetryEnabled = $false
+        Write-Warning -Message $_
+    }
+}
+
+# Turn ON Telemetry if the infrastructure is present on the machine
+$script:TelemetryEnabled = $false
+if('Microsoft.PowerShell.Commands.PowerShellGet.Telemetry' -as [Type])
+{
+    $telemetryMethods = ([Microsoft.PowerShell.Commands.PowerShellGet.Telemetry] | Get-Member -Static).Name
+
+    if ($telemetryMethods.Contains("TraceMessageArtifactsNotFound") -and $telemetryMethods.Contains("TraceMessageNonPSGalleryRegistration"))
+    {
+        $script:TelemetryEnabled = $true
     }
 }
 

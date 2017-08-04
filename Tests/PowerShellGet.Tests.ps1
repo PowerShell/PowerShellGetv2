@@ -237,7 +237,7 @@ Describe 'PowerShellGet Type tests' -tags @('BVT','CI') {
             InternalWebProxy = @('GetProxy', 'IsBypassed')
         }
 
-        if((IsWindows) -and ($PSVersionTable.PSVersion -ge '5.1.0')) {
+        if((IsWindows)) {
             $PowerShellGetTypeDetails['CERT_CHAIN_POLICY_PARA'] = @('cbSize','dwFlags','pvExtraPolicyPara')
             $PowerShellGetTypeDetails['CERT_CHAIN_POLICY_STATUS'] = @('cbSize','dwError','lChainIndex','lElementIndex','pvExtraPolicyStatus')
             $PowerShellGetTypeDetails['InternalSafeHandleZeroOrMinusOneIsInvalid'] = @('IsInvalid')
@@ -245,7 +245,7 @@ Describe 'PowerShellGet Type tests' -tags @('BVT','CI') {
             $PowerShellGetTypeDetails['Win32Helpers'] = @('CertVerifyCertificateChainPolicy', 'CertDuplicateCertificateChain', 'IsMicrosoftCertificate')
         }
 
-        if(-not (IsCoreCLR)) {
+        if('Microsoft.PowerShell.Telemetry.Internal.TelemetryAPI' -as [Type]) {
             $PowerShellGetTypeDetails['Telemetry'] = @('TraceMessageArtifactsNotFound', 'TraceMessageNonPSGalleryRegistration')
         }
 

@@ -509,7 +509,7 @@ namespace Microsoft.PowerShell.Commands.PowerShellGet
 }
 
 # Check and add Telemetry type
-if(-not $script:IsCoreCLR -and 
+if(('Microsoft.PowerShell.Telemetry.Internal.TelemetryAPI' -as [Type]) -and
    -not ('Microsoft.PowerShell.Commands.PowerShellGet.Telemetry' -as [Type]))
 {
     $RequiredAssembliesForTelemetry = @( 

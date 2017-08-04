@@ -235,13 +235,17 @@ Describe 'PowerShellGet Type tests' -tags @('BVT','CI') {
         $PowerShellGetNamespace = 'Microsoft.PowerShell.Commands.PowerShellGet'
         $PowerShellGetTypeDetails = @{
             InternalWebProxy = @('GetProxy', 'IsBypassed')
-            CERT_CHAIN_POLICY_PARA = @('cbSize','dwFlags','pvExtraPolicyPara')
-            CERT_CHAIN_POLICY_STATUS = @('cbSize','dwError','lChainIndex','lElementIndex','pvExtraPolicyStatus')
-            InternalSafeHandleZeroOrMinusOneIsInvalid = @('IsInvalid')
-            InternalSafeX509ChainHandle = @('CertFreeCertificateChain','ReleaseHandle','InvalidHandle')
-            Win32Helpers = @('CertVerifyCertificateChainPolicy', 'CertDuplicateCertificateChain', 'IsMicrosoftCertificate')
         }
-        if(-not $Script:IsCoreCLR) {
+
+        if((IsWindows) -and ($PSVersionTable.PSVersion -ge '5.1.0')) {
+            $PowerShellGetTypeDetails['CERT_CHAIN_POLICY_PARA'] = @('cbSize','dwFlags','pvExtraPolicyPara')
+            $PowerShellGetTypeDetails['CERT_CHAIN_POLICY_STATUS'] = @('cbSize','dwError','lChainIndex','lElementIndex','pvExtraPolicyStatus')
+            $PowerShellGetTypeDetails['InternalSafeHandleZeroOrMinusOneIsInvalid'] = @('IsInvalid')
+            $PowerShellGetTypeDetails['InternalSafeX509ChainHandle'] = @('CertFreeCertificateChain','ReleaseHandle','InvalidHandle')
+            $PowerShellGetTypeDetails['Win32Helpers'] = @('CertVerifyCertificateChainPolicy', 'CertDuplicateCertificateChain', 'IsMicrosoftCertificate')
+        }
+
+        if(-not (IsCoreCLR)) {
             $PowerShellGetTypeDetails['Telemetry'] = @('TraceMessageArtifactsNotFound', 'TraceMessageNonPSGalleryRegistration')
         }
 

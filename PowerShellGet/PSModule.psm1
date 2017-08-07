@@ -137,10 +137,10 @@ $script:NuGetProvider = $null
 # PowerShellGetFormatVersion is in the form of Major.Minor.  
 # Minor is incremented for the backward compatible format change.
 # Major is incremented for the breaking change.
-$script:CurrentPSGetFormatVersion = "1.0"
+$script:PSGetRequireLicenseAcceptanceFormatVersion = [Version]'2.0'
+$script:CurrentPSGetFormatVersion = $script:PSGetRequireLicenseAcceptanceFormatVersion
 $script:PSGetFormatVersion = "PowerShellGetFormatVersion"
 $script:SupportedPSGetFormatVersionMajors = @("1","2")
-$script:PSGetRequireLicenseAcceptanceFormatVersion = [Version]'2.0'
 $script:ModuleReferences = 'Module References'
 $script:AllVersions = "AllVersions"
 $script:Filter      = "Filter"
@@ -807,7 +807,7 @@ function Publish-Module
         $Credential,
 
         [Parameter()] 
-        [ValidateSet("1.0","2.0")]
+        [ValidateSet("2.0")]
         [Version]
         $FormatVersion,
 
@@ -8238,7 +8238,7 @@ function Publish-PSArtifactUtility
             { 
                 $ProjectUri = $PSModuleInfo.PrivateData.PSData.ProjectUri
             }
-            if($PSModuleInfo.PrivateData.PSData["requireLicenseAcceptance"])
+            if($PSModuleInfo.PrivateData.PSData["RequireLicenseAcceptance"])
             {
                 $requireLicenseAcceptance = $PSModuleInfo.PrivateData.PSData.requireLicenseAcceptance.ToString().ToLower()
                 if($requireLicenseAcceptance -eq "true")
@@ -8287,7 +8287,7 @@ function Publish-PSArtifactUtility
                     #RequireLicenseAcceptance is true, License uri and license.txt exist. Bump Up the FormatVersion
                     if(-not $FormatVersion)
                     {
-                        $FormatVersion = $script:PSGetRequireLicenseAcceptanceFormatVersion
+                        $FormatVersion = $script:CurrentPSGetFormatVersion
                     }
                 }
                 elseif($requireLicenseAcceptance -ne "false")
@@ -11007,19 +11007,16 @@ function Install-PackageUtility
                                            -ExceptionMessage $message `
                                            -ErrorId "LicenseTxtNotFound" `
                                            -CallerPSCmdlet $PSCmdlet `
-                                           -ErrorCategory InvalidArgument
+                                           -ErrorCategory ObjectNotFound
                             }
                             $EULA = Get-Content "$sourceModulePath\License.txt"
-                            $FormattedEula = ""
-                            foreach($line in $EULA)
-                            {
-                                $FormattedEula +=$line -join "`r`n"
-                                $FormattedEula +="`r`n"
-                            }
-                            $message = $LocalizedData.AcceptanceLicenseQuery -f $pkg.Name
-                            $result = $request.ShouldContinue($message, $FormattedEula, [ref]$yesToAll, [ref]$NoToAll)
+                            $FormattedEula = (Get-Content -Path "$sourceModulePath\License.txt") -Join "`r`n"
+                            $message = $FormattedEula + "`r`n" + ($LocalizedData.AcceptanceLicenseQuery -f $pkg.Name)
+                            $title = $LocalizedData.AcceptLicense
+                            $result = $request.ShouldContinue($message, $title, [ref]$yesToAll, [ref]$NoToAll)
                             if(($result -eq $false) -or ($NoToAll -eq $true))
                             {
+                                Write-Warning -Message $LocalizedData.UserDeclinedLicenseAcceptance
                                 return
                             }
                         }
@@ -13861,25 +13858,19 @@ function Get-PrivateData
     foreach($key in $PrivateData.Keys)
     {
         if($DefaultProperties -notcontains $key)
-        {
+        {            
             $PropertyString = "#"+"$key"+ " of this module"
             $PropertyString += "`r`n    "
-            if(($PrivateData[$key]).GetType().IsArray){                
-                $PropertyString += $key +" = @(" 
-                $firstElement = $true
-                foreach($element in $PrivateData[$key]){
-                    if($firstElement)
-                    {
-                        $firstElement = $false
-                    }
-                    else
-                    {
-                        $PropertyString += ","
-                    }
-                    $PropertyString += "'"+$element+"'"
-
-                }                               
-                $PropertyString += ")" 
+            if(($PrivateData[$key]).GetType().IsArray)
+            { 
+                $PropertyString += $key +" = " +" @("               
+                $PrivateData[$key] | % { $PropertyString += "'" + $_ +"'" + "," }
+                if($PrivateData[$key].Length -ge 1) 
+                {
+                    #Remove extra ,
+                    $PropertyString = $PropertyString -Replace ".$"
+                }
+                $PropertyString += ")"
             }
             else
             {

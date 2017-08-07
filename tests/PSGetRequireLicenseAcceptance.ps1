@@ -9,9 +9,6 @@
    Name: PowerShell.PSGet.PSGetRequireLicenseAcceptance
    Description: Tests for Require License Acceptance functionality   
 #>
-if($PSEdition -eq 'Core') {
-    return
-}
 
 function SuiteSetup {
     Import-Module "$PSScriptRoot\PSGetTestUtils.psm1" -WarningAction SilentlyContinue
@@ -80,10 +77,6 @@ Describe PowerShell.PSGet.PSGetRequireLicenseAcceptance.UpdateModuleManifest -Ta
         SuiteCleanup
     }
 
-    BeforeEach {
-        Set-Content "$script:PublishModuleBase\$script:PublishModuleName.psm1" -Value "function Get-$script:PublishModuleName { Get-Date }"
-    }
-
     AfterEach {
         RemoveItem "$script:PSGalleryRepoPath\*"
         RemoveItem "$script:PublishModuleBase\*"
@@ -104,6 +97,9 @@ Describe PowerShell.PSGet.PSGetRequireLicenseAcceptance.UpdateModuleManifest -Ta
 }
 
 Describe PowerShell.PSGet.PSGetRequireLicenseAcceptance.Publish -Tags 'BVT','InnerLoop' {
+    if($PSEdition -eq 'Core') {
+        return
+    }
     BeforeAll {
         SuiteSetup
     }
@@ -200,27 +196,6 @@ Describe PowerShell.PSGet.PSGetRequireLicenseAcceptance.Publish -Tags 'BVT','Inn
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $version
         $psgetItemInfo.AdditionalMetadata.requireLicenseAcceptance | should be "False"        
     }
-
-
-    # Purpose: Publish module with FormatVersion 1.0
-    #
-    # Action:
-    #      Update-ModuleManifest -RequireLicenseAcceptance    
-    #      Add License.txt
-    #      Update-ModuleManifest -LicenseUri <LicenseUri>    
-    #      Publish-Module -FormatVersion 1.0
-    # Expected Result: It fails with LicenseUriNotSpecified error
-    #
-    It "PublishModuleWithFormatVersion1.0" {
-        $version = "1.0"
-        New-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"                
-        Update-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -RequireLicenseAcceptance        
-        Update-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -LicenseUri "http://$script:PublishModuleName.com/license"
-        Set-Content "$script:PublishModuleBase\license.txt" -Value "LicenseTerms"        
-        AssertFullyQualifiedErrorIdEquals -scriptblock {Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -FormatVersion 1.0 -WarningAction SilentlyContinue}`
-                                          -expectedFullyQualifiedErrorId 'requireLicenseAcceptanceNotSupported,Publish-PSArtifactUtility'
-
-    }        
 }
 
 function InstallSuiteSetup {

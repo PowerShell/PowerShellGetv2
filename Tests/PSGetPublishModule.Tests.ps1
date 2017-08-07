@@ -94,7 +94,8 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         RemoveItem "$script:ProgramFilesModulesPath\$script:PublishModuleName"
         RemoveItem "$script:PublishModuleBase\*"
     }
-
+    
+    
     # Purpose: Publish a module with -Name
     #
     # Action: Publish-Module -Name ContosoPublishModule -NuGetApiKey <ApiKey>
@@ -644,7 +645,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
 
         New-ModuleManifest -Path "$ModuleBase\$ModuleName.psd1" -ModuleVersion $version -Description $Description -Author $Author -CompanyName $CompanyName -Copyright $CopyRight
 
-        Publish-Module -Path $ModuleBase -NuGetApiKey $script:ApiKey -ReleaseNotes $ReleaseNotes -Tags $Tags -LicenseUri $LicenseUri -ProjectUri $ProjectUri -FormatVersion "1.0" -WarningAction SilentlyContinue
+        Publish-Module -Path $ModuleBase -NuGetApiKey $script:ApiKey -ReleaseNotes $ReleaseNotes -Tags $Tags -LicenseUri $LicenseUri -ProjectUri $ProjectUri -WarningAction SilentlyContinue
 
         RemoveItem -path $ModuleBase
 
@@ -660,8 +661,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         AssertEqualsCaseInsensitive $psgetItemInfo.CopyRight $CopyRight "CopyRight should be same as the published one"
         Assert       ($psgetItemInfo.Tags -contains $($Tags[0])) "Tags ($($psgetItemInfo.Tags)) should contain the published one ($($Tags[0]))"
         Assert       ($psgetItemInfo.Tags -contains $($Tags[1])) "Tags ($($psgetItemInfo.Tags)) should contain the published one ($($Tags[1]))"
-        AssertEqualsCaseInsensitive $psgetItemInfo.LicenseUri $LicenseUri "LicenseUri should be same as the published one"
-        AssertEqualsCaseInsensitive $psgetItemInfo.PowerShellGetFormatVersion ([Version]$script:CurrentPSGetFormatVersion) "PowerShellGetFormatVersion $($psgetItemInfo.PowerShellGetFormatVersion) should match the current PowerShellGetFormatVersion $script:CurrentPSGetFormatVersion"
+        AssertEqualsCaseInsensitive $psgetItemInfo.LicenseUri $LicenseUri "LicenseUri should be same as the published one"        
     }
 
     # Purpose: Test Publish-Module cmdlet gets the PSData properties from the module manifest file
@@ -813,8 +813,8 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
            PSGetTestUtils\Uninstall-Module -Name $moduleName
            #Get-InstalledModule -Name $moduleName -ErrorAction SilentlyContinue | Uninstall-Module -Force
         }
-    }
-
+    }    
+    
     # Purpose: Validate *-Module cmdlets with compatible PowerShellGetFormatVersion
     #
     # Action:

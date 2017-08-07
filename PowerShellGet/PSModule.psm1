@@ -432,61 +432,20 @@ Microsoft.PowerShell.Utility\Import-LocalizedData  LocalizedData -filename PSGet
 
 #region Add .Net type for Telemetry APIs and WebProxy
 
-# This code is required to add a .Net type and call the Telemetry APIs 
-# This is required since PowerShell does not support generation of .Net Anonymous types
-#
-$requiredAssembly = @( [System.Management.Automation.PSCmdlet].Assembly.FullName,
-                       [System.Net.IWebProxy].Assembly.FullName, 
-                       [System.Uri].Assembly.FullName )
-
-$script:IsSafeX509ChainHandleAvailable = ($null -ne ('Microsoft.Win32.SafeHandles.SafeX509ChainHandle' -as [Type]))
-
-if($script:IsSafeX509ChainHandleAvailable)
-{  
-   # It is not possible to define a single internal SafeHandle class in PowerShellGet namespace for all the supported versions of .Net Framework including .Net Core.
-   # SafeHandleZeroOrMinusOneIsInvalid is not a public class on .Net Core,
-   # therefore SafeX509ChainHandle will be used if it is available otherwise InternalSafeX509ChainHandle is defined below.
-   #
-   # ChainContext is not available on .Net Core, we must have to use SafeX509ChainHandle on .Net Core.
-   #
-   $SafeX509ChainHandleClassName = 'SafeX509ChainHandle'      
-   $requiredAssembly += [Microsoft.Win32.SafeHandles.SafeX509ChainHandle].Assembly.FullName
-}
-else
+# Check and add InternalWebProxy type
+if( -not ('Microsoft.PowerShell.Commands.PowerShellGet.InternalWebProxy' -as [Type]))
 {
-   # SafeX509ChainHandle is not available on .Net Framework 4.5 or older versions,
-   # therefore InternalSafeX509ChainHandle is defined below.
-   #
-   $SafeX509ChainHandleClassName = 'InternalSafeX509ChainHandle'
-}
+    $RequiredAssembliesForInternalWebProxy = @( 
+        [System.Net.IWebProxy].Assembly.FullName,
+        [System.Uri].Assembly.FullName
+    )
 
-$source = @" 
+    $InternalWebProxySource = @'
 using System; 
 using System.Net;
-using System.Management.Automation;
-using Microsoft.Win32.SafeHandles;
-using System.Security.Cryptography;
-using System.Runtime.InteropServices;
-using System.Runtime.ConstrainedExecution;
-using System.Runtime.Versioning;
-using System.Security;
 
 namespace Microsoft.PowerShell.Commands.PowerShellGet 
-{ 
-    public static class Telemetry  
-    { 
-        public static void TraceMessageArtifactsNotFound(string[] artifactsNotFound, string operationName) 
-        { 
-            Microsoft.PowerShell.Telemetry.Internal.TelemetryAPI.TraceMessage(operationName, new { ArtifactsNotFound = artifactsNotFound });
-        }         
-        
-        public static void TraceMessageNonPSGalleryRegistration(string sourceLocationType, string sourceLocationHash, string installationPolicy, string packageManagementProvider, string publishLocationHash, string scriptSourceLocationHash, string scriptPublishLocationHash, string operationName) 
-        { 
-            Microsoft.PowerShell.Telemetry.Internal.TelemetryAPI.TraceMessage(operationName, new { SourceLocationType = sourceLocationType, SourceLocationHash = sourceLocationHash, InstallationPolicy = installationPolicy, PackageManagementProvider = packageManagementProvider, PublishLocationHash = publishLocationHash, ScriptSourceLocationHash = scriptSourceLocationHash, ScriptPublishLocationHash = scriptPublishLocationHash });
-        }         
-        
-    }
-    
+{        
     /// <summary>
     /// Used by Ping-Endpoint function to supply webproxy to HttpClient
     /// We cannot use System.Net.WebProxy because this is not available on CoreClr
@@ -526,8 +485,120 @@ namespace Microsoft.PowerShell.Commands.PowerShellGet
         {
             return false;
         }
-    } 
+    }
+}
+'@
 
+    try
+    {
+        $AddType_prams = @{
+            TypeDefinition = $InternalWebProxySource
+            Language = 'CSharp'
+            ErrorAction = 'SilentlyContinue'
+        }
+        if (-not $script:IsCoreCLR)
+        {
+            $AddType_prams['ReferencedAssemblies'] = $RequiredAssembliesForInternalWebProxy
+        }
+        Add-Type @AddType_prams 
+    }
+    catch
+    {
+        Write-Warning -Message "InternalWebProxy: $_"
+    }
+}
+
+# Check and add Telemetry type
+if(('Microsoft.PowerShell.Telemetry.Internal.TelemetryAPI' -as [Type]) -and
+   -not ('Microsoft.PowerShell.Commands.PowerShellGet.Telemetry' -as [Type]))
+{
+    $RequiredAssembliesForTelemetry = @( 
+        [System.Management.Automation.PSCmdlet].Assembly.FullName
+    )
+
+    $TelemetrySource = @'
+using System; 
+using System.Management.Automation;
+
+namespace Microsoft.PowerShell.Commands.PowerShellGet 
+{ 
+    public static class Telemetry  
+    { 
+        public static void TraceMessageArtifactsNotFound(string[] artifactsNotFound, string operationName) 
+        { 
+            Microsoft.PowerShell.Telemetry.Internal.TelemetryAPI.TraceMessage(operationName, new { ArtifactsNotFound = artifactsNotFound });
+        }
+        
+        public static void TraceMessageNonPSGalleryRegistration(string sourceLocationType, string sourceLocationHash, string installationPolicy, string packageManagementProvider, string publishLocationHash, string scriptSourceLocationHash, string scriptPublishLocationHash, string operationName) 
+        { 
+            Microsoft.PowerShell.Telemetry.Internal.TelemetryAPI.TraceMessage(operationName, new { SourceLocationType = sourceLocationType, SourceLocationHash = sourceLocationHash, InstallationPolicy = installationPolicy, PackageManagementProvider = packageManagementProvider, PublishLocationHash = publishLocationHash, ScriptSourceLocationHash = scriptSourceLocationHash, ScriptPublishLocationHash = scriptPublishLocationHash });
+        }        
+    }
+}
+'@
+
+    try
+    {
+        $AddType_prams = @{
+            TypeDefinition = $TelemetrySource
+            Language = 'CSharp'
+            ErrorAction = 'SilentlyContinue'
+        }
+        $AddType_prams['ReferencedAssemblies'] = $RequiredAssembliesForTelemetry
+        Add-Type @AddType_prams
+    }
+    catch
+    {
+        Write-Warning -Message "Telemetry: $_"
+    }
+}
+# Turn ON Telemetry if the infrastructure is present on the machine
+$script:TelemetryEnabled = $false
+if('Microsoft.PowerShell.Commands.PowerShellGet.Telemetry' -as [Type])
+{
+    $telemetryMethods = ([Microsoft.PowerShell.Commands.PowerShellGet.Telemetry] | Get-Member -Static).Name
+    if ($telemetryMethods.Contains("TraceMessageArtifactsNotFound") -and $telemetryMethods.Contains("TraceMessageNonPSGalleryRegistration"))
+    {
+        $script:TelemetryEnabled = $true
+    }
+}
+
+# Check and add Win32Helpers type
+$script:IsSafeX509ChainHandleAvailable = ($null -ne ('Microsoft.Win32.SafeHandles.SafeX509ChainHandle' -as [Type]))
+if($script:IsWindows -and -not ('Microsoft.PowerShell.Commands.PowerShellGet.Win32Helpers' -as [Type]))
+{
+    $RequiredAssembliesForWin32Helpers = @()
+    if($script:IsSafeX509ChainHandleAvailable)
+    {  
+        # It is not possible to define a single internal SafeHandle class in PowerShellGet namespace for all the supported versions of .Net Framework including .Net Core.
+        # SafeHandleZeroOrMinusOneIsInvalid is not a public class on .Net Core,
+        # therefore SafeX509ChainHandle will be used if it is available otherwise InternalSafeX509ChainHandle is defined below.
+        #
+        # ChainContext is not available on .Net Core, we must have to use SafeX509ChainHandle on .Net Core.
+        #
+        $SafeX509ChainHandleClassName = 'SafeX509ChainHandle'      
+        $RequiredAssembliesForWin32Helpers += [Microsoft.Win32.SafeHandles.SafeX509ChainHandle].Assembly.FullName
+    }
+    else
+    {
+        # SafeX509ChainHandle is not available on .Net Framework 4.5 or older versions,
+        # therefore InternalSafeX509ChainHandle is defined below.
+        #
+        $SafeX509ChainHandleClassName = 'InternalSafeX509ChainHandle'
+    }
+
+    $Win32HelpersSource = @" 
+using System; 
+using System.Net;
+using Microsoft.Win32.SafeHandles;
+using System.Security.Cryptography;
+using System.Runtime.InteropServices;
+using System.Runtime.ConstrainedExecution;
+using System.Runtime.Versioning;
+using System.Security;
+
+namespace Microsoft.PowerShell.Commands.PowerShellGet 
+{ 
     [StructLayout(LayoutKind.Sequential, CharSet=CharSet.Unicode)]
     public struct CERT_CHAIN_POLICY_PARA {
         public CERT_CHAIN_POLICY_PARA(int size) {
@@ -708,53 +779,22 @@ $(if($script:IsSafeX509ChainHandleAvailable)
 } 
 "@ 
 
-# Telemetry is turned off by default.
-$script:TelemetryEnabled = $false
-
-try
-{
-    # If the telemetry namespace/methods are not found flow goes to the catch block where telemetry is disabled
-    $telemetryMethods = ([Microsoft.PowerShell.Commands.PowerShellGet.Telemetry] | Get-Member -Static).Name
-
-    if ($telemetryMethods.Contains("TraceMessageArtifactsNotFound") -and $telemetryMethods.Contains("TraceMessageNonPSGalleryRegistration"))
-    {
-        # Turn ON Telemetry if the infrastructure is present on the machine
-        $script:TelemetryEnabled = $true
-    }
-}
-catch
-{
-    # Ignore the error and try adding the type below
-}
-
-if(-not $script:TelemetryEnabled -and $script:IsWindows)
-{
     try
     {
         $AddType_prams = @{
-            TypeDefinition = $source
+            TypeDefinition = $Win32HelpersSource
             Language = 'CSharp'            
             ErrorAction = 'SilentlyContinue'
         }
-        if (-not $script:IsCoreCLR)
+        if (-not $script:IsCoreCLR -and $RequiredAssembliesForWin32Helpers)
         {
-            $AddType_prams['ReferencedAssemblies'] = $requiredAssembly
+            $AddType_prams['ReferencedAssemblies'] = $RequiredAssembliesForWin32Helpers
         }
-        Add-Type @AddType_prams 
-    
-        # If the telemetry namespace/methods are not found flow goes to the catch block where telemetry is disabled
-        $telemetryMethods = ([Microsoft.PowerShell.Commands.PowerShellGet.Telemetry] | Get-Member -Static).Name
-
-        if ($telemetryMethods.Contains("TraceMessageArtifactsNotFound") -and $telemetryMethods.Contains("TraceMessageNonPSGalleryRegistration"))
-        {
-            # Turn ON Telemetry if the infrastructure is present on the machine
-            $script:TelemetryEnabled = $true
-        }
+        Add-Type @AddType_prams
     }
     catch
     {
-        # Disable Telemetry if there are any issues finding/loading the Telemetry infrastructure
-        $script:TelemetryEnabled = $false
+        Write-Warning -Message "Win32Helpers: $_"
     }
 }
 

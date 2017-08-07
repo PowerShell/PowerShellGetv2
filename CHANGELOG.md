@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.3.2
+* Disabled PowerShellGet Telemetry on PS Core as PowerShell Telemetry APIs got removed in PowerShell Core beta builds. (#153)
+* Fixed for DateTime format serialization issue. (#141)
+* Update-ModuleManifest should add ExternalModuleDependencies value as a collection. (#129)
+
+
 ## 1.1.3.1
 
 New features

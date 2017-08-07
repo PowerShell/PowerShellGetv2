@@ -90,7 +90,7 @@ function Initialize
 
 function Remove-InstalledModules
 {
-    Get-InstalledModule -Name $ContosoServer -AllVersions -ErrorAction SilentlyContinue | Uninstall-Module -Force
+    Get-InstalledModule -Name $ContosoServer -AllVersions -ErrorAction SilentlyContinue | PowerShellGet\Uninstall-Module -Force
 }
 
 Describe "PowerShellGet - Module tests" -tags "Feature" {

@@ -6377,7 +6377,7 @@ function Ping-Endpoint
     $results = @{}
 
     $WebProxy = $null
-    if($Proxy -and $script:IsWindows)
+    if($Proxy -and ('Microsoft.PowerShell.Commands.PowerShellGet.InternalWebProxy' -as [Type]))
     {
         $ProxyNetworkCredential = $null
         if($ProxyCredential)
@@ -7593,7 +7593,7 @@ function Install-NuGetClientBinaries
 
             $nugetExeFilePath = Microsoft.PowerShell.Management\Join-Path -Path $nugetExeBasePath -ChildPath $script:NuGetExeName
 
-            # Download the NuGet.exe from http://nuget.org/NuGet.exe
+            # Download the NuGet.exe from https://nuget.org/NuGet.exe
             $null = Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri $script:NuGetClientSourceURL `
                                                                    -OutFile $nugetExeFilePath `
                                                                    @AdditionalParams

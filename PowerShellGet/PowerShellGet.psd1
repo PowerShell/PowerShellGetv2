@@ -55,6 +55,12 @@ PrivateData = @{
         ProjectUri = 'https://go.microsoft.com/fwlink/?LinkId=828955'
         LicenseUri = 'https://go.microsoft.com/fwlink/?LinkId=829061'
         ReleaseNotes = @'
+
+## 1.1.3.3
+
+New features
+* Added support for RequireLicenseAcceptance. Allows publishers to require license acceptance for modules on Save/Install/Update.
+
 ## 1.1.3.1
 
 New features

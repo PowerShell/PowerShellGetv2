@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.3.3
+
+New features
+* Added support for RequireLicenseAcceptance. Allows publishers to require license acceptance for modules on Save/Install/Update.
+
 ## 1.1.3.1
 
 New features

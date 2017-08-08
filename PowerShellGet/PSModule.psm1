@@ -11008,9 +11008,9 @@ function Install-PackageUtility
                                            -ErrorId "LicenseTxtNotFound" `
                                            -CallerPSCmdlet $PSCmdlet `
                                            -ErrorCategory ObjectNotFound
-                            }
-                            $EULA = Get-Content "$sourceModulePath\License.txt"
-                            $FormattedEula = (Get-Content -Path "$sourceModulePath\License.txt") -Join "`r`n"
+                            }                            
+                            $LicenseFilePath = Join-Path $sourceModulePath "License.txt"
+                            $FormattedEula = (Get-Content -Path $LicenseFilePath) -Join "`r`n"
                             $message = $FormattedEula + "`r`n" + ($LocalizedData.AcceptanceLicenseQuery -f $pkg.Name)
                             $title = $LocalizedData.AcceptLicense
                             $result = $request.ShouldContinue($message, $title, [ref]$yesToAll, [ref]$NoToAll)
@@ -13867,7 +13867,7 @@ function Get-PrivateData
                 $PrivateData[$key] | % { $PropertyString += "'" + $_ +"'" + "," }
                 if($PrivateData[$key].Length -ge 1) 
                 {
-                    #Remove extra ,
+                    #Remove ex
                     $PropertyString = $PropertyString -Replace ".$"
                 }
                 $PropertyString += ")"

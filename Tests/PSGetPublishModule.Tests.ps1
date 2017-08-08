@@ -108,7 +108,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         #Copy module to $script:ProgramFilesModulesPath
         Copy-Item $script:PublishModuleBase $script:ProgramFilesModulesPath -Recurse -Force
 
-        Publish-Module -Name $script:PublishModuleName -ReleaseNotes "$script:PublishModuleName release notes" -Tags PSGet -LicenseUri "http://$script:PublishModuleName.com/license" -ProjectUri "http://$script:PublishModuleName.com" -WarningAction SilentlyContinue
+        Publish-Module -Name $script:PublishModuleName -ReleaseNotes "$script:PublishModuleName release notes" -Tags PSGet -LicenseUri "https://$script:PublishModuleName.com/license" -ProjectUri "https://$script:PublishModuleName.com" -WarningAction SilentlyContinue
 
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $version
         Assert (($psgetItemInfo.Name -eq $script:PublishModuleName) -and (($psgetItemInfo.Version.ToString() -eq $version))) "Publish-Module should publish a module with valid module name, $($psgetItemInfo.Name)"
@@ -133,7 +133,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         #Copy module to $script:ProgramFilesModulesPath
         Copy-Item $script:PublishModuleBase $script:ProgramFilesModulesPath -Recurse -Force
 
-        Publish-Module -Name $script:PublishModuleName -NuGetApiKey $script:ApiKey -ReleaseNotes "$script:PublishModuleName release notes" -Tags PSGet -LicenseUri "http://$script:PublishModuleName.com/license" -ProjectUri "http://$script:PublishModuleName.com" -WarningAction SilentlyContinue
+        Publish-Module -Name $script:PublishModuleName -NuGetApiKey $script:ApiKey -ReleaseNotes "$script:PublishModuleName release notes" -Tags PSGet -LicenseUri "https://$script:PublishModuleName.com/license" -ProjectUri "https://$script:PublishModuleName.com" -WarningAction SilentlyContinue
 
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $version
         Assert (($psgetItemInfo.Name -eq $script:PublishModuleName) -and (($psgetItemInfo.Version.ToString() -eq $version))) "Publish-Module should publish a module with valid module name, $($psgetItemInfo.Name)"
@@ -162,8 +162,8 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
                        -NuGetApiKey $script:ApiKey `
                        -ReleaseNotes "$script:PublishModuleName release notes" `
                        -Tags 'PSGet' `
-                       -LicenseUri "http://$script:PublishModuleName.com/license" `
-                       -ProjectUri "http://$script:PublishModuleName.com" `
+                       -LicenseUri "https://$script:PublishModuleName.com/license" `
+                       -ProjectUri "https://$script:PublishModuleName.com" `
                        -WarningAction SilentlyContinue
 
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $version
@@ -180,7 +180,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     It "PublishModuleWithPath" {
         $version = "1.0"
         New-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
-        Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -ReleaseNotes "$script:PublishModuleName release notes" -Tags PSGet -LicenseUri "http://$script:PublishModuleName.com/license" -ProjectUri "http://$script:PublishModuleName.com" -WarningAction SilentlyContinue
+        Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -ReleaseNotes "$script:PublishModuleName release notes" -Tags PSGet -LicenseUri "https://$script:PublishModuleName.com/license" -ProjectUri "https://$script:PublishModuleName.com" -WarningAction SilentlyContinue
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $version
         Assert ($psgetItemInfo.Name -eq $script:PublishModuleName) "Publish-Module should publish a module with valid module path, $($psgetItemInfo.Name)"
     }
@@ -206,7 +206,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         try
         {
             Set-Location -Path $moduleBase
-            Publish-Module -Path .\ -NuGetApiKey $script:ApiKey -ReleaseNotes "$script:PublishModuleName release notes" -Tags PSGet -LicenseUri "http://$script:PublishModuleName.com/license" -ProjectUri "http://$script:PublishModuleName.com" -WarningAction SilentlyContinue
+            Publish-Module -Path .\ -NuGetApiKey $script:ApiKey -ReleaseNotes "$script:PublishModuleName release notes" -Tags PSGet -LicenseUri "https://$script:PublishModuleName.com/license" -ProjectUri "https://$script:PublishModuleName.com" -WarningAction SilentlyContinue
             $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $version
             Assert ($psgetItemInfo.Name -eq $script:PublishModuleName) "Publish-Module should publish a module with valid module relative path, $($psgetItemInfo.Name)"
         }
@@ -288,8 +288,8 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
                        -NuGetApiKey $script:ApiKey `
                        -ReleaseNotes "$script:PublishModuleName release notes" `
                        -Tags 'PSGet' `
-                       -LicenseUri "http://$script:PublishModuleName.com/license" `
-                       -ProjectUri "http://$script:PublishModuleName.com" `
+                       -LicenseUri "https://$script:PublishModuleName.com/license" `
+                       -ProjectUri "https://$script:PublishModuleName.com" `
                        -WarningAction SilentlyContinue
 
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $version
@@ -448,7 +448,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         #Copy module to $script:ProgramFilesModulesPath
         Copy-Item $script:PublishModuleBase $script:ProgramFilesModulesPath -Recurse -Force
 
-        Publish-Module -Name $script:PublishModuleName -NuGetApiKey $script:ApiKey -ReleaseNotes "$script:PublishModuleName release notes" -Tags PSGet -LicenseUri "http://$script:PublishModuleName.com/license" -ProjectUri "http://$script:PublishModuleName.com" -WarningAction SilentlyContinue
+        Publish-Module -Name $script:PublishModuleName -NuGetApiKey $script:ApiKey -ReleaseNotes "$script:PublishModuleName release notes" -Tags PSGet -LicenseUri "https://$script:PublishModuleName.com/license" -ProjectUri "https://$script:PublishModuleName.com" -WarningAction SilentlyContinue
 
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $version
         Assert (($psgetItemInfo.Name -eq $script:PublishModuleName) -and (($psgetItemInfo.Version.ToString() -eq $version))) "Publish-Module should publish a module with valid module name, $($psgetItemInfo.Name)"
@@ -460,7 +460,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         #Copy module to $script:ProgramFilesModulesPath
         Copy-Item $script:PublishModuleBase $script:ProgramFilesModulesPath -Recurse -Force
 
-        Publish-Module -Name $script:PublishModuleName -NuGetApiKey $script:ApiKey -ReleaseNotes "$script:PublishModuleName release notes" -Tags PSGet -LicenseUri "http://$script:PublishModuleName.com/license" -ProjectUri "http://$script:PublishModuleName.com" -WarningAction SilentlyContinue
+        Publish-Module -Name $script:PublishModuleName -NuGetApiKey $script:ApiKey -ReleaseNotes "$script:PublishModuleName release notes" -Tags PSGet -LicenseUri "https://$script:PublishModuleName.com/license" -ProjectUri "https://$script:PublishModuleName.com" -WarningAction SilentlyContinue
 
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $version
         Assert (($psgetItemInfo.Name -eq $script:PublishModuleName) -and (($psgetItemInfo.Version.ToString() -eq $version))) "Publish-Module should publish a module with valid module name, $($psgetItemInfo.Name)"
@@ -635,9 +635,9 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         $Description = "$ModuleName module <TestElement> $&*!()[]{}@#"
         $ReleaseNotes = @("$ModuleName release notes", " <TestElement> $&*!()[]{}@#")
         $Tags = "PSGet","Special$&*!()[]{}@#<TestElement>"
-        $ProjectUri = "http://$ModuleName.com/Project"
-        $IconUri = "http://$ModuleName.com/Icon"
-        $LicenseUri = "http://$ModuleName.com/license"
+        $ProjectUri = "https://$ModuleName.com/Project"
+        $IconUri = "https://$ModuleName.com/Icon"
+        $LicenseUri = "https://$ModuleName.com/license"
         $Author = "Author#@<TestElement>$&*!()[]{}@#"
         $CompanyName = "CompanyName <TestElement>$&*!()[]{}@#"
         $CopyRight = "CopyRight <TestElement>$&*!()[]{}@#"
@@ -675,9 +675,9 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         $Description = "$script:PublishModuleName module"
         $ReleaseNotes = "$script:PublishModuleName release notes"
         $Tags = "PSGet","DSC"
-        $ProjectUri = "http://$script:PublishModuleName.com/Project"
-        $IconUri = "http://$script:PublishModuleName.com/Icon"
-        $LicenseUri = "http://$script:PublishModuleName.com/license"
+        $ProjectUri = "https://$script:PublishModuleName.com/Project"
+        $IconUri = "https://$script:PublishModuleName.com/Icon"
+        $LicenseUri = "https://$script:PublishModuleName.com/license"
         $Author = "AuthorName"
         $CompanyName = "CompanyName"
         $CopyRight = "CopyRight"
@@ -726,9 +726,9 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         $Description = "$script:PublishModuleName module"
         $ReleaseNotes = "$script:PublishModuleName release notes"
         $Tags = "PSGet","DSC"
-        $ProjectUri = New-Object System.Uri "http://$script:PublishModuleName.com/Project"
-        $IconUri = New-Object System.Uri "http://$script:PublishModuleName.com/Icon"
-        $LicenseUri = New-Object System.Uri "http://$script:PublishModuleName.com/license"
+        $ProjectUri = New-Object System.Uri "https://$script:PublishModuleName.com/Project"
+        $IconUri = New-Object System.Uri "https://$script:PublishModuleName.com/Icon"
+        $LicenseUri = New-Object System.Uri "https://$script:PublishModuleName.com/license"
         $Author = "AuthorName"
         $CompanyName = "CompanyName"
         $CopyRight = "CopyRight"
@@ -904,9 +904,9 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     It PublishModuleWithSupportedParameter {
        $version = "1.0"
        $Tags = "Tags"
-       $LicenseUri = 'http://contoso.com/license'
-       $ProjectUri = 'http://contoso.com/'
-       $IconUri = 'http://contoso.com/icon'
+       $LicenseUri = 'https://contoso.com/license'
+       $ProjectUri = 'https://contoso.com/'
+       $IconUri = 'https://contoso.com/icon'
        $ReleaseNotes = 'Test module for external module dependecies'
        New-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module" 
        #Copy module to $script:ProgramFilesModulesPath
@@ -979,9 +979,9 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
                            -NestedModules "$ModuleName.psm1",$binaryDllName `
                            -Tags $tags `
                            -Description 'Temp Description KeyWord1 Keyword2 Keyword3' `
-                           -LicenseUri "http://$ModuleName.com/license" `
-                           -IconUri "http://$ModuleName.com/icon" `
-                           -ProjectUri "http://$ModuleName.com" `
+                           -LicenseUri "https://$ModuleName.com/license" `
+                           -IconUri "https://$ModuleName.com/icon" `
+                           -ProjectUri "https://$ModuleName.com" `
                            -ReleaseNotes "$ModuleName release notes" `
                            -DscResourcesToExport "*"
         }
@@ -997,9 +997,9 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
                            -NuGetApiKey $script:ApiKey `
                            -ReleaseNotes "$ModuleName release notes" `
                            -Tags $tags `
-                           -LicenseUri "http://$ModuleName.com/license" `
-                           -IconUri "http://$ModuleName.com/icon" `
-                           -ProjectUri "http://$ModuleName.com" `
+                           -LicenseUri "https://$ModuleName.com/license" `
+                           -IconUri "https://$ModuleName.com/icon" `
+                           -ProjectUri "https://$ModuleName.com" `
                            -WarningAction SilentlyContinue `
                            -WarningVariable wa
     
@@ -1093,7 +1093,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
     It "PublishModuleWithFalseConfirm" {
         $version = "2.0"
         New-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
-        Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -ReleaseNotes "$script:PublishModuleName release notes" -Tags PSGet -LicenseUri "http://$script:PublishModuleName.com/license" -ProjectUri "http://$script:PublishModuleName.com" -Confirm:$false -WarningAction SilentlyContinue
+        Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -ReleaseNotes "$script:PublishModuleName release notes" -Tags PSGet -LicenseUri "https://$script:PublishModuleName.com/license" -ProjectUri "https://$script:PublishModuleName.com" -Confirm:$false -WarningAction SilentlyContinue
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $version
         Assert ($psgetItemInfo.Name -eq $script:PublishModuleName) "Publish-Module should publish a module with valid module path, $($psgetItemInfo.Name)"
     }
@@ -1101,7 +1101,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
     It 'PublishModuleWithForceAndConfirm' {
         $version = "2.0"
         New-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
-        Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -ReleaseNotes "$script:PublishModuleName release notes" -Tags PSGet -LicenseUri "http://$script:PublishModuleName.com/license" -ProjectUri "http://$script:PublishModuleName.com" -Force -Confirm -WarningAction SilentlyContinue
+        Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -ReleaseNotes "$script:PublishModuleName release notes" -Tags PSGet -LicenseUri "https://$script:PublishModuleName.com/license" -ProjectUri "https://$script:PublishModuleName.com" -Force -Confirm -WarningAction SilentlyContinue
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $version
         Assert ($psgetItemInfo.Name -eq $script:PublishModuleName) "Publish-Module should publish a module with valid module path, $($psgetItemInfo.Name)"
     }
@@ -1109,7 +1109,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
     It 'PublishModuleWithForceAndWhatIf' {
         $version = "2.0"
         New-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
-        Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -ReleaseNotes "$script:PublishModuleName release notes" -Tags PSGet -LicenseUri "http://$script:PublishModuleName.com/license" -ProjectUri "http://$script:PublishModuleName.com" -Force -WhatIf -WarningAction SilentlyContinue
+        Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -ReleaseNotes "$script:PublishModuleName release notes" -Tags PSGet -LicenseUri "https://$script:PublishModuleName.com/license" -ProjectUri "https://$script:PublishModuleName.com" -Force -WhatIf -WarningAction SilentlyContinue
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $version
         Assert ($psgetItemInfo.Name -eq $script:PublishModuleName) "Publish-Module should publish a module with valid module path, $($psgetItemInfo.Name)"
     }
@@ -1496,9 +1496,9 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
                     PrivateData = @{
                         PSData = @{
                             Tags = 'Tag1', 'Tag2'
-                            LicenseUri = 'http://contoso.com/license'
-                            ProjectUri = 'http://contoso.com/'
-                            IconUri = 'http://contoso.com/icon'
+                            LicenseUri = 'https://contoso.com/license'
+                            ProjectUri = 'https://contoso.com/'
+                            IconUri = 'https://contoso.com/icon'
                             ReleaseNotes = 'Test module for external module dependecies'
     	                    ExternalModuleDependencies = @()
                         }
@@ -1702,9 +1702,9 @@ Describe PowerShell.PSGet.PublishModuleTests.P2 -Tags 'P2','OuterLoop' {
                     PrivateData = @{
                         PSData = @{
                             Tags = 'Tag1', 'Tag2'
-                            LicenseUri = 'http://contoso.com/license'
-                            ProjectUri = 'http://contoso.com/'
-                            IconUri = 'http://contoso.com/icon'
+                            LicenseUri = 'https://contoso.com/license'
+                            ProjectUri = 'https://contoso.com/'
+                            IconUri = 'https://contoso.com/icon'
                             ReleaseNotes = 'Test module for external module dependecies'
     	                    ExternalModuleDependencies = @('$($ExternalRequiredModuleDep)', '$($ExternalNestedModuleDep)')
                         }

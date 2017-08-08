@@ -13867,7 +13867,7 @@ function Get-PrivateData
                 $PrivateData[$key] | % { $PropertyString += "'" + $_ +"'" + "," }
                 if($PrivateData[$key].Length -ge 1) 
                 {
-                    #Remove ex
+                    #Remove extra ,
                     $PropertyString = $PropertyString -Replace ".$"
                 }
                 $PropertyString += ")"

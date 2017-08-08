@@ -211,7 +211,7 @@ Describe PowerShell.PSGet.PackageManagementIntegrationTests -Tags 'P1','OuterLoo
     #>
     It ValidateSetModuleSourceWithExistingLocationValue {
 
-        $Location1 = 'http://nuget.org/api/v2/'
+        $Location1 = 'https://nuget.org/api/v2/'
         $Location2 = 'https://msconfiggallery.cloudapp.net/api/v2/'
 
         Register-PSRepository -Name $script:TestModuleSourceName -SourceLocation $Location1 -PackageManagementProvider "NuGet"

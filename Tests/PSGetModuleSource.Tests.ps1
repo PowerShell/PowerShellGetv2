@@ -558,7 +558,7 @@ Describe PowerShell.PSGet.ModuleSourceTests.P1 -Tags 'P1','OuterLoop' {
 
         $expectedFullyQualifiedErrorId = 'InvalidWebUri,Register-PSRepository'
 
-        AssertFullyQualifiedErrorIdEquals -scriptblock {Register-PSRepository -Name myNuGetSource -SourceLocation http://www.nonexistingcompany.com/api/v2/} `
+        AssertFullyQualifiedErrorIdEquals -scriptblock {Register-PSRepository -Name myNuGetSource -SourceLocation https://www.nonexistingcompany.com/api/v2/} `
                                     -expectedFullyQualifiedErrorId $expectedFullyQualifiedErrorId
     }
 
@@ -573,7 +573,7 @@ Describe PowerShell.PSGet.ModuleSourceTests.P1 -Tags 'P1','OuterLoop' {
 
         $expectedFullyQualifiedErrorId = 'InvalidWebUri,Register-PSRepository'
 
-        AssertFullyQualifiedErrorIdEquals -scriptblock {Register-PSRepository -Name myNuGetSource2 -SourceLocation http://www.nonexistingcompany.com} `
+        AssertFullyQualifiedErrorIdEquals -scriptblock {Register-PSRepository -Name myNuGetSource2 -SourceLocation https://www.nonexistingcompany.com} `
                                           -expectedFullyQualifiedErrorId $expectedFullyQualifiedErrorId
     }
 
@@ -603,7 +603,7 @@ Describe PowerShell.PSGet.ModuleSourceTests.P1 -Tags 'P1','OuterLoop' {
 
         $expectedFullyQualifiedErrorId = 'RepositoryNameContainsWildCards,Add-PackageSource,Microsoft.PowerShell.PackageManagement.Cmdlets.RegisterPackageSource'
 
-        AssertFullyQualifiedErrorIdEquals -scriptblock {Register-PSRepository -Name my*NuGetSource -SourceLocation http://www.myget.org/F/powershellgetdemo} `
+        AssertFullyQualifiedErrorIdEquals -scriptblock {Register-PSRepository -Name my*NuGetSource -SourceLocation https://www.myget.org/F/powershellgetdemo} `
                                           -expectedFullyQualifiedErrorId $expectedFullyQualifiedErrorId
     }
 

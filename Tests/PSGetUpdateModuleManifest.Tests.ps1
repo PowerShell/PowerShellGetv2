@@ -155,9 +155,9 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         $ProcessorArchitecture = $env:PROCESSOR_ARCHITECTURE
         $ReleaseNotes = "$script:UpdateModuleManifestName release notes"
         $Tags = "PSGet","DSC"
-        $ProjectUri = "http://$script:UpdateModuleManifestName.com/Project"
-        $IconUri = "http://$script:UpdateModuleManifestName.com/Icon"
-        $LicenseUri = "http://$script:UpdateModuleManifestName.com/license"
+        $ProjectUri = "https://$script:UpdateModuleManifestName.com/Project"
+        $IconUri = "https://$script:UpdateModuleManifestName.com/Icon"
+        $LicenseUri = "https://$script:UpdateModuleManifestName.com/license"
         $Author = "AuthorName"
         $CompanyName = "CompanyName"
         $CopyRight = "CopyRight"
@@ -175,7 +175,7 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         $AliasesToExport = "alias1","alias2"
         $VariablesToExport = "var1","var2"
         $CmdletsToExport="get-test1","get-test2"
-        $HelpInfoURI = "http://$script:UpdateModuleManifestName.com/HelpInfoURI"
+        $HelpInfoURI = "https://$script:UpdateModuleManifestName.com/HelpInfoURI"
         $RequiredModules = @('Microsoft.PowerShell.Management',@{ModuleName='Microsoft.PowerShell.Utility';ModuleVersion='1.0.0.0';GUID='1da87e53-152b-403e-98dc-74d7b4d63d59'})
         $NestedModules = "Microsoft.PowerShell.Management","Microsoft.PowerShell.Utility"
         $ScriptsToProcess = "$script:UpdateModuleManifestName.ps1"
@@ -278,9 +278,9 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         $ProcessorArchitecture = $env:PROCESSOR_ARCHITECTURE
         $ReleaseNotes = "$script:UpdateModuleManifestName release notes"
         $Tags = "PSGet","DSC"
-        $ProjectUri = "http://$script:UpdateModuleManifestName.com/Project"
-        $IconUri = "http://$script:UpdateModuleManifestName.com/Icon"
-        $LicenseUri = "http://$script:UpdateModuleManifestName.com/license"
+        $ProjectUri = "https://$script:UpdateModuleManifestName.com/Project"
+        $IconUri = "https://$script:UpdateModuleManifestName.com/Icon"
+        $LicenseUri = "https://$script:UpdateModuleManifestName.com/license"
         $Author = "AuthorName"
         $CompanyName = "CompanyName"
         $CopyRight = "CopyRight"
@@ -298,7 +298,7 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         $AliasesToExport = "alias1","alias2"
         $VariablesToExport = "var1","var2"
         $CmdletsToExport="get-test1","get-test2"
-        $HelpInfoURI = "http://$script:UpdateModuleManifestName.com/HelpInfoURI"
+        $HelpInfoURI = "https://$script:UpdateModuleManifestName.com/HelpInfoURI"
         $RequiredModules = @('Microsoft.PowerShell.Management',@{ModuleName='Microsoft.PowerShell.Utility';ModuleVersion='1.0.0.0';GUID='1da87e53-152b-403e-98dc-74d7b4d63d59'})
         $NestedModules = "Microsoft.PowerShell.Management","Microsoft.PowerShell.Utility"
         $ExternalModuleDependencies = "Microsoft.PowerShell.Management","Microsoft.PowerShell.Utility"
@@ -399,9 +399,9 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
 
         $PrivateData = @{}
         $Tags = "Tags1","Tags2"
-        $ProjectUri = "http://$script:UpdateModuleManifestName.com/Project"
-        $IconUri = "http://$script:UpdateModuleManifestName.com/Icon"
-        $LicenseUri = "http://$script:UpdateModuleManifestName.com/license"
+        $ProjectUri = "https://$script:UpdateModuleManifestName.com/Project"
+        $IconUri = "https://$script:UpdateModuleManifestName.com/Icon"
+        $LicenseUri = "https://$script:UpdateModuleManifestName.com/license"
         $ReleaseNotes = "ReleaseNotes"
         $PackageManagementProviders = "$script:UpdateModuleManifestName.psm1"
         $ExtraProperties = "Extra"

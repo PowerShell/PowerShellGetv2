@@ -301,9 +301,9 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
         $Description = "$ScriptName script <TestElement> $&*!()[]{}@#"
         $ReleaseNotes = @("$ScriptName release notes", "<TestElement> $&*!()[]{}@#")
         $Tags = "PSGet","Special$&*!()[]{}@#<TestElement>"
-        $ProjectUri = "http://$ScriptName.com/Project"
-        $IconUri = "http://$ScriptName.com/Icon"
-        $LicenseUri = "http://$ScriptName.com/license"
+        $ProjectUri = "https://$ScriptName.com/Project"
+        $IconUri = "https://$ScriptName.com/Icon"
+        $LicenseUri = "https://$ScriptName.com/license"
         $Author = "Author#@<TestElement>$&*!()[]{}@#"
         $CompanyName = "CompanyName <TestElement>$&*!()[]{}@#"
         $CopyRight = "CopyRight <TestElement>$&*!()[]{}@#"
@@ -372,9 +372,9 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
                                'Feature 3',
                                'Feature 4',
                                'Feature 5')        
-        $ProjectUri = "http://$ScriptName.com/Project"
-        $IconUri = "http://$ScriptName.com/Icon"
-        $LicenseUri = "http://$ScriptName.com/license"
+        $ProjectUri = "https://$ScriptName.com/Project"
+        $IconUri = "https://$ScriptName.com/Icon"
+        $LicenseUri = "https://$ScriptName.com/license"
         $Author = 'manikb'
         $CompanyName = "Microsoft Corporation"
         $CopyRight = "(c) 2015 Microsoft Corporation. All rights reserved."
@@ -484,9 +484,9 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
                                'Feature 3',
                                'Feature 4',
                                'Feature 5')        
-        $ProjectUri = "http://$ScriptName.com/Project"
-        $IconUri = "http://$ScriptName.com/Icon"
-        $LicenseUri = "http://$ScriptName.com/license"
+        $ProjectUri = "https://$ScriptName.com/Project"
+        $IconUri = "https://$ScriptName.com/Icon"
+        $LicenseUri = "https://$ScriptName.com/license"
         $Author1 = [System.Environment]::GetEnvironmentVariable('USERNAME')
         $Author2 = 'manikb'
         $CompanyName = "Microsoft Corporation"
@@ -661,9 +661,9 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
                                'Feature 3',
                                'Feature 4',
                                'Feature 5')        
-        $ProjectUri = "http://$ScriptName.com/Project"
-        $IconUri = "http://$ScriptName.com/Icon"
-        $LicenseUri = "http://$ScriptName.com/license"
+        $ProjectUri = "https://$ScriptName.com/Project"
+        $IconUri = "https://$ScriptName.com/Icon"
+        $LicenseUri = "https://$ScriptName.com/license"
         $Author = 'manikb'
         $CompanyName = "Microsoft Corporation"
         $CopyRight = "(c) 2015 Microsoft Corporation. All rights reserved."
@@ -1114,9 +1114,9 @@ Describe PowerShell.PSGet.PublishScriptTests.P1 -Tags 'P1','OuterLoop' {
                                'Feature 3',
                                'Feature 4',
                                'Feature 5')        
-        $ProjectUri = "http://$ScriptName.com/Project"
-        $IconUri = "http://$ScriptName.com/Icon"
-        $LicenseUri = "http://$ScriptName.com/license"
+        $ProjectUri = "https://$ScriptName.com/Project"
+        $IconUri = "https://$ScriptName.com/Icon"
+        $LicenseUri = "https://$ScriptName.com/license"
         $Author = 'manikb'
         $CompanyName = "Microsoft Corporation"
         $CopyRight = "(c) 2015 Microsoft Corporation. All rights reserved."

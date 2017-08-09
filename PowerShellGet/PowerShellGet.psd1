@@ -1,6 +1,6 @@
 ﻿@{
 RootModule = 'PSModule.psm1'
-ModuleVersion = '1.1.3.3'
+ModuleVersion = '1.5.0.0'
 GUID = '1d73a601-4a6c-43c5-ba3f-619b18bbb404'
 Author = 'Microsoft Corporation'
 CompanyName = 'Microsoft Corporation'
@@ -57,7 +57,7 @@ PrivateData = @{
         ReleaseNotes = @'
 
 
-## 1.1.3.3
+## 1.5.0.0
 
 New features
 * Added support for RequireLicenseAcceptance. Allows publishers to require license acceptance for modules on Save/Install/Update.

@@ -237,6 +237,15 @@ ConvertFrom-StringData @'
         ModuleIsNotCatalogSigned=The version '{0}' of the module '{1}' being installed is not catalog signed. Ensure that the version '{0}' of the module '{1}' has the catalog file '{2}' and signed with the same publisher '{3}' as the previously-installed module '{1}' with version '{4}' under the directory '{5}'. If you still want to install or update, use -SkipPublisherCheck parameter.
         SentEnvironmentVariableChangeMessage=Successfully broadcasted the Environment variable changes.
         UnableToSendEnvironmentVariableChangeMessage=Error in broadcasting the Environment variable changes.
+        LicenseUriNotSpecified='LicenseUri' is not specified. 'LicenseUri' must be provided when user license acceptance is required.
+        LicenseTxtNotFound=License.txt not Found. License.txt must be provided when user license acceptance is required.
+        LicenseTxtEmpty=License.txt is empty.
+        requireLicenseAcceptanceNotSupported=Require License Acceptance is not supported on Format version '{0}'.
+        AcceptanceLicenseQuery=Do you accept the license terms for module '{0}'.
+        ForceAcceptLicense=License Acceptance is required for module '{0}'. Please specify '-AcceptLicense' to perform this operation.
+        InvalidValueBoolean=The specified value '{0}' for the parameter '{1}' is invalid. It should be $true or $false.
+        UserDeclinedLicenseAcceptance=User declined license acceptance.
+        AcceptLicense=License Acceptance
 ###PSLOC
 '@
 

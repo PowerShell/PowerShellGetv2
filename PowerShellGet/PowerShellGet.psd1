@@ -1,6 +1,6 @@
 ﻿@{
 RootModule = 'PSModule.psm1'
-ModuleVersion = '1.1.3.2'
+ModuleVersion = '1.5.0.0'
 GUID = '1d73a601-4a6c-43c5-ba3f-619b18bbb404'
 Author = 'Microsoft Corporation'
 CompanyName = 'Microsoft Corporation'
@@ -44,7 +44,7 @@ FileList = @('PSModule.psm1',
 RequiredModules = @(@{ModuleName='PackageManagement';ModuleVersion='1.0.0.1'})
 PrivateData = @{
                 "PackageManagementProviders" = 'PSModule.psm1'
-                "SupportedPowerShellGetFormatVersions" = @('1.x')
+                 "SupportedPowerShellGetFormatVersions" = @('1.x','2.x')
     PSData = @{
         Tags = @('Packagemanagement',
                  'Provider',
@@ -55,6 +55,13 @@ PrivateData = @{
         ProjectUri = 'https://go.microsoft.com/fwlink/?LinkId=828955'
         LicenseUri = 'https://go.microsoft.com/fwlink/?LinkId=829061'
         ReleaseNotes = @'
+
+
+## 1.5.0.0
+
+New features
+* Added support for RequireLicenseAcceptance. Allows publishers to require license acceptance for modules on Save/Install/Update.
+
 ## 1.1.3.2
 * Disabled PowerShellGet Telemetry on PS Core as PowerShell Telemetry APIs got removed in PowerShell Core beta builds. (#153)
 * Fixed for DateTime format serialization issue. (#141)

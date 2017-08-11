@@ -8536,7 +8536,14 @@ function Publish-PSArtifactUtility
             $VersionString = "$($Dependency.MinimumVersion)"
         }
 
-        $dependencies += "<dependency id='$($ModuleName)' version='$($VersionString)' />"
+        if ([System.string]::IsNullOrWhiteSpace($VersionString))
+        {
+            $dependencies += "<dependency id='$($ModuleName)'/>"
+        }
+        else 
+        {
+            $dependencies += "<dependency id='$($ModuleName)' version='$($VersionString)' />"
+        }
     }
     
     # Populate the nuspec elements

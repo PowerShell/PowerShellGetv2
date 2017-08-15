@@ -47,14 +47,14 @@ function Get-FindModuleWithSourcesTestManifest {
                     },
                     {
                         Name: '',
-                        Source: 'http://nonexistingmachine/psGallery/api/v2/',
+                        Source: 'https://nonexistingmachine/psGallery/api/v2/',
                         PositiveCase: 'false',
                         FullyQualifiedErrorID: 'InvalidWebUri,Get-ValidModuleLocation',
                         ExpectedModuleCount:0
                     },
                     {
                         Name: '',
-                        Source: ['http://nonexistingmachine/psGallery/api/v2/','PSGallery','PSGetTestModuleSource'],
+                        Source: ['https://nonexistingmachine/psGallery/api/v2/','PSGallery','PSGetTestModuleSource'],
                         PositiveCase: 'false',
                         FullyQualifiedErrorID: 'InvalidWebUri,Get-ValidModuleLocation',
                         ExpectedModuleCount:0
@@ -105,14 +105,14 @@ function Get-FindModuleWithSourcesTestManifest {
                     },
                     {
                         Name: 'PSReadLine',
-                        Source: 'http://nonexistingmachine/psGallery/api/v2/',
+                        Source: 'https://nonexistingmachine/psGallery/api/v2/',
                         PositiveCase: 'false',
                         FullyQualifiedErrorID: 'InvalidWebUri,Get-ValidModuleLocation',
                         ExpectedModuleCount:0
                     },
                     {
                         Name: 'PSReadLine',
-                        Source: ['http://nonexistingmachine/psGallery/api/v2/','PSGallery','PSGetTestModuleSource'],
+                        Source: ['https://nonexistingmachine/psGallery/api/v2/','PSGallery','PSGetTestModuleSource'],
                         PositiveCase: 'false',
                         FullyQualifiedErrorID: 'InvalidWebUri,Get-ValidModuleLocation',
                         ExpectedModuleCount:0
@@ -160,13 +160,13 @@ function Get-InstallModuleWithSourcesTestManifest {
                     },
                     {
                         Name: 'PSReadLine',
-                        Source: 'http://nonexistingmachine/psGallery/api/v2/',
+                        Source: 'https://nonexistingmachine/psGallery/api/v2/',
                         PositiveCase: 'false',
                         FullyQualifiedErrorID: 'InvalidWebUri,Get-ValidModuleLocation'
                     },
                     {
                         Name: 'PSReadLine',
-                        Source: ['http://nonexistingmachine/psGallery/api/v2/','PSGallery','PSGetTestModuleSource'],
+                        Source: ['https://nonexistingmachine/psGallery/api/v2/','PSGallery','PSGetTestModuleSource'],
                         PositiveCase: 'false',
                         FullyQualifiedErrorID: 'InvalidWebUri,Get-ValidModuleLocation'
                     }

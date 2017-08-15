@@ -76,8 +76,8 @@ ConvertFrom-StringData @'
         CouldNotInstallNuGetExe=NuGet.exe is required to interact with NuGet-based repositories. Please ensure that NuGet.exe is available under one of the paths specified in PATH environment variable value.
         CouldNotInstallNuGetBinaries2=PowerShellGet requires NuGet.exe and NuGet provider version '{0}' or newer to interact with the NuGet-based repositories. Please ensure that '{0}' or newer version of NuGet provider is installed and NuGet.exe is available under one of the paths specified in PATH environment variable value.        
         InstallNuGetProviderShouldContinueQuery=PowerShellGet requires NuGet provider version '{0}' or newer to interact with NuGet-based repositories. The NuGet provider must be available in '{1}' or '{2}'. You can also install the NuGet provider by running 'Install-PackageProvider -Name NuGet -MinimumVersion {0} -Force'. Do you want PowerShellGet to install and import the NuGet provider now?
-        InstallNuGetBinariesShouldContinueQuery2=PowerShellGet requires NuGet.exe and NuGet provider version '{0}' or newer to interact with the NuGet-based repositories. The NuGet provider must be available in '{1}' or '{2}'. You can also install the NuGet provider by running 'Install-PackageProvider -Name NuGet -MinimumVersion {0} -Force'. NuGet.exe must be available in '{3}' or '{4}, or under one of the paths specified in PATH environment variable value. NuGet.exe can be downloaded from http://nuget.org/nuget.exe. Do you want PowerShellGet to install both NuGet.exe and NuGet provider now?
-        InstallNuGetExeShouldContinueQuery=PowerShellGet requires NuGet.exe to publish an item to the NuGet-based repositories. NuGet.exe must be available in '{0}' or '{1}, or under one of the paths specified in PATH environment variable value. NuGet.exe can be downloaded from http://nuget.org/nuget.exe. Do you want PowerShellGet to install NuGet.exe now?
+        InstallNuGetBinariesShouldContinueQuery2=PowerShellGet requires NuGet.exe and NuGet provider version '{0}' or newer to interact with the NuGet-based repositories. The NuGet provider must be available in '{1}' or '{2}'. You can also install the NuGet provider by running 'Install-PackageProvider -Name NuGet -MinimumVersion {0} -Force'. NuGet.exe must be available in '{3}' or '{4}, or under one of the paths specified in PATH environment variable value. NuGet.exe can be downloaded from https://nuget.org/nuget.exe. Do you want PowerShellGet to install both NuGet.exe and NuGet provider now?
+        InstallNuGetExeShouldContinueQuery=PowerShellGet requires NuGet.exe to publish an item to the NuGet-based repositories. NuGet.exe must be available in '{0}' or '{1}, or under one of the paths specified in PATH environment variable value. NuGet.exe can be downloaded from https://nuget.org/nuget.exe. Do you want PowerShellGet to install NuGet.exe now?
         InstallNuGetBinariesShouldContinueCaption2=NuGet.exe and NuGet provider are required to continue
         InstallNuGetProviderShouldContinueCaption=NuGet provider is required to continue
         InstallNuGetExeShouldContinueCaption=NuGet.exe is required to continue        
@@ -237,6 +237,15 @@ ConvertFrom-StringData @'
         ModuleIsNotCatalogSigned=The version '{0}' of the module '{1}' being installed is not catalog signed. Ensure that the version '{0}' of the module '{1}' has the catalog file '{2}' and signed with the same publisher '{3}' as the previously-installed module '{1}' with version '{4}' under the directory '{5}'. If you still want to install or update, use -SkipPublisherCheck parameter.
         SentEnvironmentVariableChangeMessage=Successfully broadcasted the Environment variable changes.
         UnableToSendEnvironmentVariableChangeMessage=Error in broadcasting the Environment variable changes.
+        LicenseUriNotSpecified='LicenseUri' is not specified. 'LicenseUri' must be provided when user license acceptance is required.
+        LicenseTxtNotFound=License.txt not Found. License.txt must be provided when user license acceptance is required.
+        LicenseTxtEmpty=License.txt is empty.
+        requireLicenseAcceptanceNotSupported=Require License Acceptance is not supported on Format version '{0}'.
+        AcceptanceLicenseQuery=Do you accept the license terms for module '{0}'.
+        ForceAcceptLicense=License Acceptance is required for module '{0}'. Please specify '-AcceptLicense' to perform this operation.
+        InvalidValueBoolean=The specified value '{0}' for the parameter '{1}' is invalid. It should be $true or $false.
+        UserDeclinedLicenseAcceptance=User declined license acceptance.
+        AcceptLicense=License Acceptance
 ###PSLOC
 '@
 

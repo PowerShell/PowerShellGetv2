@@ -309,9 +309,9 @@ function CreateAndPublish-TestScript
                         CompanyName = 'Microsoft Corporation'
                         Copyright = '(c) 2015 Microsoft Corporation. All rights reserved.'
                         Description = "Description for the $Name script"
-                        LicenseUri = "http://$Name.com/license"
-                        IconUri = "http://$Name.com/icon"
-                        ProjectUri = "http://$Name.com"
+                        LicenseUri = "https://$Name.com/license"
+                        IconUri = "https://$Name.com/icon"
+                        ProjectUri = "https://$Name.com"
                         Tags = @('Tag1','Tag2', "Tag-$Name-$version")
                         ReleaseNotes = "$Name release notes"
                         Force = $true
@@ -462,9 +462,9 @@ function CreateAndPublishTestModule
                                    -Description "$ModuleName module" `
                                    -FunctionsToExport $exportedFunctions `
                                    -NestedModules $NestedModules `
-                                   -LicenseUri "http://$ModuleName.com/license" `
-                                   -IconUri "http://$ModuleName.com/icon" `
-                                   -ProjectUri "http://$ModuleName.com" `
+                                   -LicenseUri "https://$ModuleName.com/license" `
+                                   -IconUri "https://$ModuleName.com/icon" `
+                                   -ProjectUri "https://$ModuleName.com" `
                                    -Tags $tags `
                                    -ReleaseNotes "$ModuleName release notes" `
                                    -RequiredModules $RequiredModules
@@ -480,9 +480,9 @@ function CreateAndPublishTestModule
 
                 $params['ReleaseNotes'] = "$ModuleName release notes"
                 $params['Tags'] = $tags
-                $params['LicenseUri'] = "http://$ModuleName.com/license"
-                $params['IconUri'] = "http://$ModuleName.com/icon"
-                $params['ProjectUri'] = "http://$ModuleName.com" 
+                $params['LicenseUri'] = "https://$ModuleName.com/license"
+                $params['IconUri'] = "https://$ModuleName.com/icon"
+                $params['ProjectUri'] = "https://$ModuleName.com" 
             }
             
             $null = Publish-Module @params
@@ -567,9 +567,9 @@ function PublishDscTestModule
                                -NestedModules "$ModuleName.psm1",".\$assemblyName" `
                                -Tags $tags `
                                -Description 'Temp Description KeyWord1 Keyword2 Keyword3' `
-                               -LicenseUri "http://$ModuleName.com/license" `
-                               -IconUri "http://$ModuleName.com/icon" `
-                               -ProjectUri "http://$ModuleName.com" `
+                               -LicenseUri "https://$ModuleName.com/license" `
+                               -IconUri "https://$ModuleName.com/icon" `
+                               -ProjectUri "https://$ModuleName.com" `
                                -ReleaseNotes "$ModuleName release notes"
         }
         else
@@ -585,9 +585,9 @@ function PublishDscTestModule
                                -Repository $Repository `
                                -ReleaseNotes "$ModuleName release notes" `
                                -Tags $tags `
-                               -LicenseUri "http://$ModuleName.com/license" `
-                               -IconUri "http://$ModuleName.com/icon" `
-                               -ProjectUri "http://$ModuleName.com" `
+                               -LicenseUri "https://$ModuleName.com/license" `
+                               -IconUri "https://$ModuleName.com/icon" `
+                               -ProjectUri "https://$ModuleName.com" `
                                -WarningAction SilentlyContinue
     }
 }
@@ -630,7 +630,7 @@ function CreateAndPublishTestModuleWithVersionFormat
         
     $ModuleBase = Join-Path $ModulesPath $ModuleName
 
-    if ($PSGetFormatVersion.Major -eq '1')
+    if ($PSGetFormatVersion -eq '1.0')
     {
         $NugetPackageRoot = $ModuleBase
         $ModuleBase = "$ModuleBase\Content\Deployment\Module References\$ModuleName"
@@ -652,9 +652,9 @@ function CreateAndPublishTestModuleWithVersionFormat
                                -ModuleVersion $version `
                                -Description "$ModuleName module" `
                                -NestedModules "$ModuleName.psm1" `
-                               -LicenseUri "http://$ModuleName.com/license" `
-                               -IconUri "http://$ModuleName.com/icon" `
-                               -ProjectUri "http://$ModuleName.com" `
+                               -LicenseUri "https://$ModuleName.com/license" `
+                               -IconUri "https://$ModuleName.com/icon" `
+                               -ProjectUri "https://$ModuleName.com" `
                                -Tags @('PSGet','PowerShellGet') `
                                -ReleaseNotes "$ModuleName release notes"
         }
@@ -675,9 +675,9 @@ function CreateAndPublishTestModuleWithVersionFormat
                                        -PSGetFormatVersion $PSGetFormatVersion `
                                        -ReleaseNotes "$ModuleName release notes" `
                                        -Tags @('PSGet','PowerShellGet') `
-                                       -LicenseUri "http://$ModuleName.com/license" `
-                                       -IconUri "http://$ModuleName.com/icon" `
-                                       -ProjectUri "http://$ModuleName.com"
+                                       -LicenseUri "https://$ModuleName.com/license" `
+                                       -IconUri "https://$ModuleName.com/icon" `
+                                       -ProjectUri "https://$ModuleName.com"
     }
 }
 

@@ -246,6 +246,7 @@ ConvertFrom-StringData @'
         InvalidValueBoolean=The specified value '{0}' for the parameter '{1}' is invalid. It should be $true or $false.
         UserDeclinedLicenseAcceptance=User declined license acceptance.
         AcceptLicense=License Acceptance
+        RequiredScriptVersion=Required version of required script '{0}' is '{1}'
 ###PSLOC
 '@
 

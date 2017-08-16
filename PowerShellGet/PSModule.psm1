@@ -7821,29 +7821,45 @@ function ValidateAndGet-ScriptDependencies
                                         WarningAction = 'SilentlyContinue'
                                         Debug = $DebugPreference
                                     }
+            $ReqScriptInfo = @{}
+            $scriptName = $requiredScript
+            $scriptVersion = [string]::Empty
+
             if ($PSBoundParameters.ContainsKey('Credential'))
             {
                 $FindScriptArguments.Add('Credential',$Credential)
             }
-
-            if($DependentScriptInfo.ExternalScriptDependencies -contains $requiredScript)
+            
+            if ($scriptName.indexOf(';') -gt 0)
             {
-                Write-Verbose -Message ($LocalizedData.SkippedScriptDependency -f $requiredScript)
+                $scriptName = $requiredScript.Substring(0, $requiredScript.indexOf(';'))
+                $scriptVersion = $requiredScript.Substring($requiredScript.indexOf(';') + 1, $requiredScript.Length - $requiredScript.indexOf(';') - 1)
+            }
+
+            if ($DependentScriptInfo.ExternalScriptDependencies -contains $scriptName)
+            {
+                Write-Verbose -Message ($LocalizedData.SkippedScriptDependency -f $scriptName)
 
                 continue
             }
 
-            $FindScriptArguments['Name'] = $requiredScript
-            $ReqScriptInfo = @{}
-            $ReqScriptInfo['Name'] = $requiredScript
+            if (-not [string]::IsNullOrWhiteSpace($scriptVersion))
+            {
+                Write-Verbose -Message ($LocalizedData.RequiredScriptVersion -f ($scriptName, $scriptVersion))
+                $FindScriptArguments.Add('RequiredVersion', $scriptVersion)
+                $ReqScriptInfo.Add('RequiredVersion', $scriptVersion)
+            }
+
+            $FindScriptArguments['Name'] = $scriptName
+            $ReqScriptInfo['Name'] = $scriptName
 
             $psgetItemInfo = Find-Script @FindScriptArguments  | 
-                                        Microsoft.PowerShell.Core\Where-Object {$_.Name -eq $requiredScript} | 
+                                        Microsoft.PowerShell.Core\Where-Object {$_.Name -eq $scriptName} | 
                                             Microsoft.PowerShell.Utility\Select-Object -Last 1 -ErrorAction Ignore
 
             if(-not $psgetItemInfo)
             {
-                $message = $LocalizedData.UnableToResolveScriptDependency -f ('script', $requiredScript, $DependentScriptInfo.Name, $Repository, 'ExternalScriptDependencies')
+                $message = $LocalizedData.UnableToResolveScriptDependency -f ('script', $scriptName, $DependentScriptInfo.Name, $Repository, 'ExternalScriptDependencies')
                 ThrowError -ExceptionName "System.InvalidOperationException" `
                             -ExceptionMessage $message `
                             -ErrorId "UnableToResolveScriptDependency" `

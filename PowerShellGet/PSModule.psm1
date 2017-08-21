@@ -7822,20 +7822,24 @@ function ValidateAndGet-ScriptDependencies
                                         Debug = $DebugPreference
                                     }
             $ReqScriptInfo = @{}
-            $scriptName = $requiredScript
-            $scriptVersion = [string]::Empty
 
             if ($PSBoundParameters.ContainsKey('Credential'))
             {
                 $FindScriptArguments.Add('Credential',$Credential)
             }
             
-            if ($scriptName.indexOf(';') -gt 0)
+            if (-not ($scriptName -match '^((?<Name>[^:]+)(:(?<Version>[^:]+))?)$'))
             {
-                $scriptName = $requiredScript.Substring(0, $requiredScript.indexOf(';'))
-                $scriptVersion = $requiredScript.Substring($requiredScript.indexOf(';') + 1, $requiredScript.Length - $requiredScript.indexOf(';') - 1)
+                $message = $LocalizedData.FailedToParseRequiredScripts -f ($scriptName)
+                ThrowError -ExceptionName "System.ArgumentException" `
+                            -ExceptionMessage $message `
+                            -ErrorId "FailedToParseRequiredScripts" `
+                            -CallerPSCmdlet $CallerPSCmdlet `
+                            -ErrorCategory InvalidOperation
             }
 
+            $scriptName = $matches['Name']
+            $scriptVersion = $matches['Version']
             if ($DependentScriptInfo.ExternalScriptDependencies -contains $scriptName)
             {
                 Write-Verbose -Message ($LocalizedData.SkippedScriptDependency -f $scriptName)

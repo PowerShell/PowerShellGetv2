@@ -247,6 +247,7 @@ ConvertFrom-StringData @'
         UserDeclinedLicenseAcceptance=User declined license acceptance.
         AcceptLicense=License Acceptance
         RequiredScriptVersion=Required version of required script '{0}' is '{1}'
+        FailedToParseRequiredScripts=Cannot parse requiredscripts '{0}'. Acceptable format is <ScriptName> or <ScriptName>:<Minimum Version>
 ###PSLOC
 '@
 

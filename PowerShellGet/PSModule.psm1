@@ -7828,14 +7828,16 @@ function ValidateAndGet-ScriptDependencies
                 $FindScriptArguments.Add('Credential',$Credential)
             }
             
-            if (-not ($scriptName -match '^((?<Name>[^:]+)(:(?<Version>[^:]+))?)$'))
+            if (-not ($requiredScript -match '^((?<Name>[^:]+)(:(?<Version>[^:]+))?)$'))
             {
-                $message = $LocalizedData.FailedToParseRequiredScripts -f ($scriptName)
-                ThrowError -ExceptionName "System.ArgumentException" `
-                            -ExceptionMessage $message `
-                            -ErrorId "FailedToParseRequiredScripts" `
-                            -CallerPSCmdlet $CallerPSCmdlet `
-                            -ErrorCategory InvalidOperation
+                $message = $LocalizedData.FailedToParseRequiredScripts -f ($requiredScript)
+
+                ThrowError `
+                    -ExceptionName "System.ArgumentException" `
+                    -ExceptionMessage $message `
+                    -ErrorId "FailedToParseRequiredScripts" `
+                    -CallerPSCmdlet $CallerPSCmdlet `
+                    -ErrorCategory InvalidOperation
             }
 
             $scriptName = $matches['Name']

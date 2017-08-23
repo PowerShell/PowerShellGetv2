@@ -246,8 +246,8 @@ ConvertFrom-StringData @'
         InvalidValueBoolean=The specified value '{0}' for the parameter '{1}' is invalid. It should be $true or $false.
         UserDeclinedLicenseAcceptance=User declined license acceptance.
         AcceptLicense=License Acceptance
-        RequiredScriptVersion=Required version of required script '{0}' is '{1}'
-        FailedToParseRequiredScripts=Cannot parse requiredscripts '{0}'. Acceptable format is <ScriptName> or <ScriptName>:<Minimum Version>
+        RequiredScriptVersion=REQUIREDSCRIPTS: Required version of script '{0}' is '{1}'.
+        FailedToParseRequiredScripts=Cannot parse REQUIREDSCRIPTS '{0}'. Acceptable formats are: <ScriptName> or <ScriptName>:<Minimum Version>.
 ###PSLOC
 '@
 

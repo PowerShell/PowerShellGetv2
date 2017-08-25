@@ -204,7 +204,7 @@ ConvertFrom-StringData @'
         InvalidScriptFilePath=The script file path '{0}' is not valid. The value of the Path argument must resolve to a single file that has a '.ps1' extension. Change the value of the Path argument to point to a valid ps1 file, and then try again.
         NuGetApiKeyIsRequiredForNuGetBasedGalleryService=NuGetApiKey is required for publishing a module or script file to the specified repository '{0}' whose publish location is '{1}'. Try again after specifying a valid value for the NuGetApiKey parameter. To get your API key, view your profile page.
         ScriptFileExist=The specified script file '{0}' already exists.
-        PublishPSArtifactUnsupportedOnNano=Publish-{0} is not supported on Nano Server and PowerShellCore.
+        PublishPSArtifactUnsupportedOnNanoAndNonWindows=Publish-{0} is not supported on Nano Server and non-Windows.
         InvalidEnvironmentVariableName=The specified environment variable name '{0}' exceeded the allowed limit of '{1}' characters.
         PublishLocation=Publish Location:'{0}'.
         ScriptPATHPromptCaption=PATH Environment Variable Change

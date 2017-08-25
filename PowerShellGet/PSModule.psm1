@@ -11,14 +11,28 @@ Microsoft.PowerShell.Core\Set-StrictMode -Version Latest
 
 #region script variables
 
-# Check if this is nano server. [System.Runtime.Loader.AssemblyLoadContext] is only available on NanoServer
-$script:isNanoServer = $null -ne ('System.Runtime.Loader.AssemblyLoadContext' -as [Type])
-
 $script:IsInbox = $PSHOME.EndsWith('\WindowsPowerShell\v1.0', [System.StringComparison]::OrdinalIgnoreCase)
 $script:IsWindows = (-not (Get-Variable -Name IsWindows -ErrorAction Ignore)) -or $IsWindows
 $script:IsLinux = (Get-Variable -Name IsLinux -ErrorAction Ignore) -and $IsLinux
 $script:IsOSX = (Get-Variable -Name IsOSX -ErrorAction Ignore) -and $IsOSX
 $script:IsCoreCLR = (Get-Variable -Name IsCoreCLR -ErrorAction Ignore) -and $IsCoreCLR
+$script:IsNanoServer = & {
+    if (!$script:IsWindows)
+    {
+        return $false
+    }
+
+    $serverLevelsPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Server\ServerLevels\"
+    if (Test-Path $serverLevelsPath)
+    {
+        $NanoItem = Get-ItemProperty -Name NanoServer -Path $serverLevelsPath -ErrorAction Ignore
+        if ($NanoItem -and $NanoItem.NanoServer -eq 1)
+        {
+            return $true
+        }
+    }
+    return $false
+}
 
 if($script:IsInbox)
 {
@@ -882,11 +896,11 @@ function Publish-Module
 
     Begin
     {
-        if($script:isNanoServer -or $script:IsCoreCLR) {
-            $message = $LocalizedData.PublishPSArtifactUnsupportedOnNano -f "Module"
+        if($script:isNanoServer -or -not $script:IsWindows) {
+            $message = $LocalizedData.PublishPSArtifactUnsupportedOnNanoAndNonWindows -f "Module"
             ThrowError -ExceptionName "System.InvalidOperationException" `
                         -ExceptionMessage $message `
-                        -ErrorId 'PublishModuleIsNotSupportedOnPowerShellCoreEdition' `
+                        -ErrorId 'PublishModuleIsNotSupportedOnNanoServer' `
                         -CallerPSCmdlet $PSCmdlet `
                         -ExceptionObject $PSCmdlet `
                         -ErrorCategory InvalidOperation
@@ -2701,11 +2715,11 @@ function Publish-Script
 
     Begin
     {
-        if($script:isNanoServer -or $script:IsCoreCLR) {
-            $message = $LocalizedData.PublishPSArtifactUnsupportedOnNano -f "Script"
+        if($script:isNanoServer -or -not $script:IsWindows) {
+            $message = $LocalizedData.PublishPSArtifactUnsupportedOnNanoAndNonWindows -f "Script"
             ThrowError -ExceptionName "System.InvalidOperationException" `
                         -ExceptionMessage $message `
-                        -ErrorId 'PublishScriptIsNotSupportedOnPowerShellCoreEdition' `
+                        -ErrorId 'PublishScriptIsNotSupportedOnNanoServer' `
                         -CallerPSCmdlet $PSCmdlet `
                         -ExceptionObject $PSCmdlet `
                         -ErrorCategory InvalidOperation
@@ -8461,7 +8475,7 @@ function Publish-PSArtifactUtility
             $Tags += $PSModuleInfo.ExportedCommands.Keys | Microsoft.PowerShell.Core\ForEach-Object { "$($script:Command)_$_" }
         }
 
-        $dscResourceNames = Get-ExportedDscResources -PSModuleInfo $PSModuleInfo 
+        $dscResourceNames = Get-ExportedDscResources -PSModuleInfo $PSModuleInfo
         if($dscResourceNames)
         {
             $Tags += "$($script:Includes)_DscResource"
@@ -8478,7 +8492,6 @@ function Publish-PSArtifactUtility
                 Write-Warning -Message $WarningMessage
             }
         }
-
         $RoleCapabilityNames = Get-AvailableRoleCapabilityName -PSModuleInfo $PSModuleInfo
         if($RoleCapabilityNames)
         {
@@ -8889,6 +8902,14 @@ function Get-ExportedDscResources
                                         $_.Name
                                     }
                                 }
+        }
+        # known issue with Get-DscResource not working on CoreCLR and Linux, so just ignore
+        catch [System.Management.Automation.PSArgumentException],[System.Management.Automation.MethodInvocationException]
+        {
+            if (! $script:IsCoreCLR)
+            {
+                throw $_
+            }
         }
         finally
         {

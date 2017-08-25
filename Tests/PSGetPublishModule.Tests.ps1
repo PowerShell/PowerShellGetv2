@@ -11,7 +11,9 @@
 
    The local directory based NuGet repository is used for publishing the modules.
 #>
-if($PSEdition -eq 'Core') {
+
+if ($PSVersionTable.Platform -eq 'Unix')
+{
     return
 }
 
@@ -121,7 +123,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: should be able to publish a module
     #
     It PublishModuleWithNameForSxSVersion {
-        $version = "2.0"
+        $version = "2.0.0.0"
         RemoveItem "$script:PublishModuleBase\*"
 
         $moduleBaseWithVersion = "$script:PublishModuleBase\$version"
@@ -147,7 +149,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: should be able to publish a module
     #
     It PublishModuleWithNameRequiredVersionForSxSVersion {
-        $version = "2.0"
+        $version = "2.0.0.0"
         $moduleBaseWithVersion = "$script:PublishModuleBase\$version"
         $null = New-Item -Path $moduleBaseWithVersion -ItemType Directory -Force
         Set-Content "$moduleBaseWithVersion\$script:PublishModuleName.psm1" -Value "function Get-$script:PublishModuleName { Get-Date }"
@@ -721,7 +723,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: Publish operation should succeed and Find-Module should get the details as provided in PSData and *Uri parameters.
     #
     It PublishModuleWithUriObjectsAndPSDataInManifestFile {
-        $version = "1.0"
+        $version = "1.0.0"
         $Description = "$script:PublishModuleName module"
         $ReleaseNotes = "$script:PublishModuleName release notes"
         $Tags = "PSGet","DSC"
@@ -982,7 +984,8 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
                            -IconUri "https://$ModuleName.com/icon" `
                            -ProjectUri "https://$ModuleName.com" `
                            -ReleaseNotes "$ModuleName release notes" `
-                           -DscResourcesToExport "*"
+                           -DscResourcesToExport "*" `
+                           -CmdletsToExport "*"
         }
         else
         {
@@ -1001,7 +1004,10 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
                            -ProjectUri "https://$ModuleName.com" `
                            -WarningAction SilentlyContinue `
                            -WarningVariable wa
-    
+        foreach ($line in $wa)
+        {
+                           Write-Warning $line.ToString()
+        }
         Assert ("$wa".Contains("exported cmdlets")) "Warning messages should include 'exported cmdlets'"
         Assert ("$wa".Contains("exported functions")) "Warning messages should include 'exported functions'"
         

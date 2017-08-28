@@ -247,7 +247,9 @@ ConvertFrom-StringData @'
         UserDeclinedLicenseAcceptance=User declined license acceptance.
         AcceptLicense=License Acceptance
         RequiredScriptVersion=REQUIREDSCRIPTS: Required version of script '{0}' is '{1}'.
-        FailedToParseRequiredScripts=Cannot parse REQUIREDSCRIPTS '{0}'. Acceptable formats are: <ScriptName> or <ScriptName>:<Minimum Version>.
+        RequiredScriptVersoinFormat=<ScriptName>, <ScriptName>:<MinimumVersion>, <ScriptName>:[<RequiredVersion>], <ScriptName>:[<MinimumVersion>,<MaximumVersion>], <ScriptName>:[,<MaximumVersion>]
+        FailedToParseRequiredScripts=Cannot parse REQUIREDSCRIPTS '{0}'. Acceptable formats are: '{1}'.
+        FailedToParseRequiredScriptsVersion=Version format error: {0}, '{1}'. Acceptable formats are: '{2}'. 
 ###PSLOC
 '@
 

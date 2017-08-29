@@ -184,6 +184,14 @@ function AssertNull
     Assert ($args[0] -eq $()) $args[1]
 }
 
+# Usage: AssertNullOrEmpty <object> <message>
+#
+function AssertNullOrEmpty
+{
+    Assert ($args.Length -eq 2) "AssertNullOrEmpty takes two parameters."
+    Assert ($args[0] -eq $() -or $args[0] -eq '') $args[1]
+}
+
 # This function waits for either a specified amount of time or for a script block to evaluate to true and throws an exception if the timeout period elapses.  Example:
 #
 #   WaitFor {get-process calc} 10000 250 "Calc.exe wasn't started within 10 seconds."

@@ -117,6 +117,85 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
 
     }
 
+    
+
+    # Purpose: Validate Publish-Script cmdlet with versioned script dependencies
+    #
+    # Action:
+    #      Create and Publish a script with script dependencies which having version condition
+    #      Run Find-Script to validate the dependencies
+    #
+    # Expected Result: Publish and Find operations with script dependencies should not fail
+    #
+    It PublishScriptWithVersionedRequiredScriptDependencies {
+        $repoName = "PSGallery"
+        $ScriptName = "Script-WithDependencies1"
+
+        # Publish dependencies to be specified as RequiredModules
+        $RequiredScriptNames = @(
+                                'Required-ScriptRequiredVersion',
+                                'Required-ScriptMinAndMaxVersion',
+                                'Required-ScriptMaxVersion',
+                                'Required-ScriptMinVersion'
+                             )
+
+        $Versions = @('1.0', '1.4', '2.0', '2.5')
+        foreach($requiredScriptName in $RequiredScriptNames)
+        {
+            foreach($dependencyVersion in $Versions) {
+                CreateAndPublish-TestScript -Name $requiredScriptName `
+                                            -Version $dependencyVersion `
+                                            -NuGetApiKey $ApiKey `
+                                            -Repository $repoName
+            }
+        }
+
+        $RequiredScripts = @(
+                            "$($RequiredScriptNames[0]):[$($Versions[0])]",
+                            "$($RequiredScriptNames[1]):[$($Versions[0]),$($Versions[2])]",
+                            "$($RequiredScriptNames[2]):(,$($Versions[1])]",
+                            "$($RequiredScriptNames[3]):$($Versions[3])"
+                            )
+        for($index = 0 ; $index -lt $RequiredScripts.Count ; $index++)
+        {
+            CreateAndPublish-TestScript -Name $ScriptName `
+                                        -Version $Versions[$index] `
+                                        -NuGetApiKey $ApiKey `
+                                        -Repository $repoName `
+                                        -RequiredScripts $RequiredScripts[$index]
+        }
+
+        $res1 = Find-Script -Name $ScriptName -RequiredVersion $Versions[0]
+        AssertEqualsCaseInsensitive $res1.Name "$ScriptName" "Find-Script didn't find the exact script which has dependencies, $($res1 | Out-String)"
+        AssertEquals $res1.Dependencies.Count 1 "Find-Script with -IncludeDependencies returned wrong results, $($res1 | Out-String)"
+        AssertEqualsCaseInsensitive $res1.Dependencies.Name $RequiredScriptNames[0] "Find-Script didn't find the exact script which has dependencies, $($res1.Dependencies | Out-String)"
+        AssertEquals $res1.Dependencies.RequiredVersion $Versions[0] "Find-Script returned incorrect required version, $($res1.Dependencies | Out-String)"
+
+        $res2 = Find-Script -Name $ScriptName -RequiredVersion $Versions[1]
+        AssertEqualsCaseInsensitive $res2.Name $ScriptName "Find-Script didn't find the exact script which has dependencies, $($res2 | Out-String)"
+        AssertEquals $res2.Dependencies.Count 1 "Find-Script with -IncludeDependencies returned wrong results, $($res2 | Out-String)"
+        AssertEqualsCaseInsensitive $res2.Dependencies.Name $RequiredScriptNames[1] "Find-Script didn't find the exact script which has dependencies, $($res2.Dependencies | Out-String)"
+        AssertEquals $res2.Dependencies.MinimumVersion $Versions[0] "Find-Script returned incorrect minimum version, $($res2.Dependencies | Out-String)"
+        AssertEquals $res2.Dependencies.MaximumVersion $Versions[2] "Find-Script returned incorrect maximum version, $($res2.Dependencies | Out-String)"
+        AssertNullOrEmpty $res2.Dependencies.RequiredVersion "Required version should not exist, $($res2.Dependencies | Out-String)"
+
+        $res3 = Find-Script -Name $ScriptName -RequiredVersion $Versions[2]
+        AssertEqualsCaseInsensitive $res3.Name $ScriptName "Find-Script didn't find the exact script which has dependencies, $($res3 | Out-String)"
+        AssertEquals $res3.Dependencies.Count 1 "Find-Script with -IncludeDependencies returned wrong results, $($res3 | Out-String)"
+        AssertEqualsCaseInsensitive $res3.Dependencies.Name $RequiredScriptNames[2] "Find-Script didn't find the exact script which has dependencies, $($res3.Dependencies | Out-String)"
+        AssertEquals $res3.Dependencies.MaximumVersion $Versions[1] "Find-Script returned incorrect maximum version, $($res3.Dependencies | Out-String)"
+        AssertNullOrEmpty $res3.Dependencies.MinimumVersion "Minimum version should not exist, $($res3.Dependencies | Out-String)"
+        AssertNullOrEmpty $res3.Dependencies.RequiredVersion "Required version should not exist, $($res3.Dependencies | Out-String)"
+
+        $res4 = Find-Script -Name $ScriptName -RequiredVersion $Versions[3]
+        AssertEqualsCaseInsensitive $res4.Name $ScriptName "Find-Script didn't find the exact script which has dependencies, $($res4 | Out-String)"
+        AssertEquals $res4.Dependencies.Count 1 "Find-Script with -IncludeDependencies returned wrong results, $($res4 | Out-String)"
+        AssertEqualsCaseInsensitive $res4.Dependencies.Name $RequiredScriptNames[3] "Find-Script didn't find the exact script which has dependencies, $($res4.Dependencies | Out-String)"
+        AssertEquals $res4.Dependencies.MinimumVersion $Versions[3] "Find-Script returned incorrect minimum version, $($res4.Dependencies | Out-String)"
+        AssertNullOrEmpty $res4.Dependencies.MaximumVersion "Maximum version should not exist, $($res4.Dependencies | Out-String)"
+        AssertNullOrEmpty $res4.Dependencies.RequiredVersion "Required version should not exist, $($res4.Dependencies | Out-String)"
+    }
+
     # Purpose: Publish a script with -Path
     #
     # Action: Publish-Script -Path <ScriptPath> -NuGetApiKey <ApiKey>
@@ -390,7 +469,14 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
         }
 
         $ExternalModuleDependencies = 'Foo','Bar'
-        $RequiredScripts = 'Start-WFContosoServer', 'Stop-ContosoServerScript'
+        $RequiredScriptNames = 'Start-WFContosoServer', 'Stop-ContosoServerScript', 'Restart-ContosoServerScript', "Pause-ContosoServerScript", "Remote-ContosoServerScript"
+        $RequiredScripts = @(
+                                $RequiredScriptNames[0], 
+                                "$($RequiredScriptNames[1]):1.0",
+                                "$($RequiredScriptNames[2]):[1.0]",
+                                "$($RequiredScriptNames[3]):[1.0,2.0]",
+                                "$($RequiredScriptNames[4]):(,2.0]"
+                            )
         $ExternalScriptDependencies = 'Stop-ContosoServerScript'
         $Tags = @('Tag1', 'Tag2', 'Tag3')
 
@@ -456,6 +542,9 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
 
         Assert ($scriptInfo.RequiredScripts -contains $RequiredScripts[0]) "RequiredScripts should contain $($RequiredScripts[0])"
         Assert ($scriptInfo.RequiredScripts -contains $RequiredScripts[1]) "RequiredScripts should contain $($RequiredScripts[1])"
+        Assert ($scriptInfo.RequiredScripts -contains $RequiredScripts[2]) "RequiredScripts should contain $($RequiredScripts[2])"
+        Assert ($scriptInfo.RequiredScripts -contains $RequiredScripts[3]) "RequiredScripts should contain $($RequiredScripts[3])"
+        Assert ($scriptInfo.RequiredScripts -contains $RequiredScripts[4]) "RequiredScripts should contain $($RequiredScripts[4])"
 
         Assert ($scriptInfo.ExternalScriptDependencies -contains $ExternalScriptDependencies) "ExternalScriptDependencies should contain $ExternalScriptDependencies"
 

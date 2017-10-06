@@ -630,7 +630,7 @@ function CreateAndPublishTestModuleWithVersionFormat
         
     $ModuleBase = Join-Path $ModulesPath $ModuleName
 
-    if ($PSGetFormatVersion.Major -eq '1')
+    if ($PSGetFormatVersion -eq '1.0')
     {
         $NugetPackageRoot = $ModuleBase
         $ModuleBase = "$ModuleBase\Content\Deployment\Module References\$ModuleName"

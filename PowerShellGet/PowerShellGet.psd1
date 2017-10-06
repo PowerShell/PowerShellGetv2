@@ -1,6 +1,6 @@
 ﻿@{
 RootModule = 'PSModule.psm1'
-ModuleVersion = '1.1.3.2'
+ModuleVersion = '1.5.0.0'
 GUID = '1d73a601-4a6c-43c5-ba3f-619b18bbb404'
 Author = 'Microsoft Corporation'
 CompanyName = 'Microsoft Corporation'
@@ -44,7 +44,7 @@ FileList = @('PSModule.psm1',
 RequiredModules = @(@{ModuleName='PackageManagement';ModuleVersion='1.0.0.1'})
 PrivateData = @{
                 "PackageManagementProviders" = 'PSModule.psm1'
-                "SupportedPowerShellGetFormatVersions" = @('1.x')
+                 "SupportedPowerShellGetFormatVersions" = @('1.x','2.x')
     PSData = @{
         Tags = @('Packagemanagement',
                  'Provider',
@@ -55,6 +55,23 @@ PrivateData = @{
         ProjectUri = 'https://go.microsoft.com/fwlink/?LinkId=828955'
         LicenseUri = 'https://go.microsoft.com/fwlink/?LinkId=829061'
         ReleaseNotes = @'
+## 1.5.0.0
+
+New features
+* Added support for modules requiring license acceptance (#150)
+  - [Documentation](https://docs.microsoft.com/en-us/powershell/gallery/psget/module/RequireLicenseAcceptance)
+
+* Added version for REQUIREDSCRIPTS (#162)
+  - Enabled following scenarios for REQUIREDSCRIPTS
+    - [1.0] - RequiredVersion
+    - [1.0,2.0] - Min and Max Version
+    - (,1.0] - Max Version
+    - 1.0 - Min Version
+
+Bug fixes
+* Fixed empty version value in nuspec (#157)
+
+
 ## 1.1.3.2
 * Disabled PowerShellGet Telemetry on PS Core as PowerShell Telemetry APIs got removed in PowerShell Core beta builds. (#153)
 * Fixed for DateTime format serialization issue. (#141)

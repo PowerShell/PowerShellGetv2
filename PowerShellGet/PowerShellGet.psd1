@@ -58,7 +58,7 @@ PrivateData = @{
 ## 1.5.0.0
 
 New features
-* Added support for modules requiring license acceptance feature (#150)
+* Added support for modules requiring license acceptance (#150)
   - [Documentation](https://docs.microsoft.com/en-us/powershell/gallery/psget/module/RequireLicenseAcceptance)
 
 * Added version for REQUIREDSCRIPTS (#162)

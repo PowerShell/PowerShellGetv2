@@ -51,7 +51,8 @@ if($script:IsInbox)
 }
 elseif($script:IsWindows)
 {
-    $script:MyDocumentsPSPath = Microsoft.PowerShell.Management\Join-Path -Path $HOME -ChildPath 'Documents\PowerShell'
+    $script:MyDocumentsFolderPath = [Environment]::GetFolderPath("MyDocuments")
+    $script:MyDocumentsPSPath = Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsFolderPath -ChildPath 'PowerShell'
 }
 else
 {

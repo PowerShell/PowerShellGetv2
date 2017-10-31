@@ -1,6 +1,6 @@
 ﻿@{
 RootModule = 'PSModule.psm1'
-ModuleVersion = '1.5.0.0'
+ModuleVersion = '1.6.0.0'
 GUID = '1d73a601-4a6c-43c5-ba3f-619b18bbb404'
 Author = 'Microsoft Corporation'
 CompanyName = 'Microsoft Corporation'
@@ -41,7 +41,7 @@ AliasesToExport = @('inmo',
 FileList = @('PSModule.psm1',
              'PSGet.Format.ps1xml',
              'PSGet.Resource.psd1')
-RequiredModules = @(@{ModuleName='PackageManagement';ModuleVersion='1.0.0.1'})
+RequiredModules = @(@{ModuleName='PackageManagement';ModuleVersion='1.1.7.0'})
 PrivateData = @{
                 "PackageManagementProviders" = 'PSModule.psm1'
                  "SupportedPowerShellGetFormatVersions" = @('1.x','2.x')
@@ -55,6 +55,14 @@ PrivateData = @{
         ProjectUri = 'https://go.microsoft.com/fwlink/?LinkId=828955'
         LicenseUri = 'https://go.microsoft.com/fwlink/?LinkId=829061'
         ReleaseNotes = @'
+
+## 1.6.0.0
+
+New features
+* Added support for prerelease versions (#108, #109, #110, #111, #112, #113, #140)
+  - [Documentation](https://docs.microsoft.com/en-us/powershell/gallery/psget/module/PrereleaseModule)
+
+
 ## 1.5.0.0
 
 New features

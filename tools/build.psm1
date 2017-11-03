@@ -4,7 +4,7 @@ $script:IsInbox = $PSHOME.EndsWith('\WindowsPowerShell\v1.0', [System.StringComp
 $script:IsWindows = (-not (Get-Variable -Name IsWindows -ErrorAction Ignore)) -or $IsWindows
 $script:IsLinux = (Get-Variable -Name IsLinux -ErrorAction Ignore) -and $IsLinux
 $script:IsOSX = (Get-Variable -Name IsOSX -ErrorAction Ignore) -and $IsOSX
-$script:IsCoreCLR = (Get-Variable -Name IsCoreCLR -ErrorAction Ignore) -and $IsCoreCLR
+$script:IsCoreCLR = $PSVersionTable.ContainsKey('PSEdition') -and $PSVersionTable.PSEdition -eq 'Core'
 
 if($script:IsInbox) {
     $script:ProgramFilesPSPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramFiles -ChildPath "WindowsPowerShell"

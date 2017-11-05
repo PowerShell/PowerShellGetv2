@@ -2,8 +2,8 @@
 $script:PowerShellGet = 'PowerShellGet'
 $script:IsInbox = $PSHOME.EndsWith('\WindowsPowerShell\v1.0', [System.StringComparison]::OrdinalIgnoreCase)
 $script:IsWindows = (-not (Get-Variable -Name IsWindows -ErrorAction Ignore)) -or $IsWindows
-$script:IsLinux = (Get-Variable -Name IsLinux -ErrorAction Ignore) -and $IsLinux
-$script:IsOSX = (Get-Variable -Name IsOSX -ErrorAction Ignore) -and $IsOSX
+$script:IsLinux = (Get-Variable -Name IsLinux -ErrorAction Ignore) -and $IsLinux 
+$script:IsMacOS = (Get-Variable -Name IsMacOS -ErrorAction Ignore) -and $IsMacOS
 $script:IsCoreCLR = (Get-Variable -Name IsCoreCLR -ErrorAction Ignore) -and $IsCoreCLR
 
 if($script:IsInbox) {
@@ -58,54 +58,6 @@ Write-Host "PowerShellEdition value: $script:PowerShellEdition"
 #endregion script variables
 
 function Install-Dependencies {
-    if($script:PowerShellEdition -eq 'Desktop') {
-        $NuGetExeName = 'NuGet.exe'
-        $NugetExeFilePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $NuGetExeName
-        
-        if(-not (Test-Path -Path $NugetExeFilePath -PathType Leaf)) {
-            if(-not (Microsoft.PowerShell.Management\Test-Path -Path $script:PSGetProgramDataPath))
-            {
-                $null = Microsoft.PowerShell.Management\New-Item -Path $script:PSGetProgramDataPath -ItemType Directory -Force
-            }
-            
-            # Download the NuGet.exe from https://nuget.org/NuGet.exe
-            Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri https://nuget.org/NuGet.exe -OutFile $NugetExeFilePath
-        }
-
-        Get-ChildItem $NugetExeFilePath -File
-        
-        if(-not (Get-Module -ListAvailable Pester))
-        {
-            & $NugetExeFilePath install pester -source https://www.powershellgallery.com/api/v2 -outputDirectory $script:ProgramFilesModulesPath -ExcludeVersion
-        }
-
-        $AllUsersModulesPath = $script:ProgramFilesModulesPath
-        # Install latest PackageManagement module from PSGallery
-        $TempModulePath = Microsoft.PowerShell.Management\Join-Path -Path $script:TempPath -ChildPath "$(Get-Random)"
-        $null = Microsoft.PowerShell.Management\New-Item -Path $TempModulePath -Force -ItemType Directory
-        $OneGetModuleName = 'PackageManagement'
-        try
-        {
-            & $NugetExeFilePath install $OneGetModuleName -source https://dtlgalleryint.cloudapp.net/api/v2 -outputDirectory $TempModulePath -verbosity detailed
-            $OneGetWithVersion = Microsoft.PowerShell.Management\Get-ChildItem -Path $TempModulePath -Directory
-            $OneGetVersion = ($OneGetWithVersion.Name.Split('.',2))[1]
-
-            $OneGetModulePath = Microsoft.PowerShell.Management\Join-Path -Path  $AllUsersModulesPath -ChildPath $OneGetModuleName        
-            if($PSVersionTable.PSVersion -ge '5.0.0')
-            {
-                $OneGetModulePath = Microsoft.PowerShell.Management\Join-Path -Path $OneGetModulePath -ChildPath $OneGetVersion
-            }
-
-            $null = Microsoft.PowerShell.Management\New-Item -Path $OneGetModulePath -Force -ItemType Directory
-            Microsoft.PowerShell.Management\Copy-Item -Path "$($OneGetWithVersion.FullName)\*" -Destination "$OneGetModulePath\" -Recurse -Force
-            Get-Module -ListAvailable -Name $OneGetModuleName | Microsoft.PowerShell.Core\Where-Object {$_.Version -eq $OneGetVersion}
-        }
-        finally
-        {
-            Remove-Item -Path $TempModulePath -Recurse -Force
-        }
-    }
-
     # Update build title for daily builds
     if($script:IsWindows -and (Test-DailyBuild)) {        
         if($env:APPVEYOR_PULL_REQUEST_TITLE)
@@ -178,10 +130,31 @@ function Invoke-PowerShellGetTest {
     $PowerShellGetTestsPath = "$ClonedProjectPath\Tests\"
     $PowerShellHome = Get-PSHome
     if($script:IsWindows){
-        $PowerShellExePath = Join-Path -Path $PowerShellHome -ChildPath 'PowerShell.exe'
+        if ($script:PowerShellEdition -eq 'Core') {
+            $PowerShellExePath = Join-Path -Path $PowerShellHome -ChildPath 'pwsh.exe'
+        }
+        else {
+            $PowerShellExePath = Join-Path -Path $PowerShellHome -ChildPath 'PowerShell.exe'
+        }
     } else {
-        $PowerShellExePath = 'powershell'
+        $PowerShellExePath = 'pwsh'
     }
+
+    # Bootstrap NuGet.exe
+    $NuGetExeName = 'NuGet.exe'
+    $NugetExeFilePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $NuGetExeName
+    
+    if(-not (Test-Path -Path $NugetExeFilePath -PathType Leaf)) {
+        if(-not (Microsoft.PowerShell.Management\Test-Path -Path $script:PSGetProgramDataPath))
+        {
+            $null = Microsoft.PowerShell.Management\New-Item -Path $script:PSGetProgramDataPath -ItemType Directory -Force
+        }
+        
+        # Download the NuGet.exe from https://nuget.org/NuGet.exe
+        Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri https://nuget.org/NuGet.exe -OutFile $NugetExeFilePath
+    }
+
+    Get-ChildItem -Path $NugetExeFilePath -File
 
     # Test Environment
     # - PowerShellGet from Current branch 
@@ -213,6 +186,49 @@ function Invoke-PowerShellGetTest {
                 $AllUsersModulesPath = Microsoft.PowerShell.Management\Join-Path -Path $PowerShellHome -ChildPath 'Modules'
             }
 
+            # Install latest PackageManagement from Gallery
+            $OneGetModuleName = 'PackageManagement'
+            $OneGetModuleInfo = Get-Module -ListAvailable -Name $OneGetModuleName | Select-Object -First 1
+            if ($OneGetModuleInfo)
+            {
+                $NuGetProvider = Get-PackageProvider | Where-Object { $_.Name -eq 'NuGet' }
+                if(-not $NuGetProvider) {
+                    Install-PackageProvider -Name NuGet -Force
+                }
+
+                $LatestOneGetInPSGallery = Find-Module -Name $OneGetModuleName
+                if($LatestOneGetInPSGallery.Version -gt $OneGetModuleInfo.Version) {
+                    Install-Module -InputObject $LatestOneGetInPSGallery -Force
+                }
+            }
+            else
+            {
+                # Install latest PackageManagement module from PSGallery
+                $TempModulePath = Microsoft.PowerShell.Management\Join-Path -Path $script:TempPath -ChildPath "$(Get-Random)"
+                $null = Microsoft.PowerShell.Management\New-Item -Path $TempModulePath -Force -ItemType Directory
+                $OneGetModuleName = 'PackageManagement'
+                try
+                {
+                    & $NugetExeFilePath install $OneGetModuleName -source https://www.powershellgallery.com/api/v2 -outputDirectory $TempModulePath -verbosity detailed
+                    $OneGetWithVersion = Microsoft.PowerShell.Management\Get-ChildItem -Path $TempModulePath -Directory
+                    $OneGetVersion = ($OneGetWithVersion.Name.Split('.',2))[1]
+        
+                    $OneGetModulePath = Microsoft.PowerShell.Management\Join-Path -Path  $AllUsersModulesPath -ChildPath $OneGetModuleName
+                    if($PSVersionTable.PSVersion -ge '5.0.0')
+                    {
+                        $OneGetModulePath = Microsoft.PowerShell.Management\Join-Path -Path $OneGetModulePath -ChildPath $OneGetVersion
+                    }
+        
+                    $null = Microsoft.PowerShell.Management\New-Item -Path $OneGetModulePath -Force -ItemType Directory
+                    Microsoft.PowerShell.Management\Copy-Item -Path "$($OneGetWithVersion.FullName)\*" -Destination "$OneGetModulePath\" -Recurse -Force
+                    Get-Module -ListAvailable -Name $OneGetModuleName | Microsoft.PowerShell.Core\Where-Object {$_.Version -eq $OneGetVersion}
+                }
+                finally
+                {
+                    Remove-Item -Path $TempModulePath -Recurse -Force
+                }
+            }
+        
             # Copy OneGet and PSGet modules to PSHOME    
             $PowerShellGetSourcePath = Microsoft.PowerShell.Management\Join-Path -Path $ClonedProjectPath -ChildPath $script:PowerShellGet
             $PowerShellGetModuleInfo = Test-ModuleManifest "$PowerShellGetSourcePath\PowerShellGet.psd1" -ErrorAction Ignore
@@ -236,6 +252,24 @@ function Invoke-PowerShellGetTest {
             Get-PackageProvider;
             Get-PSRepository;
             Get-Module;
+
+            $NuGetProvider = Get-PackageProvider | Where-Object { $_.Name -eq 'NuGet' }
+            if(-not $NuGetProvider) {
+                Install-PackageProvider -Name NuGet -Force
+            }
+
+            # 4.0.8 version of Pester module is not compatible on MacOS, so using the Pester version installed with PWSH.
+            if(-not (Get-Variable -Name IsMacOS -ErrorAction Ignore) -or -not $IsMacOS) {
+                Install-Module -Name Pester -MaximumVersion 4.0.8 -Force
+            }
+            Get-Module -Name Pester -ListAvailable;
+
+            # Remove PSGetModuleInfo.xml files from the installed module bases to ensure that Update-Module tests executed properly.
+            Get-InstalledModule -Name Pester,PackageManagement -ErrorAction SilentlyContinue | Foreach-Object {
+                $PSGetModuleInfoXmlPath = Join-Path -Path $_.InstalledLocation -ChildPath 'PSGetModuleInfo.xml'
+                Remove-Item -Path $PSGetModuleInfoXmlPath -Force -Verbose
+            }
+            Get-InstalledModule
 
             # WMF 4 appveyor OS Image has duplicate entries in $env:PSModulePath
             if($PSVersionTable.PSVersion -le '5.0.0') {

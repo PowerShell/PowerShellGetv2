@@ -493,7 +493,7 @@ Describe PowerShell.PSGet.PSGetRequireLicenseAcceptance.InstallSaveUpdate -Tags 
 
         try
         {
-            $result = ExecuteCommand $runspace 'Install-Script ScriptRequireLicenseAcceptance'
+            $result = ExecuteCommand $runspace 'Install-Script ScriptRequireLicenseAcceptance -NoPathUpdate'
         }
         finally
         {
@@ -539,7 +539,7 @@ Describe PowerShell.PSGet.PSGetRequireLicenseAcceptance.InstallSaveUpdate -Tags 
 
         try
         {
-            $result = ExecuteCommand $runspace 'Install-Script ScriptRequireLicenseAcceptance'
+            $result = ExecuteCommand $runspace 'Install-Script ScriptRequireLicenseAcceptance -NoPathUpdate'
         }
         finally
         {
@@ -574,7 +574,7 @@ Describe PowerShell.PSGet.PSGetRequireLicenseAcceptance.InstallSaveUpdate -Tags 
     # Expected Result: script and dependant module are installed successfully
     #
     It "InstallScriptAcceptLicense" {
-        Install-Script ScriptRequireLicenseAcceptance -AcceptLicense
+        Install-Script ScriptRequireLicenseAcceptance -AcceptLicense -NoPathUpdate
 
         $res = Get-InstalledScript ScriptRequireLicenseAcceptance
         AssertEquals $res.Name "ScriptRequireLicenseAcceptance" "Install-Script failed to install $scriptName, $res"
@@ -958,7 +958,7 @@ Describe PowerShell.PSGet.PSGetRequireLicenseAcceptance.InstallSaveUpdate -Tags 
         $UpdateShouldProcessMessage = $script:LocalizedData.AcceptanceLicenseQuery -f ($itemInfo.Name)
         Assert ($content -and ($content -match $UpdateShouldProcessMessage)) "Update module confirm prompt is not working, Expected:$UpdateShouldProcessMessage, Actual:$content"
 
-        $res = Get-InstalledModule ModuleRequireLicenseAcceptance -RequiredVersion 2.0
+        $res = Get-InstalledModule ModuleRequireLicenseAcceptance -RequiredVersion 3.0
         AssertNotNull $res "Update-Module should Update a module if Confirm is accepted"
     } `
     -Skip:$(($PSEdition -eq 'Core') -or ([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
@@ -973,7 +973,7 @@ Describe PowerShell.PSGet.PSGetRequireLicenseAcceptance.InstallSaveUpdate -Tags 
     It "UpdateModuleAcceptLicnese" {
         Install-module ModuleRequireLicenseAcceptance -RequiredVersion 1.0 -AcceptLicense -Force
         Update-Module ModuleRequireLicenseAcceptance -AcceptLicense
-        $res = Get-InstalledModule ModuleRequireLicenseAcceptance -RequiredVersion 2.0
+        $res = Get-InstalledModule ModuleRequireLicenseAcceptance -RequiredVersion 3.0
         AssertNotNull $res "Update-Module should Update a module"
     }
 

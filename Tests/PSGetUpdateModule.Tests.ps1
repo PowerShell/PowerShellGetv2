@@ -573,7 +573,7 @@ Describe PowerShell.PSGet.UpdateModuleTests.P2 -Tags 'P2','OuterLoop' {
     #
     It "AdminPrivilegesAreRequiredForUpdatingAllUsersModule" {
         Install-Module -Name ContosoServer -RequiredVersion 1.0
-        $NonAdminConsoleOutput = Join-Path $TestDrive 'nonadminconsole-out.txt'
+        $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
         Start-Process "$PSHOME\PowerShell.exe" -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
                                                               $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
                                                               Update-Module -Name ContosoServer' `

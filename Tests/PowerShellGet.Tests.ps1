@@ -23,38 +23,51 @@ if(IsInbox)
 {
     $script:ProgramFilesPSPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramFiles -ChildPath "WindowsPowerShell"
 }
-else
+elseif(IsCoreCLR){
+    if(IsWindows) {
+        $script:ProgramFilesPSPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramFiles -ChildPath 'PowerShell'
+    }
+    else {
+        $script:ProgramFilesPSPath = Split-Path -Path ([System.Management.Automation.Platform]::SelectProductNameForDirectory('SHARED_MODULES')) -Parent
+    }
+}
+
+try
 {
-    $script:ProgramFilesPSPath = $PSHome
+    $script:MyDocumentsFolderPath = [Environment]::GetFolderPath("MyDocuments")
+}
+catch
+{
+    $script:MyDocumentsFolderPath = $null
 }
 
 if(IsInbox)
 {
-    try
-    {
-        $script:MyDocumentsFolderPath = [Environment]::GetFolderPath("MyDocuments")
-    }
-    catch
-    {
-        $script:MyDocumentsFolderPath = $null
-    }
-
     $script:MyDocumentsPSPath = if($script:MyDocumentsFolderPath)
                                 {
                                     Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsFolderPath -ChildPath "WindowsPowerShell"
-                                }
+                                } 
                                 else
                                 {
                                     Microsoft.PowerShell.Management\Join-Path -Path $env:USERPROFILE -ChildPath "Documents\WindowsPowerShell"
                                 }
 }
-elseif(IsWindows)
-{
-    $script:MyDocumentsPSPath = Microsoft.PowerShell.Management\Join-Path -Path $HOME -ChildPath 'Documents\PowerShell'
-}
-else
-{
-    $script:MyDocumentsPSPath = Microsoft.PowerShell.Management\Join-Path -Path $HOME -ChildPath '.local/share/powershell'
+elseif(IsCoreCLR) {
+    if(IsWindows)
+    {
+        $script:MyDocumentsPSPath = if($script:MyDocumentsFolderPath)
+        {
+            Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsFolderPath -ChildPath 'PowerShell'
+        } 
+        else
+        {
+            Microsoft.PowerShell.Management\Join-Path -Path $HOME -ChildPath "Documents\PowerShell"
+        }
+    }
+    else
+    {
+        $script:MyDocumentsPSPath = Split-Path -Path ([System.Management.Automation.Platform]::SelectProductNameForDirectory('USER_MODULES')) -Parent
+    }
 }
 
 $script:ProgramFilesModulesPath = Microsoft.PowerShell.Management\Join-Path -Path $script:ProgramFilesPSPath -ChildPath 'Modules'

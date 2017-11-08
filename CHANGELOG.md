@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.6.0
+
+New features
+* Prerelease Version Support (#185)
+  - Implemented prerelease versions functionality in PowerShellGet cmdlets.
+  - Enables publishing, discovering, and installing the prerelease versions of modules and scripts from the PowerShell Gallery.
+  - [Documentation](https://docs.microsoft.com/en-us/powershell/gallery/psget/module/PrereleaseModule)
+
+* Enabled publish cmdlets on PWSH and Nano Server (#196)
+  - Dotnet command version 2.0.0 or newer should be installed by the user prior to using the publish cmdlets on PWSH and Windows Nano Server.
+  - Users can install the dotnet command by running *Invoke-WebRequest -Uri 'https://dot.net/v1/dotnet-install.ps1' -OutFile '.\dotnet-install.ps1'; & '.\dotnet-install.ps1' -Channel Current -Version '2.0.0'*
+  - Publish cmdlets on Windows PowerShell supports using the dotnet command for publishing operations.
+
+Breaking Change
+- PWSH: Changed the installation location of AllUsers scope to the parent of $PSHOME instead of $PSHOME. It is the SHARED_MODULES folder on PWSH.
+
+Bug fixes
+- Update HelpInfoURI to 'https://go.microsoft.com/fwlink/?linkid=855963' (#195)
+- Ensure MyDocumentsPSPath path is correct (#179) (Thanks @lwsrbrts)
+
 ## 1.5.0.0
 
 New features

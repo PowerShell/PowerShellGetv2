@@ -1,5 +1,6 @@
 
-language: cpp
+language: csharp
+dotnet: 2.0.2
 
 git:
   depth: 1000

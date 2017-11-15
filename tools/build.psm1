@@ -258,10 +258,7 @@ function Invoke-PowerShellGetTest {
                 Install-PackageProvider -Name NuGet -Force
             }
 
-            # 4.0.8 version of Pester module is not compatible on MacOS, so using the Pester version installed with PWSH.
-            if(-not (Get-Variable -Name IsMacOS -ErrorAction Ignore) -or -not $IsMacOS) {
-                Install-Module -Name Pester -MaximumVersion 4.0.8 -Force
-            }
+            Install-Module -Name Pester -MaximumVersion 4.1.0 -Force
             Get-Module -Name Pester -ListAvailable;
 
             # Remove PSGetModuleInfo.xml files from the installed module bases to ensure that Update-Module tests executed properly.

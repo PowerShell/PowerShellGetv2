@@ -1,10 +1,4 @@
 
-if((Get-Variable -Name IsMacOS -ErrorAction Ignore) -and $IsMacOS) {
-    Write-Warning "Disabled Prerelease tests on MacOS."
-    return
-}
-
-
 function RegisterTestRepository {
 
     # Register test repository

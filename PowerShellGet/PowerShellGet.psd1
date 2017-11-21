@@ -12,24 +12,24 @@ FunctionsToExport = @('Install-Module',
                       'Find-Module',
                       'Save-Module',
                       'Update-Module',
-                      'Publish-Module', 
+                      'Publish-Module',
                       'Get-InstalledModule',
                       'Uninstall-Module',
-                      'Find-Command', 
-                      'Find-DscResource', 
+                      'Find-Command',
+                      'Find-DscResource',
                       'Find-RoleCapability',
                       'Install-Script',
                       'Find-Script',
                       'Save-Script',
                       'Update-Script',
-                      'Publish-Script', 
+                      'Publish-Script',
                       'Get-InstalledScript',
                       'Uninstall-Script',
                       'Test-ScriptFileInfo',
                       'New-ScriptFileInfo',
                       'Update-ScriptFileInfo',
                       'Get-PSRepository',
-                      'Set-PSRepository',                      
+                      'Set-PSRepository',
                       'Register-PSRepository',
                       'Unregister-PSRepository',
                       'Update-ModuleManifest')
@@ -116,5 +116,5 @@ Bug fixes
     }
 }
 
-HelpInfoURI = 'http://go.microsoft.com/fwlink/?LinkId=393271'
+HelpInfoURI = 'https://go.microsoft.com/fwlink/?linkid=855963'
 }

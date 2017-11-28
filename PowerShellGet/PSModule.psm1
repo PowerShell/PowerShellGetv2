@@ -11357,17 +11357,26 @@ function Install-PackageUtility
                 {
                     if(-not $installUpdate)
                     {
-                        $result = ValidateAndGet-VersionPrereleaseStrings -Version $MinimumVersion -CallerPSCmdlet $PSCmdlet
-                        if (-not $result)
+                        if ($MinimumVersion)
                         {
-                            # ValidateAndGet-VersionPrereleaseStrings throws the error. 
-                            # returning to avoid further execution when different values are specified for -ErrorAction parameter
-                            return
+                            $result = ValidateAndGet-VersionPrereleaseStrings -Version $MinimumVersion -CallerPSCmdlet $PSCmdlet
+                            if (-not $result)
+                            {
+                                # ValidateAndGet-VersionPrereleaseStrings throws the error. 
+                                # returning to avoid further execution when different values are specified for -ErrorAction parameter
+                                return
+                            }
+                            $minVersion = $result["Version"]
+                            $minPrerelease = $result["Prerelease"]
+                            $minFullVersion = $result["FullVersion"]
                         }
-                        $minVersion = $result["Version"]
-                        $minPrerelease = $result["Prerelease"]
-                        $minFullVersion = $result["FullVersion"]
-
+                        else 
+                        {
+                            $minVersion = $null
+                            $minPrerelease = $null
+                            $minFullVersion = $null
+                        }
+                        
                         if( (-not $MinimumVersion -and ($galleryItemFullVersion -ne $InstalledModuleFullVersion)) -or 
                             ($MinimumVersion -and (Compare-PrereleaseVersions -FirstItemVersion $installedModuleVersion `
                                                                               -FirstItemPrerelease $installedModulePrerelease `
@@ -11435,16 +11444,26 @@ function Install-PackageUtility
 
                 if(-not $installUpdate)
                 {
-                    $result = ValidateAndGet-VersionPrereleaseStrings -Version $MinimumVersion -CallerPSCmdlet $PSCmdlet
-                    if (-not $result)
+                    if ($MinimumVersion)
                     {
-                        # ValidateAndGet-VersionPrereleaseStrings throws the error. 
-                        # returning to avoid further execution when different values are specified for -ErrorAction parameter
-                        return
+                        $result = ValidateAndGet-VersionPrereleaseStrings -Version $MinimumVersion -CallerPSCmdlet $PSCmdlet
+                        if (-not $result)
+                        {
+                            # ValidateAndGet-VersionPrereleaseStrings throws the error. 
+                            # returning to avoid further execution when different values are specified for -ErrorAction parameter
+                            return
+                        }
+                        $minVersion = $result["Version"]
+                        $minPrerelease = $result["Prerelease"]
+                        $minFullVersion = $result["FullVersion"]
                     }
-                    $minVersion = $result["Version"]
-                    $minPrerelease = $result["Prerelease"]
-                    $minFullVersion = $result["FullVersion"]
+                    else
+                    {
+                        $minVersion = $null
+                        $minPrerelease = $null
+                        $minFullVersion = $null
+                    }
+                    
 
                     if( (-not $MinimumVersion -and ($galleryItemFullVersion -ne $installedScriptFullVersion)) -or 
                         ($MinimumVersion -and (Compare-PrereleaseVersions -FirstItemVersion $installedScriptInfoVersion `

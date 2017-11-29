@@ -162,7 +162,7 @@ $script:NuGetExePath = $null
 $script:NuGetProvider = $null
 $script:DotnetCommandName = 'dotnet'
 $script:MinimumDotnetCommandVersion = [Version]'2.0.0'
-$script:DotnetInstallUrl = 'https://dot.net/v1/dotnet-install.ps1'
+$script:DotnetInstallUrl = 'https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-install-script'
 $script:DotnetCommandPath = $null
 # PowerShellGetFormatVersion will be incremented when we change the .nupkg format structure. 
 # PowerShellGetFormatVersion is in the form of Major.Minor.  
@@ -7985,10 +7985,9 @@ function Install-NuGetClientBinaries
 
     # On non-Windows, dotnet should be installed by the user, throw an error if dotnet is not found using above logic.
     if ($BootstrapNuGetExe -and (-not $script:IsWindows -or $script:IsNanoServer)) {
-        $TempDotnetInstallScriptPath = Microsoft.PowerShell.Management\Join-Path -Path $script:TempPath -ChildPath 'dotnet-install.ps1'
         $ThrowError_params = @{
             ExceptionName    = 'System.InvalidOperationException'
-            ExceptionMessage = ($LocalizedData.CouldNotFindDotnetCommand -f $script:MinimumDotnetCommandVersion, $script:DotnetInstallUrl, $TempDotnetInstallScriptPath)
+            ExceptionMessage = ($LocalizedData.CouldNotFindDotnetCommand -f $script:MinimumDotnetCommandVersion, $script:DotnetInstallUrl)
             ErrorId          = 'CouldNotFindDotnetCommand'
             CallerPSCmdlet   = $CallerPSCmdlet
             ErrorCategory    = 'InvalidOperation'

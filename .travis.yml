@@ -1,6 +1,7 @@
 
 language: csharp
 dotnet: 2.0.2
+mono: none
 
 git:
   depth: 1000

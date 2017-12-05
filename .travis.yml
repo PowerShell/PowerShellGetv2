@@ -1,5 +1,7 @@
 
-language: cpp
+language: csharp
+dotnet: 2.0.2
+mono: none
 
 git:
   depth: 1000
@@ -9,11 +11,9 @@ os:
   - osx
 sudo: required
 dist: trusty
-osx_image: xcode8.2
+osx_image: xcode8.1
 
 matrix:
-  allow_failures:
-    - os: osx
   fast_finish: true
 
 
@@ -23,15 +23,16 @@ addons:
 
 
 install:
-  - export PATH=~/.dotnet:$PATH
-  - pushd tools
-  - chmod +x download.sh
-  - chmod +x travis.sh
-  - ./download.sh
-  - popd
   # Default 2.0.0 Ruby is buggy
   # Default bundler version is buggy
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then rvm install ruby-2.3.1; rvm use 2.3.1; gem uninstall bundler -v1.13.1; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      rvm install ruby-2.3.3;
+      rvm --default use 2.3.3;
+    fi
+  - bash <(wget -O - https://raw.githubusercontent.com/PowerShell/PowerShell/master/tools/install-powershell.sh)
+  - pushd tools
+  - chmod +x travis.sh  
+  - popd
 
 script: 
   - echo "TRAVIS_EVENT_TYPE value $TRAVIS_EVENT_TYPE"

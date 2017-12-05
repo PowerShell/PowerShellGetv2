@@ -53,7 +53,7 @@ function SuiteSetup {
     $script:assertTimeOutms = 20000
     
     # Create temp folder for saving the scripts
-    $script:TempSavePath="$env:LocalAppData\temp\PSGet_$(Get-Random)"
+    $script:TempSavePath = Join-Path -Path $script:TempPath -ChildPath "PSGet_$(Get-Random)"
     $null = New-Item -Path $script:TempSavePath -ItemType Directory -Force
 
     $script:AddedAllUsersInstallPath    = Set-PATHVariableForScriptsInstallLocation -Scope AllUsers

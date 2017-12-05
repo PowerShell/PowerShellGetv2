@@ -53,7 +53,7 @@ function SuiteSetup {
     $script:assertTimeOutms = 20000
     
     # Create temp folder for saving the scripts
-    $script:TempSavePath="$env:LocalAppData\temp\PSGet_$(Get-Random)"
+    $script:TempSavePath = Join-Path -Path $script:TempPath -ChildPath "PSGet_$(Get-Random)"
     $null = New-Item -Path $script:TempSavePath -ItemType Directory -Force
 
     $script:AddedAllUsersInstallPath    = Set-PATHVariableForScriptsInstallLocation -Scope AllUsers
@@ -419,7 +419,7 @@ Describe PowerShell.PSGet.UpdateScriptTests -Tags 'BVT','InnerLoop' {
     #
     It "AdminPrivilegesAreRequiredForUpdatingAllUsersScript" {
         Install-Script -Name Fabrikam-ServerScript -RequiredVersion 1.0 -Scope AllUsers
-        $NonAdminConsoleOutput = Join-Path $TestDrive 'nonadminconsole-out.txt'
+        $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
         Start-Process "$PSHOME\PowerShell.exe" -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
                                                               $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
                                                               Update-Script -Name Fabrikam-ServerScript' `

@@ -11,9 +11,6 @@
 
    The local directory based NuGet repository is used for publishing the modules.
 #>
-if($PSEdition -eq 'Core') {
-    return
-}
 
 function SuiteSetup {
     Import-Module "$PSScriptRoot\PSGetTestUtils.psm1" -WarningAction SilentlyContinue
@@ -31,11 +28,11 @@ function SuiteSetup {
     $psgetModuleInfo = Import-Module PowerShellGet -Global -Force -Passthru
     Import-LocalizedData  script:LocalizedData -filename PSGet.Resource.psd1 -BaseDirectory $psgetModuleInfo.ModuleBase
 
-    $script:PSGalleryRepoPath="$env:SystemDrive\PSGallery Repo With Spaces\"
+    $script:PSGalleryRepoPath = Join-Path -Path $script:TempPath -ChildPath 'PSGallery Repo With Spaces'
     RemoveItem $script:PSGalleryRepoPath
     $null = New-Item -Path $script:PSGalleryRepoPath -ItemType Directory -Force
 
-    $script:moduleSourcesFilePath= Join-Path $script:PSGetLocalAppDataPath "PSRepositories.xml"
+    $script:moduleSourcesFilePath = Join-Path $script:PSGetLocalAppDataPath "PSRepositories.xml"
     $script:moduleSourcesBackupFilePath = Join-Path $script:PSGetLocalAppDataPath "PSRepositories.xml_$(get-random)_backup"
     if(Test-Path $script:moduleSourcesFilePath)
     {
@@ -54,14 +51,14 @@ function SuiteSetup {
     $script:ApiKey="TestPSGalleryApiKey"
 
     # Create temp module to be published
-    $script:TempScriptsPath="$env:LocalAppData\temp\PSGet_$(Get-Random)"
+    $script:TempScriptsPath = Join-Path -Path $script:TempPath -ChildPath "PSGet_$(Get-Random)"
     $null = New-Item -Path $script:TempScriptsPath -ItemType Directory -Force
 
     $script:TempScriptsLiteralPath = Join-Path -Path $script:TempScriptsPath -ChildPath 'Lite[ral]Path'
     $null = New-Item -Path $script:TempScriptsLiteralPath -ItemType Directory -Force
 
     $script:PublishScriptName = 'Fabrikam-TestScript'
-    $script:PublishScriptVersion = '1.0'
+    $script:PublishScriptVersion = '1.0.0'
     $script:PublishScriptFilePath = Join-Path -Path $script:TempScriptsPath -ChildPath "$script:PublishScriptName.ps1"
 }
 
@@ -95,7 +92,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
         
         $null = New-ScriptFileInfo -Path $script:PublishScriptFilePath `
                                -Version $script:PublishScriptVersion `
-                               -Author Manikyam.Bavandla@microsoft.com `
+                               -Author Author@contoso.com `
                                -Description 'Test script description goes here ' `
                                -Force
 
@@ -139,7 +136,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
                                 'Required-ScriptMinVersion'
                              )
 
-        $Versions = @('1.0', '1.4', '2.0', '2.5')
+        $Versions = @('1.0.0', '1.4.0', '2.0.0', '2.5.0')
         foreach($requiredScriptName in $RequiredScriptNames)
         {
             foreach($dependencyVersion in $Versions) {
@@ -220,7 +217,8 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
         {
             Split-Path -Path $script:PublishScriptFilePath | Set-Location
 
-            Publish-Script -Path ".\$script:PublishScriptName.ps1" -NuGetApiKey $script:ApiKey
+            $ScriptPath = Join-Path -Path '.' -ChildPath "$script:PublishScriptName.ps1"
+            Publish-Script -Path $ScriptPath -NuGetApiKey $script:ApiKey
             $psgetItemInfo = Find-Script $script:PublishScriptName
             Assert ($psgetItemInfo.Name -eq $script:PublishScriptName) "Publish-Script should publish a script with valid relative path, $($psgetItemInfo.Name)"
         }
@@ -237,10 +235,11 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
     # Expected Result: should be able to publish a script
     #
     It "PublishScriptWithLiteralPath" {
-        Copy-Item -Path $script:PublishScriptFilePath -Destination "$script:TempScriptsLiteralPath\"
+        Copy-Item -Path $script:PublishScriptFilePath -Destination $script:TempScriptsLiteralPath
         $scriptFilePath = Join-Path -Path $script:TempScriptsLiteralPath -ChildPath "$script:PublishScriptName.ps1"
         Assert (Test-Path -LiteralPath $scriptFilePath -PathType Leaf) "$scriptFilePath is not available"
-        Publish-Script -LiteralPath "$script:TempScriptsLiteralPath\$script:PublishScriptName.ps1" -NuGetApiKey $script:ApiKey
+        $LiteralPath = Join-Path -Path $script:TempScriptsLiteralPath -ChildPath "$script:PublishScriptName.ps1"
+        Publish-Script -LiteralPath $LiteralPath -NuGetApiKey $script:ApiKey
         $psgetItemInfo = Find-Script $script:PublishScriptName -RequiredVersion $script:PublishScriptVersion
         AssertEquals $psgetItemInfo.Name $script:PublishScriptName "Publish-Script should publish a script with valid script path, $($psgetItemInfo.Name)"
     }
@@ -285,7 +284,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
                                           -expectedFullyQualifiedErrorId "NoMatchFoundForCriteria,Microsoft.PowerShell.PackageManagement.Cmdlets.FindPackage"
     } `
     -Skip:$(($PSEdition -eq 'Core') -or ($PSCulture -ne 'en-US') -or ([System.Environment]::OSVersion.Version -lt '6.2.9200.0'))
-
+   
     # Purpose: PublishScriptWithConfirmAndYesToPrompt
     #
     # Action: Publish-Script -Name Fabrikam-TestScript -NuGetApiKey apikey -Confirm
@@ -327,7 +326,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
         AssertEquals $psgetItemInfo.Version $script:PublishScriptVersion "Publish-Script should publish a valid script after confirming YES, $($psgetItemInfo.Version)"
     } `
     -Skip:$(($PSEdition -eq 'Core') -or ($PSCulture -ne 'en-US') -or ([System.Environment]::OSVersion.Version -lt '6.2.9200.0'))
-
+    
     # Purpose: PublishScriptWithWhatIf
     #
     # Action: Publish-Script -Name Fabrikam-TestScript -NuGetApiKey apikey -WhatIf
@@ -365,7 +364,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
                                           -expectedFullyQualifiedErrorId "NoMatchFoundForCriteria,Microsoft.PowerShell.PackageManagement.Cmdlets.FindPackage"
     } `
     -Skip:$(($PSEdition -eq 'Core') -or ($PSCulture -ne 'en-US') -or ([System.Environment]::OSVersion.Version -lt '6.2.9200.0'))
-
+   
     # Purpose: Test xml special characters are escaped when publishing a script
     #
     # Action: Create a script, try to upload it with XML special characters in ReleaseNotes, Tag, LicenseUri, IconUri, ProjectUri, Description
@@ -373,7 +372,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
     # Expected Result: Publish operation should succeed and Find-Script should get the details with same special characters
     #
     It PublishScriptWithXMLSpecialCharacters {
-        $version = '1.9'
+        $version = '1.9.0'
         $ScriptName = "Script-WithSpecialChars"
         $ScriptFilePath = Join-Path -Path $script:TempScriptsLiteralPath -ChildPath "$ScriptName.ps1"
 
@@ -936,7 +935,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
     .GUID 
     35eb535b-7e54-4412-a58b-8a0c588c0b30
     .AUTHOR 
-    Manikyam Bavandla @ManikB
+    Contoso Author @AuthorAccount
     .TAGS 
     ManualScriptInfo
     .RELEASENOTES
@@ -953,6 +952,19 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
         $res | Uninstall-Script
         AssertEquals $res.Name $scriptName "Script file with manually created metadata is not working fine. $res"
     }
+
+    It "PublishScriptWithoutDotnetCommandShouldThrowError" {
+        try {
+            # Delete nuget.exe and rename dotnet to validate error message on Linux, MAcOS and Nano Server platforms.
+            Remove-NuGetExe
+
+            AssertFullyQualifiedErrorIdEquals -Scriptblock { Publish-Script -Path $script:PublishScriptFilePath -NuGetApiKey $script:ApiKey } `
+                -ExpectedFullyQualifiedErrorId 'CouldNotFindDotnetCommand,Publish-Script'
+        }
+        finally {
+            Install-NuGetBinaries
+        }
+    } -Skip:$(-not ($IsLinux -or $IsMacOS))
 }
 
 Describe PowerShell.PSGet.PublishScriptTests.P1 -Tags 'P1','OuterLoop' {
@@ -968,7 +980,7 @@ Describe PowerShell.PSGet.PublishScriptTests.P1 -Tags 'P1','OuterLoop' {
         
         $null = New-ScriptFileInfo -Path $script:PublishScriptFilePath `
                                -Version $script:PublishScriptVersion `
-                               -Author Manikyam.Bavandla@microsoft.com `
+                               -Author Author@contoso.com `
                                -Description 'Test script description goes here ' `
                                -Force
 
@@ -1056,7 +1068,7 @@ Describe PowerShell.PSGet.PublishScriptTests.P1 -Tags 'P1','OuterLoop' {
         $psgetItemInfo = Find-Script $script:PublishScriptName -RequiredVersion $script:PublishScriptVersion
         Assert ($psgetItemInfo.Name -eq $script:PublishScriptName) "Publish-Script should publish a script with valid script path, $($psgetItemInfo.Name)"
     }
-    
+
     It "PublishScriptWithoutNugetExeAndNoToPrompt" {
         try {
             # Delete nuget.exe to test the prompt for installing nuget binaries.
@@ -1117,7 +1129,7 @@ Describe PowerShell.PSGet.PublishScriptTests.P1 -Tags 'P1','OuterLoop' {
     # Expected Result: should fail
     #
     It "PublishNotAvailableScript" {
-        AssertFullyQualifiedErrorIdEquals -scriptblock {Publish-Script -Path "$script:TempScriptsPath\NotAvailableScript.ps1" -NuGetApiKey $script:ApiKey} `
+        AssertFullyQualifiedErrorIdEquals -scriptblock {Publish-Script -Path (Join-Path -Path $script:TempScriptsPath -ChildPath NotAvailableScript.ps1) -NuGetApiKey $script:ApiKey} `
                                           -expectedFullyQualifiedErrorId 'PathNotFound,Publish-Script'
     }
 
@@ -1180,7 +1192,7 @@ Describe PowerShell.PSGet.PublishScriptTests.P1 -Tags 'P1','OuterLoop' {
     # Expected Result: should fail
     #
     It "PublishInvalidScriptBasePath" {
-        $invalidScriptBasePath = "$script:TempScriptsPath\InvalidScriptBase\ScriptFile.ps1"
+        $invalidScriptBasePath = Join-Path -Path $script:TempScriptsPath -ChildPath InvalidScriptBase | Join-Path -ChildPath ScriptFile.ps1
         AssertFullyQualifiedErrorIdEquals -scriptblock {Publish-Script -Path $invalidScriptBasePath} `
                                             -expectedFullyQualifiedErrorId "PathNotFound,Publish-Script"
     }
@@ -1463,7 +1475,7 @@ Foo
                                           -scriptblock {
                                                          New-ScriptFileInfo -Path $script:PublishScriptFilePath `
                                                                         -Version $script:PublishScriptVersion `
-                                                                        -Author Manikyam.Bavandla@microsoft.com `
+                                                                        -Author Author@contoso.com `
                                                                         -Description 'Test script description goes here ' `
                                                                         -LicenseUri "\\ma" `
                                                                         -Force
@@ -1482,7 +1494,7 @@ Foo
                                           -scriptblock {
                                                          New-ScriptFileInfo -Path $script:PublishScriptFilePath `
                                                                         -Version $script:PublishScriptVersion `
-                                                                        -Author Manikyam.Bavandla@microsoft.com `
+                                                                        -Author Author@contoso.com `
                                                                         -Description 'Test script description goes here ' `
                                                                         -IconUri "\\localmachine\MyIcon.png" `
                                                                         -Force
@@ -1501,7 +1513,7 @@ Foo
                                           -scriptblock {
                                                          New-ScriptFileInfo -Path $script:PublishScriptFilePath `
                                                                         -Version $script:PublishScriptVersion `
-                                                                        -Author Manikyam.Bavandla@microsoft.com `
+                                                                        -Author Author@contoso.com `
                                                                         -Description 'Test script description goes here ' `
                                                                         -ProjectUri "MyProject.com" `
                                                                         -Force
@@ -1520,7 +1532,7 @@ Foo
                                           -scriptblock {
                                                          New-ScriptFileInfo -Path $script:PublishScriptFilePath `
                                                                         -Version $script:PublishScriptVersion `
-                                                                        -Author Manikyam.Bavandla@microsoft.com `
+                                                                        -Author Author@contoso.com `
                                                                         -Description 'Test script description goes here '
                                                         }
     }
@@ -1537,7 +1549,7 @@ Foo
                                           -scriptblock {
                                                          New-ScriptFileInfo -Path $script:PublishScriptFilePath `
                                                                         -Version $script:PublishScriptVersion `
-                                                                        -Author Manikyam.Bavandla@microsoft.com `
+                                                                        -Author Author@contoso.com `
                                                                         -Description 'Test script description #> goes here ' `
                                                                         -Force
                                                         }
@@ -1564,7 +1576,7 @@ Foo
                                           -scriptblock {
                                                          New-ScriptFileInfo -Path $script:PublishScriptFilePath `
                                                                         -Version $script:PublishScriptVersion `
-                                                                        -Author Manikyam.Bavandla@microso<#ft.com `
+                                                                        -Author "author@con<#tos#>o.com" `
                                                                         -Description 'Test script description goes here ' `
                                                                         -Force
                                                         }
@@ -1584,7 +1596,7 @@ Describe PowerShell.PSGet.PublishScriptTests.P2 -Tags 'P2','OuterLoop' {
         
         $null = New-ScriptFileInfo -Path $script:PublishScriptFilePath `
                                -Version $script:PublishScriptVersion `
-                               -Author Manikyam.Bavandla@microsoft.com `
+                               -Author Author@contoso.com `
                                -Description 'Test script description goes here ' `
                                -Force
 

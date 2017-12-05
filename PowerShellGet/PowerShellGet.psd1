@@ -1,6 +1,6 @@
 ﻿@{
 RootModule = 'PSModule.psm1'
-ModuleVersion = '1.5.0.0'
+ModuleVersion = '1.6.0'
 GUID = '1d73a601-4a6c-43c5-ba3f-619b18bbb404'
 Author = 'Microsoft Corporation'
 CompanyName = 'Microsoft Corporation'
@@ -12,24 +12,24 @@ FunctionsToExport = @('Install-Module',
                       'Find-Module',
                       'Save-Module',
                       'Update-Module',
-                      'Publish-Module', 
+                      'Publish-Module',
                       'Get-InstalledModule',
                       'Uninstall-Module',
-                      'Find-Command', 
-                      'Find-DscResource', 
+                      'Find-Command',
+                      'Find-DscResource',
                       'Find-RoleCapability',
                       'Install-Script',
                       'Find-Script',
                       'Save-Script',
                       'Update-Script',
-                      'Publish-Script', 
+                      'Publish-Script',
                       'Get-InstalledScript',
                       'Uninstall-Script',
                       'Test-ScriptFileInfo',
                       'New-ScriptFileInfo',
                       'Update-ScriptFileInfo',
                       'Get-PSRepository',
-                      'Set-PSRepository',                      
+                      'Set-PSRepository',
                       'Register-PSRepository',
                       'Unregister-PSRepository',
                       'Update-ModuleManifest')
@@ -41,7 +41,7 @@ AliasesToExport = @('inmo',
 FileList = @('PSModule.psm1',
              'PSGet.Format.ps1xml',
              'PSGet.Resource.psd1')
-RequiredModules = @(@{ModuleName='PackageManagement';ModuleVersion='1.0.0.1'})
+RequiredModules = @(@{ModuleName='PackageManagement';ModuleVersion='1.1.7.0'})
 PrivateData = @{
                 "PackageManagementProviders" = 'PSModule.psm1'
                  "SupportedPowerShellGetFormatVersions" = @('1.x','2.x')
@@ -55,6 +55,28 @@ PrivateData = @{
         ProjectUri = 'https://go.microsoft.com/fwlink/?LinkId=828955'
         LicenseUri = 'https://go.microsoft.com/fwlink/?LinkId=829061'
         ReleaseNotes = @'
+## 1.6.0
+        
+New features
+* Prerelease Version Support (#185)
+  - Implemented prerelease versions functionality in PowerShellGet cmdlets.
+  - Enables publishing, discovering, and installing the prerelease versions of modules and scripts from the PowerShell Gallery.
+  - [Documentation](https://docs.microsoft.com/en-us/powershell/gallery/psget/module/PrereleaseModule)
+
+* Enabled publish cmdlets on PWSH and Nano Server (#196)
+  - Dotnet command version 2.0.0 or newer should be installed by the user prior to using the publish cmdlets on PWSH and Windows Nano Server.
+  - Users can install the dotnet command by following the instructions specified at https://aka.ms/dotnet-install-script.
+  - On Windows, users can install the dotnet command by running *Invoke-WebRequest -Uri 'https://dot.net/v1/dotnet-install.ps1' -OutFile '.\dotnet-install.ps1'; & '.\dotnet-install.ps1' -Channel Current -Version '2.0.0'*
+  - Publish cmdlets on Windows PowerShell supports using the dotnet command for publishing operations.
+
+Breaking Change
+- PWSH: Changed the installation location of AllUsers scope to the parent of $PSHOME instead of $PSHOME. It is the SHARED_MODULES folder on PWSH.
+
+Bug fixes
+- Update HelpInfoURI to 'https://go.microsoft.com/fwlink/?linkid=855963' (#195)
+- Ensure MyDocumentsPSPath path is correct (#179) (Thanks @lwsrbrts)
+
+
 ## 1.5.0.0
 
 New features
@@ -126,5 +148,5 @@ Bug fixes
     }
 }
 
-HelpInfoURI = 'http://go.microsoft.com/fwlink/?LinkId=393271'
+HelpInfoURI = 'https://go.microsoft.com/fwlink/?linkid=855963'
 }

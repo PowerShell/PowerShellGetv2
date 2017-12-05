@@ -11,35 +11,53 @@ Microsoft.PowerShell.Core\Set-StrictMode -Version Latest
 
 #region script variables
 
-# Check if this is nano server. [System.Runtime.Loader.AssemblyLoadContext] is only available on NanoServer
-$script:isNanoServer = $null -ne ('System.Runtime.Loader.AssemblyLoadContext' -as [Type])
-
 $script:IsInbox = $PSHOME.EndsWith('\WindowsPowerShell\v1.0', [System.StringComparison]::OrdinalIgnoreCase)
 $script:IsWindows = (-not (Get-Variable -Name IsWindows -ErrorAction Ignore)) -or $IsWindows
 $script:IsLinux = (Get-Variable -Name IsLinux -ErrorAction Ignore) -and $IsLinux
-$script:IsOSX = (Get-Variable -Name IsOSX -ErrorAction Ignore) -and $IsOSX
-$script:IsCoreCLR = (Get-Variable -Name IsCoreCLR -ErrorAction Ignore) -and $IsCoreCLR
+$script:IsMacOS = (Get-Variable -Name IsMacOS -ErrorAction Ignore) -and $IsMacOS
+$script:IsCoreCLR = $PSVersionTable.ContainsKey('PSEdition') -and $PSVersionTable.PSEdition -eq 'Core'
+$script:IsNanoServer = & {
+    if (!$script:IsWindows)
+    {
+        return $false
+    }
+
+    $serverLevelsPath = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Server\ServerLevels\'
+    if (Test-Path -Path $serverLevelsPath)
+    {
+        $NanoItem = Get-ItemProperty -Name NanoServer -Path $serverLevelsPath -ErrorAction Ignore
+        if ($NanoItem -and ($NanoItem.NanoServer -eq 1))
+        {
+            return $true
+        }
+    }
+    return $false
+}
 
 if($script:IsInbox)
 {
     $script:ProgramFilesPSPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramFiles -ChildPath "WindowsPowerShell"
 }
-else
+elseif($script:IsCoreCLR){
+    if($script:IsWindows) {
+        $script:ProgramFilesPSPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramFiles -ChildPath 'PowerShell'
+    }
+    else {
+        $script:ProgramFilesPSPath = Microsoft.PowerShell.Management\Split-Path -Path ([System.Management.Automation.Platform]::SelectProductNameForDirectory('SHARED_MODULES')) -Parent
+    }
+}
+
+try
 {
-    $script:ProgramFilesPSPath = $PSHome
+    $script:MyDocumentsFolderPath = [Environment]::GetFolderPath("MyDocuments")
+}
+catch
+{
+    $script:MyDocumentsFolderPath = $null
 }
 
 if($script:IsInbox)
 {
-    try
-    {
-        $script:MyDocumentsFolderPath = [Environment]::GetFolderPath("MyDocuments")
-    }
-    catch
-    {
-        $script:MyDocumentsFolderPath = $null
-    }
-
     $script:MyDocumentsPSPath = if($script:MyDocumentsFolderPath)
                                 {
                                     Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsFolderPath -ChildPath "WindowsPowerShell"
@@ -49,23 +67,31 @@ if($script:IsInbox)
                                     Microsoft.PowerShell.Management\Join-Path -Path $env:USERPROFILE -ChildPath "Documents\WindowsPowerShell"
                                 }
 }
-elseif($script:IsWindows)
-{
-    $script:MyDocumentsPSPath = Microsoft.PowerShell.Management\Join-Path -Path $HOME -ChildPath 'Documents\PowerShell'
+elseif($script:IsCoreCLR) {
+    if($script:IsWindows)
+    {
+        $script:MyDocumentsPSPath = if($script:MyDocumentsFolderPath)
+        {
+            Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsFolderPath -ChildPath 'PowerShell'
+        } 
+        else
+        {
+            Microsoft.PowerShell.Management\Join-Path -Path $HOME -ChildPath "Documents\PowerShell"
+        }
+    }
+    else
+    {
+        $script:MyDocumentsPSPath = Microsoft.PowerShell.Management\Split-Path -Path ([System.Management.Automation.Platform]::SelectProductNameForDirectory('USER_MODULES')) -Parent
+    }
 }
-else
-{
-    $script:MyDocumentsPSPath = Microsoft.PowerShell.Management\Join-Path -Path $HOME -ChildPath ".local/share/powershell"
-}
 
-$script:ProgramFilesModulesPath = Microsoft.PowerShell.Management\Join-Path -Path $script:ProgramFilesPSPath -ChildPath "Modules"
-$script:MyDocumentsModulesPath = Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsPSPath -ChildPath "Modules"
+$script:ProgramFilesModulesPath = Microsoft.PowerShell.Management\Join-Path -Path $script:ProgramFilesPSPath -ChildPath 'Modules'
+$script:MyDocumentsModulesPath = Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsPSPath -ChildPath 'Modules'
 
-$script:ProgramFilesScriptsPath = Microsoft.PowerShell.Management\Join-Path -Path $script:ProgramFilesPSPath -ChildPath "Scripts"
+$script:ProgramFilesScriptsPath = Microsoft.PowerShell.Management\Join-Path -Path $script:ProgramFilesPSPath -ChildPath 'Scripts'
+$script:MyDocumentsScriptsPath = Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsPSPath -ChildPath 'Scripts'
 
-$script:MyDocumentsScriptsPath = Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsPSPath -ChildPath "Scripts"
-
-$script:TempPath = if($script:IsWindows){ ([System.IO.DirectoryInfo]$env:TEMP).FullName } else { '/tmp' }
+$script:TempPath = [System.IO.Path]::GetTempPath()
 $script:PSGetItemInfoFileName = "PSGetModuleInfo.xml"
 
 if($script:IsWindows)
@@ -75,8 +101,8 @@ if($script:IsWindows)
 }
 else
 {
-    $script:PSGetProgramDataPath = "$HOME/.config/powershell/powershellget" #TODO: Get $env:ProgramData equivalent
-    $script:PSGetAppLocalPath = "$HOME/.config/powershell/powershellget"
+    $script:PSGetProgramDataPath = Microsoft.PowerShell.Management\Join-Path -Path ([System.Management.Automation.Platform]::SelectProductNameForDirectory('CONFIG')) -ChildPath 'PowerShellGet'
+    $script:PSGetAppLocalPath = Microsoft.PowerShell.Management\Join-Path -Path ([System.Management.Automation.Platform]::SelectProductNameForDirectory('CACHE')) -ChildPath 'PowerShellGet'
 }
 
 $script:PSGetModuleSourcesFilePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetAppLocalPath -ChildPath "PSRepositories.xml"
@@ -120,6 +146,7 @@ $script:Proxy = 'Proxy'
 $script:ProxyCredential = 'ProxyCredential'
 $script:Credential = 'Credential'
 $script:VSTSAuthenticatedFeedsDocUrl = 'https://go.microsoft.com/fwlink/?LinkID=698608'
+$script:Prerelease = "Prerelease"
 
 $script:NuGetProviderName = "NuGet"
 $script:NuGetProviderVersion  = [Version]'2.8.5.201'
@@ -133,6 +160,10 @@ $script:NuGetClientSourceURL = 'https://go.microsoft.com/fwlink/?LinkID=690216&c
 $script:NuGetExeName = 'NuGet.exe'
 $script:NuGetExePath = $null
 $script:NuGetProvider = $null
+$script:DotnetCommandName = 'dotnet'
+$script:MinimumDotnetCommandVersion = [Version]'2.0.0'
+$script:DotnetInstallUrl = 'https://aka.ms/dotnet-install-script'
+$script:DotnetCommandPath = $null
 # PowerShellGetFormatVersion will be incremented when we change the .nupkg format structure. 
 # PowerShellGetFormatVersion is in the form of Major.Minor.  
 # Minor is incremented for the backward compatible format change.
@@ -143,6 +174,7 @@ $script:PSGetFormatVersion = "PowerShellGetFormatVersion"
 $script:SupportedPSGetFormatVersionMajors = @("1","2")
 $script:ModuleReferences = 'Module References'
 $script:AllVersions = "AllVersions"
+$script:AllowPrereleaseVersions = "AllowPrereleaseVersions"
 $script:Filter      = "Filter"
 $script:IncludeValidSet = @('DscResource','Cmdlet','Function','Workflow','RoleCapability')
 $script:DscResource = "PSDscResource"
@@ -497,11 +529,11 @@ namespace Microsoft.PowerShell.Commands.PowerShellGet
             Language = 'CSharp'
             ErrorAction = 'SilentlyContinue'
         }
-        if (-not $script:IsCoreCLR)
+        if (-not $script:IsCoreCLR -or $script:IsNanoServer)
         {
             $AddType_prams['ReferencedAssemblies'] = $RequiredAssembliesForInternalWebProxy
         }
-        Add-Type @AddType_prams 
+        Add-Type @AddType_prams
     }
     catch
     {
@@ -666,7 +698,7 @@ namespace Microsoft.PowerShell.Commands.PowerShellGet
         } 
 
         [DllImport("Crypt32.dll", SetLastError=true)]
-$(if(-not $script:isNanoServer)
+$(if(-not $script:IsCoreCLR)
 {
         '
         [SuppressUnmanagedCodeSecurity,
@@ -696,7 +728,7 @@ $(if($script:IsSafeX509ChainHandleAvailable)
 {
 @"
         [DllImport("Crypt32.dll", CharSet=CharSet.Auto, SetLastError=true)]
-    $(if(-not $script:isNanoServer)
+    $(if(-not $script:IsCoreCLR)
     {
     '
         [ResourceExposure(ResourceScope.None)]
@@ -787,7 +819,7 @@ $(if($script:IsSafeX509ChainHandleAvailable)
             Language = 'CSharp'            
             ErrorAction = 'SilentlyContinue'
         }
-        if (-not $script:IsCoreCLR -and $RequiredAssembliesForWin32Helpers)
+        if ((-not $script:IsCoreCLR -or $script:IsNanoServer) -and $RequiredAssembliesForWin32Helpers)
         {
             $AddType_prams['ReferencedAssemblies'] = $RequiredAssembliesForWin32Helpers
         }
@@ -829,7 +861,7 @@ function Publish-Module
 
         [Parameter(ParameterSetName="ModuleNameParameterSet")]
         [ValidateNotNullOrEmpty()]
-        [Version]
+        [string]
         $RequiredVersion,
 
         [Parameter()]
@@ -877,21 +909,15 @@ function Publish-Module
 
         [Parameter()]
         [switch]
-        $Force
+        $Force,
+
+        [Parameter(ParameterSetName="ModuleNameParameterSet")]
+        [switch]
+        $AllowPrerelease
     )
 
     Begin
     {
-        if($script:isNanoServer -or $script:IsCoreCLR) {
-            $message = $LocalizedData.PublishPSArtifactUnsupportedOnNano -f "Module"
-            ThrowError -ExceptionName "System.InvalidOperationException" `
-                        -ExceptionMessage $message `
-                        -ErrorId 'PublishModuleIsNotSupportedOnPowerShellCoreEdition' `
-                        -CallerPSCmdlet $PSCmdlet `
-                        -ExceptionObject $PSCmdlet `
-                        -ErrorCategory InvalidOperation
-        }
-
         Get-PSGalleryApiAvailability -Repository $Repository
         
         if($LicenseUri -and -not (Test-WebUri -uri $LicenseUri))
@@ -1006,8 +1032,49 @@ function Publish-Module
 
         if($Name)
         {
+            if ($RequiredVersion)
+            {
+                $ValidationResult = Validate-VersionParameters -CallerPSCmdlet $PSCmdlet `
+                                                               -Name $Name `
+                                                               -RequiredVersion $RequiredVersion `
+                                                               -AllowPrerelease:$AllowPrerelease
+                if(-not $ValidationResult)
+                {
+                    # Validate-VersionParameters throws the error. 
+                    # returning to avoid further execution when different values are specified for -ErrorAction parameter
+                    return
+                }
+
+                $reqResult = ValidateAndGet-VersionPrereleaseStrings -Version $RequiredVersion -CallerPSCmdlet $PSCmdlet
+                if (-not $reqResult)
+                {
+                    # ValidateAndGet-VersionPrereleaseStrings throws the error.
+                    # returning to avoid further execution when different values are specified for -ErrorAction parameter
+                    return
+                }
+                $reqVersion = $reqResult["Version"]
+                $reqPrerelease = $reqResult["Prerelease"]
+            }
+            else 
+            {
+                $reqVersion = $null
+                $reqPrerelease = $null
+            }
+
+            # Find the module to be published locally, search by name and RequiredVersion
             $module = Microsoft.PowerShell.Core\Get-Module -ListAvailable -Name $Name -Verbose:$false | 
-                          Microsoft.PowerShell.Core\Where-Object {-not $RequiredVersion -or ($RequiredVersion -eq $_.Version)} 
+                          Microsoft.PowerShell.Core\Where-Object {
+                                $modInfoPrerelease = $null
+                                if ($_.PrivateData -and 
+                                    $_.PrivateData.GetType().ToString() -eq "System.Collections.Hashtable" -and
+                                    $_.PrivateData["PSData"] -and 
+                                    $_.PrivateData.PSData.GetType().ToString() -eq "System.Collections.Hashtable" -and
+                                    $_.PrivateData.PSData["Prerelease"])
+                                {
+                                    $modInfoPrerelease = $_.PrivateData.PSData.Prerelease
+                                }
+                                (-not $RequiredVersion) -or ( ($reqVersion -eq $_.Version) -and ($reqPrerelease -match $modInfoPrerelease) )
+                            }
 
             if(-not $module)
             {
@@ -1062,14 +1129,14 @@ function Publish-Module
             $modulePathWithVersion = $false
         
             # if the Leaf of the $resolvedPath is a version, use its parent folder name as the module name
-            $ModuleVersion = New-Object System.Version
+            [Version]$ModuleVersion = $null
             if([System.Version]::TryParse($moduleName, ([ref]$ModuleVersion)))
             {
                 $moduleName = Microsoft.PowerShell.Management\Split-Path -Path (Microsoft.PowerShell.Management\Split-Path $resolvedPath -Parent) -Leaf
                 $modulePathWithVersion = $true
             }
 
-            $manifestPath = Join-Path -Path $resolvedPath -ChildPath "$moduleName.psd1"
+            $manifestPath = Join-PathUtility -Path $resolvedPath -ChildPath "$moduleName.psd1" -PathType File
             $module = $null
 
             if(Microsoft.PowerShell.Management\Test-Path -Path $manifestPath -PathType Leaf)
@@ -1180,7 +1247,7 @@ function Publish-Module
 
         try
         {
-            $manifestPath = Microsoft.PowerShell.Management\Join-Path $tempModulePathForFormatVersion "$moduleName.psd1"
+            $manifestPath = Join-PathUtility -Path $tempModulePathForFormatVersion -ChildPath "$moduleName.psd1" -PathType File
         
             if(-not (Microsoft.PowerShell.Management\Test-Path $manifestPath))
             {
@@ -1216,10 +1283,33 @@ function Publish-Module
                            -ExceptionObject $moduleName
             }
 
+            # Validate Prerelease string
+            $moduleInfoPrerelease = $null
+            if ($moduleInfo.PrivateData -and 
+                $moduleInfo.PrivateData.GetType().ToString() -eq "System.Collections.Hashtable" -and
+                $moduleInfo.PrivateData["PSData"] -and 
+                $moduleInfo.PrivateData.PSData.GetType().ToString() -eq "System.Collections.Hashtable" -and
+                $moduleInfo.PrivateData.PSData["Prerelease"])
+            {
+                $moduleInfoPrerelease = $moduleInfo.PrivateData.PSData.Prerelease
+            }
+
+            $result = ValidateAndGet-VersionPrereleaseStrings -Version $moduleInfo.Version -Prerelease $moduleInfoPrerelease -CallerPSCmdlet $PSCmdlet
+            if (-not $result)
+            {
+                # ValidateAndGet-VersionPrereleaseStrings throws the error.
+                # returning to avoid further execution when different values are specified for -ErrorAction parameter
+                return
+            }
+            $moduleInfoVersion = $result["Version"]
+            $moduleInfoPrerelease = $result["Prerelease"]
+            $moduleInfoFullVersion = $result["FullVersion"]
+
             $FindParameters = @{
                 Name = $moduleName
                 Repository = $Repository
                 Tag = 'PSScript'
+                AllowPrerelease = $true
                 Verbose = $VerbosePreference
                 ErrorAction = 'SilentlyContinue'
                 WarningAction = 'SilentlyContinue'
@@ -1254,24 +1344,79 @@ function Publish-Module
 
             if($currentPSGetItemInfo)
             {
-                if($currentPSGetItemInfo.Version -eq $moduleInfo.Version)
-                {
-                    $message = $LocalizedData.ModuleVersionIsAlreadyAvailableInTheGallery -f ($moduleInfo.Name, $moduleInfo.Version, $currentPSGetItemInfo.Version, $currentPSGetItemInfo.RepositorySourceLocation)
-                    ThrowError -ExceptionName 'System.InvalidOperationException' `
-                               -ExceptionMessage $message `
-                               -ErrorId 'ModuleVersionIsAlreadyAvailableInTheGallery' `
-                               -CallerPSCmdlet $PSCmdlet `
-                               -ErrorCategory InvalidOperation
+                $result = ValidateAndGet-VersionPrereleaseStrings -Version $currentPSGetItemInfo.Version -CallerPSCmdlet $PSCmdlet
+                if (-not $result)
+                {                
+                    # ValidateAndGet-VersionPrereleaseStrings throws the error.
+                    # returning to avoid further execution when different values are specified for -ErrorAction parameter
+                    return
                 }
-                elseif(-not $Force -and ($currentPSGetItemInfo.Version -gt $moduleInfo.Version))
+                $currentPSGetItemVersion = $result["Version"]
+                $currentPSGetItemPrereleaseString = $result["Prerelease"]
+                $currentPSGetItemFullVersion = $result["FullVersion"]
+
+                if($currentPSGetItemVersion -eq $moduleInfoVersion)
                 {
-                    $message = $LocalizedData.ModuleVersionShouldBeGreaterThanGalleryVersion -f ($moduleInfo.Name, $moduleInfo.Version, $currentPSGetItemInfo.Version, $currentPSGetItemInfo.RepositorySourceLocation)
+                    # Compare Prerelease strings
+                    if (-not $currentPSGetItemPrereleaseString -and -not $moduleInfoPrerelease)
+                    {
+                        $message = $LocalizedData.ModuleVersionIsAlreadyAvailableInTheGallery -f ($moduleInfo.Name, $moduleInfoFullVersion, $currentPSGetItemFullVersion, $currentPSGetItemInfo.RepositorySourceLocation)
+                        ThrowError -ExceptionName 'System.InvalidOperationException' `
+                                   -ExceptionMessage $message `
+                                   -ErrorId 'ModuleVersionIsAlreadyAvailableInTheGallery' `
+                                   -CallerPSCmdlet $PSCmdlet `
+                                   -ErrorCategory InvalidOperation
+                    }
+                    elseif (-not $Force -and (-not $currentPSGetItemPrereleaseString -and $moduleInfoPrerelease))
+                    {
+                        # User is trying to publish a new Prerelease version AFTER publishing the stable version.
+                        $message = $LocalizedData.ModuleVersionShouldBeGreaterThanGalleryVersion -f ($moduleInfo.Name, $moduleInfoFullVersion, $currentPSGetItemFullVersion, $currentPSGetItemInfo.RepositorySourceLocation)
+                        ThrowError -ExceptionName "System.InvalidOperationException" `
+                                   -ExceptionMessage $message `
+                                   -ErrorId "ModuleVersionShouldBeGreaterThanGalleryVersion" `
+                                   -CallerPSCmdlet $PSCmdlet `
+                                   -ErrorCategory InvalidOperation
+                    }
+
+                    # elseif ($currentPSGetItemPrereleaseString -and -not $moduleInfoPrerelease) --> allow publish
+                    # User is attempting to publish a stable version after publishing a Prerelease version (allowed).  
+
+                    elseif ($currentPSGetItemPrereleaseString -and $moduleInfoPrerelease)
+                    {
+                        if ($currentPSGetItemPrereleaseString -eq $moduleInfoPrerelease)
+                        {
+                            $message = $LocalizedData.ModuleVersionIsAlreadyAvailableInTheGallery -f ($moduleInfo.Name, $moduleInfoFullVersion, $currentPSGetItemFullVersion, $currentPSGetItemInfo.RepositorySourceLocation)
+                            ThrowError -ExceptionName 'System.InvalidOperationException' `
+                                       -ExceptionMessage $message `
+                                       -ErrorId 'ModuleVersionIsAlreadyAvailableInTheGallery' `
+                                       -CallerPSCmdlet $PSCmdlet `
+                                       -ErrorCategory InvalidOperation
+                        }
+
+                        elseif (-not $Force -and ($currentPSGetItemPrereleaseString -gt $moduleInfoPrerelease))
+                        {
+                            $message = $LocalizedData.ModuleVersionShouldBeGreaterThanGalleryVersion -f ($moduleInfo.Name, $moduleInfoFullVersion, $currentPSGetItemFullVersion, $currentPSGetItemInfo.RepositorySourceLocation)
+                            ThrowError -ExceptionName "System.InvalidOperationException" `
+                                       -ExceptionMessage $message `
+                                       -ErrorId "ModuleVersionShouldBeGreaterThanGalleryVersion" `
+                                       -CallerPSCmdlet $PSCmdlet `
+                                       -ErrorCategory InvalidOperation
+                        }
+
+                        # elseif ($currentPSGetItemPrereleaseString -lt $moduleInfoPrerelease) --> allow publish
+                    }
+                }
+                elseif(-not $Force -and ($currentPSGetItemVersion -gt $moduleInfoVersion))
+                {
+                    $message = $LocalizedData.ModuleVersionShouldBeGreaterThanGalleryVersion -f ($moduleInfo.Name, $moduleInfoVersion, $currentPSGetItemFullVersion, $currentPSGetItemInfo.RepositorySourceLocation)
                     ThrowError -ExceptionName "System.InvalidOperationException" `
                                -ExceptionMessage $message `
                                -ErrorId "ModuleVersionShouldBeGreaterThanGalleryVersion" `
                                -CallerPSCmdlet $PSCmdlet `
                                -ErrorCategory InvalidOperation
                 }
+
+                # else ($currentPSGetItemVersion -lt $moduleInfoVersion) --> allow publish
             }
 
             $shouldProcessMessage = $LocalizedData.PublishModulewhatIfMessage -f ($moduleInfo.Version, $moduleInfo.Name)
@@ -1326,17 +1471,17 @@ function Find-Module
 
         [Parameter(ValueFromPipelineByPropertyName=$true)]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $MinimumVersion,
 
         [Parameter(ValueFromPipelineByPropertyName=$true)]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $MaximumVersion,
         
         [Parameter(ValueFromPipelineByPropertyName=$true)]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $RequiredVersion,
 
         [Parameter()]
@@ -1394,7 +1539,11 @@ function Find-Module
 
         [Parameter(ValueFromPipelineByPropertyName=$true)]
         [PSCredential]
-        $Credential
+        $Credential,
+
+        [Parameter()]
+        [switch]
+        $AllowPrerelease
     )
 
     Begin
@@ -1411,7 +1560,8 @@ function Find-Module
                                                        -MinimumVersion $MinimumVersion `
                                                        -MaximumVersion $MaximumVersion `
                                                        -RequiredVersion $RequiredVersion `
-                                                       -AllVersions:$AllVersions
+                                                       -AllVersions:$AllVersions `
+                                                       -AllowPrerelease:$AllowPrerelease
 
         if(-not $ValidationResult)
         {
@@ -1422,6 +1572,8 @@ function Find-Module
 
         $PSBoundParameters["Provider"] = $script:PSModuleProviderName
         $PSBoundParameters[$script:PSArtifactType] = $script:PSArtifactTypeModule
+        $PSBoundParameters[$script:AllowPrereleaseVersions] = $AllowPrerelease
+        $null = $PSBoundParameters.Remove("AllowPrerelease")
                 
         if($PSBoundParameters.ContainsKey("Repository"))
         {
@@ -1453,12 +1605,24 @@ function Find-Module
                 $isRepositoryNullOrPSGallerySpecified = $true
             }
         }
-		
+        
 		PackageManagement\Find-Package @PSBoundParameters | Microsoft.PowerShell.Core\ForEach-Object {
 
             $psgetItemInfo = New-PSGetItemInfo -SoftwareIdentity $_ -Type $script:PSArtifactTypeModule 
-                                                        
-            $psgetItemInfo
+
+            if ($AllVersions -and -not $AllowPrerelease)
+            {
+                # If AllVersions is specified but not AllowPrerelease, we should only return stable release versions.
+                # PackageManagement returns ALL versions (including prerelease) when AllVersions is specified, regardless of the value of AllowPrerelease.
+                # Filtering results returned from PackageManagement based on flags.
+                if ($psgetItemInfo.AdditionalMetadata -and $psgetItemInfo.AdditionalMetadata.IsPrerelease -eq 'false')
+                {
+                    $psgetItemInfo
+                }
+            }
+            else {
+                $psgetItemInfo
+            }
 
             if ($psgetItemInfo -and 
                 $isRepositoryNullOrPSGallerySpecified -and 
@@ -1468,6 +1632,7 @@ function Find-Module
                 $modulesFoundInPSGallery += $psgetItemInfo.Name 
             }
         }
+
 
         # Perform Telemetry if Repository is not supplied or Repository contains PSGallery
         # We are only interested in finding modules not in PSGallery
@@ -1519,7 +1684,7 @@ function Save-Module
         [Parameter(ValueFromPipelineByPropertyName=$true,
                    ParameterSetName='NameAndLiteralPathParameterSet')]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $MinimumVersion,
 
         [Parameter(ValueFromPipelineByPropertyName=$true,
@@ -1527,7 +1692,7 @@ function Save-Module
         [Parameter(ValueFromPipelineByPropertyName=$true,
                    ParameterSetName='NameAndLiteralPathParameterSet')]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $MaximumVersion,
         
         [Parameter(ValueFromPipelineByPropertyName=$true,
@@ -1535,7 +1700,7 @@ function Save-Module
         [Parameter(ValueFromPipelineByPropertyName=$true,
                    ParameterSetName='NameAndLiteralPathParameterSet')]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $RequiredVersion,
 
         [Parameter(ValueFromPipelineByPropertyName=$true,
@@ -1573,6 +1738,11 @@ function Save-Module
         [switch]
         $Force,
 
+        [Parameter(ParameterSetName='NameAndPathParameterSet')]
+        [Parameter(ParameterSetName='NameAndLiteralPathParameterSet')]
+        [switch]
+        $AllowPrerelease,
+
         [Parameter()]
         [switch]
         $AcceptLicense
@@ -1593,6 +1763,8 @@ function Save-Module
         $PSBoundParameters["Provider"] = $script:PSModuleProviderName
         $PSBoundParameters["MessageResolver"] = $script:PackageManagementSaveModuleMessageResolverScriptBlock
         $PSBoundParameters[$script:PSArtifactType] = $script:PSArtifactTypeModule
+        $PSBoundParameters[$script:AllowPrereleaseVersions] = $AllowPrerelease
+        $null = $PSBoundParameters.Remove("AllowPrerelease")
         
         # When -Force is specified, Path will be created if not available.
         if(-not $Force)
@@ -1640,7 +1812,8 @@ function Save-Module
                                                            -TestWildcardsInName `
                                                            -MinimumVersion $MinimumVersion `
                                                            -MaximumVersion $MaximumVersion `
-                                                           -RequiredVersion $RequiredVersion
+                                                           -RequiredVersion $RequiredVersion `
+                                                           -AllowPrerelease:$AllowPrerelease
 
             if(-not $ValidationResult)
             {
@@ -1756,19 +1929,19 @@ function Install-Module
         [Parameter(ValueFromPipelineByPropertyName=$true,
                    ParameterSetName='NameParameterSet')]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $MinimumVersion,
 
         [Parameter(ValueFromPipelineByPropertyName=$true,
                    ParameterSetName='NameParameterSet')]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $MaximumVersion,
         
         [Parameter(ValueFromPipelineByPropertyName=$true,
                    ParameterSetName='NameParameterSet')]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $RequiredVersion,
 
         [Parameter(ParameterSetName='NameParameterSet')]
@@ -1805,6 +1978,10 @@ function Install-Module
         [Parameter()]
         [switch]
         $Force,
+
+        [Parameter(ParameterSetName='NameParameterSet')]
+        [switch]
+        $AllowPrerelease,
 
         [Parameter()]
         [switch]
@@ -1847,6 +2024,8 @@ function Install-Module
         $PSBoundParameters["MessageResolver"] = $script:PackageManagementInstallModuleMessageResolverScriptBlock
         $PSBoundParameters[$script:PSArtifactType] = $script:PSArtifactTypeModule
         $PSBoundParameters['Scope'] = $Scope
+        $PSBoundParameters[$script:AllowPrereleaseVersions] = $AllowPrerelease
+        $null = $PSBoundParameters.Remove("AllowPrerelease")
 
         if($PSCmdlet.ParameterSetName -eq "NameParameterSet")
         {
@@ -1855,7 +2034,8 @@ function Install-Module
                                                            -TestWildcardsInName `
                                                            -MinimumVersion $MinimumVersion `
                                                            -MaximumVersion $MaximumVersion `
-                                                           -RequiredVersion $RequiredVersion
+                                                           -RequiredVersion $RequiredVersion `
+                                                           -AllowPrerelease:$AllowPrerelease
 
             if(-not $ValidationResult)
             {
@@ -1931,11 +2111,12 @@ function Install-Module
 
                 $PSBoundParameters["Name"] = $psgetModuleInfo.Name
                 $PSBoundParameters["RequiredVersion"] = $psgetModuleInfo.Version
+                $PSBoundParameters[$script:AllowPrereleaseVersions] = $psgetModuleInfo.AdditionalMetadata.IsPrerelease -eq "true"
                 $PSBoundParameters['Source'] = $psgetModuleInfo.Repository
                 $PSBoundParameters["PackageManagementProvider"] = (Get-ProviderName -PSCustomObject $psgetModuleInfo)
 
                 #Check if module is already installed
-                $InstalledModuleInfo = Test-ModuleInstalled -Name $psgetModuleInfo.Name -RequiredVersion  $psgetModuleInfo.Version                 
+                $InstalledModuleInfo = Test-ModuleInstalled -Name $psgetModuleInfo.Name -RequiredVersion $psgetModuleInfo.Version                
                 if(-not $Force -and $InstalledModuleInfo -ne $null)
                 {
                     $message = $LocalizedData.ModuleAlreadyInstalledVerbose -f ($InstalledModuleInfo.Version, $InstalledModuleInfo.Name, $InstalledModuleInfo.ModuleBase)
@@ -1960,7 +2141,7 @@ function Install-Module
                                 }
                                 else
                                 {
-                                    $sourceTrusted = $psCmdlet.ShouldContinue("$message", "$RepositoryIsNotTrusted", [ref]$YesToAll, [ref]$NoToAll)
+                                     $sourceTrusted = $psCmdlet.ShouldContinue("$message", "$RepositoryIsNotTrusted", [ref]$YesToAll, [ref]$NoToAll)
                                 }                               
 
                                 if($sourceTrusted)
@@ -2003,12 +2184,12 @@ function Update-Module
 
         [Parameter(ValueFromPipelineByPropertyName=$true)]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $RequiredVersion,
 
         [Parameter(ValueFromPipelineByPropertyName=$true)]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $MaximumVersion,
 
         [Parameter(ValueFromPipelineByPropertyName=$true)]
@@ -2029,6 +2210,10 @@ function Update-Module
         $Force,
 
         [Parameter()]
+        [Switch]
+        $AllowPrerelease,
+
+        [Parameter()]
         [switch]
         $AcceptLicense
     )
@@ -2046,7 +2231,8 @@ function Update-Module
         $ValidationResult = Validate-VersionParameters -CallerPSCmdlet $PSCmdlet `
                                                        -Name $Name `
                                                        -MaximumVersion $MaximumVersion `
-                                                       -RequiredVersion $RequiredVersion
+                                                       -RequiredVersion $RequiredVersion `
+                                                       -AllowPrerelease:$AllowPrerelease
 
         if(-not $ValidationResult)
         {
@@ -2061,6 +2247,8 @@ function Update-Module
         $GetPackageParameters["MessageResolver"] = $script:PackageManagementMessageResolverScriptBlock
         $GetPackageParameters['ErrorAction'] = 'SilentlyContinue'
         $GetPackageParameters['WarningAction'] = 'SilentlyContinue'
+        $PSBoundParameters[$script:AllowPrereleaseVersions] = $AllowPrerelease
+        $null = $PSBoundParameters.Remove("AllowPrerelease")
 
         $PSGetItemInfos = @()
 
@@ -2193,19 +2381,19 @@ function Uninstall-Module
         [Parameter(ValueFromPipelineByPropertyName=$true,
                    ParameterSetName='NameParameterSet')]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $MinimumVersion,
 
         [Parameter(ValueFromPipelineByPropertyName=$true,
                    ParameterSetName='NameParameterSet')]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $RequiredVersion,
 
         [Parameter(ValueFromPipelineByPropertyName=$true,
                    ParameterSetName='NameParameterSet')]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $MaximumVersion,
         
         [Parameter(ParameterSetName='NameParameterSet')]
@@ -2214,7 +2402,11 @@ function Uninstall-Module
 
         [Parameter()]
         [Switch]
-        $Force
+        $Force,
+
+        [Parameter(ParameterSetName='NameParameterSet')]
+        [switch]
+        $AllowPrerelease
     )
 
     Process
@@ -2254,7 +2446,8 @@ function Uninstall-Module
                                                            -MinimumVersion $MinimumVersion `
                                                            -MaximumVersion $MaximumVersion `
                                                            -RequiredVersion $RequiredVersion `
-                                                           -AllVersions:$AllVersions
+                                                           -AllVersions:$AllVersions `
+                                                           -AllowPrerelease:$AllowPrerelease
 
             if(-not $ValidationResult)
             {
@@ -2284,22 +2477,26 @@ function Get-InstalledModule
 
         [Parameter(ValueFromPipelineByPropertyName=$true)]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $MinimumVersion,
 
         [Parameter(ValueFromPipelineByPropertyName=$true)]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $RequiredVersion,
 
         [Parameter(ValueFromPipelineByPropertyName=$true)]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $MaximumVersion,
         
         [Parameter()]
         [switch]
-        $AllVersions
+        $AllVersions,
+
+        [Parameter()]
+        [switch]
+        $AllowPrerelease
     )
 
     Process
@@ -2309,7 +2506,8 @@ function Get-InstalledModule
                                                        -MinimumVersion $MinimumVersion `
                                                        -MaximumVersion $MaximumVersion `
                                                        -RequiredVersion $RequiredVersion `
-                                                       -AllVersions:$AllVersions
+                                                       -AllVersions:$AllVersions `
+                                                       -AllowPrerelease:$AllowPrerelease 
 
         if(-not $ValidationResult)
         {
@@ -2321,6 +2519,8 @@ function Get-InstalledModule
         $PSBoundParameters["Provider"] = $script:PSModuleProviderName
         $PSBoundParameters["MessageResolver"] = $script:PackageManagementMessageResolverScriptBlock
         $PSBoundParameters[$script:PSArtifactType] = $script:PSArtifactTypeModule
+        $PSBoundParameters[$script:AllowPrereleaseVersions] = $AllowPrerelease
+        $null = $PSBoundParameters.Remove("AllowPrerelease")
 
         PackageManagement\Get-Package @PSBoundParameters | Microsoft.PowerShell.Core\ForEach-Object {New-PSGetItemInfo -SoftwareIdentity $_ -Type $script:PSArtifactTypeModule}  
     }
@@ -2351,22 +2551,26 @@ function Find-DscResource
 
         [Parameter()]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $MinimumVersion,
 
         [Parameter()]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $MaximumVersion,
         
         [Parameter()]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $RequiredVersion,
 
         [Parameter()]
         [switch]
         $AllVersions,
+
+        [Parameter()]
+        [switch]
+        $AllowPrerelease,
 
         [Parameter()]
         [ValidateNotNull()]
@@ -2409,7 +2613,7 @@ function Find-DscResource
             $PSBoundParameters['Name'] = $ModuleName
             $null = $PSBoundParameters.Remove('ModuleName')
         }        
-
+        
         PowerShellGet\Find-Module @PSBoundParameters | 
         Microsoft.PowerShell.Core\ForEach-Object {
             $psgetModuleInfo = $_
@@ -2429,8 +2633,8 @@ function Find-DscResource
 
                 $psgetDscResourceInfo.PSTypeNames.Insert(0, 'Microsoft.PowerShell.Commands.PSGetDscResourceInfo')
                 $psgetDscResourceInfo
-            }   
-        } 
+            }
+        }
     }
 }
 
@@ -2459,22 +2663,26 @@ function Find-Command
 
         [Parameter()]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $MinimumVersion,
 
         [Parameter()]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $MaximumVersion,
         
         [Parameter()]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $RequiredVersion,
 
         [Parameter()]
         [switch]
         $AllVersions,
+
+        [Parameter()]
+        [switch]
+        $AllowPrerelease,
 
         [Parameter()]
         [ValidateNotNull()]
@@ -2518,29 +2726,30 @@ function Find-Command
         {
             $PSBoundParameters['Name'] = $ModuleName
             $null = $PSBoundParameters.Remove('ModuleName')
-        }        
+        }
+
 
         PowerShellGet\Find-Module @PSBoundParameters | 
-        Microsoft.PowerShell.Core\ForEach-Object {
-            $psgetModuleInfo = $_
-            $psgetModuleInfo.Includes.Command | Microsoft.PowerShell.Core\ForEach-Object {
-                if(($_ -eq "*") -or ($Name -and ($Name -notcontains $_)))
-                {
-                    return
+            Microsoft.PowerShell.Core\ForEach-Object {
+                $psgetModuleInfo = $_
+                $psgetModuleInfo.Includes.Command | Microsoft.PowerShell.Core\ForEach-Object {
+                    if(($_ -eq "*") -or ($Name -and ($Name -notcontains $_)))
+                    {
+                        return
+                    }
+
+                    $psgetCommandInfo = Microsoft.PowerShell.Utility\New-Object PSCustomObject -Property ([ordered]@{
+                            Name            = $_
+                            Version         = $psgetModuleInfo.Version
+                            ModuleName      = $psgetModuleInfo.Name
+                            Repository      = $psgetModuleInfo.Repository
+                            PSGetModuleInfo = $psgetModuleInfo
+                    })
+
+                    $psgetCommandInfo.PSTypeNames.Insert(0, 'Microsoft.PowerShell.Commands.PSGetCommandInfo')
+                    $psgetCommandInfo
                 }
-
-                $psgetCommandInfo = Microsoft.PowerShell.Utility\New-Object PSCustomObject -Property ([ordered]@{
-                        Name            = $_
-                        Version         = $psgetModuleInfo.Version
-                        ModuleName      = $psgetModuleInfo.Name
-                        Repository      = $psgetModuleInfo.Repository
-                        PSGetModuleInfo = $psgetModuleInfo
-                })
-
-                $psgetCommandInfo.PSTypeNames.Insert(0, 'Microsoft.PowerShell.Commands.PSGetCommandInfo')
-                $psgetCommandInfo
             }
-        }
     }
 }
 
@@ -2569,22 +2778,26 @@ function Find-RoleCapability
 
         [Parameter()]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $MinimumVersion,
         
         [Parameter()]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $MaximumVersion,
 
         [Parameter()]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $RequiredVersion,
 
         [Parameter()]
         [switch]
         $AllVersions,
+
+        [Parameter()]
+        [switch]
+        $AllowPrerelease,
 
         [Parameter()]
         [ValidateNotNull()]
@@ -2701,16 +2914,6 @@ function Publish-Script
 
     Begin
     {
-        if($script:isNanoServer -or $script:IsCoreCLR) {
-            $message = $LocalizedData.PublishPSArtifactUnsupportedOnNano -f "Script"
-            ThrowError -ExceptionName "System.InvalidOperationException" `
-                        -ExceptionMessage $message `
-                        -ErrorId 'PublishScriptIsNotSupportedOnPowerShellCoreEdition' `
-                        -CallerPSCmdlet $PSCmdlet `
-                        -ExceptionObject $PSCmdlet `
-                        -ErrorCategory InvalidOperation
-        }
-
         Get-PSGalleryApiAvailability -Repository $Repository        
 
         Install-NuGetClientBinaries -CallerPSCmdlet $PSCmdlet -BootstrapNuGetExe -Force:$Force
@@ -2856,12 +3059,23 @@ function Publish-Script
             # Test-ScriptFileInfo throws the actual error
             return
         }
-
+        
         $scriptName = $PSScriptInfo.Name
 
+        $result = ValidateAndGet-VersionPrereleaseStrings -Version $PSScriptInfo.Version -CallerPSCmdlet $PSCmdlet
+        if (-not $result)
+        {
+            # ValidateAndGet-VersionPrereleaseStrings throws the error.
+            # returning to avoid further execution when different values are specified for -ErrorAction parameter
+            return
+        }
+        $scriptVersion = $result["Version"]
+        $scriptPrerelease = $result["Prerelease"]
+        $scriptFullVersion = $result["FullVersion"]
+
         # Copy the source script file to temp location to publish
-        $tempScriptPath = Microsoft.PowerShell.Management\Join-Path -Path $script:TempPath `
-                              -ChildPath "$(Microsoft.PowerShell.Utility\Get-Random)\$scriptName"
+        $tempScriptPath = Microsoft.PowerShell.Management\Join-Path -Path $script:TempPath -ChildPath "$(Get-Random)" |
+            Microsoft.PowerShell.Management\Join-Path -ChildPath $scriptName
 
         $null = Microsoft.PowerShell.Management\New-Item -Path $tempScriptPath -ItemType Directory -Force -ErrorAction SilentlyContinue -WarningAction SilentlyContinue -Confirm:$false -WhatIf:$false
         if($Path)
@@ -2879,6 +3093,7 @@ function Publish-Script
                 Name = $scriptName
                 Repository = $Repository
                 Tag = 'PSModule'
+                AllowPrerelease = $true
                 Verbose = $VerbosePreference
                 ErrorAction = 'SilentlyContinue'
                 WarningAction = 'SilentlyContinue'
@@ -2915,11 +3130,22 @@ function Publish-Script
 
             if($currentPSGetItemInfo)
             {
-                if($currentPSGetItemInfo.Version -eq $PSScriptInfo.Version)
+                $result = ValidateAndGet-VersionPrereleaseStrings -Version $currentPSGetItemInfo.Version -CallerPSCmdlet $PSCmdlet
+                if (-not $result)
+                {
+                    # ValidateAndGet-VersionPrereleaseStrings throws the error.
+                    # returning to avoid further execution when different values are specified for -ErrorAction parameter
+                    return
+                }
+                $galleryScriptVersion = $result["Version"]
+                $galleryScriptPrerelease = $result["Prerelease"]
+                $galleryScriptFullVersion = $result["FullVersion"]
+
+                if($galleryScriptFullVersion -eq $scriptFullVersion)
                 {
                     $message = $LocalizedData.ScriptVersionIsAlreadyAvailableInTheGallery -f ($scriptName,
-                                                                                              $PSScriptInfo.Version,
-                                                                                              $currentPSGetItemInfo.Version,
+                                                                                              $scriptFullVersion,
+                                                                                              $galleryScriptFullVersion,
                                                                                               $currentPSGetItemInfo.RepositorySourceLocation)
                     ThrowError -ExceptionName "System.InvalidOperationException" `
                                -ExceptionMessage $message `
@@ -2927,18 +3153,67 @@ function Publish-Script
                                -CallerPSCmdlet $PSCmdlet `
                                -ErrorCategory InvalidOperation
                 }
-                elseif(-not $Force -and ($currentPSGetItemInfo.Version -gt $PSScriptInfo.Version))
+
+                if ($galleryScriptVersion -eq $scriptVersion -and -not $Force)
+                {
+                    # Prerelease strings will not both be null, otherwise would have terminated already above
+
+                    if (-not $Force -and (-not $galleryScriptPrerelease -and $scriptPrerelease))
+                    {
+                        # User is trying to publish a new Prerelease version AFTER publishing the stable version.
+                        $message = $LocalizedData.ScriptPrereleaseStringShouldBeGreaterThanGalleryPrereleaseString -f ($scriptName,
+                                                                                                                       $scriptVersion,
+                                                                                                                       $scriptPrerelease,
+                                                                                                                       $galleryScriptPrerelease,
+                                                                                                                       $currentPSGetItemInfo.RepositorySourceLocation)
+                        ThrowError -ExceptionName "System.InvalidOperationException" `
+                                -ExceptionMessage $message `
+                                -ErrorId "ScriptPrereleaseStringShouldBeGreaterThanGalleryPrereleaseString" `
+                                -CallerPSCmdlet $PSCmdlet `
+                                -ErrorCategory InvalidOperation
+                    }
+
+                    # elseif ($galleryScriptPrerelease -and -not $scriptPrerelease) --> allow publish
+                    # User is attempting to publish a stable version after publishing a prerelease version (allowed).
+
+                    elseif($galleryScriptPrerelease -and $scriptPrerelease)
+                    {
+                        # if ($galleryScriptPrerelease -eq $scriptPrerelease) --> not reachable, would have terminated already above.
+                        
+                        if (-not $Force -and ($galleryScriptPrerelease -gt $scriptPrerelease))
+                        {
+                            # User is trying to publish a lower prerelease version.
+                            $message = $LocalizedData.ScriptPrereleaseStringShouldBeGreaterThanGalleryPrereleaseString -f ($scriptName,
+                                                                                                                           $scriptVersion,
+                                                                                                                           $scriptPrerelease,
+                                                                                                                           $galleryScriptPrerelease,
+                                                                                                                           $currentPSGetItemInfo.RepositorySourceLocation)
+                            ThrowError -ExceptionName "System.InvalidOperationException" `
+                                    -ExceptionMessage $message `
+                                    -ErrorId "ScriptPrereleaseStringShouldBeGreaterThanGalleryPrereleaseString" `
+                                    -CallerPSCmdlet $PSCmdlet `
+                                    -ErrorCategory InvalidOperation
+                        }
+
+                        # elseif ($galleryScriptPrerelease -lt $scriptPrerelease) --> allow publish
+                        # User is trying to publish a newer prerelease version (allowed)
+                    }
+                }
+                elseif (-not $Force -and ($galleryScriptVersion -gt $scriptVersion))
                 {
                     $message = $LocalizedData.ScriptVersionShouldBeGreaterThanGalleryVersion -f ($scriptName,
-                                                                                                 $PSScriptInfo.Version,
-                                                                                                 $currentPSGetItemInfo.Version,
+                                                                                                 $scriptVersion,
+                                                                                                 $galleryScriptVersion,
                                                                                                  $currentPSGetItemInfo.RepositorySourceLocation)
                     ThrowError -ExceptionName "System.InvalidOperationException" `
-                               -ExceptionMessage $message `
-                               -ErrorId "ScriptVersionShouldBeGreaterThanGalleryVersion" `
-                               -CallerPSCmdlet $PSCmdlet `
-                               -ErrorCategory InvalidOperation
+                            -ExceptionMessage $message `
+                            -ErrorId "ScriptVersionShouldBeGreaterThanGalleryVersion" `
+                            -CallerPSCmdlet $PSCmdlet `
+                            -ErrorCategory InvalidOperation
                 }
+
+                # else ($galleryScriptVersion -lt $scriptVersion) --> allow publish
+                # User is trying to publish a newer stable version (allowed)
             }
 
             $shouldProcessMessage = $LocalizedData.PublishScriptwhatIfMessage -f ($PSScriptInfo.Version, $scriptName)
@@ -2968,7 +3243,6 @@ function Publish-Script
         }
     }
 }
-
 function Find-Script
 {
     <#
@@ -2986,17 +3260,17 @@ function Find-Script
 
         [Parameter(ValueFromPipelineByPropertyName=$true)]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $MinimumVersion,
 
         [Parameter(ValueFromPipelineByPropertyName=$true)]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $MaximumVersion,
         
         [Parameter(ValueFromPipelineByPropertyName=$true)]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $RequiredVersion,
 
         [Parameter()]
@@ -3044,7 +3318,11 @@ function Find-Script
 
         [Parameter(ValueFromPipelineByPropertyName=$true)]
         [PSCredential]
-        $Credential
+        $Credential,
+
+        [Parameter()]
+        [switch]
+        $AllowPrerelease
     )
 
     Begin
@@ -3061,7 +3339,8 @@ function Find-Script
                                                        -MinimumVersion $MinimumVersion `
                                                        -MaximumVersion $MaximumVersion `
                                                        -RequiredVersion $RequiredVersion `
-                                                       -AllVersions:$AllVersions
+                                                       -AllVersions:$AllVersions `
+                                                       -AllowPrerelease:$AllowPrerelease
 
         if(-not $ValidationResult)
         {
@@ -3072,6 +3351,8 @@ function Find-Script
 
         $PSBoundParameters['Provider'] = $script:PSModuleProviderName
         $PSBoundParameters[$script:PSArtifactType] = $script:PSArtifactTypeScript
+        $PSBoundParameters[$script:AllowPrereleaseVersions] = $AllowPrerelease
+        $null = $PSBoundParameters.Remove("AllowPrerelease")
                 
         if($PSBoundParameters.ContainsKey("Repository"))
         {
@@ -3129,7 +3410,19 @@ function Find-Script
         PackageManagement\Find-Package @PSBoundParameters | Microsoft.PowerShell.Core\ForEach-Object {
                 $psgetItemInfo = New-PSGetItemInfo -SoftwareIdentity $_ -Type $script:PSArtifactTypeScript 
                                                         
-                $psgetItemInfo
+                if ($AllVersions -and -not $AllowPrerelease)
+                {
+                    # If AllVersions is specified but not AllowPrerelease, we should only return stable release versions.
+                    # PackageManagement returns ALL versions (including prerelease) when AllVersions is specified, regardless of the value of AllowPrerelease.
+                    # Filtering results returned from PackageManagement based on flags.
+                    if ($psgetItemInfo.AdditionalMetadata -and $psgetItemInfo.AdditionalMetadata.IsPrerelease -eq $false)
+                    {
+                        $psgetItemInfo
+                    }
+                }
+                else {
+                    $psgetItemInfo
+                }
 
                 if ($psgetItemInfo -and 
                     $isRepositoryNullOrPSGallerySpecified -and 
@@ -3190,7 +3483,7 @@ function Save-Script
         [Parameter(ValueFromPipelineByPropertyName=$true,
                    ParameterSetName='NameAndLiteralPathParameterSet')]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $MinimumVersion,
 
         [Parameter(ValueFromPipelineByPropertyName=$true,
@@ -3198,7 +3491,7 @@ function Save-Script
         [Parameter(ValueFromPipelineByPropertyName=$true,
                    ParameterSetName='NameAndLiteralPathParameterSet')]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $MaximumVersion,
         
         [Parameter(ValueFromPipelineByPropertyName=$true,
@@ -3206,7 +3499,7 @@ function Save-Script
         [Parameter(ValueFromPipelineByPropertyName=$true,
                    ParameterSetName='NameAndLiteralPathParameterSet')]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $RequiredVersion,
 
         [Parameter(ValueFromPipelineByPropertyName=$true,
@@ -3254,6 +3547,11 @@ function Save-Script
         [switch]
         $Force,
 
+        [Parameter(ParameterSetName='NameAndPathParameterSet')]
+        [Parameter(ParameterSetName='NameAndLiteralPathParameterSet')]
+        [switch]
+        $AllowPrerelease,
+
         [Parameter()]
         [switch]
         $AcceptLicense
@@ -3274,6 +3572,8 @@ function Save-Script
         $PSBoundParameters["Provider"] = $script:PSModuleProviderName
         $PSBoundParameters["MessageResolver"] = $script:PackageManagementSaveScriptMessageResolverScriptBlock
         $PSBoundParameters[$script:PSArtifactType] = $script:PSArtifactTypeScript
+        $PSBoundParameters[$script:AllowPrereleaseVersions] = $AllowPrerelease
+        $null = $PSBoundParameters.Remove("AllowPrerelease")
 
         # When -Force is specified, Path will be created if not available.
         if(-not $Force)
@@ -3323,7 +3623,8 @@ function Save-Script
                                                            -TestWildcardsInName `
                                                            -MinimumVersion $MinimumVersion `
                                                            -MaximumVersion $MaximumVersion `
-                                                           -RequiredVersion $RequiredVersion
+                                                           -RequiredVersion $RequiredVersion `
+                                                           -AllowPrerelease:$AllowPrerelease
 
             if(-not $ValidationResult)
             {
@@ -3441,19 +3742,19 @@ function Install-Script
         [Parameter(ValueFromPipelineByPropertyName=$true,
                    ParameterSetName='NameParameterSet')]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $MinimumVersion,
 
         [Parameter(ValueFromPipelineByPropertyName=$true,
                    ParameterSetName='NameParameterSet')]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $MaximumVersion,
         
         [Parameter(ValueFromPipelineByPropertyName=$true,
                    ParameterSetName='NameParameterSet')]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $RequiredVersion,
 
         [Parameter(ParameterSetName='NameParameterSet')]
@@ -3486,6 +3787,10 @@ function Install-Script
         [Parameter()]
         [switch]
         $Force,
+
+        [Parameter(ParameterSetName='NameParameterSet')]
+        [switch]
+        $AllowPrerelease,
 
         [Parameter()]
         [switch]
@@ -3545,6 +3850,8 @@ function Install-Script
         $PSBoundParameters["MessageResolver"] = $script:PackageManagementInstallScriptMessageResolverScriptBlock
         $PSBoundParameters[$script:PSArtifactType] = $script:PSArtifactTypeScript
         $PSBoundParameters['Scope'] = $Scope
+        $PSBoundParameters[$script:AllowPrereleaseVersions] = $AllowPrerelease
+        $null = $PSBoundParameters.Remove("AllowPrerelease")
 
         if($PSCmdlet.ParameterSetName -eq "NameParameterSet")
         {
@@ -3553,7 +3860,8 @@ function Install-Script
                                                            -TestWildcardsInName `
                                                            -MinimumVersion $MinimumVersion `
                                                            -MaximumVersion $MaximumVersion `
-                                                           -RequiredVersion $RequiredVersion
+                                                           -RequiredVersion $RequiredVersion `
+                                                           -AllowPrerelease:$AllowPrerelease
 
             if(-not $ValidationResult)
             {
@@ -3748,12 +4056,12 @@ function Update-Script
 
         [Parameter(ValueFromPipelineByPropertyName=$true)]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $RequiredVersion,
 
         [Parameter(ValueFromPipelineByPropertyName=$true)]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $MaximumVersion,
 
         [Parameter(ValueFromPipelineByPropertyName=$true)]
@@ -3772,6 +4080,10 @@ function Update-Script
         [Parameter()]
         [Switch]
         $Force,
+
+        [Parameter()]
+        [Switch]
+        $AllowPrerelease,
 
         [Parameter()]
         [switch]
@@ -3793,7 +4105,8 @@ function Update-Script
         $ValidationResult = Validate-VersionParameters -CallerPSCmdlet $PSCmdlet `
                                                        -Name $Name `
                                                        -MaximumVersion $MaximumVersion `
-                                                       -RequiredVersion $RequiredVersion
+                                                       -RequiredVersion $RequiredVersion `
+                                                       -AllowPrerelease:$AllowPrerelease
 
         if(-not $ValidationResult)
         {
@@ -3928,6 +4241,8 @@ function Update-Script
             $PSBoundParameters["PackageManagementProvider"] = $providerName 
             $PSBoundParameters["Name"] = $psgetItemInfo.Name
             $PSBoundParameters['Source'] = $psgetItemInfo.Repository
+            $PSBoundParameters[$script:AllowPrereleaseVersions] = $AllowPrerelease
+            $null = $PSBoundParameters.Remove("AllowPrerelease")
 
             Get-PSGalleryApiAvailability -Repository (Get-SourceName -Location $psgetItemInfo.RepositorySourceLocation)
 
@@ -3966,24 +4281,28 @@ function Uninstall-Script
         [Parameter(ValueFromPipelineByPropertyName=$true,
                    ParameterSetName='NameParameterSet')]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $MinimumVersion,
 
         [Parameter(ValueFromPipelineByPropertyName=$true,
                    ParameterSetName='NameParameterSet')]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $RequiredVersion,
 
         [Parameter(ValueFromPipelineByPropertyName=$true,
                    ParameterSetName='NameParameterSet')]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $MaximumVersion,
 
         [Parameter()]
         [Switch]
-        $Force
+        $Force,
+
+        [Parameter(ParameterSetName='NameParameterSet')]
+        [Switch]
+        $AllowPrerelease
     )
 
     Process
@@ -3991,6 +4310,8 @@ function Uninstall-Script
         $PSBoundParameters["Provider"] = $script:PSModuleProviderName
         $PSBoundParameters["MessageResolver"] = $script:PackageManagementUnInstallScriptMessageResolverScriptBlock
         $PSBoundParameters[$script:PSArtifactType] = $script:PSArtifactTypeScript
+        $PSBoundParameters[$script:AllowPrereleaseVersions] = $AllowPrerelease
+        $null = $PSBoundParameters.Remove("AllowPrerelease")
 
         if($PSCmdlet.ParameterSetName -eq "InputObject")
         {
@@ -4022,7 +4343,8 @@ function Uninstall-Script
                                                            -TestWildcardsInName `
                                                            -MinimumVersion $MinimumVersion `
                                                            -MaximumVersion $MaximumVersion `
-                                                           -RequiredVersion $RequiredVersion
+                                                           -RequiredVersion $RequiredVersion `
+                                                           -AllowPrerelease:$AllowPrerelease
 
             if(-not $ValidationResult)
             {
@@ -4052,18 +4374,22 @@ function Get-InstalledScript
 
         [Parameter(ValueFromPipelineByPropertyName=$true)]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $MinimumVersion,
 
         [Parameter(ValueFromPipelineByPropertyName=$true)]
         [ValidateNotNull()]
-        [Version]
+        [string]
         $RequiredVersion,
 
         [Parameter(ValueFromPipelineByPropertyName=$true)]
         [ValidateNotNull()]
-        [Version]
-        $MaximumVersion
+        [string]
+        $MaximumVersion,
+
+        [Parameter()]
+        [Switch]
+        $AllowPrerelease
     )
 
     Process
@@ -4072,7 +4398,8 @@ function Get-InstalledScript
                                                        -Name $Name `
                                                        -MinimumVersion $MinimumVersion `
                                                        -MaximumVersion $MaximumVersion `
-                                                       -RequiredVersion $RequiredVersion
+                                                       -RequiredVersion $RequiredVersion `
+                                                       -AllowPrerelease:$AllowPrerelease
 
         if(-not $ValidationResult)
         {
@@ -4084,6 +4411,8 @@ function Get-InstalledScript
         $PSBoundParameters["Provider"] = $script:PSModuleProviderName
         $PSBoundParameters["MessageResolver"] = $script:PackageManagementMessageResolverScriptBlockForScriptCmdlets
         $PSBoundParameters[$script:PSArtifactType] = $script:PSArtifactTypeScript
+        $PSBoundParameters[$script:AllowPrereleaseVersions] = $AllowPrerelease
+        $null = $PSBoundParameters.Remove("AllowPrerelease")
 
         PackageManagement\Get-Package @PSBoundParameters | Microsoft.PowerShell.Core\ForEach-Object {New-PSGetItemInfo -SoftwareIdentity $_ -Type $script:PSArtifactTypeScript}
     }
@@ -4644,7 +4973,7 @@ Feature 5
 #> 
 
 
-#
+
 function Test-ScriptFileInfo
 {
     <#
@@ -4972,6 +5301,17 @@ function Test-ScriptFileInfo
             return
         }
 
+        if ($PSScriptInfo.Version -match '-')
+        {
+            $result = ValidateAndGet-VersionPrereleaseStrings -Version $PSScriptInfo.Version  -CallerPSCmdlet $PSCmdlet
+            if (-not $result)
+            {
+                # ValidateAndGet-VersionPrereleaseStrings throws the error.
+                # returning to avoid further execution when different values are specified for -ErrorAction parameter
+                return
+            }
+        }
+
         $PSScriptInfo = Get-OrderedPSScriptInfoObject -PSScriptInfo $PSScriptInfo
 
         return $PSScriptInfo
@@ -4997,7 +5337,7 @@ function New-ScriptFileInfo
 
         [Parameter()]
         [ValidateNotNullOrEmpty()]
-        [Version]
+        [string]
         $Version,
 
         [Parameter()]
@@ -5017,7 +5357,7 @@ function New-ScriptFileInfo
 
         [Parameter()]
         [ValidateNotNullOrEmpty()]
-        [String]
+        [string]
         $CompanyName,
 
         [Parameter()]
@@ -5123,7 +5463,17 @@ function New-ScriptFileInfo
 
         if(-not $Version)
         {
-            $Version = [Version]'1.0'
+            $Version = '1.0'
+        }
+        else 
+        {
+            $result = ValidateAndGet-VersionPrereleaseStrings -Version $Version -CallerPSCmdlet $PSCmdlet
+            if (-not $result)
+            {
+                # ValidateAndGet-VersionPrereleaseStrings throws the error. 
+                # returning to avoid further execution when different values are specified for -ErrorAction parameter
+                return
+            }
         }
 
         if(-not $Author)
@@ -5253,7 +5603,7 @@ function Update-ScriptFileInfo
 
         [Parameter()]
         [ValidateNotNullOrEmpty()]
-        [Version]
+        [string]
         $Version,
 
         [Parameter()]
@@ -5273,7 +5623,7 @@ function Update-ScriptFileInfo
 
         [Parameter()] 
         [ValidateNotNullOrEmpty()]
-        [String]
+        [string]
         $CompanyName,
 
         [Parameter()]
@@ -5327,7 +5677,8 @@ function Update-ScriptFileInfo
 
 		[Parameter()]
         [ValidateNotNullOrEmpty()]
-        [string]$PrivateData,
+        [string]
+        $PrivateData,
                 
         [Parameter()]
         [switch]
@@ -5340,6 +5691,7 @@ function Update-ScriptFileInfo
 
     Process
     {
+        # Resolve the script path
         $scriptFilePath = $null
         if($Path)
         {
@@ -5388,6 +5740,7 @@ function Update-ScriptFileInfo
             return
         }
         
+        # Obtain script info
         $psscriptInfo = $null
         try
         {
@@ -5416,7 +5769,17 @@ function Update-ScriptFileInfo
 
             if(-not $Version)
             {
-                $Version = [Version]'1.0'
+                $Version = '1.0'
+            }
+            else 
+            {
+                $result = ValidateAndGet-VersionPrereleaseStrings -Version $Version -CallerPSCmdlet $PSCmdlet
+                if (-not $result)
+                {
+                    # ValidateAndGet-VersionPrereleaseStrings throws the error. 
+                    # returning to avoid further execution when different values are specified for -ErrorAction parameter
+                    return
+                }
             }
 
             if(-not $Author)
@@ -5527,6 +5890,7 @@ function Update-ScriptFileInfo
 			PrivateData = $PrivateData
         }
 
+        # Ensure no fields contain '<#' or '#>' (would break comment section)
         if(-not (Validate-ScriptFileInfoParameters -parameters $params))
         {
             return
@@ -5841,7 +6205,7 @@ function Get-PSScriptInfoString
     (
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
-        [Version]
+        [string]
         $Version,
 
         [Parameter(Mandatory=$true)]
@@ -5966,7 +6330,6 @@ function Validate-ScriptFileInfoParameters
                                         $hasErrors = $true
                                     }
                                 }
-
     return (-not $hasErrors)
 }
 
@@ -6528,6 +6891,7 @@ function Ping-Endpoint
 
 function Validate-VersionParameters
 {
+    [CmdletBinding()]
     Param(
         [parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
@@ -6539,15 +6903,15 @@ function Validate-VersionParameters
         $Name,
 
         [Parameter()]
-        [Version]
+        [string]
         $MinimumVersion,
 
         [Parameter()]
-        [Version]
+        [string]
         $RequiredVersion,
 
         [Parameter()]
-        [Version]
+        [string]
         $MaximumVersion,
 
         [Parameter()]
@@ -6556,8 +6920,28 @@ function Validate-VersionParameters
 
         [Parameter()]
         [Switch]
+        $AllowPrerelease,
+
+        [Parameter()]
+        [Switch]
         $TestWildcardsInName
     )
+    
+    if ($MinimumVersion)
+    {
+        $minResult = ValidateAndGet-VersionPrereleaseStrings -Version $MinimumVersion -CallerPSCmdlet $PSCmdlet
+        # ValidateAndGet-VersionPrereleaseStrings will throw error if issue is found
+    }
+    if ($MaximumVersion)
+    {
+        $maxResult = ValidateAndGet-VersionPrereleaseStrings -Version $MaximumVersion -CallerPSCmdlet $PSCmdlet
+        # ValidateAndGet-VersionPrereleaseStrings will throw error if issue is found
+    }
+    if ($RequiredVersion)
+    {
+        $reqResult = ValidateAndGet-VersionPrereleaseStrings -Version $RequiredVersion -CallerPSCmdlet $PSCmdlet
+        # ValidateAndGet-VersionPrereleaseStrings will throw error if issue is found
+    }
 
     if($TestWildcardsInName -and $Name -and (Test-WildcardPattern -Name "$Name"))
     {
@@ -6593,7 +6977,15 @@ function Validate-VersionParameters
                     -CallerPSCmdlet $CallerPSCmdlet `
                     -ErrorCategory InvalidArgument
     }
-    elseif($AllVersions -or $RequiredVersion -or $MinimumVersion -or $MaximumVersion)
+    elseif( (($MinimumVersion -match '-') -or ($MaximumVersion -match '-') -or ($RequiredVersion -match '-')) -and -not $AllowPrerelease)
+    {
+        ThrowError -ExceptionName "System.ArgumentException" `
+                   -ExceptionMessage $LocalizedData.AllowPrereleaseRequiredToUsePrereleaseStringInVersion `
+                   -ErrorId "AllowPrereleaseRequiredToUsePrereleaseStringInVersion" `
+                   -CallerPSCmdlet $CallerPSCmdlet `
+                   -ErrorCategory InvalidArgument
+    }
+    elseif($AllVersions -or $AllowPrerelease -or $RequiredVersion -or $MinimumVersion -or $MaximumVersion)
     {
         if(-not $Name -or $Name.Count -ne 1 -or (Test-WildcardPattern -Name $Name[0]))
         {
@@ -7251,7 +7643,24 @@ function New-PSGetItemInfo
                                                     -Name $key `
                                                     -Value (Get-First $swid.Metadata[$key])
         }
-        
+
+        if (-not (Get-Member -InputObject $additionalMetadata -Name "IsPrerelease") )
+        {
+            if ($swid.Version -match '-')
+            {
+                Microsoft.PowerShell.Utility\Add-Member -InputObject $additionalMetadata `
+                                                        -MemberType NoteProperty `
+                                                        -Name 'IsPrerelease' `
+                                                        -Value $true
+            }
+            else {
+                Microsoft.PowerShell.Utility\Add-Member -InputObject $additionalMetadata `
+                                                        -MemberType NoteProperty `
+                                                        -Name 'IsPrerelease' `
+                                                        -Value $false
+            }
+        }
+
         if(Get-Member -InputObject $additionalMetadata -Name 'ItemType')
         {
             $Type = $additionalMetadata.'ItemType'
@@ -7265,9 +7674,10 @@ function New-PSGetItemInfo
             $Type = $script:PSArtifactTypeScript
         }
 
+        
         $PSGetItemInfo = Microsoft.PowerShell.Utility\New-Object PSCustomObject -Property ([ordered]@{
                 Name = $swid.Name
-                Version = [Version]$swid.Version
+                Version = $swid.Version
                 Type = $Type    
                 Description = (Get-First $swid.Metadata["description"])
                 Author = (Get-EntityName -SoftwareIdentity $swid -Role "author")
@@ -7435,10 +7845,10 @@ function Install-NuGetClientBinaries
         $Force
     )
 
-    if(-not $script:IsWindows -or
-       ($script:NuGetProvider -and 
-        (-not $BootstrapNuGetExe -or 
-        ($script:NuGetExePath -and (Microsoft.PowerShell.Management\Test-Path -Path $script:NuGetExePath)))))
+    if ($script:NuGetProvider -and 
+         (-not $BootstrapNuGetExe -or 
+         (($script:NuGetExePath -and (Microsoft.PowerShell.Management\Test-Path -Path $script:NuGetExePath)) -or
+          ($script:DotnetCommandPath -and (Microsoft.PowerShell.Management\Test-Path -Path $script:DotnetCommandPath)))))
     {
         return
     }
@@ -7493,52 +7903,101 @@ function Install-NuGetClientBinaries
         }
     }
 
-    if($BootstrapNuGetExe -and 
-       (-not $script:NuGetExePath -or 
-        -not (Microsoft.PowerShell.Management\Test-Path -Path $script:NuGetExePath)))
-    {
-        $programDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $script:NuGetExeName
-        $applocalDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetAppLocalPath -ChildPath $script:NuGetExeName        
+    if($script:IsWindows -and -not $script:IsNanoServer) {
+        if($BootstrapNuGetExe -and 
+        (-not $script:NuGetExePath -or 
+            -not (Microsoft.PowerShell.Management\Test-Path -Path $script:NuGetExePath)))
+        {
+            $programDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $script:NuGetExeName
+            $applocalDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetAppLocalPath -ChildPath $script:NuGetExeName        
 
-        # Check if NuGet.exe is available under one of the predefined PowerShellGet locations under ProgramData or LocalAppData
-        if(Microsoft.PowerShell.Management\Test-Path -Path $programDataExePath)
-        {
-            $script:NuGetExePath = $programDataExePath
-            $BootstrapNuGetExe = $false
-        }
-        elseif(Microsoft.PowerShell.Management\Test-Path -Path $applocalDataExePath)
-        {
-            $script:NuGetExePath = $applocalDataExePath
-            $BootstrapNuGetExe = $false
+            # Check if NuGet.exe is available under one of the predefined PowerShellGet locations under ProgramData or LocalAppData
+            if(Microsoft.PowerShell.Management\Test-Path -Path $programDataExePath)
+            {
+                $script:NuGetExePath = $programDataExePath
+                $BootstrapNuGetExe = $false
+            }
+            elseif(Microsoft.PowerShell.Management\Test-Path -Path $applocalDataExePath)
+            {
+                $script:NuGetExePath = $applocalDataExePath
+                $BootstrapNuGetExe = $false
+            }
+            else
+            {
+                # Using Get-Command cmdlet, get the location of NuGet.exe if it is available under $env:PATH.
+                # NuGet.exe does not work if it is under $env:WINDIR, so skip it from the Get-Command results.
+                $nugetCmd = Microsoft.PowerShell.Core\Get-Command -Name $script:NuGetExeName `
+                                                                -ErrorAction Ignore `
+                                                                -WarningAction SilentlyContinue | 
+                                Microsoft.PowerShell.Core\Where-Object { 
+                                    $_.Path -and 
+                                    ((Microsoft.PowerShell.Management\Split-Path -Path $_.Path -Leaf) -eq $script:NuGetExeName) -and
+                                    (-not $_.Path.StartsWith($env:windir, [System.StringComparison]::OrdinalIgnoreCase)) 
+                                } | Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
+
+                if($nugetCmd -and $nugetCmd.Path)
+                {
+                    $script:NuGetExePath = $nugetCmd.Path
+                    $BootstrapNuGetExe = $false
+                }
+            }
         }
         else
         {
-            # Using Get-Command cmdlet, get the location of NuGet.exe if it is available under $env:PATH.
-            # NuGet.exe does not work if it is under $env:WINDIR, so skip it from the Get-Command results.
-            $nugetCmd = Microsoft.PowerShell.Core\Get-Command -Name $script:NuGetExeName `
-                                                              -ErrorAction Ignore `
-                                                              -WarningAction SilentlyContinue | 
-                            Microsoft.PowerShell.Core\Where-Object { 
-                                $_.Path -and 
-                                ((Microsoft.PowerShell.Management\Split-Path -Path $_.Path -Leaf) -eq $script:NuGetExeName) -and
-                                (-not $_.Path.StartsWith($env:windir, [System.StringComparison]::OrdinalIgnoreCase)) 
-                            } | Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
+            # No need to bootstrap the NuGet.exe when $BootstrapNuGetExe is false or NuGet.exe path is already assigned.
+            $BootstrapNuGetExe = $false
+        }
+    }
 
-            if($nugetCmd -and $nugetCmd.Path)
-            {
-                $script:NuGetExePath = $nugetCmd.Path
-                $BootstrapNuGetExe = $false
+    if($BootstrapNuGetExe) {
+        $DotnetCmd = Microsoft.PowerShell.Core\Get-Command -Name $script:DotnetCommandName -ErrorAction Ignore -WarningAction SilentlyContinue |
+            Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
+
+        if ($DotnetCmd -and $DotnetCmd.Path) {
+            $script:DotnetCommandPath = $DotnetCmd.Path
+            $BootstrapNuGetExe = $false
+        }
+        else {
+            if($script:IsWindows) {
+                $DotnetCommandPath = Microsoft.PowerShell.Management\Join-Path -Path $env:LocalAppData -ChildPath Microsoft |
+                    Microsoft.PowerShell.Management\Join-Path -ChildPath dotnet |
+                        Microsoft.PowerShell.Management\Join-Path -ChildPath dotnet.exe
+
+                if($DotnetCommandPath -and 
+                   -not (Microsoft.PowerShell.Management\Test-Path -LiteralPath $DotnetCommandPath -PathType Leaf)) {
+                    $DotnetCommandPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramFiles -ChildPath dotnet |
+                        Microsoft.PowerShell.Management\Join-Path -ChildPath dotnet.exe
+                }
+            } 
+            else {                
+                $DotnetCommandPath = '/usr/local/bin/dotnet'
+            }
+
+            if($DotnetCommandPath -and (Microsoft.PowerShell.Management\Test-Path -LiteralPath $DotnetCommandPath -PathType Leaf)) {
+                $DotnetCommandVersion,$null = (& $DotnetCommandPath '--version') -split '-',2
+                if($DotnetCommandVersion -and ($script:MinimumDotnetCommandVersion -le $DotnetCommandVersion)) {
+                    $script:DotnetCommandPath = $DotnetCommandPath
+                    $BootstrapNuGetExe = $false
+                }
             }
         }
     }
-    else
-    {
-        # No need to bootstrap the NuGet.exe when $BootstrapNuGetExe is false or NuGet.exe path is already assigned.
-        $BootstrapNuGetExe = $false
+
+    # On non-Windows, dotnet should be installed by the user, throw an error if dotnet is not found using above logic.
+    if ($BootstrapNuGetExe -and (-not $script:IsWindows -or $script:IsNanoServer)) {
+        $ThrowError_params = @{
+            ExceptionName    = 'System.InvalidOperationException'
+            ExceptionMessage = ($LocalizedData.CouldNotFindDotnetCommand -f $script:MinimumDotnetCommandVersion, $script:DotnetInstallUrl)
+            ErrorId          = 'CouldNotFindDotnetCommand'
+            CallerPSCmdlet   = $CallerPSCmdlet
+            ErrorCategory    = 'InvalidOperation'
+        }
+
+        ThrowError @ThrowError_params
+        return
     }
-    
-    # On Nano server we don't need NuGet.exe
-    if(-not $bootstrapNuGetProvider -and ($script:isNanoServer -or $script:IsCoreCLR -or -not $BootstrapNuGetExe))
+
+    if(-not $bootstrapNuGetProvider -and -not $BootstrapNuGetExe)
     {
         return
     }
@@ -7595,7 +8054,7 @@ function Install-NuGetClientBinaries
             }
         }
 
-        if($BootstrapNuGetExe -and -not $script:isNanoServer -and -not $script:IsCoreCLR)
+        if($BootstrapNuGetExe -and $script:IsWindows)
         {
             Write-Verbose -Message $LocalizedData.DownloadingNugetExe
 
@@ -7650,7 +8109,7 @@ function Install-NuGetClientBinaries
     {
         $failedToBootstrapNuGetExe = $true
 
-        $message = $LocalizedData.CouldNotInstallNuGetExe -f @($script:NuGetProviderVersion)
+        $message = $LocalizedData.CouldNotInstallNuGetExe -f @($script:MinimumDotnetCommandVersion)
         $errorId = 'CouldNotInstallNuGetExe'
     }
 
@@ -8404,7 +8863,7 @@ function Publish-PSArtifactUtility
     $PSArtifactType = $script:PSArtifactTypeModule
     $Name = $null
     $Description = $null
-    $Version = $null
+    $Version = ""
     $Author = $null
     $CompanyName = $null
     $Copyright = $null
@@ -8449,6 +8908,20 @@ function Publish-PSArtifactUtility
             { 
                 $ProjectUri = $PSModuleInfo.PrivateData.PSData.ProjectUri
             }
+
+            if ($PSModuleInfo.PrivateData.PSData["Prerelease"])
+            {
+                $psmoduleInfoPrereleaseString = $PSModuleInfo.PrivateData.PSData.Prerelease
+                if ($psmoduleInfoPrereleaseString -and $psmoduleInfoPrereleaseString.StartsWith("-"))
+                {
+                    $Version = [string]$Version + $psmoduleInfoPrereleaseString
+                }
+                else
+                {
+                    $Version = [string]$Version + "-" + $psmoduleInfoPrereleaseString
+                }
+            }
+            
             if($PSModuleInfo.PrivateData.PSData["RequireLicenseAcceptance"])
             {
                 $requireLicenseAcceptance = $PSModuleInfo.PrivateData.PSData.requireLicenseAcceptance.ToString().ToLower()
@@ -8474,8 +8947,8 @@ function Publish-PSArtifactUtility
                             -ErrorCategory InvalidData
                     }
 
-                    $licenseFile = Get-ChildItem -path $NugetPackageRoot -filter License.txt
-                    if(-not $licenseFile)
+                    $LicenseFilePath = Join-PathUtility -Path $NugetPackageRoot -ChildPath 'License.txt' -PathType File
+                    if(-not $LicenseFilePath -or -not (Test-Path -Path $LicenseFilePath -PathType Leaf))
                     {
                         $message = $LocalizedData.LicenseTxtNotFound
                         ThrowError -ExceptionName "System.InvalidOperationException" `
@@ -8485,7 +8958,7 @@ function Publish-PSArtifactUtility
                         -ErrorCategory InvalidData
                     }
 
-                    if((Get-Content $licenseFile.FullName) -eq $null)
+                    if((Get-Content -LiteralPath $LicenseFilePath) -eq $null)
                     {
                         $message = $LocalizedData.LicenseTxtEmpty
                         ThrowError -ExceptionName "System.InvalidOperationException" `
@@ -8505,8 +8978,8 @@ function Publish-PSArtifactUtility
                 {
                     $InvalidValueForRequireLicenseAcceptance = $LocalizedData.InvalidValueBoolean -f ($requireLicenseAcceptance, "requireLicenseAcceptance")
                     Write-Warning -Message $InvalidValueForRequireLicenseAcceptance
-                }                
-            }
+                } 
+            }               
         }
     }
     else
@@ -8747,22 +9220,71 @@ function Publish-PSArtifactUtility
 </package>
 "@
 
-    $NupkgPath = "$NugetPackageRoot\$Name.$($Version.ToString()).nupkg"
-    $NuspecPath = "$NugetPackageRoot\$Name.nuspec"
+# When packaging we must build something. 
+# So, we are building an empty assembly called NotUsed, and discarding it.
+$CsprojContent = @"
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>NotUsed</AssemblyName>
+    <Description>Temp project used for creating nupkg file.</Description>
+    <NuspecFile>$Name.nuspec</NuspecFile>
+    <NuspecBasePath>$NugetPackageRoot</NuspecBasePath>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+  </PropertyGroup>
+</Project>
+"@
+    $NupkgPath = Microsoft.PowerShell.Management\Join-Path -Path $NugetPackageRoot -ChildPath "$Name.$Version.nupkg"
+
+    $csprojBasePath = $null
+    if($script:DotnetCommandPath) {
+        $csprojBasePath = Microsoft.PowerShell.Management\Join-Path -Path $script:TempPath -ChildPath ([System.Guid]::NewGuid())
+        $null = Microsoft.PowerShell.Management\New-Item -Path $csprojBasePath -ItemType Directory -Force -WhatIf:$false -Confirm:$false
+        $NuspecPath = Microsoft.PowerShell.Management\Join-Path -Path $csprojBasePath -ChildPath "$Name.nuspec"
+        $CsprojFilePath = Microsoft.PowerShell.Management\Join-Path -Path $csprojBasePath -ChildPath "$Name.csproj"
+    }
+    else {
+        $NuspecPath = Microsoft.PowerShell.Management\Join-Path -Path $NugetPackageRoot -ChildPath "$Name.nuspec"
+    }
+
     $tempErrorFile = $null
     $tempOutputFile = $null
 
     try
     {        
         # Remove existing nuspec and nupkg files
-        Microsoft.PowerShell.Management\Remove-Item $NupkgPath  -Force -ErrorAction SilentlyContinue -WarningAction SilentlyContinue -Confirm:$false -WhatIf:$false
-        Microsoft.PowerShell.Management\Remove-Item $NuspecPath -Force -ErrorAction SilentlyContinue -WarningAction SilentlyContinue -Confirm:$false -WhatIf:$false
+        if($NupkgPath -and (Test-Path -Path $NupkgPath -PathType Leaf))
+        {
+            Microsoft.PowerShell.Management\Remove-Item $NupkgPath  -Force -ErrorAction SilentlyContinue -WarningAction SilentlyContinue -Confirm:$false -WhatIf:$false
+        }
+
+        if($NuspecPath -and (Test-Path -Path $NuspecPath -PathType Leaf))
+        {
+            Microsoft.PowerShell.Management\Remove-Item $NuspecPath -Force -ErrorAction SilentlyContinue -WarningAction SilentlyContinue -Confirm:$false -WhatIf:$false
+        }
             
         Microsoft.PowerShell.Management\Set-Content -Value $nuspec -Path $NuspecPath -Force -Confirm:$false -WhatIf:$false
 
         # Create .nupkg file
-        $output = & $script:NuGetExePath pack $NuspecPath -OutputDirectory $NugetPackageRoot
-        if($LASTEXITCODE)
+        if($script:DotnetCommandPath) {
+            Microsoft.PowerShell.Management\Set-Content -Value $CsprojContent -Path $CsprojFilePath -Force -Confirm:$false -WhatIf:$false
+
+            $arguments = @('pack')
+            $arguments += $csprojBasePath
+            $arguments += @('--output',$NugetPackageRoot)
+            $arguments += "/p:StagingPath=$NugetPackageRoot"
+            $output = & $script:DotnetCommandPath $arguments
+            Write-Debug -Message "dotnet pack output:  $output"
+        }
+        elseif($script:NuGetExePath) {
+            $output = & $script:NuGetExePath pack $NuspecPath -OutputDirectory $NugetPackageRoot
+        }
+
+        if(-not (Test-Path -Path $NupkgPath -PathType Leaf)) {
+            $SemanticVersionString = Get-NormalizedVersionString -Version $Version
+            $NupkgPath = Join-PathUtility -Path $NugetPackageRoot -ChildPath "$Name.$($SemanticVersionString).nupkg" -PathType File
+        }
+
+        if($LASTEXITCODE -or -not $NupkgPath -or -not (Test-Path -Path $NupkgPath -PathType Leaf))
         {
             if($PSArtifactType -eq $script:PSArtifactTypeModule)
             {
@@ -8782,15 +9304,45 @@ function Publish-PSArtifactUtility
         # Publish the .nupkg to gallery
         $tempErrorFile = Microsoft.PowerShell.Management\Join-Path -Path $nugetPackageRoot -ChildPath "TempPublishError.txt"
         $tempOutputFile = Microsoft.PowerShell.Management\Join-Path -Path $nugetPackageRoot -ChildPath "TempPublishOutput.txt"
-        
-        Microsoft.PowerShell.Management\Start-Process -FilePath "$script:NuGetExePath" `
-                                                      -ArgumentList @('push', "`"$NupkgPath`"", '-source', "`"$($Destination.TrimEnd('\'))`"", '-NonInteractive', '-ApiKey', "`"$NugetApiKey`"") `
-                                                      -RedirectStandardError $tempErrorFile `
-                                                      -RedirectStandardOutput $tempOutputFile `
-                                                      -NoNewWindow `
-                                                      -Wait
 
-        $errorMsg = Microsoft.PowerShell.Management\Get-Content -Path $tempErrorFile -Raw
+        $errorMsg = $null
+        $StartProcess_params = @{
+            RedirectStandardError = $tempErrorFile
+            RedirectStandardOutput = $tempOutputFile
+            NoNewWindow = $true
+            Wait = $true
+        }
+
+        if($script:DotnetCommandPath) {
+            $StartProcess_params['FilePath'] = $script:DotnetCommandPath
+
+            $ArgumentList = @('nuget')
+            $ArgumentList += 'push'
+            $ArgumentList += "`"$NupkgPath`""
+            $ArgumentList += @('--source', "`"$($Destination.TrimEnd('\'))`"")
+            $ArgumentList += @('--api-key', "`"$NugetApiKey`"")
+        }
+        elseif($script:NuGetExePath) {
+            $StartProcess_params['FilePath'] = $script:NuGetExePath
+
+            $ArgumentList = @('push')
+            $ArgumentList += "`"$NupkgPath`""
+            $ArgumentList += @('-source', "`"$($Destination.TrimEnd('\'))`"")
+            $ArgumentList += @('-apikey', "`"$NugetApiKey`"")
+            $ArgumentList += '-NonInteractive'
+        }
+        $StartProcess_params['ArgumentList'] = $ArgumentList
+        
+        if($script:IsCoreCLR -and -not $script:IsNanoServer) {
+            $StartProcess_params['WhatIf'] = $false
+            $StartProcess_params['Confirm'] = $false
+        }
+
+        Microsoft.PowerShell.Management\Start-Process @StartProcess_params
+
+        if(Test-Path -Path $tempErrorFile -PathType Leaf) {
+            $errorMsg = Microsoft.PowerShell.Management\Get-Content -Path $tempErrorFile -Raw
+        }
 
         if($errorMsg)
         {
@@ -8848,6 +9400,11 @@ function Publish-PSArtifactUtility
         {
             Microsoft.PowerShell.Management\Remove-Item $tempOutputFile -Force -ErrorAction SilentlyContinue -WarningAction SilentlyContinue -Confirm:$false -WhatIf:$false        
         }
+
+        if($csprojBasePath -and (Test-Path -Path $csprojBasePath -PathType Container))
+        {
+            Microsoft.PowerShell.Management\Remove-Item -Path $csprojBasePath -Recurse -Force -ErrorAction SilentlyContinue -WarningAction SilentlyContinue -Confirm:$false -WhatIf:$false
+        }
     }
 }
 
@@ -8887,24 +9444,17 @@ function ValidateAndAdd-PSScriptInfoEntry
         # Validate the property value and also use proper key name as users can specify the property name in any case.
         $script:Version {
                             $KeyName = $script:Version
-
-                            [Version]$Version = $null
-
-                            if([System.Version]::TryParse($Value, ([ref]$Version)))
+                            $result = ValidateAndGet-VersionPrereleaseStrings -Version $Value -CallerPSCmdlet $CallerPSCmdlet
+                            if (-not $result)
                             {
-                                $Value = $Version                            
-                            }
-                            else
-                            {
-                                $message = $LocalizedData.InvalidVersion -f ($Value)
-                                ThrowError -ExceptionName "System.ArgumentException" `
-                                            -ExceptionMessage $message `
-                                            -ErrorId "InvalidVersion" `
-                                            -CallerPSCmdlet $CallerPSCmdlet `
-                                            -ErrorCategory InvalidArgument `
-                                            -ExceptionObject $Value
+                                # ValidateAndGet-VersionPrereleaseStrings throws the error.
+                                # returning to avoid further execution when different values are specified for -ErrorAction parameter
                                 return
                             }
+                            $Version = $result["Version"]
+                            $Prerelease = $result["Prerelease"]
+                            $fullVersion = $result["FullVersion"]
+                            $Value = if ($Prerelease) { $fullVersion } else { $Version }
                             break
                         }
 
@@ -9044,7 +9594,7 @@ function Get-ExportedDscResources
 
     $dscResources = @()
 
-    if(Get-Command -Name Get-DscResource -Module PSDesiredStateConfiguration -ErrorAction Ignore)
+    if(-not $script:IsCoreCLR -and (Get-Command -Name Get-DscResource -Module PSDesiredStateConfiguration -ErrorAction Ignore))
     {
         $OldPSModulePath = $env:PSModulePath
 
@@ -9068,7 +9618,7 @@ function Get-ExportedDscResources
     }
     else
     {
-        $dscResourcesDir = Microsoft.PowerShell.Management\Join-Path -Path $PSModuleInfo.ModuleBase -ChildPath "DscResources"
+        $dscResourcesDir = Join-PathUtility -Path $PSModuleInfo.ModuleBase -ChildPath "DscResources" -PathType Directory
         if(Microsoft.PowerShell.Management\Test-Path $dscResourcesDir)
         {
             $dscResources = Microsoft.PowerShell.Management\Get-ChildItem -Path $dscResourcesDir -Directory -Name
@@ -9091,7 +9641,7 @@ function Get-AvailableRoleCapabilityName
 
     $RoleCapabilityNames = @()
 
-    $RoleCapabilitiesDir = Microsoft.PowerShell.Management\Join-Path -Path $PSModuleInfo.ModuleBase -ChildPath 'RoleCapabilities'
+    $RoleCapabilitiesDir = Join-PathUtility -Path $PSModuleInfo.ModuleBase -ChildPath 'RoleCapabilities' -PathType Directory
     if(Microsoft.PowerShell.Management\Test-Path -Path $RoleCapabilitiesDir -PathType Container)
     {
         $RoleCapabilityNames = Microsoft.PowerShell.Management\Get-ChildItem -Path $RoleCapabilitiesDir `
@@ -9131,6 +9681,84 @@ function Get-LocationString
     }
 
     return $LocationString
+}
+
+<#
+.DESCRIPTION
+    Utility to get the case-sensitive path, if exists.
+    Otherwise, returns the output of Join-Path cmdlet.
+    This is required for getting the case-sensitive paths on non-Windows platforms.
+#>
+function Join-PathUtility
+{
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Path,
+
+        [Parameter(Mandatory = $false)]
+        [string]
+        $ChildPath,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        [ValidateSet('File', 'Directory', 'Any')]
+        $PathType = 'Any'
+    )
+
+    $JoinedPath = Microsoft.PowerShell.Management\Join-Path -Path $Path -ChildPath $ChildPath
+    if(Microsoft.PowerShell.Management\Test-Path -Path $Path -PathType Container) {
+        $GetChildItem_params = @{
+            Path = $Path
+            ErrorAction = 'SilentlyContinue'
+            WarningAction = 'SilentlyContinue'
+        }
+        if($PathType -eq 'File') {
+            $GetChildItem_params['File'] = $true
+        }
+        elseif($PathType -eq 'Directory') {
+            $GetChildItem_params['Directory'] = $true
+        }
+
+        $FoundPath = Microsoft.PowerShell.Management\Get-ChildItem @GetChildItem_params | 
+            Where-Object {$_.Name -eq $ChildPath} |
+                ForEach-Object {$_.FullName} |
+                    Select-Object -First 1 -ErrorAction SilentlyContinue
+
+        if($FoundPath) {
+            $JoinedPath = $FoundPath 
+        }
+    }
+
+    return $JoinedPath
+}
+
+<#
+.DESCRIPTION
+    Latest versions of nuget.exe and dotnet command generate the .nupkg file name with
+    semantic version format for the modules/scripts with two part version.
+    For example: package 1.0 --> package.1.0.0.nupkg
+#>
+function Get-NormalizedVersionString {
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Version
+    )
+
+    [Version]$ParsedVersion = $null
+    if ([System.Version]::TryParse($Version, [ref]$ParsedVersion)) {
+        $Build = $ParsedVersion.Build
+        if ($Build -eq -1) {
+            $Build = 0
+        }
+    
+        return "$($ParsedVersion.Major).$($ParsedVersion.Minor).$Build"
+    }
+
+    return $Version
 }
 
 #endregion Utility functions
@@ -9177,6 +9805,7 @@ function Get-DynamicOptions
                     Write-Output -InputObject (New-DynamicOption -Category $category -Name Includes -ExpectedType StringArray -IsRequired $false -PermittedValues $script:IncludeValidSet)
                     Write-Output -InputObject (New-DynamicOption -Category $category -Name DscResource -ExpectedType StringArray -IsRequired $false)
                     Write-Output -InputObject (New-DynamicOption -Category $category -Name RoleCapability -ExpectedType StringArray -IsRequired $false)
+                    Write-Output -InputObject (New-DynamicOption -Category $category -Name 'AllowPrereleaseVersions' -ExpectedType Switch -IsRequired $false)
                     Write-Output -InputObject (New-DynamicOption -Category $category -Name Command -ExpectedType StringArray -IsRequired $false)
                     Write-Output -InputObject (New-DynamicOption -Category $category -Name 'AcceptLicense' -ExpectedType Switch -IsRequired $false)
                 }
@@ -9199,6 +9828,7 @@ function Get-DynamicOptions
                     Write-Output -InputObject (New-DynamicOption -Category $category -Name 'SkipPublisherCheck' -ExpectedType Switch -IsRequired $false)
                     Write-Output -InputObject (New-DynamicOption -Category $category -Name "InstallUpdate" -ExpectedType Switch -IsRequired $false)
                     Write-Output -InputObject (New-DynamicOption -Category $category -Name 'NoPathUpdate' -ExpectedType Switch -IsRequired $false)
+                    Write-Output -InputObject (New-DynamicOption -Category $category -Name 'AllowPrereleaseVersions' -ExpectedType Switch -IsRequired $false)
                 }
     }
 }
@@ -10072,6 +10702,11 @@ function Find-Package
         $providerOptions[$script:AllVersions] = $options[$script:AllVersions]
     }
 
+    if ($options.Contains($script:AllowPrereleaseVersions))
+    {
+        $providerOptions[$script:AllowPrereleaseVersions] = $options[$script:AllowPrereleaseVersions]
+    }
+
     if($options.ContainsKey($script:Filter))
     {
         $Filter = $options[$script:Filter]
@@ -10648,8 +11283,8 @@ function Install-PackageUtility
     $SkipPublisherCheck = $false
     $AllowClobber = $false
     $Debug = $false
-    $MinimumVersion = $null
-    $RequiredVersion = $null
+    $MinimumVersion = ""
+    $RequiredVersion = ""
     $IsSavePackage = $false
     $Scope = $null
     $NoPathUpdate = $false
@@ -10665,6 +11300,17 @@ function Install-PackageUtility
         $version = $parts[2]
         $sourceLocation= $parts[3]
         $artifactType = $parts[4]
+
+        $result = ValidateAndGet-VersionPrereleaseStrings -Version $version -CallerPSCmdlet $PSCmdlet
+        if (-not $result)
+        {
+            # ValidateAndGet-VersionPrereleaseStrings throws the error. 
+            # returning to avoid further execution when different values are specified for -ErrorAction parameter
+            return
+        }
+        $galleryItemVersion = $result["Version"]
+        $galleryItemPrerelease = $result["Prerelease"]
+        $galleryItemFullVersion = $result["FullVersion"]
 
         # The default destination location for Modules and Scripts is ProgramFiles path
         $scriptDestination = $script:ProgramFilesScriptsPath
@@ -10895,6 +11541,28 @@ function Install-PackageUtility
 
             if(-not $Force -and $InstalledModuleInfo)
             {
+                $installedModPrerelease = $null
+                if ((Get-Member -InputObject $InstalledModuleInfo -Name PrivateData -ErrorAction SilentlyContinue) -and `
+                    $InstalledModuleInfo.PrivateData -and `
+                    $InstalledModuleInfo.PrivateData.GetType().ToString() -eq "System.Collections.Hashtable" -and `
+                    ($InstalledModuleInfo.PrivateData.ContainsKey('PSData')) -and `
+                    $InstalledModuleInfo.PrivateData.PSData.GetType().ToString() -eq "System.Collections.Hashtable" -and `
+                    ($InstalledModuleInfo.PrivateData.PSData.ContainsKey('Prerelease')))
+                { 
+                    $installedModPrerelease = $InstalledModuleInfo.PrivateData.PSData.Prerelease 
+                }
+
+                $result = ValidateAndGet-VersionPrereleaseStrings -Version $InstalledModuleInfo.Version -Prerelease $installedModPrerelease -CallerPSCmdlet $PSCmdlet
+                if (-not $result)
+                {
+                    # ValidateAndGet-VersionPrereleaseStrings throws the error. 
+                    # returning to avoid further execution when different values are specified for -ErrorAction parameter
+                    return
+                }
+                $installedModuleVersion = $result["Version"]
+                $installedModulePrerelease = $result["Prerelease"]
+                $installedModuleFullVersion = $result["FullVersion"]
+
                 if($RequiredVersion -and (Test-ModuleSxSVersionSupport))
                 {
                     # Check if the module with the required version is already installed otherwise proceed to install/update.
@@ -10902,7 +11570,6 @@ function Install-PackageUtility
                     {
                         $message = $LocalizedData.ModuleWithRequiredVersionAlreadyInstalled -f ($InstalledModuleInfo.Version, $InstalledModuleInfo.Name, $InstalledModuleInfo.ModuleBase, $InstalledModuleInfo.Version)
                         Write-Error -Message $message -ErrorId "ModuleWithRequiredVersionAlreadyInstalled" -Category InvalidOperation
-
                         return
                     }
                 }
@@ -10910,22 +11577,45 @@ function Install-PackageUtility
                 {
                     if(-not $installUpdate)
                     {
-                        if( (-not $MinimumVersion -and ($version -ne $InstalledModuleInfo.Version)) -or 
-                            ($MinimumVersion -and ($MinimumVersion -gt $InstalledModuleInfo.Version)))
+                        if ($MinimumVersion)
+                        {
+                            $result = ValidateAndGet-VersionPrereleaseStrings -Version $MinimumVersion -CallerPSCmdlet $PSCmdlet
+                            if (-not $result)
+                            {
+                                # ValidateAndGet-VersionPrereleaseStrings throws the error. 
+                                # returning to avoid further execution when different values are specified for -ErrorAction parameter
+                                return
+                            }
+                            $minVersion = $result["Version"]
+                            $minPrerelease = $result["Prerelease"]
+                            $minFullVersion = $result["FullVersion"]
+                        }
+                        else 
+                        {
+                            $minVersion = $null
+                            $minPrerelease = $null
+                            $minFullVersion = $null
+                        }
+                        
+                        if( (-not $MinimumVersion -and ($galleryItemFullVersion -ne $InstalledModuleFullVersion)) -or 
+                            ($MinimumVersion -and (Compare-PrereleaseVersions -FirstItemVersion $installedModuleVersion `
+                                                                              -FirstItemPrerelease $installedModulePrerelease `
+                                                                              -SecondItemVersion $minVersion `
+                                                                              -SecondItemPrerelease $minPrerelease)))
                         {
                             if($PSVersionTable.PSVersion -ge '5.0.0')
                             {
-                                $message = $LocalizedData.ModuleAlreadyInstalledSxS -f ($InstalledModuleInfo.Version, $InstalledModuleInfo.Name, $InstalledModuleInfo.ModuleBase, $version, $InstalledModuleInfo.Version, $version)                            
+                                $message = $LocalizedData.ModuleAlreadyInstalledSxS -f ($InstalledModuleFullVersion, $InstalledModuleInfo.Name, $InstalledModuleInfo.ModuleBase, $galleryItemFullVersion, $InstalledModuleFullVersion, $galleryItemFullVersion)                            
                             }
                             else
                             {
-                                $message = $LocalizedData.ModuleAlreadyInstalled -f ($InstalledModuleInfo.Version, $InstalledModuleInfo.Name, $InstalledModuleInfo.ModuleBase, $InstalledModuleInfo.Version, $version)
+                                $message = $LocalizedData.ModuleAlreadyInstalled -f ($InstalledModuleFullVersion, $InstalledModuleInfo.Name, $InstalledModuleInfo.ModuleBase, $InstalledModuleFullVersion, $galleryItemFullVersion)
                             }
                             Write-Error -Message $message -ErrorId "ModuleAlreadyInstalled" -Category InvalidOperation
                         }
                         else
                         {
-                            $message = $LocalizedData.ModuleAlreadyInstalledVerbose -f ($InstalledModuleInfo.Version, $InstalledModuleInfo.Name, $InstalledModuleInfo.ModuleBase)
+                            $message = $LocalizedData.ModuleAlreadyInstalledVerbose -f ($InstalledModuleFullVersion, $InstalledModuleInfo.Name, $InstalledModuleInfo.ModuleBase)
                             Write-Verbose $message                
                         }
 
@@ -10933,17 +11623,20 @@ function Install-PackageUtility
                     }
                     else
                     {
-                        if($InstalledModuleInfo.Version -lt $version)
+                        if (Compare-PrereleaseVersions -FirstItemVersion $installedModuleVersion `
+                                                       -FirstItemPrerelease $installedModulePrerelease `
+                                                       -SecondItemVersion $galleryItemVersion.ToString() `
+                                                       -SecondItemPrerelease $galleryItemPrerelease) 
                         {
-                            $message = $LocalizedData.FoundModuleUpdate -f ($InstalledModuleInfo.Name, $version)
-                            Write-Verbose $message    
+                            $message = $LocalizedData.FoundModuleUpdate -f ($InstalledModuleInfo.Name, $galleryItemFullVersion)
+                            Write-Verbose $message
                         }
                         else
                         {
                             $message = $LocalizedData.NoUpdateAvailable -f ($InstalledModuleInfo.Name)
                             Write-Verbose $message
                             return
-                        }
+                        }                    
                     }
                 }
             }
@@ -10958,17 +11651,52 @@ function Install-PackageUtility
 
             if(-not $Force -and $InstalledScriptInfo)
             {
+                $result = ValidateAndGet-VersionPrereleaseStrings -Version $InstalledScriptInfo.Version -CallerPSCmdlet $PSCmdlet
+                if (-not $result)
+                {
+                    # ValidateAndGet-VersionPrereleaseStrings throws the error. 
+                    # returning to avoid further execution when different values are specified for -ErrorAction parameter
+                    return
+                }
+                $installedScriptInfoVersion = $result["Version"]
+                $installedScriptInfoPrerelease = $result["Prerelease"]
+                $installedScriptFullVersion = $result["FullVersion"]
+
                 if(-not $installUpdate)
                 {
-                    if( (-not $MinimumVersion -and ($version -ne $InstalledScriptInfo.Version)) -or 
-                        ($MinimumVersion -and ($MinimumVersion -gt $InstalledScriptInfo.Version)))
+                    if ($MinimumVersion)
                     {
-                        $message = $LocalizedData.ScriptAlreadyInstalled -f ($InstalledScriptInfo.Version, $InstalledScriptInfo.Name, $InstalledScriptInfo.ScriptBase, $InstalledScriptInfo.Version, $version)
+                        $result = ValidateAndGet-VersionPrereleaseStrings -Version $MinimumVersion -CallerPSCmdlet $PSCmdlet
+                        if (-not $result)
+                        {
+                            # ValidateAndGet-VersionPrereleaseStrings throws the error. 
+                            # returning to avoid further execution when different values are specified for -ErrorAction parameter
+                            return
+                        }
+                        $minVersion = $result["Version"]
+                        $minPrerelease = $result["Prerelease"]
+                        $minFullVersion = $result["FullVersion"]
+                    }
+                    else
+                    {
+                        $minVersion = $null
+                        $minPrerelease = $null
+                        $minFullVersion = $null
+                    }
+                    
+
+                    if( (-not $MinimumVersion -and ($galleryItemFullVersion -ne $installedScriptFullVersion)) -or 
+                        ($MinimumVersion -and (Compare-PrereleaseVersions -FirstItemVersion $installedScriptInfoVersion `
+                                                                          -FirstItemPrerelease $installedScriptInfoPrerelease `
+                                                                          -SecondItemVersion $minVersion `
+                                                                          -SecondItemPrerelease $minPrerelease) ))
+                    {
+                        $message = $LocalizedData.ScriptAlreadyInstalled -f ($installedScriptFullVersion, $InstalledScriptInfo.Name, $InstalledScriptInfo.ScriptBase, $installedScriptFullVersion, $galleryItemFullVersion)
                         Write-Error -Message $message -ErrorId "ScriptAlreadyInstalled" -Category InvalidOperation
                     }
                     else
                     {
-                        $message = $LocalizedData.ScriptAlreadyInstalledVerbose -f ($InstalledScriptInfo.Version, $InstalledScriptInfo.Name, $InstalledScriptInfo.ScriptBase)
+                        $message = $LocalizedData.ScriptAlreadyInstalledVerbose -f ($installedScriptFullVersion, $InstalledScriptInfo.Name, $InstalledScriptInfo.ScriptBase)
                         Write-Verbose $message                
                     }
 
@@ -10976,12 +11704,15 @@ function Install-PackageUtility
                 }
                 else
                 {
-                    if($InstalledScriptInfo.Version -lt $version)
+                    if (Compare-PrereleaseVersions -FirstItemVersion $installedScriptInfoVersion.ToString() `
+                                                   -FirstItemPrerelease $installedScriptInfoPrerelease `
+                                                   -SecondItemVersion $galleryItemVersion.ToString() `
+                                                   -SecondItemPrerelease $galleryItemPrerelease) 
                     {
                         $message = $LocalizedData.FoundScriptUpdate -f ($InstalledScriptInfo.Name, $version)
                         Write-Verbose $message
                     }
-                    else
+                    else 
                     {
                         $message = $LocalizedData.NoScriptUpdateAvailable -f ($InstalledScriptInfo.Name)
                         Write-Verbose $message
@@ -11017,7 +11748,6 @@ function Install-PackageUtility
             if(-not $provider)
             {
                 Write-Error -Message ($LocalizedData.PackageManagementProviderIsNotAvailable -f $providerName)
-
                 return
             }
 
@@ -11070,11 +11800,11 @@ function Install-PackageUtility
 
             if($artifactType -eq $script:PSArtifactTypeModule)
             {
-                $message = $LocalizedData.DownloadingModuleFromGallery -f ($packageName, $version, $sourceLocation)
+                $message = $LocalizedData.DownloadingModuleFromGallery -f ($packageName, $galleryItemFullVersion, $sourceLocation)
             }
             else
             {
-                $message = $LocalizedData.DownloadingScriptFromGallery -f ($packageName, $version, $sourceLocation)
+                $message = $LocalizedData.DownloadingScriptFromGallery -f ($packageName, $galleryItemFullVersion, $sourceLocation)
             }
             Write-Verbose $message
 
@@ -11090,13 +11820,24 @@ function Install-PackageUtility
                     return
                 }
 
+                $result = ValidateAndGet-VersionPrereleaseStrings -Version $pkg.Version -CallerPSCmdlet $PSCmdlet
+                if (-not $result)
+                {
+                    # ValidateAndGet-VersionPrereleaseStrings throws the error. 
+                    # returning to avoid further execution when different values are specified for -ErrorAction parameter
+                    return
+                }
+                $pkgVersion = $result["Version"]
+                $pkgPrerelease = $result["Prerelease"]
+                $pkgFullVersion = $result["FullVersion"]
+
                 $destinationModulePath = Microsoft.PowerShell.Management\Join-Path -Path $moduleDestination -ChildPath $pkg.Name
 
                 # Side-by-Side module version is available on PowerShell 5.0 or later versions only
                 # By default, PowerShell module versions will be installed/updated Side-by-Side.
                 if(Test-ModuleSxSVersionSupport)
                 {
-                    $destinationModulePath = Microsoft.PowerShell.Management\Join-Path -Path $destinationModulePath -ChildPath $pkg.Version
+                    $destinationModulePath = Microsoft.PowerShell.Management\Join-Path -Path $destinationModulePath -ChildPath $pkgVersion
                 }
 
                 $destinationscriptPath = $scriptDestination
@@ -11156,14 +11897,6 @@ function Install-PackageUtility
                     $AdditionalParams['InstalledDate'] = $InstalledDate
                 }
 
-                $sid = New-SoftwareIdentityFromPackage -Package $pkg `
-                                                       -SourceLocation $sourceLocation `
-                                                       -PackageManagementProviderName $provider.ProviderName `
-                                                       -Request $request `
-                                                       -Type $packageType `
-                                                       -InstalledLocation $installLocation `
-                                                       @AdditionalParams
-
                 # construct the PSGetItemInfo from SoftwareIdentity and persist it
                 $psgItemInfo = New-PSGetItemInfo -SoftwareIdentity $pkg `
                                                  -PackageManagementProviderName $provider.ProviderName `
@@ -11217,7 +11950,8 @@ function Install-PackageUtility
 
                         If (-not ($YesToAll -or $NoToAll -or $AcceptLicense))
                         {
-                            if(-not(Test-Path -path "$sourceModulePath\License.txt" -PathType Leaf))
+                            $LicenseFilePath = Join-PathUtility -Path $sourceModulePath -ChildPath 'License.txt' -PathType File
+                            if(-not(Test-Path -Path $LicenseFilePath -PathType Leaf))
                             {
                                 $message = $LocalizedData.LicenseTxtNotFound
 
@@ -11227,7 +11961,6 @@ function Install-PackageUtility
                                            -CallerPSCmdlet $PSCmdlet `
                                            -ErrorCategory ObjectNotFound
                             }                            
-                            $LicenseFilePath = Join-Path $sourceModulePath "License.txt"
                             $FormattedEula = (Get-Content -Path $LicenseFilePath) -Join "`r`n"
                             $message = $FormattedEula + "`r`n" + ($LocalizedData.AcceptanceLicenseQuery -f $pkg.Name)
                             $title = $LocalizedData.AcceptLicense
@@ -11261,19 +11994,30 @@ function Install-PackageUtility
                     }
 
                     # Test if module is already installed
-                    $InstalledModuleInfo2 = if(-not $IsSavePackage){ Test-ModuleInstalled -Name $pkg.Name -RequiredVersion $pkg.Version }
+                    $InstalledModuleInfo2 = if(-not $IsSavePackage){ Test-ModuleInstalled -Name $pkg.Name -RequiredVersion $pkgFullVersion }
 
                     if($pkg.Name -ne $packageName)
                     {
                         if(-not $Force -and $InstalledModuleInfo2)
                         {
+                            $result = ValidateAndGet-VersionPrereleaseStrings -Version $InstalledModuleInfo2.Version -CallerPSCmdlet $PSCmdlet
+                            if (-not $result)
+                            {
+                                # ValidateAndGet-VersionPrereleaseStrings throws the error. 
+                                # returning to avoid further execution when different values are specified for -ErrorAction parameter
+                                return
+                            }
+                            $installedModuleVersion = $result["Version"]
+                            $installedModulePrerelease = $result["Prerelease"]
+                            $installedModuleFullVersion = $result["FullVersion"]
+
                             if(Test-ModuleSxSVersionSupport)
                             {
-                                if($pkg.version -eq $InstalledModuleInfo2.Version)
+                                if($pkgFullVersion -eq $installedModuleFullVersion)
                                 {
                                     if(-not $installUpdate)
                                     {
-                                        $message = $LocalizedData.ModuleWithRequiredVersionAlreadyInstalled -f ($InstalledModuleInfo2.Version, $InstalledModuleInfo2.Name, $InstalledModuleInfo2.ModuleBase, $InstalledModuleInfo2.Version)
+                                        $message = $LocalizedData.ModuleWithRequiredVersionAlreadyInstalled -f ($installedModuleFullVersion, $InstalledModuleInfo2.Name, $InstalledModuleInfo2.ModuleBase, $InstalledModuleFullVersion)
                                     }
                                     else
                                     {
@@ -11288,15 +12032,18 @@ function Install-PackageUtility
                             {
                                 if(-not $installUpdate)
                                 {
-                                    $message = $LocalizedData.ModuleAlreadyInstalledVerbose -f ($InstalledModuleInfo2.Version, $InstalledModuleInfo2.Name, $InstalledModuleInfo2.ModuleBase)
+                                    $message = $LocalizedData.ModuleAlreadyInstalledVerbose -f ($InstalledModuleFullVersion, $InstalledModuleInfo2.Name, $InstalledModuleInfo2.ModuleBase)
                                     Write-Verbose $message
                                     Continue
                                 }
                                 else
                                 {
-                                    if($pkg.version -gt $InstalledModuleInfo2.Version)
+                                    if(Compare-PrereleaseVersions -FirstItemVersion $installedModuleVersion.ToString() `
+                                                                  -FirstItemPrerelease $installedModPrerelease `
+                                                                  -SecondItemVersion $pkgVersion.ToString() `
+                                                                  -SecondItemPrerelease $pkgPrerelease)
                                     {
-                                        $message = $LocalizedData.FoundModuleUpdate -f ($pkg.Name, $pkg.Version)
+                                        $message = $LocalizedData.FoundModuleUpdate -f ($pkg.Name, $pkgFullVersion)
                                         Write-Verbose $message
                                     }
                                     else
@@ -11311,11 +12058,11 @@ function Install-PackageUtility
                                     
                         if($IsSavePackage)
                         {
-                            $DependencyInstallMessage = $LocalizedData.SavingDependencyModule -f ($pkg.Name, $pkg.Version, $packageName)
+                            $DependencyInstallMessage = $LocalizedData.SavingDependencyModule -f ($pkg.Name, $pkgFullVersion, $packageName)
                         }
                         else
                         {
-                            $DependencyInstallMessage = $LocalizedData.InstallingDependencyModule -f ($pkg.Name, $pkg.Version, $packageName)
+                            $DependencyInstallMessage = $LocalizedData.InstallingDependencyModule -f ($pkg.Name, $pkgFullVersion, $packageName)
                         }
                     
                         Write-Verbose  $DependencyInstallMessage
@@ -11338,6 +12085,16 @@ function Install-PackageUtility
                             Write-Verbose $message
                             continue
                         }
+                    }
+
+                    # Use the actual module version retrieved from the module manifest.
+                    if($CurrentModuleInfo -and (Test-ModuleSxSVersionSupport) -and -not $pkgPrerelease)
+                    {
+                        $destinationModulePath = Microsoft.PowerShell.Management\Join-Path -Path $moduleDestination -ChildPath $pkg.Name |
+                            Microsoft.PowerShell.Management\Join-Path -ChildPath $CurrentModuleInfo.Version
+                        $installLocation = $destinationModulePath
+                        $psgItemInfo.InstalledLocation = $installLocation
+                        $psgItemInfo.Version = $CurrentModuleInfo.Version
                     }
 
                     Copy-Module -SourcePath $sourceModulePath -DestinationPath $destinationModulePath -PSGetItemInfo $psgItemInfo
@@ -11383,7 +12140,7 @@ function Install-PackageUtility
                         continue
                     }
 
-                    $sourceScriptPath = Microsoft.PowerShell.Management\Join-Path -Path $tempPackagePath -ChildPath "$($pkg.Name).ps1"
+                    $sourceScriptPath = Join-PathUtility -Path $tempPackagePath -ChildPath "$($pkg.Name).ps1" -PathType File
                     
                     $currentScriptInfo = $null
                     if(-not $IsSavePackage)
@@ -11397,26 +12154,42 @@ function Install-PackageUtility
                             Write-Error -Message $message -ErrorId "InvalidPowerShellScriptFile" -Category InvalidOperation -TargetObject $pkg.Name
                             continue
                         }
+
+                        # Use the version extracted from the script file.
+                        $psgItemInfo.Version = $currentScriptInfo.Version
                     }
 
                     # Test if script is already installed
                     $InstalledScriptInfo2 = if(-not $IsSavePackage){ Test-ScriptInstalled -Name $pkg.Name }
 
+                    
                     if($pkg.Name -ne $packageName)
                     {
                         if(-not $Force -and $InstalledScriptInfo2)
                         {
+                            $result = ValidateAndGet-VersionPrereleaseStrings -Version $InstalledScriptInfo2.Version -CallerPSCmdlet $PSCmdlet
+                            if (-not $result)
+                            {
+                                # ValidateAndGet-VersionPrereleaseStrings throws the error. 
+                                # returning to avoid further execution when different values are specified for -ErrorAction parameter
+                                return
+                            }
+                            $installedScriptFullVersion = $result["FullVersion"]
+
                             if(-not $installUpdate)
                             {
-                                $message = $LocalizedData.ScriptAlreadyInstalledVerbose -f ($InstalledScriptInfo2.Version, $InstalledScriptInfo2.Name, $InstalledScriptInfo2.ScriptBase)
+                                $message = $LocalizedData.ScriptAlreadyInstalledVerbose -f ($InstalledScriptFullVersion, $InstalledScriptInfo2.Name, $InstalledScriptInfo2.ScriptBase)
                                 Write-Verbose $message
                                 Continue
                             }
                             else
                             {
-                                if($pkg.version -gt $InstalledScriptInfo2.Version)
+                                if(Compare-PrereleaseVersions -FirstItemVersion $installedScriptInfoVersion.ToString() `
+                                                              -FirstItemPrerelease $installedScriptInfoPrerelease `
+                                                              -SecondItemVersion $pkgVersion `
+                                                              -SecondItemPrerelease $pkgPrerelease)
                                 {
-                                    $message = $LocalizedData.FoundScriptUpdate -f ($pkg.Name, $pkg.Version)
+                                    $message = $LocalizedData.FoundScriptUpdate -f ($pkg.Name, $pkgFullVersion)
                                     Write-Verbose $message
                                 }
                                 else
@@ -11430,11 +12203,11 @@ function Install-PackageUtility
                                     
                         if($IsSavePackage)
                         {
-                            $DependencyInstallMessage = $LocalizedData.SavingDependencyScript -f ($pkg.Name, $pkg.Version, $packageName)
+                            $DependencyInstallMessage = $LocalizedData.SavingDependencyScript -f ($pkg.Name, $pkgFullVersion, $packageName)
                         }
                         else
                         {
-                            $DependencyInstallMessage = $LocalizedData.InstallingDependencyScript -f ($pkg.Name, $pkg.Version, $packageName)
+                            $DependencyInstallMessage = $LocalizedData.InstallingDependencyScript -f ($pkg.Name, $pkgFullVersion, $packageName)
                         }
                     
                         Write-Verbose  $DependencyInstallMessage
@@ -11498,6 +12271,14 @@ function Install-PackageUtility
                     }                
                     Write-Verbose $message
                 }
+
+                $sid = New-SoftwareIdentityFromPackage -Package $pkg `
+                    -SourceLocation $sourceLocation `
+                    -PackageManagementProviderName $provider.ProviderName `
+                    -Request $request `
+                    -Type $packageType `
+                    -InstalledLocation $installLocation `
+                    @AdditionalParams
 
                 Write-Output -InputObject $sid
             }
@@ -11815,15 +12596,15 @@ function Get-InstalledPackage
         $Name,
 
         [Parameter()]
-        [Version]
+        [string]
         $RequiredVersion,
 
         [Parameter()]
-        [Version]
+        [string]
         $MinimumVersion,
 
         [Parameter()]
-        [Version]
+        [string]
         $MaximumVersion
     )
 
@@ -11867,6 +12648,86 @@ function Get-InstalledPackage
 #endregion
 
 #region Internal Utility functions for the PackageManagement Provider Implementation
+
+function Compare-PrereleaseVersions
+{
+    [CmdletBinding()]
+    param(
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $FirstItemVersion,
+
+        [string]
+        $FirstItemPrerelease,
+
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $SecondItemVersion,
+
+        [string]
+        $SecondItemPrerelease
+    )
+
+    <#
+        This function compares one item to another to determine if it has a greater version (and/or prerelease).  
+        It returns true if item TWO is GREATER/newer than item ONE, it returns false otherwise.  
+
+
+        First Order:  Compare Versions
+        ===========
+        *** Version is never NULL.
+
+        Item #1         Comparison      Item #2
+        Version         of Values       Version         Notes about item #2
+        -------         ----------      -------         -------------------
+        Value           >               Value           An older release version
+        Value           <               Value         * A newer release version
+        Value           ==              Value           Inconclusive, must compare prerelease strings now
+
+
+
+        Second Order:  Compare Prereleases
+        =============
+        *** Prerelease may be NULL, indicates a release version.
+
+        Item #1         Comparison      Item #2
+        Prerelease      of Values       Prerelease      Notes about item #2
+        ----------      -----------     ----------      -------------------
+        NULL                ==          NULL            Exact same release version
+        NULL                >           Value           Older (prerelease) version
+        Value               <           NULL          * A newer, release version
+        Value               ==          Value           Exact same prerelease (and same version)
+        Value               >           Value           An older prerelease 
+        Value               <           Value         * A newer prerelease
+            
+
+        Item #2 is newer/greater than item #1 in the starred (*) combinations.
+        Those are the conditions tested for below.
+    #>
+    
+    [version]$itemOneVersion = $null
+    # try parsing version string
+    if (-not ( [System.Version]::TryParse($FirstItemVersion.Trim(), [ref]$itemOneVersion) ))
+    {
+        $message = $LocalizedData.InvalidVersion -f ($FirstItemVersion)
+        Write-Error -Message $message -ErrorId "InvalidVersion" -Category InvalidArgument
+        return
+    }
+
+    [Version]$itemTwoVersion = $null
+    # try parsing version string
+    if (-not ( [System.Version]::TryParse($SecondItemVersion.Trim(), [ref]$itemTwoVersion) ))
+    {
+        $message = $LocalizedData.InvalidVersion -f ($SecondItemVersion)
+        Write-Error -Message $message -ErrorId "InvalidVersion" -Category InvalidArgument
+        return
+    }
+
+    return (($itemOneVersion -lt $itemTwoVersion) -or `
+            (($itemOneVersion -eq $itemTwoVersion) -and `
+             (($FirstItemPrerelease -and -not $SecondItemPrerelease) -or `
+              ($FirstItemPrerelease -lt $SecondItemPrerelease))))
+}
 
 function Set-InstalledScriptsVariable
 {
@@ -11923,15 +12784,15 @@ function Get-InstalledScriptDetails
         $Name,
 
         [Parameter()]
-        [Version]
+        [string]
         $RequiredVersion,
 
         [Parameter()]
-        [Version]
+        [string]
         $MinimumVersion,
 
         [Parameter()]
-        [Version]
+        [string]
         $MaximumVersion
     )
 
@@ -11951,20 +12812,12 @@ function Get-InstalledScriptDetails
 
                                                             if(-not $Name -or $nameWildcardPattern.IsMatch($InstalledScriptDetails.PSGetItemInfo.Name))
                                                             {
-                                                                if($RequiredVersion)
+                                                                if (Test-ItemPrereleaseVersionRequirements -Version $InstalledScriptDetails.PSGetItemInfo.Version `
+                                                                                                           -RequiredVersion $RequiredVersion `
+                                                                                                           -MinimumVersion $MinimumVersion `
+                                                                                                           -MaximumVersion $MaximumVersion)
                                                                 {
-                                                                   if($RequiredVersion -eq $InstalledScriptDetails.PSGetItemInfo.Version)
-                                                                   {
-                                                                       $InstalledScriptDetails
-                                                                   }
-                                                                }
-                                                                else
-                                                                {
-                                                                    if( (-not $MinimumVersion -or ($MinimumVersion -le $InstalledScriptDetails.PSGetItemInfo.Version)) -and 
-                                                                        (-not $MaximumVersion -or ($MaximumVersion -ge $InstalledScriptDetails.PSGetItemInfo.Version)))
-                                                                    {
-                                                                        $InstalledScriptDetails
-                                                                    }
+                                                                    $InstalledScriptDetails
                                                                 }
                                                             }
                                                         }
@@ -11981,15 +12834,15 @@ function Get-InstalledModuleDetails
         $Name,
 
         [Parameter()]
-        [Version]
+        [string]
         $RequiredVersion,
 
         [Parameter()]
-        [Version]
+        [string]
         $MinimumVersion,
 
         [Parameter()]
-        [Version]
+        [string]
         $MaximumVersion
     )
 
@@ -12009,24 +12862,121 @@ function Get-InstalledModuleDetails
 
                                                             if(-not $Name -or $nameWildcardPattern.IsMatch($InstalledModuleDetails.PSGetItemInfo.Name))
                                                             {
-                                                                if($RequiredVersion)
+
+                                                                if (Test-ItemPrereleaseVersionRequirements -Version $InstalledModuleDetails.PSGetItemInfo.Version `
+                                                                                                           -RequiredVersion $RequiredVersion `
+                                                                                                           -MinimumVersion $MinimumVersion `
+                                                                                                           -MaximumVersion $MaximumVersion)
                                                                 {
-                                                                   if($RequiredVersion -eq $InstalledModuleDetails.PSGetItemInfo.Version)
-                                                                   {
-                                                                       $InstalledModuleDetails
-                                                                   }
-                                                                }
-                                                                else
-                                                                {
-                                                                    if( (-not $MinimumVersion -or ($MinimumVersion -le $InstalledModuleDetails.PSGetItemInfo.Version)) -and 
-                                                                        (-not $MaximumVersion -or ($MaximumVersion -ge $InstalledModuleDetails.PSGetItemInfo.Version)))
-                                                                    {
-                                                                        $InstalledModuleDetails
-                                                                    }
+                                                                    $InstalledModuleDetails
                                                                 }
                                                             }
                                                         }
                                                     }
+}
+
+# Returns true if it meets the Required, Minimum, and Maximum version bounds.
+function Test-ItemPrereleaseVersionRequirements
+{
+    [CmdletBinding()]
+    param(
+
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Version,
+
+        [string]
+        $RequiredVersion,
+        
+        [string]
+        $MinimumVersion,
+
+        [string]
+        $MaximumVersion
+    )
+
+    $result = ValidateAndGet-VersionPrereleaseStrings -Version $Version -CallerPSCmdlet $PSCmdlet
+    if (-not $result)
+    {
+        # ValidateAndGet-VersionPrereleaseStrings throws the error.
+        # returning to avoid further execution when different values are specified for -ErrorAction parameter
+        return
+    }
+    $psgetitemVersion = $result["Version"]
+    $psgetitemPrerelease = $result["Prerelease"]
+    $psgetitemFullVersion = $result["FullVersion"]
+
+    if($RequiredVersion)
+    {
+        $reqResult = ValidateAndGet-VersionPrereleaseStrings -Version $RequiredVersion -CallerPSCmdlet $PSCmdlet
+        if (-not $reqResult)
+        {
+            # ValidateAndGet-VersionPrereleaseStrings throws the error.
+            # returning to avoid further execution when different values are specified for -ErrorAction parameter
+            return
+        }
+        $reqFullVersion = $reqResult["FullVersion"]
+
+        return ($reqFullVersion -eq $psgetitemFullVersion) 
+    }
+    else
+    {
+        $minimumBoundMet = $false
+        if ($MinimumVersion)
+        {
+            $minResult = ValidateAndGet-VersionPrereleaseStrings -Version $MinimumVersion -CallerPSCmdlet $PSCmdlet
+            if (-not $minResult)
+            {
+                # ValidateAndGet-VersionPrereleaseStrings throws the error.
+                # returning to avoid further execution when different values are specified for -ErrorAction parameter
+                return
+            }
+            $minVersion = $minResult["Version"]
+            $minPrerelease = $minResult["Prerelease"]
+
+            # minimum bound is met if PSGet item version is greater than or equal to minimum version
+            if (-not (Compare-PrereleaseVersions -FirstItemVersion $psgetitemVersion `
+                                                 -FirstItemPrerelease $psgetitemPrerelease `
+                                                 -SecondItemVersion $minVersion `
+                                                 -SecondItemPrerelease $minPrerelease ))
+            {
+                $minimumBoundMet = $true
+            }
+        }
+        else 
+        {
+            $minimumBoundMet = $true
+        }
+
+        $maximumBoundMet = $false
+        if ($MaximumVersion)
+        {
+            $maxResult = ValidateAndGet-VersionPrereleaseStrings -Version $MaximumVersion -CallerPSCmdlet $PSCmdlet
+            if (-not $maxResult)
+            {
+                # ValidateAndGet-VersionPrereleaseStrings throws the error.
+                # returning to avoid further execution when different values are specified for -ErrorAction parameter
+                return
+            }
+            $maxVersion = $maxResult["Version"]
+            $maxPrerelease = $maxResult["Prerelease"]
+
+            # maximum bound is met if PSGet item version is less than or equal to maximum version
+            if (-not (Compare-PrereleaseVersions -FirstItemVersion $maxVersion `
+                                                 -FirstItemPrerelease $maxPrerelease `
+                                                 -SecondItemVersion $psgetitemVersion `
+                                                 -SecondItemPrerelease $psgetitemPrerelease ))
+            {
+                $maximumBoundMet = $true
+            }
+        }
+        else 
+        {
+            $maximumBoundMet = $true
+        }
+
+        return ($minimumBoundMet -and $maximumBoundMet)
+    }
 }
 
 function New-SoftwareIdentityFromPackage
@@ -12147,7 +13097,7 @@ function New-SoftwareIdentityFromPackage
 
     $params = @{FastPackageReference = $fastPackageReference;
                 Name = $Package.Name;
-                Version = $Package.Version;
+                Version = $Package.Version; 
                 versionScheme  = "MultiPartNumeric";
                 Source = $sourceNameForSoftwareIdentity;
                 Summary = $Package.Summary;
@@ -12904,14 +13854,18 @@ function Test-ModuleInstalled
         $Name,
 
         [Parameter()]
-        [Version]
+        [string]
         $RequiredVersion
     )
 
     # Check if module is already installed
     $availableModule = Microsoft.PowerShell.Core\Get-Module -ListAvailable -Name $Name -Verbose:$false | 
-                           Microsoft.PowerShell.Core\Where-Object {-not (Test-ModuleSxSVersionSupport) -or -not $RequiredVersion -or ($RequiredVersion -eq $_.Version)} | 
-                               Microsoft.PowerShell.Utility\Select-Object -Unique -First 1 -ErrorAction Ignore
+                           Microsoft.PowerShell.Core\Where-Object {
+                               -not (Test-ModuleSxSVersionSupport) `
+                               -or (-not $RequiredVersion) `
+                               -or ($RequiredVersion.Trim() -eq $_.Version.ToString()) `
+                               -or (Test-ItemPrereleaseVersionRequirements -Version $_.Version -RequiredVersion $RequiredVersion)
+                            } | Microsoft.PowerShell.Utility\Select-Object -Unique -First 1 -ErrorAction Ignore
 
     return $availableModule
 }
@@ -12927,7 +13881,7 @@ function Test-ScriptInstalled
         $Name,
 
         [Parameter()]
-        [Version]
+        [string]
         $RequiredVersion
     )
 
@@ -12935,6 +13889,17 @@ function Test-ScriptInstalled
     $scriptFileName = "$Name.ps1"
     $scriptPaths = @($script:ProgramFilesScriptsPath, $script:MyDocumentsScriptsPath)    
     $scriptInfos = @()
+
+    if ($RequiredVersion)
+    {
+        $reqResult = ValidateAndGet-VersionPrereleaseStrings -Version $RequiredVersion -CallerPSCmdlet $PSCmdlet
+        if (-not $reqResult)
+        {
+            return
+        }
+        $reqFullVersion = $reqResult["FullVersion"]
+    }
+    
 
     foreach ($location in $scriptPaths)
     {
@@ -12971,7 +13936,13 @@ function Test-ScriptInstalled
     }
 
     $scriptInfo = $scriptInfos | Microsoft.PowerShell.Core\Where-Object {
-                                                                (-not $RequiredVersion) -or ($RequiredVersion -eq $_.Version)
+                                                                $thisResult = ValidateAndGet-VersionPrereleaseStrings -Version $_.Version -CallerPSCmdlet $PSCmdlet
+                                                                if (-not $thisResult)
+                                                                {
+                                                                    return
+                                                                }
+                                                                $thisFullVersion = $thisResult["FullVersion"]
+                                                                (-not $RequiredVersion) -or ($reqFullVersion -eq $thisFullVersion)
                                                             } | Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
 
     return $scriptInfo
@@ -13142,10 +14113,10 @@ function Get-InstalledScriptFilePath
 
 function Update-ModuleManifest
 {
-<#
-.ExternalHelp PSGet.psm1-help.xml
-#>
-[CmdletBinding(SupportsShouldProcess=$true,
+    <#
+    .ExternalHelp PSGet.psm1-help.xml
+    #>
+    [CmdletBinding(SupportsShouldProcess=$true,
                    PositionalBinding=$false,
                    HelpUri='https://go.microsoft.com/fwlink/?LinkId=619311')]
     Param
@@ -13318,7 +14289,11 @@ function Update-ModuleManifest
         [Parameter()]
         [string[]]
         $ReleaseNotes,
-                
+
+        [Parameter()]
+        [string]
+        $Prerelease,
+        
         [Parameter()]
         [ValidateNotNullOrEmpty()]
         [Uri]
@@ -13641,7 +14616,6 @@ function Update-ModuleManifest
         $params.Add("FunctionsToExport",($moduleInfo.ExportedFunctions.Keys -split ' '))
     }
     
-
     if($AliasesToExport)
     {
         $params.Add("AliasesToExport",$AliasesToExport)
@@ -13650,6 +14624,7 @@ function Update-ModuleManifest
     {
         $params.Add("AliasesToExport",($moduleInfo.ExportedAliases.Keys -split ' '))
     }
+
     if($VariablesToExport)
     {
         $params.Add("VariablesToExport",$VariablesToExport)
@@ -13658,6 +14633,7 @@ function Update-ModuleManifest
     { 
         $params.Add("VariablesToExport",($moduleInfo.ExportedVariables.Keys -split ' '))
     }
+
     if($CmdletsToExport)
     {
         $params.Add("CmdletsToExport", $CmdletsToExport)
@@ -13666,6 +14642,7 @@ function Update-ModuleManifest
     {
         $params.Add("CmdletsToExport",($moduleInfo.ExportedCmdlets.Keys -split ' '))
     }
+
     if($DscResourcesToExport)
     {
         #DscResourcesToExport field is not available in PowerShell version lower than 5.0
@@ -13773,9 +14750,9 @@ function Update-ModuleManifest
                 {
                     $PSData = $ExistingData["PSData"]
                     foreach($entry in $PSData.Keys)
-                            {
-                    $Data.Add($entry,$PSData[$Entry])
-                }
+                    {
+                        $Data.Add($entry,$PSData[$Entry])
+                    }
                 }
             }
         }
@@ -13806,7 +14783,6 @@ function Update-ModuleManifest
         {
            $Data["Tags"] = $Tags 
         }
-       
 
         #The following Uris and ReleaseNotes cannot be empty
         if($ProjectUri)
@@ -13818,6 +14794,7 @@ function Update-ModuleManifest
         {
             $Data["LicenseUri"] = $LicenseUri
         }
+
         if($IconUri)
         {
             $Data["IconUri"] = $IconUri
@@ -13831,6 +14808,19 @@ function Update-ModuleManifest
         {
             #If value is provided as an array, we append the string.
             $Data["ReleaseNotes"] = $($ReleaseNotes -join "`r`n")
+        }
+        
+        if ($Prerelease)
+        {
+            $result = ValidateAndGet-VersionPrereleaseStrings -Version $params["ModuleVersion"] -Prerelease $Prerelease -CallerPSCmdlet $PSCmdlet
+            if (-not $result)
+            {
+                # ValidateAndGet-VersionPrereleaseStrings throws the error.
+                # returning to avoid further execution when different values are specified for -ErrorAction parameter
+                return
+            }
+            $validatedPrerelease = $result["Prerelease"]
+            $Data[$script:Prerelease] = $validatedPrerelease
         }
         
         if($ExternalModuleDependencies)
@@ -13987,31 +14977,32 @@ function Update-ModuleManifest
         }
     
     
-       $newContent = Microsoft.PowerShell.Management\Get-Content -Path $tempPath
-   
-       try{
-           #Ask for confirmation of the new manifest before replacing the original one
-           if($PSCmdlet.ShouldProcess($Path,$LocalizedData.UpdateManifestContentMessage+$newContent))
-           {
+        $newContent = Microsoft.PowerShell.Management\Get-Content -Path $tempPath
+    
+        try
+        {
+            #Ask for confirmation of the new manifest before replacing the original one
+            if($PSCmdlet.ShouldProcess($Path,$LocalizedData.UpdateManifestContentMessage+$newContent))
+            {
                 Microsoft.PowerShell.Management\Set-Content -Path $Path -Value $newContent -Confirm:$false -WhatIf:$false
-           }
+            }
 
-           #Return the new content if -PassThru is specified
-           if($PassThru)
-           {
-      	        return $newContent
-           }
-      }
-      catch
-      {
+            #Return the new content if -PassThru is specified
+            if($PassThru)
+            {
+                return $newContent
+            }
+        }
+        catch
+        {
             $message = $LocalizedData.ManifestFileReadWritePermissionDenied -f ($Path)
             ThrowError -ExceptionName "System.ArgumentException" `
-                       -ExceptionMessage $message `
-                       -ErrorId "ManifestFileReadWritePermissionDenied" `
-                       -ExceptionObject $Path `
-                       -CallerPSCmdlet $PSCmdlet `
-                       -ErrorCategory InvalidArgument
-      }
+                        -ExceptionMessage $message `
+                        -ErrorId "ManifestFileReadWritePermissionDenied" `
+                        -ExceptionObject $Path `
+                        -CallerPSCmdlet $PSCmdlet `
+                        -ErrorCategory InvalidArgument
+        }
     }
     finally
     {
@@ -14048,6 +15039,9 @@ function Get-PrivateData
         # ReleaseNotes of this module
         # ReleaseNotes = ''
 
+        # Prerelease string of this module
+        # Prerelease = ''
+
         # Flag to indicate whether the module requires explicit user acceptance for install/update/save
         # RequireLicenseAcceptance = $false
 
@@ -14068,9 +15062,10 @@ function Get-PrivateData
     $IconUri = $PrivateData["IconUri"] | %{"'$_'"}
     $ReleaseNotesEscape = $PrivateData["ReleaseNotes"] -Replace "'","''"
     $ReleaseNotes = $ReleaseNotesEscape | %{"'$_'"}
-    $ExternalModuleDependencies = $PrivateData["ExternalModuleDependencies"] -join "','" | %{"'$_'"}     
+    $Prerelease = $PrivateData[$script:Prerelease] | %{"'$_'"}
     $RequireLicenseAcceptance = $PrivateData["RequireLicenseAcceptance"]
-    $DefaultProperties = @("Tags","LicenseUri","ProjectUri","IconUri","ReleaseNotes","ExternalModuleDependencies","RequireLicenseAcceptance")
+    $ExternalModuleDependencies = $PrivateData["ExternalModuleDependencies"] -join "','" | %{"'$_'"} 
+    $DefaultProperties = @("Tags","LicenseUri","ProjectUri","IconUri","ReleaseNotes",$script:Prerelease,"ExternalModuleDependencies","RequireLicenseAcceptance")
 
     $ExtraProperties = @()
     foreach($key in $PrivateData.Keys)
@@ -14139,6 +15134,12 @@ function Get-PrivateData
     {
         $ReleaseNotesLine = "ReleaseNotes = "+$ReleaseNotes
     }
+    $PrereleaseLine = "# Prerelease = ''"
+    if ($Prerelease -ne "''")
+    {
+        $PrereleaseLine = "Prerelease = " +$Prerelease
+    }
+
     $RequireLicenseAcceptanceLine = "# RequireLicenseAcceptance = `$false"
     if($RequireLicenseAcceptance)
     {
@@ -14173,6 +15174,9 @@ function Get-PrivateData
         # ReleaseNotes of this module
         $ReleaseNotesLine
 
+        # Prerelease string of this module
+        $PrereleaseLine
+
         # Flag to indicate whether the module requires explicit user acceptance for install/update/save
         $RequireLicenseAcceptanceLine
 
@@ -14206,6 +15210,9 @@ function Get-PrivateData
         # ReleaseNotes of this module
         $ReleaseNotesLine
 
+        # Prerelease string of this module
+        $PrereleaseLine
+
         # Flag to indicate whether the module requires explicit user acceptance for install/update
         $RequireLicenseAcceptanceLine
 
@@ -14218,6 +15225,91 @@ function Get-PrivateData
         return $content
     }
 }
+
+# Separates Version from Prerelease string (if needed) and validates each.
+function ValidateAndGet-VersionPrereleaseStrings
+{
+    Param
+    (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Version,
+
+        [string]
+        $Prerelease,
+
+        [parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [System.Management.Automation.PSCmdlet]
+        $CallerPSCmdlet
+    )
+
+    # Scripts scenario
+    if ($Version -match '-' -and -not $Prerelease)
+    {
+        $Version,$Prerelease = $Version -split '-',2
+    }
+    
+    # Remove leading hyphen (if present) and trim whitespace
+    if ($Prerelease -and $Prerelease.StartsWith('-') )
+    {
+        $Prerelease = $Prerelease -split '-',2 | Select-Object -Skip 1
+    }
+    if ($Prerelease)
+    {
+        $Prerelease = $Prerelease.Trim()
+    }
+
+    # only these characters are allowed in a prerelease string
+    $validCharacters = "^[a-zA-Z0-9]+$"
+    $prereleaseStringValid = $Prerelease -match $validCharacters
+    if ($Prerelease -and -not $prereleaseStringValid)
+    {
+        $message = $LocalizedData.InvalidCharactersInPrereleaseString -f $Prerelease
+        ThrowError -ExceptionName "System.ArgumentException" `
+                   -ExceptionMessage $message `
+                   -ErrorId "InvalidCharactersInPrereleaseString" `
+                   -CallerPSCmdlet $CallerPSCmdlet `
+                   -ErrorCategory InvalidOperation `
+                   -ExceptionObject $Prerelease
+    }
+
+    # Validate that Version contains exactly 3 parts
+    if ($Prerelease -and -not ($Version.ToString().Split('.').Count -eq 3))
+    {
+        $message = $LocalizedData.IncorrectVersionPartsCountForPrereleaseStringUsage -f $Version
+        ThrowError -ExceptionName "System.ArgumentException" `
+                   -ExceptionMessage $message `
+                   -ErrorId "IncorrectVersionPartsCountForPrereleaseStringUsage" `
+                   -CallerPSCmdlet $CallerPSCmdlet `
+                   -ErrorCategory InvalidOperation `
+                   -ExceptionObject $Version
+    }
+
+    # try parsing version string
+    [Version]$VersionVersion = $null
+    if (-not ( [System.Version]::TryParse($Version, [ref]$VersionVersion) ))
+    {
+        $message = $LocalizedData.InvalidVersion -f ($Version)
+        ThrowError -ExceptionName "System.ArgumentException" `
+                   -ExceptionMessage $message `
+                   -ErrorId "InvalidVersion" `
+                   -CallerPSCmdlet $CallerPSCmdlet `
+                   -ErrorCategory InvalidArgument `
+                   -ExceptionObject $Version
+    }
+    
+    $fullVersion = if ($Prerelease) { "$Version-$Prerelease" } else { $Version }
+
+    $results = @{
+        Version = $Version
+        Prerelease = $Prerelease
+        FullVersion = $fullVersion
+    }
+    return $results
+}
+
 
 function Copy-ScriptFile
 {
@@ -14402,9 +15494,10 @@ function Copy-Module
     }
 
     # Remove the *.nupkg file
-    if(Microsoft.PowerShell.Management\Test-Path "$DestinationPath\$($PSGetItemInfo.Name).nupkg")
+    $NupkgFilePath = Join-PathUtility -Path $DestinationPath -ChildPath "$($PSGetItemInfo.Name).nupkg" -PathType File
+    if(Microsoft.PowerShell.Management\Test-Path -Path $NupkgFilePath -PathType Leaf)
     {
-        Microsoft.PowerShell.Management\Remove-Item -Path "$DestinationPath\$($PSGetItemInfo.Name).nupkg" -Force -ErrorAction SilentlyContinue -WarningAction SilentlyContinue -Confirm:$false -WhatIf:$false
+        Microsoft.PowerShell.Management\Remove-Item -Path $NupkgFilePath -Force -ErrorAction SilentlyContinue -WarningAction SilentlyContinue -Confirm:$false -WhatIf:$false
     }
                     
     # Create PSGetModuleInfo.xml
@@ -14466,7 +15559,7 @@ function Test-ModuleInUse
 
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
-        [Version]
+        [string]
         $ModuleVersion
     )
 
@@ -14962,7 +16055,8 @@ function Test-MicrosoftCertificate
 
     $IsMicrosoftCertificate = $false
 
-    if($AuthenticodeSignature.SignerCertificate)
+    if($AuthenticodeSignature.SignerCertificate -and
+       ('Microsoft.PowerShell.Commands.PowerShellGet.Win32Helpers' -as [Type]))
     {
         $X509Chain = $null
         $SafeX509ChainHandle = $null
@@ -15031,7 +16125,7 @@ function Test-ValidManifestModule
     )
 
     $moduleName = Microsoft.PowerShell.Management\Split-Path $ModuleBasePath -Leaf
-    $manifestPath = Microsoft.PowerShell.Management\Join-Path $ModuleBasePath "$moduleName.psd1"
+    $manifestPath = Join-PathUtility -Path $ModuleBasePath -ChildPath "$moduleName.psd1" -PathType File
     $PSModuleInfo = $null
 
     if(Microsoft.PowerShell.Management\Test-Path $manifestPath)

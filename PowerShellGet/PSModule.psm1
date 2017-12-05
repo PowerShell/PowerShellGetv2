@@ -11,35 +11,53 @@ Microsoft.PowerShell.Core\Set-StrictMode -Version Latest
 
 #region script variables
 
-# Check if this is nano server. [System.Runtime.Loader.AssemblyLoadContext] is only available on NanoServer
-$script:isNanoServer = $null -ne ('System.Runtime.Loader.AssemblyLoadContext' -as [Type])
-
 $script:IsInbox = $PSHOME.EndsWith('\WindowsPowerShell\v1.0', [System.StringComparison]::OrdinalIgnoreCase)
 $script:IsWindows = (-not (Get-Variable -Name IsWindows -ErrorAction Ignore)) -or $IsWindows
 $script:IsLinux = (Get-Variable -Name IsLinux -ErrorAction Ignore) -and $IsLinux
-$script:IsOSX = (Get-Variable -Name IsOSX -ErrorAction Ignore) -and $IsOSX
+$script:IsMacOS = (Get-Variable -Name IsMacOS -ErrorAction Ignore) -and $IsMacOS
 $script:IsCoreCLR = $PSVersionTable.ContainsKey('PSEdition') -and $PSVersionTable.PSEdition -eq 'Core'
+$script:IsNanoServer = & {
+    if (!$script:IsWindows)
+    {
+        return $false
+    }
+
+    $serverLevelsPath = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Server\ServerLevels\'
+    if (Test-Path -Path $serverLevelsPath)
+    {
+        $NanoItem = Get-ItemProperty -Name NanoServer -Path $serverLevelsPath -ErrorAction Ignore
+        if ($NanoItem -and ($NanoItem.NanoServer -eq 1))
+        {
+            return $true
+        }
+    }
+    return $false
+}
 
 if($script:IsInbox)
 {
     $script:ProgramFilesPSPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramFiles -ChildPath "WindowsPowerShell"
 }
-else
+elseif($script:IsCoreCLR){
+    if($script:IsWindows) {
+        $script:ProgramFilesPSPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramFiles -ChildPath 'PowerShell'
+    }
+    else {
+        $script:ProgramFilesPSPath = Microsoft.PowerShell.Management\Split-Path -Path ([System.Management.Automation.Platform]::SelectProductNameForDirectory('SHARED_MODULES')) -Parent
+    }
+}
+
+try
 {
-    $script:ProgramFilesPSPath = $PSHome
+    $script:MyDocumentsFolderPath = [Environment]::GetFolderPath("MyDocuments")
+}
+catch
+{
+    $script:MyDocumentsFolderPath = $null
 }
 
 if($script:IsInbox)
 {
-    try
-    {
-        $script:MyDocumentsFolderPath = [Environment]::GetFolderPath("MyDocuments")
-    }
-    catch
-    {
-        $script:MyDocumentsFolderPath = $null
-    }
-
     $script:MyDocumentsPSPath = if($script:MyDocumentsFolderPath)
                                 {
                                     Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsFolderPath -ChildPath "WindowsPowerShell"
@@ -49,24 +67,31 @@ if($script:IsInbox)
                                     Microsoft.PowerShell.Management\Join-Path -Path $env:USERPROFILE -ChildPath "Documents\WindowsPowerShell"
                                 }
 }
-elseif($script:IsWindows)
-{
-    $script:MyDocumentsFolderPath = [Environment]::GetFolderPath("MyDocuments")
-    $script:MyDocumentsPSPath = Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsFolderPath -ChildPath 'PowerShell'
+elseif($script:IsCoreCLR) {
+    if($script:IsWindows)
+    {
+        $script:MyDocumentsPSPath = if($script:MyDocumentsFolderPath)
+        {
+            Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsFolderPath -ChildPath 'PowerShell'
+        } 
+        else
+        {
+            Microsoft.PowerShell.Management\Join-Path -Path $HOME -ChildPath "Documents\PowerShell"
+        }
+    }
+    else
+    {
+        $script:MyDocumentsPSPath = Microsoft.PowerShell.Management\Split-Path -Path ([System.Management.Automation.Platform]::SelectProductNameForDirectory('USER_MODULES')) -Parent
+    }
 }
-else
-{
-    $script:MyDocumentsPSPath = Microsoft.PowerShell.Management\Join-Path -Path $HOME -ChildPath ".local/share/powershell"
-}
 
-$script:ProgramFilesModulesPath = Microsoft.PowerShell.Management\Join-Path -Path $script:ProgramFilesPSPath -ChildPath "Modules"
-$script:MyDocumentsModulesPath = Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsPSPath -ChildPath "Modules"
+$script:ProgramFilesModulesPath = Microsoft.PowerShell.Management\Join-Path -Path $script:ProgramFilesPSPath -ChildPath 'Modules'
+$script:MyDocumentsModulesPath = Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsPSPath -ChildPath 'Modules'
 
-$script:ProgramFilesScriptsPath = Microsoft.PowerShell.Management\Join-Path -Path $script:ProgramFilesPSPath -ChildPath "Scripts"
+$script:ProgramFilesScriptsPath = Microsoft.PowerShell.Management\Join-Path -Path $script:ProgramFilesPSPath -ChildPath 'Scripts'
+$script:MyDocumentsScriptsPath = Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsPSPath -ChildPath 'Scripts'
 
-$script:MyDocumentsScriptsPath = Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsPSPath -ChildPath "Scripts"
-
-$script:TempPath = if($script:IsWindows){ ([System.IO.DirectoryInfo]$env:TEMP).FullName } else { '/tmp' }
+$script:TempPath = [System.IO.Path]::GetTempPath()
 $script:PSGetItemInfoFileName = "PSGetModuleInfo.xml"
 
 if($script:IsWindows)
@@ -76,8 +101,8 @@ if($script:IsWindows)
 }
 else
 {
-    $script:PSGetProgramDataPath = "$HOME/.config/powershell/powershellget" #TODO: Get $env:ProgramData equivalent
-    $script:PSGetAppLocalPath = "$HOME/.config/powershell/powershellget"
+    $script:PSGetProgramDataPath = Microsoft.PowerShell.Management\Join-Path -Path ([System.Management.Automation.Platform]::SelectProductNameForDirectory('CONFIG')) -ChildPath 'PowerShellGet'
+    $script:PSGetAppLocalPath = Microsoft.PowerShell.Management\Join-Path -Path ([System.Management.Automation.Platform]::SelectProductNameForDirectory('CACHE')) -ChildPath 'PowerShellGet'
 }
 
 $script:PSGetModuleSourcesFilePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetAppLocalPath -ChildPath "PSRepositories.xml"
@@ -135,6 +160,10 @@ $script:NuGetClientSourceURL = 'https://go.microsoft.com/fwlink/?LinkID=690216&c
 $script:NuGetExeName = 'NuGet.exe'
 $script:NuGetExePath = $null
 $script:NuGetProvider = $null
+$script:DotnetCommandName = 'dotnet'
+$script:MinimumDotnetCommandVersion = [Version]'2.0.0'
+$script:DotnetInstallUrl = 'https://aka.ms/dotnet-install-script'
+$script:DotnetCommandPath = $null
 # PowerShellGetFormatVersion will be incremented when we change the .nupkg format structure. 
 # PowerShellGetFormatVersion is in the form of Major.Minor.  
 # Minor is incremented for the backward compatible format change.
@@ -500,11 +529,11 @@ namespace Microsoft.PowerShell.Commands.PowerShellGet
             Language = 'CSharp'
             ErrorAction = 'SilentlyContinue'
         }
-        if (-not $script:IsCoreCLR)
+        if (-not $script:IsCoreCLR -or $script:IsNanoServer)
         {
             $AddType_prams['ReferencedAssemblies'] = $RequiredAssembliesForInternalWebProxy
         }
-        Add-Type @AddType_prams 
+        Add-Type @AddType_prams
     }
     catch
     {
@@ -669,7 +698,7 @@ namespace Microsoft.PowerShell.Commands.PowerShellGet
         } 
 
         [DllImport("Crypt32.dll", SetLastError=true)]
-$(if(-not $script:isNanoServer)
+$(if(-not $script:IsCoreCLR)
 {
         '
         [SuppressUnmanagedCodeSecurity,
@@ -699,7 +728,7 @@ $(if($script:IsSafeX509ChainHandleAvailable)
 {
 @"
         [DllImport("Crypt32.dll", CharSet=CharSet.Auto, SetLastError=true)]
-    $(if(-not $script:isNanoServer)
+    $(if(-not $script:IsCoreCLR)
     {
     '
         [ResourceExposure(ResourceScope.None)]
@@ -790,7 +819,7 @@ $(if($script:IsSafeX509ChainHandleAvailable)
             Language = 'CSharp'            
             ErrorAction = 'SilentlyContinue'
         }
-        if (-not $script:IsCoreCLR -and $RequiredAssembliesForWin32Helpers)
+        if ((-not $script:IsCoreCLR -or $script:IsNanoServer) -and $RequiredAssembliesForWin32Helpers)
         {
             $AddType_prams['ReferencedAssemblies'] = $RequiredAssembliesForWin32Helpers
         }
@@ -889,16 +918,6 @@ function Publish-Module
 
     Begin
     {
-        if($script:isNanoServer -or $script:IsCoreCLR) {
-            $message = $LocalizedData.PublishPSArtifactUnsupportedOnNano -f "Module"
-            ThrowError -ExceptionName "System.InvalidOperationException" `
-                        -ExceptionMessage $message `
-                        -ErrorId 'PublishModuleIsNotSupportedOnPowerShellCoreEdition' `
-                        -CallerPSCmdlet $PSCmdlet `
-                        -ExceptionObject $PSCmdlet `
-                        -ErrorCategory InvalidOperation
-        }
-
         Get-PSGalleryApiAvailability -Repository $Repository
         
         if($LicenseUri -and -not (Test-WebUri -uri $LicenseUri))
@@ -1110,14 +1129,14 @@ function Publish-Module
             $modulePathWithVersion = $false
         
             # if the Leaf of the $resolvedPath is a version, use its parent folder name as the module name
-            $ModuleVersion = New-Object System.Version
+            [Version]$ModuleVersion = $null
             if([System.Version]::TryParse($moduleName, ([ref]$ModuleVersion)))
             {
                 $moduleName = Microsoft.PowerShell.Management\Split-Path -Path (Microsoft.PowerShell.Management\Split-Path $resolvedPath -Parent) -Leaf
                 $modulePathWithVersion = $true
             }
 
-            $manifestPath = Join-Path -Path $resolvedPath -ChildPath "$moduleName.psd1"
+            $manifestPath = Join-PathUtility -Path $resolvedPath -ChildPath "$moduleName.psd1" -PathType File
             $module = $null
 
             if(Microsoft.PowerShell.Management\Test-Path -Path $manifestPath -PathType Leaf)
@@ -1228,7 +1247,7 @@ function Publish-Module
 
         try
         {
-            $manifestPath = Microsoft.PowerShell.Management\Join-Path $tempModulePathForFormatVersion "$moduleName.psd1"
+            $manifestPath = Join-PathUtility -Path $tempModulePathForFormatVersion -ChildPath "$moduleName.psd1" -PathType File
         
             if(-not (Microsoft.PowerShell.Management\Test-Path $manifestPath))
             {
@@ -2895,16 +2914,6 @@ function Publish-Script
 
     Begin
     {
-        if($script:isNanoServer -or $script:IsCoreCLR) {
-            $message = $LocalizedData.PublishPSArtifactUnsupportedOnNano -f "Script"
-            ThrowError -ExceptionName "System.InvalidOperationException" `
-                        -ExceptionMessage $message `
-                        -ErrorId 'PublishScriptIsNotSupportedOnPowerShellCoreEdition' `
-                        -CallerPSCmdlet $PSCmdlet `
-                        -ExceptionObject $PSCmdlet `
-                        -ErrorCategory InvalidOperation
-        }
-
         Get-PSGalleryApiAvailability -Repository $Repository        
 
         Install-NuGetClientBinaries -CallerPSCmdlet $PSCmdlet -BootstrapNuGetExe -Force:$Force
@@ -3065,8 +3074,8 @@ function Publish-Script
         $scriptFullVersion = $result["FullVersion"]
 
         # Copy the source script file to temp location to publish
-        $tempScriptPath = Microsoft.PowerShell.Management\Join-Path -Path $script:TempPath `
-                              -ChildPath "$(Microsoft.PowerShell.Utility\Get-Random)\$scriptName"
+        $tempScriptPath = Microsoft.PowerShell.Management\Join-Path -Path $script:TempPath -ChildPath "$(Get-Random)" |
+            Microsoft.PowerShell.Management\Join-Path -ChildPath $scriptName
 
         $null = Microsoft.PowerShell.Management\New-Item -Path $tempScriptPath -ItemType Directory -Force -ErrorAction SilentlyContinue -WarningAction SilentlyContinue -Confirm:$false -WhatIf:$false
         if($Path)
@@ -7836,10 +7845,10 @@ function Install-NuGetClientBinaries
         $Force
     )
 
-    if(-not $script:IsWindows -or
-       ($script:NuGetProvider -and 
-        (-not $BootstrapNuGetExe -or 
-        ($script:NuGetExePath -and (Microsoft.PowerShell.Management\Test-Path -Path $script:NuGetExePath)))))
+    if ($script:NuGetProvider -and 
+         (-not $BootstrapNuGetExe -or 
+         (($script:NuGetExePath -and (Microsoft.PowerShell.Management\Test-Path -Path $script:NuGetExePath)) -or
+          ($script:DotnetCommandPath -and (Microsoft.PowerShell.Management\Test-Path -Path $script:DotnetCommandPath)))))
     {
         return
     }
@@ -7894,52 +7903,101 @@ function Install-NuGetClientBinaries
         }
     }
 
-    if($BootstrapNuGetExe -and 
-       (-not $script:NuGetExePath -or 
-        -not (Microsoft.PowerShell.Management\Test-Path -Path $script:NuGetExePath)))
-    {
-        $programDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $script:NuGetExeName
-        $applocalDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetAppLocalPath -ChildPath $script:NuGetExeName        
+    if($script:IsWindows -and -not $script:IsNanoServer) {
+        if($BootstrapNuGetExe -and 
+        (-not $script:NuGetExePath -or 
+            -not (Microsoft.PowerShell.Management\Test-Path -Path $script:NuGetExePath)))
+        {
+            $programDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $script:NuGetExeName
+            $applocalDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetAppLocalPath -ChildPath $script:NuGetExeName        
 
-        # Check if NuGet.exe is available under one of the predefined PowerShellGet locations under ProgramData or LocalAppData
-        if(Microsoft.PowerShell.Management\Test-Path -Path $programDataExePath)
-        {
-            $script:NuGetExePath = $programDataExePath
-            $BootstrapNuGetExe = $false
-        }
-        elseif(Microsoft.PowerShell.Management\Test-Path -Path $applocalDataExePath)
-        {
-            $script:NuGetExePath = $applocalDataExePath
-            $BootstrapNuGetExe = $false
+            # Check if NuGet.exe is available under one of the predefined PowerShellGet locations under ProgramData or LocalAppData
+            if(Microsoft.PowerShell.Management\Test-Path -Path $programDataExePath)
+            {
+                $script:NuGetExePath = $programDataExePath
+                $BootstrapNuGetExe = $false
+            }
+            elseif(Microsoft.PowerShell.Management\Test-Path -Path $applocalDataExePath)
+            {
+                $script:NuGetExePath = $applocalDataExePath
+                $BootstrapNuGetExe = $false
+            }
+            else
+            {
+                # Using Get-Command cmdlet, get the location of NuGet.exe if it is available under $env:PATH.
+                # NuGet.exe does not work if it is under $env:WINDIR, so skip it from the Get-Command results.
+                $nugetCmd = Microsoft.PowerShell.Core\Get-Command -Name $script:NuGetExeName `
+                                                                -ErrorAction Ignore `
+                                                                -WarningAction SilentlyContinue | 
+                                Microsoft.PowerShell.Core\Where-Object { 
+                                    $_.Path -and 
+                                    ((Microsoft.PowerShell.Management\Split-Path -Path $_.Path -Leaf) -eq $script:NuGetExeName) -and
+                                    (-not $_.Path.StartsWith($env:windir, [System.StringComparison]::OrdinalIgnoreCase)) 
+                                } | Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
+
+                if($nugetCmd -and $nugetCmd.Path)
+                {
+                    $script:NuGetExePath = $nugetCmd.Path
+                    $BootstrapNuGetExe = $false
+                }
+            }
         }
         else
         {
-            # Using Get-Command cmdlet, get the location of NuGet.exe if it is available under $env:PATH.
-            # NuGet.exe does not work if it is under $env:WINDIR, so skip it from the Get-Command results.
-            $nugetCmd = Microsoft.PowerShell.Core\Get-Command -Name $script:NuGetExeName `
-                                                              -ErrorAction Ignore `
-                                                              -WarningAction SilentlyContinue | 
-                            Microsoft.PowerShell.Core\Where-Object { 
-                                $_.Path -and 
-                                ((Microsoft.PowerShell.Management\Split-Path -Path $_.Path -Leaf) -eq $script:NuGetExeName) -and
-                                (-not $_.Path.StartsWith($env:windir, [System.StringComparison]::OrdinalIgnoreCase)) 
-                            } | Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
+            # No need to bootstrap the NuGet.exe when $BootstrapNuGetExe is false or NuGet.exe path is already assigned.
+            $BootstrapNuGetExe = $false
+        }
+    }
 
-            if($nugetCmd -and $nugetCmd.Path)
-            {
-                $script:NuGetExePath = $nugetCmd.Path
-                $BootstrapNuGetExe = $false
+    if($BootstrapNuGetExe) {
+        $DotnetCmd = Microsoft.PowerShell.Core\Get-Command -Name $script:DotnetCommandName -ErrorAction Ignore -WarningAction SilentlyContinue |
+            Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
+
+        if ($DotnetCmd -and $DotnetCmd.Path) {
+            $script:DotnetCommandPath = $DotnetCmd.Path
+            $BootstrapNuGetExe = $false
+        }
+        else {
+            if($script:IsWindows) {
+                $DotnetCommandPath = Microsoft.PowerShell.Management\Join-Path -Path $env:LocalAppData -ChildPath Microsoft |
+                    Microsoft.PowerShell.Management\Join-Path -ChildPath dotnet |
+                        Microsoft.PowerShell.Management\Join-Path -ChildPath dotnet.exe
+
+                if($DotnetCommandPath -and 
+                   -not (Microsoft.PowerShell.Management\Test-Path -LiteralPath $DotnetCommandPath -PathType Leaf)) {
+                    $DotnetCommandPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramFiles -ChildPath dotnet |
+                        Microsoft.PowerShell.Management\Join-Path -ChildPath dotnet.exe
+                }
+            } 
+            else {                
+                $DotnetCommandPath = '/usr/local/bin/dotnet'
+            }
+
+            if($DotnetCommandPath -and (Microsoft.PowerShell.Management\Test-Path -LiteralPath $DotnetCommandPath -PathType Leaf)) {
+                $DotnetCommandVersion,$null = (& $DotnetCommandPath '--version') -split '-',2
+                if($DotnetCommandVersion -and ($script:MinimumDotnetCommandVersion -le $DotnetCommandVersion)) {
+                    $script:DotnetCommandPath = $DotnetCommandPath
+                    $BootstrapNuGetExe = $false
+                }
             }
         }
     }
-    else
-    {
-        # No need to bootstrap the NuGet.exe when $BootstrapNuGetExe is false or NuGet.exe path is already assigned.
-        $BootstrapNuGetExe = $false
+
+    # On non-Windows, dotnet should be installed by the user, throw an error if dotnet is not found using above logic.
+    if ($BootstrapNuGetExe -and (-not $script:IsWindows -or $script:IsNanoServer)) {
+        $ThrowError_params = @{
+            ExceptionName    = 'System.InvalidOperationException'
+            ExceptionMessage = ($LocalizedData.CouldNotFindDotnetCommand -f $script:MinimumDotnetCommandVersion, $script:DotnetInstallUrl)
+            ErrorId          = 'CouldNotFindDotnetCommand'
+            CallerPSCmdlet   = $CallerPSCmdlet
+            ErrorCategory    = 'InvalidOperation'
+        }
+
+        ThrowError @ThrowError_params
+        return
     }
-    
-    # On Nano server we don't need NuGet.exe
-    if(-not $bootstrapNuGetProvider -and ($script:isNanoServer -or $script:IsCoreCLR -or -not $BootstrapNuGetExe))
+
+    if(-not $bootstrapNuGetProvider -and -not $BootstrapNuGetExe)
     {
         return
     }
@@ -7996,7 +8054,7 @@ function Install-NuGetClientBinaries
             }
         }
 
-        if($BootstrapNuGetExe -and -not $script:isNanoServer -and -not $script:IsCoreCLR)
+        if($BootstrapNuGetExe -and $script:IsWindows)
         {
             Write-Verbose -Message $LocalizedData.DownloadingNugetExe
 
@@ -8051,7 +8109,7 @@ function Install-NuGetClientBinaries
     {
         $failedToBootstrapNuGetExe = $true
 
-        $message = $LocalizedData.CouldNotInstallNuGetExe -f @($script:NuGetProviderVersion)
+        $message = $LocalizedData.CouldNotInstallNuGetExe -f @($script:MinimumDotnetCommandVersion)
         $errorId = 'CouldNotInstallNuGetExe'
     }
 
@@ -8889,8 +8947,8 @@ function Publish-PSArtifactUtility
                             -ErrorCategory InvalidData
                     }
 
-                    $licenseFile = Get-ChildItem -path $NugetPackageRoot -filter License.txt
-                    if(-not $licenseFile)
+                    $LicenseFilePath = Join-PathUtility -Path $NugetPackageRoot -ChildPath 'License.txt' -PathType File
+                    if(-not $LicenseFilePath -or -not (Test-Path -Path $LicenseFilePath -PathType Leaf))
                     {
                         $message = $LocalizedData.LicenseTxtNotFound
                         ThrowError -ExceptionName "System.InvalidOperationException" `
@@ -8900,7 +8958,7 @@ function Publish-PSArtifactUtility
                         -ErrorCategory InvalidData
                     }
 
-                    if((Get-Content $licenseFile.FullName) -eq $null)
+                    if((Get-Content -LiteralPath $LicenseFilePath) -eq $null)
                     {
                         $message = $LocalizedData.LicenseTxtEmpty
                         ThrowError -ExceptionName "System.InvalidOperationException" `
@@ -9162,22 +9220,71 @@ function Publish-PSArtifactUtility
 </package>
 "@
 
-    $NupkgPath = "$NugetPackageRoot\$Name.$Version.nupkg"
-    $NuspecPath = "$NugetPackageRoot\$Name.nuspec"
+# When packaging we must build something. 
+# So, we are building an empty assembly called NotUsed, and discarding it.
+$CsprojContent = @"
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>NotUsed</AssemblyName>
+    <Description>Temp project used for creating nupkg file.</Description>
+    <NuspecFile>$Name.nuspec</NuspecFile>
+    <NuspecBasePath>$NugetPackageRoot</NuspecBasePath>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+  </PropertyGroup>
+</Project>
+"@
+    $NupkgPath = Microsoft.PowerShell.Management\Join-Path -Path $NugetPackageRoot -ChildPath "$Name.$Version.nupkg"
+
+    $csprojBasePath = $null
+    if($script:DotnetCommandPath) {
+        $csprojBasePath = Microsoft.PowerShell.Management\Join-Path -Path $script:TempPath -ChildPath ([System.Guid]::NewGuid())
+        $null = Microsoft.PowerShell.Management\New-Item -Path $csprojBasePath -ItemType Directory -Force -WhatIf:$false -Confirm:$false
+        $NuspecPath = Microsoft.PowerShell.Management\Join-Path -Path $csprojBasePath -ChildPath "$Name.nuspec"
+        $CsprojFilePath = Microsoft.PowerShell.Management\Join-Path -Path $csprojBasePath -ChildPath "$Name.csproj"
+    }
+    else {
+        $NuspecPath = Microsoft.PowerShell.Management\Join-Path -Path $NugetPackageRoot -ChildPath "$Name.nuspec"
+    }
+
     $tempErrorFile = $null
     $tempOutputFile = $null
 
     try
     {        
         # Remove existing nuspec and nupkg files
-        Microsoft.PowerShell.Management\Remove-Item $NupkgPath  -Force -ErrorAction SilentlyContinue -WarningAction SilentlyContinue -Confirm:$false -WhatIf:$false
-        Microsoft.PowerShell.Management\Remove-Item $NuspecPath -Force -ErrorAction SilentlyContinue -WarningAction SilentlyContinue -Confirm:$false -WhatIf:$false
+        if($NupkgPath -and (Test-Path -Path $NupkgPath -PathType Leaf))
+        {
+            Microsoft.PowerShell.Management\Remove-Item $NupkgPath  -Force -ErrorAction SilentlyContinue -WarningAction SilentlyContinue -Confirm:$false -WhatIf:$false
+        }
+
+        if($NuspecPath -and (Test-Path -Path $NuspecPath -PathType Leaf))
+        {
+            Microsoft.PowerShell.Management\Remove-Item $NuspecPath -Force -ErrorAction SilentlyContinue -WarningAction SilentlyContinue -Confirm:$false -WhatIf:$false
+        }
             
         Microsoft.PowerShell.Management\Set-Content -Value $nuspec -Path $NuspecPath -Force -Confirm:$false -WhatIf:$false
 
         # Create .nupkg file
-        $output = & $script:NuGetExePath pack $NuspecPath -OutputDirectory $NugetPackageRoot
-        if($LASTEXITCODE)
+        if($script:DotnetCommandPath) {
+            Microsoft.PowerShell.Management\Set-Content -Value $CsprojContent -Path $CsprojFilePath -Force -Confirm:$false -WhatIf:$false
+
+            $arguments = @('pack')
+            $arguments += $csprojBasePath
+            $arguments += @('--output',$NugetPackageRoot)
+            $arguments += "/p:StagingPath=$NugetPackageRoot"
+            $output = & $script:DotnetCommandPath $arguments
+            Write-Debug -Message "dotnet pack output:  $output"
+        }
+        elseif($script:NuGetExePath) {
+            $output = & $script:NuGetExePath pack $NuspecPath -OutputDirectory $NugetPackageRoot
+        }
+
+        if(-not (Test-Path -Path $NupkgPath -PathType Leaf)) {
+            $SemanticVersionString = Get-NormalizedVersionString -Version $Version
+            $NupkgPath = Join-PathUtility -Path $NugetPackageRoot -ChildPath "$Name.$($SemanticVersionString).nupkg" -PathType File
+        }
+
+        if($LASTEXITCODE -or -not $NupkgPath -or -not (Test-Path -Path $NupkgPath -PathType Leaf))
         {
             if($PSArtifactType -eq $script:PSArtifactTypeModule)
             {
@@ -9197,15 +9304,45 @@ function Publish-PSArtifactUtility
         # Publish the .nupkg to gallery
         $tempErrorFile = Microsoft.PowerShell.Management\Join-Path -Path $nugetPackageRoot -ChildPath "TempPublishError.txt"
         $tempOutputFile = Microsoft.PowerShell.Management\Join-Path -Path $nugetPackageRoot -ChildPath "TempPublishOutput.txt"
-        
-        Microsoft.PowerShell.Management\Start-Process -FilePath "$script:NuGetExePath" `
-                                                      -ArgumentList @('push', "`"$NupkgPath`"", '-source', "`"$($Destination.TrimEnd('\'))`"", '-NonInteractive', '-ApiKey', "`"$NugetApiKey`"") `
-                                                      -RedirectStandardError $tempErrorFile `
-                                                      -RedirectStandardOutput $tempOutputFile `
-                                                      -NoNewWindow `
-                                                      -Wait
 
-        $errorMsg = Microsoft.PowerShell.Management\Get-Content -Path $tempErrorFile -Raw
+        $errorMsg = $null
+        $StartProcess_params = @{
+            RedirectStandardError = $tempErrorFile
+            RedirectStandardOutput = $tempOutputFile
+            NoNewWindow = $true
+            Wait = $true
+        }
+
+        if($script:DotnetCommandPath) {
+            $StartProcess_params['FilePath'] = $script:DotnetCommandPath
+
+            $ArgumentList = @('nuget')
+            $ArgumentList += 'push'
+            $ArgumentList += "`"$NupkgPath`""
+            $ArgumentList += @('--source', "`"$($Destination.TrimEnd('\'))`"")
+            $ArgumentList += @('--api-key', "`"$NugetApiKey`"")
+        }
+        elseif($script:NuGetExePath) {
+            $StartProcess_params['FilePath'] = $script:NuGetExePath
+
+            $ArgumentList = @('push')
+            $ArgumentList += "`"$NupkgPath`""
+            $ArgumentList += @('-source', "`"$($Destination.TrimEnd('\'))`"")
+            $ArgumentList += @('-apikey', "`"$NugetApiKey`"")
+            $ArgumentList += '-NonInteractive'
+        }
+        $StartProcess_params['ArgumentList'] = $ArgumentList
+        
+        if($script:IsCoreCLR -and -not $script:IsNanoServer) {
+            $StartProcess_params['WhatIf'] = $false
+            $StartProcess_params['Confirm'] = $false
+        }
+
+        Microsoft.PowerShell.Management\Start-Process @StartProcess_params
+
+        if(Test-Path -Path $tempErrorFile -PathType Leaf) {
+            $errorMsg = Microsoft.PowerShell.Management\Get-Content -Path $tempErrorFile -Raw
+        }
 
         if($errorMsg)
         {
@@ -9262,6 +9399,11 @@ function Publish-PSArtifactUtility
         if($tempOutputFile -and (Test-Path -Path $tempOutputFile -PathType Leaf))
         {
             Microsoft.PowerShell.Management\Remove-Item $tempOutputFile -Force -ErrorAction SilentlyContinue -WarningAction SilentlyContinue -Confirm:$false -WhatIf:$false        
+        }
+
+        if($csprojBasePath -and (Test-Path -Path $csprojBasePath -PathType Container))
+        {
+            Microsoft.PowerShell.Management\Remove-Item -Path $csprojBasePath -Recurse -Force -ErrorAction SilentlyContinue -WarningAction SilentlyContinue -Confirm:$false -WhatIf:$false
         }
     }
 }
@@ -9452,7 +9594,7 @@ function Get-ExportedDscResources
 
     $dscResources = @()
 
-    if(Get-Command -Name Get-DscResource -Module PSDesiredStateConfiguration -ErrorAction Ignore)
+    if(-not $script:IsCoreCLR -and (Get-Command -Name Get-DscResource -Module PSDesiredStateConfiguration -ErrorAction Ignore))
     {
         $OldPSModulePath = $env:PSModulePath
 
@@ -9476,7 +9618,7 @@ function Get-ExportedDscResources
     }
     else
     {
-        $dscResourcesDir = Microsoft.PowerShell.Management\Join-Path -Path $PSModuleInfo.ModuleBase -ChildPath "DscResources"
+        $dscResourcesDir = Join-PathUtility -Path $PSModuleInfo.ModuleBase -ChildPath "DscResources" -PathType Directory
         if(Microsoft.PowerShell.Management\Test-Path $dscResourcesDir)
         {
             $dscResources = Microsoft.PowerShell.Management\Get-ChildItem -Path $dscResourcesDir -Directory -Name
@@ -9499,7 +9641,7 @@ function Get-AvailableRoleCapabilityName
 
     $RoleCapabilityNames = @()
 
-    $RoleCapabilitiesDir = Microsoft.PowerShell.Management\Join-Path -Path $PSModuleInfo.ModuleBase -ChildPath 'RoleCapabilities'
+    $RoleCapabilitiesDir = Join-PathUtility -Path $PSModuleInfo.ModuleBase -ChildPath 'RoleCapabilities' -PathType Directory
     if(Microsoft.PowerShell.Management\Test-Path -Path $RoleCapabilitiesDir -PathType Container)
     {
         $RoleCapabilityNames = Microsoft.PowerShell.Management\Get-ChildItem -Path $RoleCapabilitiesDir `
@@ -9539,6 +9681,84 @@ function Get-LocationString
     }
 
     return $LocationString
+}
+
+<#
+.DESCRIPTION
+    Utility to get the case-sensitive path, if exists.
+    Otherwise, returns the output of Join-Path cmdlet.
+    This is required for getting the case-sensitive paths on non-Windows platforms.
+#>
+function Join-PathUtility
+{
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Path,
+
+        [Parameter(Mandatory = $false)]
+        [string]
+        $ChildPath,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        [ValidateSet('File', 'Directory', 'Any')]
+        $PathType = 'Any'
+    )
+
+    $JoinedPath = Microsoft.PowerShell.Management\Join-Path -Path $Path -ChildPath $ChildPath
+    if(Microsoft.PowerShell.Management\Test-Path -Path $Path -PathType Container) {
+        $GetChildItem_params = @{
+            Path = $Path
+            ErrorAction = 'SilentlyContinue'
+            WarningAction = 'SilentlyContinue'
+        }
+        if($PathType -eq 'File') {
+            $GetChildItem_params['File'] = $true
+        }
+        elseif($PathType -eq 'Directory') {
+            $GetChildItem_params['Directory'] = $true
+        }
+
+        $FoundPath = Microsoft.PowerShell.Management\Get-ChildItem @GetChildItem_params | 
+            Where-Object {$_.Name -eq $ChildPath} |
+                ForEach-Object {$_.FullName} |
+                    Select-Object -First 1 -ErrorAction SilentlyContinue
+
+        if($FoundPath) {
+            $JoinedPath = $FoundPath 
+        }
+    }
+
+    return $JoinedPath
+}
+
+<#
+.DESCRIPTION
+    Latest versions of nuget.exe and dotnet command generate the .nupkg file name with
+    semantic version format for the modules/scripts with two part version.
+    For example: package 1.0 --> package.1.0.0.nupkg
+#>
+function Get-NormalizedVersionString {
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Version
+    )
+
+    [Version]$ParsedVersion = $null
+    if ([System.Version]::TryParse($Version, [ref]$ParsedVersion)) {
+        $Build = $ParsedVersion.Build
+        if ($Build -eq -1) {
+            $Build = 0
+        }
+    
+        return "$($ParsedVersion.Major).$($ParsedVersion.Minor).$Build"
+    }
+
+    return $Version
 }
 
 #endregion Utility functions
@@ -11677,14 +11897,6 @@ function Install-PackageUtility
                     $AdditionalParams['InstalledDate'] = $InstalledDate
                 }
 
-                $sid = New-SoftwareIdentityFromPackage -Package $pkg `
-                                                       -SourceLocation $sourceLocation `
-                                                       -PackageManagementProviderName $provider.ProviderName `
-                                                       -Request $request `
-                                                       -Type $packageType `
-                                                       -InstalledLocation $installLocation `
-                                                       @AdditionalParams
-
                 # construct the PSGetItemInfo from SoftwareIdentity and persist it
                 $psgItemInfo = New-PSGetItemInfo -SoftwareIdentity $pkg `
                                                  -PackageManagementProviderName $provider.ProviderName `
@@ -11738,7 +11950,8 @@ function Install-PackageUtility
 
                         If (-not ($YesToAll -or $NoToAll -or $AcceptLicense))
                         {
-                            if(-not(Test-Path -path "$sourceModulePath\License.txt" -PathType Leaf))
+                            $LicenseFilePath = Join-PathUtility -Path $sourceModulePath -ChildPath 'License.txt' -PathType File
+                            if(-not(Test-Path -Path $LicenseFilePath -PathType Leaf))
                             {
                                 $message = $LocalizedData.LicenseTxtNotFound
 
@@ -11748,7 +11961,6 @@ function Install-PackageUtility
                                            -CallerPSCmdlet $PSCmdlet `
                                            -ErrorCategory ObjectNotFound
                             }                            
-                            $LicenseFilePath = Join-Path $sourceModulePath "License.txt"
                             $FormattedEula = (Get-Content -Path $LicenseFilePath) -Join "`r`n"
                             $message = $FormattedEula + "`r`n" + ($LocalizedData.AcceptanceLicenseQuery -f $pkg.Name)
                             $title = $LocalizedData.AcceptLicense
@@ -11875,6 +12087,16 @@ function Install-PackageUtility
                         }
                     }
 
+                    # Use the actual module version retrieved from the module manifest.
+                    if($CurrentModuleInfo -and (Test-ModuleSxSVersionSupport) -and -not $pkgPrerelease)
+                    {
+                        $destinationModulePath = Microsoft.PowerShell.Management\Join-Path -Path $moduleDestination -ChildPath $pkg.Name |
+                            Microsoft.PowerShell.Management\Join-Path -ChildPath $CurrentModuleInfo.Version
+                        $installLocation = $destinationModulePath
+                        $psgItemInfo.InstalledLocation = $installLocation
+                        $psgItemInfo.Version = $CurrentModuleInfo.Version
+                    }
+
                     Copy-Module -SourcePath $sourceModulePath -DestinationPath $destinationModulePath -PSGetItemInfo $psgItemInfo
 
                     if(-not $IsSavePackage)
@@ -11918,7 +12140,7 @@ function Install-PackageUtility
                         continue
                     }
 
-                    $sourceScriptPath = Microsoft.PowerShell.Management\Join-Path -Path $tempPackagePath -ChildPath "$($pkg.Name).ps1"
+                    $sourceScriptPath = Join-PathUtility -Path $tempPackagePath -ChildPath "$($pkg.Name).ps1" -PathType File
                     
                     $currentScriptInfo = $null
                     if(-not $IsSavePackage)
@@ -11932,6 +12154,9 @@ function Install-PackageUtility
                             Write-Error -Message $message -ErrorId "InvalidPowerShellScriptFile" -Category InvalidOperation -TargetObject $pkg.Name
                             continue
                         }
+
+                        # Use the version extracted from the script file.
+                        $psgItemInfo.Version = $currentScriptInfo.Version
                     }
 
                     # Test if script is already installed
@@ -12046,6 +12271,14 @@ function Install-PackageUtility
                     }                
                     Write-Verbose $message
                 }
+
+                $sid = New-SoftwareIdentityFromPackage -Package $pkg `
+                    -SourceLocation $sourceLocation `
+                    -PackageManagementProviderName $provider.ProviderName `
+                    -Request $request `
+                    -Type $packageType `
+                    -InstalledLocation $installLocation `
+                    @AdditionalParams
 
                 Write-Output -InputObject $sid
             }
@@ -12472,7 +12705,7 @@ function Compare-PrereleaseVersions
         Those are the conditions tested for below.
     #>
     
-    $itemOneVersion = New-Object System.Version
+    [version]$itemOneVersion = $null
     # try parsing version string
     if (-not ( [System.Version]::TryParse($FirstItemVersion.Trim(), [ref]$itemOneVersion) ))
     {
@@ -12481,7 +12714,7 @@ function Compare-PrereleaseVersions
         return
     }
 
-    $itemTwoVersion = New-Object System.Version
+    [Version]$itemTwoVersion = $null
     # try parsing version string
     if (-not ( [System.Version]::TryParse($SecondItemVersion.Trim(), [ref]$itemTwoVersion) ))
     {
@@ -15055,7 +15288,7 @@ function ValidateAndGet-VersionPrereleaseStrings
     }
 
     # try parsing version string
-    $VersionVersion = New-Object System.Version
+    [Version]$VersionVersion = $null
     if (-not ( [System.Version]::TryParse($Version, [ref]$VersionVersion) ))
     {
         $message = $LocalizedData.InvalidVersion -f ($Version)
@@ -15261,9 +15494,10 @@ function Copy-Module
     }
 
     # Remove the *.nupkg file
-    if(Microsoft.PowerShell.Management\Test-Path "$DestinationPath\$($PSGetItemInfo.Name).nupkg")
+    $NupkgFilePath = Join-PathUtility -Path $DestinationPath -ChildPath "$($PSGetItemInfo.Name).nupkg" -PathType File
+    if(Microsoft.PowerShell.Management\Test-Path -Path $NupkgFilePath -PathType Leaf)
     {
-        Microsoft.PowerShell.Management\Remove-Item -Path "$DestinationPath\$($PSGetItemInfo.Name).nupkg" -Force -ErrorAction SilentlyContinue -WarningAction SilentlyContinue -Confirm:$false -WhatIf:$false
+        Microsoft.PowerShell.Management\Remove-Item -Path $NupkgFilePath -Force -ErrorAction SilentlyContinue -WarningAction SilentlyContinue -Confirm:$false -WhatIf:$false
     }
                     
     # Create PSGetModuleInfo.xml
@@ -15821,7 +16055,8 @@ function Test-MicrosoftCertificate
 
     $IsMicrosoftCertificate = $false
 
-    if($AuthenticodeSignature.SignerCertificate)
+    if($AuthenticodeSignature.SignerCertificate -and
+       ('Microsoft.PowerShell.Commands.PowerShellGet.Win32Helpers' -as [Type]))
     {
         $X509Chain = $null
         $SafeX509ChainHandle = $null
@@ -15890,7 +16125,7 @@ function Test-ValidManifestModule
     )
 
     $moduleName = Microsoft.PowerShell.Management\Split-Path $ModuleBasePath -Leaf
-    $manifestPath = Microsoft.PowerShell.Management\Join-Path $ModuleBasePath "$moduleName.psd1"
+    $manifestPath = Join-PathUtility -Path $ModuleBasePath -ChildPath "$moduleName.psd1" -PathType File
     $PSModuleInfo = $null
 
     if(Microsoft.PowerShell.Management\Test-Path $manifestPath)

@@ -23,7 +23,7 @@ function SuiteSetup {
     #Bootstrap NuGet binaries
     Install-NuGetBinaries
 
-    $script:PSGalleryRepoPath="$env:SystemDrive\PSGalleryRepo"
+    $script:PSGalleryRepoPath = Join-Path -Path $script:TempPath -ChildPath 'PSGalleryRepo'
     RemoveItem $script:PSGalleryRepoPath
     $null = New-Item -Path $script:PSGalleryRepoPath -ItemType Directory -Force
 
@@ -43,7 +43,7 @@ function SuiteSetup {
     $script:ApiKey="TestPSGalleryApiKey"
 
     # Create temp module to be published
-    $script:TempModulesPath="$env:LocalAppData\temp\PSGet_$(Get-Random)"
+    $script:TempModulesPath = Join-Path -Path $script:TempPath -ChildPath "PSGet_$(Get-Random)"
     $null = New-Item -Path $script:TempModulesPath -ItemType Directory -Force
 
     $script:PublishModuleName = "RequireLicenseAcceptancePublishModule"
@@ -97,11 +97,10 @@ Describe PowerShell.PSGet.PSGetRequireLicenseAcceptance.UpdateModuleManifest -Ta
 }
 
 Describe PowerShell.PSGet.PSGetRequireLicenseAcceptance.Publish -Tags 'BVT','InnerLoop' {
-    if($PSEdition -eq 'Core') {
-        return
-    }
     BeforeAll {
         SuiteSetup
+        $ModuleManifestFilePath = Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1"
+        $LicenseFilePath = Join-Path -Path $script:PublishModuleBase -ChildPath 'license.txt'
     }
 
     AfterAll {
@@ -129,10 +128,10 @@ Describe PowerShell.PSGet.PSGetRequireLicenseAcceptance.Publish -Tags 'BVT','Inn
     #
     It "PublishModuleRequiresLicenseAcceptance" {
         $version = "1.0"
-        New-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"        
-        Update-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -LicenseUri "http://$script:PublishModuleName.com/license"
-        Update-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -RequireLicenseAcceptance        
-        Set-Content "$script:PublishModuleBase\license.txt" -Value "LicenseTerms"
+        New-ModuleManifest -Path $ModuleManifestFilePath -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"        
+        Update-ModuleManifest -Path $ModuleManifestFilePath -LicenseUri "http://$script:PublishModuleName.com/license"
+        Update-ModuleManifest -Path $ModuleManifestFilePath -RequireLicenseAcceptance
+        Set-Content $LicenseFilePath -Value "LicenseTerms"
         
         Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $version        
@@ -150,9 +149,9 @@ Describe PowerShell.PSGet.PSGetRequireLicenseAcceptance.Publish -Tags 'BVT','Inn
     #
     It "PublishModuleWithoutLicenseTxt" {
         $version = "1.0"
-        New-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"        
-        Update-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -LicenseUri "http://$script:PublishModuleName.com/license"
-        Update-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -RequireLicenseAcceptance        
+        New-ModuleManifest -Path $ModuleManifestFilePath -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"        
+        Update-ModuleManifest -Path $ModuleManifestFilePath -LicenseUri "http://$script:PublishModuleName.com/license"
+        Update-ModuleManifest -Path $ModuleManifestFilePath -RequireLicenseAcceptance        
         
         AssertFullyQualifiedErrorIdEquals -scriptblock {Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -WarningAction SilentlyContinue}`
                                           -expectedFullyQualifiedErrorId 'LicenseTxtNotFound,Publish-PSArtifactUtility'
@@ -170,9 +169,9 @@ Describe PowerShell.PSGet.PSGetRequireLicenseAcceptance.Publish -Tags 'BVT','Inn
     #
     It "PublishModuleWithoutLicenseUri" {
         $version = "1.0"
-        New-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"                
-        Update-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -RequireLicenseAcceptance        
-        Set-Content "$script:PublishModuleBase\license.txt" -Value "LicenseTerms"        
+        New-ModuleManifest -Path $ModuleManifestFilePath -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"                
+        Update-ModuleManifest -Path $ModuleManifestFilePath -RequireLicenseAcceptance        
+        Set-Content $LicenseFilePath -Value "LicenseTerms"        
         AssertFullyQualifiedErrorIdEquals -scriptblock {Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -WarningAction SilentlyContinue}`
                                           -expectedFullyQualifiedErrorId 'LicenseUriNotSpecified,Publish-PSArtifactUtility'
 
@@ -188,9 +187,9 @@ Describe PowerShell.PSGet.PSGetRequireLicenseAcceptance.Publish -Tags 'BVT','Inn
     #
     It "PublishModuleNoRequireLicenseAcceptance" {
         $version = "1.0"
-        New-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"        
-        Update-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -LicenseUri "http://$script:PublishModuleName.com/license"        
-        Set-Content "$script:PublishModuleBase\license.txt" -Value "LicenseTerms"
+        New-ModuleManifest -Path $ModuleManifestFilePath -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"        
+        Update-ModuleManifest -Path $ModuleManifestFilePath -LicenseUri "http://$script:PublishModuleName.com/license"        
+        Set-Content $LicenseFilePath -Value "LicenseTerms"
         
         Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $version

@@ -11,9 +11,6 @@
 
    The local directory based NuGet repository is used for publishing the modules.
 #>
-if($PSEdition -eq 'Core') {
-    return
-}
 
 function SuiteSetup {
     Import-Module "$PSScriptRoot\PSGetTestUtils.psm1" -WarningAction SilentlyContinue
@@ -31,11 +28,11 @@ function SuiteSetup {
     $script:psgetModuleInfo = Import-Module PowerShellGet -Global -Force -Passthru
     Import-LocalizedData  script:LocalizedData -filename PSGet.Resource.psd1 -BaseDirectory $script:psgetModuleInfo.ModuleBase
 
-    $script:PSGalleryRepoPath="$env:SystemDrive\PSGalleryRepo"
+    $script:PSGalleryRepoPath = Join-Path -Path $script:TempPath -ChildPath 'PSGalleryRepo'
     RemoveItem $script:PSGalleryRepoPath
     $null = New-Item -Path $script:PSGalleryRepoPath -ItemType Directory -Force
 
-    $script:moduleSourcesFilePath= Join-Path $script:PSGetLocalAppDataPath "PSRepositories.xml"
+    $script:moduleSourcesFilePath = Join-Path $script:PSGetLocalAppDataPath "PSRepositories.xml"
     $script:moduleSourcesBackupFilePath = Join-Path $script:PSGetLocalAppDataPath "PSRepositories.xml_$(get-random)_backup"
     if(Test-Path $script:moduleSourcesFilePath)
     {
@@ -51,7 +48,7 @@ function SuiteSetup {
     $script:ApiKey="TestPSGalleryApiKey"
 
     # Create temp module to be published
-    $script:TempModulesPath="$env:LocalAppData\temp\PSGet_$(Get-Random)"
+    $script:TempModulesPath = Join-Path -Path $script:TempPath -ChildPath "PSGet_$(Get-Random)"
     $null = New-Item -Path $script:TempModulesPath -ItemType Directory -Force
 
     $script:PublishModuleName = "ContosoPublishModule"
@@ -86,7 +83,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     }
 
     BeforeEach {
-        Set-Content "$script:PublishModuleBase\$script:PublishModuleName.psm1" -Value "function Get-$script:PublishModuleName { Get-Date }"
+        Set-Content (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psm1") -Value "function Get-$script:PublishModuleName { Get-Date }"
     }
 
     AfterEach {
@@ -103,15 +100,17 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     #
     It "PublishModuleWithName" {
         $version = "1.0"
-        New-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
+        $semanticVersion = '1.0.0'
+        New-ModuleManifest -Path (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
 
         #Copy module to $script:ProgramFilesModulesPath
         Copy-Item $script:PublishModuleBase $script:ProgramFilesModulesPath -Recurse -Force
 
-        Publish-Module -Name $script:PublishModuleName -ReleaseNotes "$script:PublishModuleName release notes" -Tags PSGet -LicenseUri "https://$script:PublishModuleName.com/license" -ProjectUri "https://$script:PublishModuleName.com" -WarningAction SilentlyContinue
+        Publish-Module -Name $script:PublishModuleName -ReleaseNotes "$script:PublishModuleName release notes" -Tags PSGet -LicenseUri "https://$script:PublishModuleName.com/license" -ProjectUri "https://$script:PublishModuleName.com" -WarningAction SilentlyContinue        
 
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $version
-        Assert (($psgetItemInfo.Name -eq $script:PublishModuleName) -and (($psgetItemInfo.Version.ToString() -eq $version))) "Publish-Module should publish a module with valid module name, $($psgetItemInfo.Name)"
+        # This version can be 1.0 or 1.0.0, depending on the version of NuGet.exe or dotnet command.
+        Assert (($psgetItemInfo.Name -eq $script:PublishModuleName) -and (($psgetItemInfo.Version.ToString() -eq $version) -or ($psgetItemInfo.Version.ToString() -eq $semanticVersion))) "Publish-Module should publish a module with valid module name, $($psgetItemInfo.Name)"
     }
 
     # Purpose: Publish a module with -Name and Module is created with SxS multi version support
@@ -121,14 +120,15 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: should be able to publish a module
     #
     It PublishModuleWithNameForSxSVersion {
-        $version = "2.0"
+        $version = "2.0.0.0"
+        $semanticVersion = '2.0.0'
         RemoveItem "$script:PublishModuleBase\*"
 
-        $moduleBaseWithVersion = "$script:PublishModuleBase\$version"
+        $moduleBaseWithVersion = (Join-Path -Path $script:PublishModuleBase -ChildPath "$version")
         $null = New-Item -Path $moduleBaseWithVersion -ItemType Directory -Force
-        Set-Content "$moduleBaseWithVersion\$script:PublishModuleName.psm1" -Value "function Get-$script:PublishModuleName { Get-Date }"
+        Set-Content (Join-Path $moduleBaseWithVersion "$script:PublishModuleName.psm1") -Value "function Get-$script:PublishModuleName { Get-Date }"
 
-        New-ModuleManifest -Path "$moduleBaseWithVersion\$script:PublishModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
+        New-ModuleManifest -Path (Join-Path $moduleBaseWithVersion "$script:PublishModuleName.psd1") -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
 
         #Copy module to $script:ProgramFilesModulesPath
         Copy-Item $script:PublishModuleBase $script:ProgramFilesModulesPath -Recurse -Force
@@ -136,7 +136,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         Publish-Module -Name $script:PublishModuleName -NuGetApiKey $script:ApiKey -ReleaseNotes "$script:PublishModuleName release notes" -Tags PSGet -LicenseUri "https://$script:PublishModuleName.com/license" -ProjectUri "https://$script:PublishModuleName.com" -WarningAction SilentlyContinue
 
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $version
-        Assert (($psgetItemInfo.Name -eq $script:PublishModuleName) -and (($psgetItemInfo.Version.ToString() -eq $version))) "Publish-Module should publish a module with valid module name, $($psgetItemInfo.Name)"
+        Assert (($psgetItemInfo.Name -eq $script:PublishModuleName) -and (($psgetItemInfo.Version.ToString() -eq $version) -or ($psgetItemInfo.Version.ToString() -eq $semanticVersion))) "Publish-Module should publish a module with valid module name, $($psgetItemInfo.Name)"
     } `
     -Skip:$(-not (Test-ModuleSxSVersionSupport))
 
@@ -147,12 +147,12 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: should be able to publish a module
     #
     It PublishModuleWithNameRequiredVersionForSxSVersion {
-        $version = "2.0"
-        $moduleBaseWithVersion = "$script:PublishModuleBase\$version"
+        $version = "2.0.0"
+        $moduleBaseWithVersion = (Join-Path -Path $script:PublishModuleBase -ChildPath "$version")
         $null = New-Item -Path $moduleBaseWithVersion -ItemType Directory -Force
-        Set-Content "$moduleBaseWithVersion\$script:PublishModuleName.psm1" -Value "function Get-$script:PublishModuleName { Get-Date }"
+        Set-Content (Join-Path -Path $moduleBaseWithVersion -ChildPath "$script:PublishModuleName.psm1") -Value "function Get-$script:PublishModuleName { Get-Date }"
 
-        New-ModuleManifest -Path "$moduleBaseWithVersion\$script:PublishModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
+        New-ModuleManifest -Path (Join-Path -Path $moduleBaseWithVersion -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
 
         #Copy module to $script:ProgramFilesModulesPath
         Copy-Item $script:PublishModuleBase $script:ProgramFilesModulesPath -Recurse -Force
@@ -167,7 +167,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
                        -WarningAction SilentlyContinue
 
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $version
-        Assert (($psgetItemInfo.Name -eq $script:PublishModuleName) -and (($psgetItemInfo.Version.ToString() -eq $version))) "Publish-Module should publish a module with valid module name, $($psgetItemInfo.Name)"
+        Assert (($psgetItemInfo.Name -eq $script:PublishModuleName) -and ($psgetItemInfo.Version.ToString() -eq $version)) "Publish-Module should publish a module with valid module name, $($psgetItemInfo.Name)"
     } `
     -Skip:$(-not (Test-ModuleSxSVersionSupport))
 
@@ -179,7 +179,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     #
     It "PublishModuleWithPath" {
         $version = "1.0"
-        New-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
+        New-ModuleManifest -Path (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
         Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -ReleaseNotes "$script:PublishModuleName release notes" -Tags PSGet -LicenseUri "https://$script:PublishModuleName.com/license" -ProjectUri "https://$script:PublishModuleName.com" -WarningAction SilentlyContinue
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $version
         Assert ($psgetItemInfo.Name -eq $script:PublishModuleName) "Publish-Module should publish a module with valid module path, $($psgetItemInfo.Name)"
@@ -197,11 +197,11 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
 
         if($PSVersionTable.PSVersion -gt '5.0.0')
         {
-            $moduleBase = "$script:PublishModuleBase\$version"
+            $moduleBase = (Join-Path -Path $script:PublishModuleBase -ChildPath "$version")
             $null = New-Item -ItemType Directory -Path $moduleBase -Force
         }
         
-        New-ModuleManifest -Path "$moduleBase\$script:PublishModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module"
+        New-ModuleManifest -Path (Join-Path -Path $moduleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version -Description "$script:PublishModuleName module"
         $currentLocation = Get-Location
         try
         {
@@ -232,12 +232,12 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
 
         if($PSVersionTable.PSVersion -gt '5.0.0')
         {
-            $moduleBase = "$moduleBase\$version"
+            $moduleBase = Join-Path -Path $moduleBase -ChildPath $version
         }
 
         $null = New-Item -ItemType Directory -Path $moduleBase -Force
         
-        New-ModuleManifest -Path "$moduleBase\$Name.psd1" -ModuleVersion $version -Description "$Name module"
+        New-ModuleManifest -Path (Join-Path -Path $moduleBase -ChildPath "$Name.psd1") -ModuleVersion $version -Description "$Name module"
 
         Publish-Module -Path $moduleBaseWithoutVersion -NuGetApiKey $script:ApiKey -WarningAction SilentlyContinue
         $psgetItemInfo = Find-Module $Name -RequiredVersion $version
@@ -256,13 +256,13 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         $moduleBase = $script:PublishModuleBase
         $moduleBaseWithoutVersion = $script:PublishModuleBase
 
-        $moduleBase = "$script:PublishModuleBase\$version1"
+        $moduleBase = Join-Path -Path $script:PublishModuleBase -ChildPath $version1
         $null = New-Item -ItemType Directory -Path $moduleBase -Force        
-        New-ModuleManifest -Path "$moduleBase\$script:PublishModuleName.psd1" -ModuleVersion $version1 -Description "$script:PublishModuleName module"
+        New-ModuleManifest -Path (Join-Path -Path $moduleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version1 -Description "$script:PublishModuleName module"
 
-        $moduleBase = "$script:PublishModuleBase\$version2"
+        $moduleBase = Join-Path -Path $script:PublishModuleBase -ChildPath $version2
         $null = New-Item -ItemType Directory -Path $moduleBase -Force        
-        New-ModuleManifest -Path "$moduleBase\$script:PublishModuleName.psd1" -ModuleVersion $version2 -Description "$script:PublishModuleName module"
+        New-ModuleManifest -Path (Join-Path -Path $moduleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version2 -Description "$script:PublishModuleName module"
 
         AssertFullyQualifiedErrorIdEquals -scriptblock {Publish-Module -Path $moduleBaseWithoutVersion -WarningAction SilentlyContinue}`
                                           -expectedFullyQualifiedErrorId 'AmbiguousModulePathToPublish,Publish-Module'
@@ -276,13 +276,13 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: should be able to publish a module
     #
     It PublishModuleWithPathForSxSVersion {
-        $version = "2.0"
+        $version = "2.0.0"
 
-        $moduleBaseWithVersion = "$script:PublishModuleBase\$version"
+        $moduleBaseWithVersion = (Join-Path -Path $script:PublishModuleBase -ChildPath "$version")
         $null = New-Item -Path $moduleBaseWithVersion -ItemType Directory -Force
-        Set-Content "$moduleBaseWithVersion\$script:PublishModuleName.psm1" -Value "function Get-$script:PublishModuleName { Get-Date }"
+        Set-Content (Join-Path -Path $moduleBaseWithVersion -ChildPath "$script:PublishModuleName.psm1") -Value "function Get-$script:PublishModuleName { Get-Date }"
 
-        New-ModuleManifest -Path "$moduleBaseWithVersion\$script:PublishModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
+        New-ModuleManifest -Path (Join-Path -Path $moduleBaseWithVersion -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
 
         Publish-Module -Path $moduleBaseWithVersion `
                        -NuGetApiKey $script:ApiKey `
@@ -293,7 +293,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
                        -WarningAction SilentlyContinue
 
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $version
-        Assert (($psgetItemInfo.Name -eq $script:PublishModuleName) -and (($psgetItemInfo.Version.ToString() -eq $version))) "Publish-Module should publish a module with valid module name, $($psgetItemInfo.Name)"
+        Assert (($psgetItemInfo.Name -eq $script:PublishModuleName) -and ($psgetItemInfo.Version.ToString() -eq $version)) "Publish-Module should publish a module with valid module name, $($psgetItemInfo.Name)"
     } `
     -Skip:$(-not (Test-ModuleSxSVersionSupport))
 
@@ -314,7 +314,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         $content = $null
 
         $version = "1.0"
-        New-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
+        New-ModuleManifest -Path (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
 
         #Copy module to $script:ProgramFilesModulesPath
         Copy-Item $script:PublishModuleBase $script:ProgramFilesModulesPath -Recurse -Force
@@ -361,14 +361,14 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         $content = $null
 
         $version = "2.0"
-        New-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
+        New-ModuleManifest -Path (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
 
         # Copy module to $script:ProgramFilesModulesPath
         Copy-Item $script:PublishModuleBase $script:ProgramFilesModulesPath -Recurse -Force
 
         try
         {
-            $result = ExecuteCommand $runspace 'Import-Module PowerShellGet -Global -Force; $PSGallerySourceUri="$env:SystemDrive\PSGalleryRepo"; $PSGalleryPublishUri="$env:SystemDrive\PSGalleryRepo"; Publish-Module -Name ContosoPublishModule -NuGetApiKey TestPSGalleryApiKey -Confirm'
+            $result = ExecuteCommand $runspace 'Import-Module PowerShellGet -Global -Force; $PSGallerySourceUri="$script:TempPath\PSGalleryRepo"; $PSGalleryPublishUri="$script:TempPath\PSGalleryRepo"; Publish-Module -Name ContosoPublishModule -NuGetApiKey TestPSGalleryApiKey -Confirm'
         }
         finally
         {
@@ -399,7 +399,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     #
     It "PublishModuleWithWhatIf" {
         $version = "3.0"
-        New-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
+        New-ModuleManifest -Path (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
 
         #Copy module to $script:ProgramFilesModulesPath
         Copy-Item $script:PublishModuleBase $script:ProgramFilesModulesPath -Recurse -Force
@@ -412,7 +412,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
 
         try
         {
-            $result = ExecuteCommand $runspace 'Import-Module PowerShellGet -Global -Force; $PSGallerySourceUri="$env:SystemDrive\PSGalleryRepo"; $PSGalleryPublishUri="$env:SystemDrive\PSGalleryRepo"; Publish-Module -Name ContosoPublishModule -NuGetApiKey TestPSGalleryApiKey -WhatIf'
+            $result = ExecuteCommand $runspace 'Import-Module PowerShellGet -Global -Force; $PSGallerySourceUri="$script:TempPath\PSGalleryRepo"; $PSGalleryPublishUri="$script:TempPath\PSGalleryRepo"; Publish-Module -Name ContosoPublishModule -NuGetApiKey TestPSGalleryApiKey -WhatIf'
         }
         finally
         {
@@ -442,8 +442,8 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: should be able to publish multiple versions
     #
     It "PublishModuleMultipleVersions" {
-        $version = "1.0"
-        New-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
+        $version = "1.0.0"
+        New-ModuleManifest -Path (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
 
         #Copy module to $script:ProgramFilesModulesPath
         Copy-Item $script:PublishModuleBase $script:ProgramFilesModulesPath -Recurse -Force
@@ -451,11 +451,11 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         Publish-Module -Name $script:PublishModuleName -NuGetApiKey $script:ApiKey -ReleaseNotes "$script:PublishModuleName release notes" -Tags PSGet -LicenseUri "https://$script:PublishModuleName.com/license" -ProjectUri "https://$script:PublishModuleName.com" -WarningAction SilentlyContinue
 
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $version
-        Assert (($psgetItemInfo.Name -eq $script:PublishModuleName) -and (($psgetItemInfo.Version.ToString() -eq $version))) "Publish-Module should publish a module with valid module name, $($psgetItemInfo.Name)"
+        Assert (($psgetItemInfo.Name -eq $script:PublishModuleName) -and ($psgetItemInfo.Version.ToString() -eq $version)) "Publish-Module should publish a module with valid module name, $($psgetItemInfo.Name)"
 
 
-        $version = "2.0"
-        New-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
+        $version = "2.0.0"
+        New-ModuleManifest -Path (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
 
         #Copy module to $script:ProgramFilesModulesPath
         Copy-Item $script:PublishModuleBase $script:ProgramFilesModulesPath -Recurse -Force
@@ -463,7 +463,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         Publish-Module -Name $script:PublishModuleName -NuGetApiKey $script:ApiKey -ReleaseNotes "$script:PublishModuleName release notes" -Tags PSGet -LicenseUri "https://$script:PublishModuleName.com/license" -ProjectUri "https://$script:PublishModuleName.com" -WarningAction SilentlyContinue
 
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $version
-        Assert (($psgetItemInfo.Name -eq $script:PublishModuleName) -and (($psgetItemInfo.Version.ToString() -eq $version))) "Publish-Module should publish a module with valid module name, $($psgetItemInfo.Name)"
+        Assert (($psgetItemInfo.Name -eq $script:PublishModuleName) -and ($psgetItemInfo.Version.ToString() -eq $version)) "Publish-Module should publish a module with valid module name, $($psgetItemInfo.Name)"
     }
 
     # Purpose: Publish a module with non-existing nested module
@@ -473,7 +473,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: should fail with an error id
     #
     It "PublishModuleWithNonExistingNestedModule" {
-        New-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -ModuleVersion '1.0' -Description "$script:PublishModuleName module" -NestedModules "NonExistingNestedModule"
+        New-ModuleManifest -Path (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion '1.0' -Description "$script:PublishModuleName module" -NestedModules "NonExistingNestedModule"
                 
         AssertFullyQualifiedErrorIdEquals -scriptblock {Publish-Module -Path $script:PublishModuleBase -WarningAction SilentlyContinue}`
                                           -expectedFullyQualifiedErrorId 'UnableToResolveModuleDependency,Publish-PSArtifactUtility'
@@ -486,15 +486,15 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: should fail with an error id
     #
     It "PublishModuleWithInvalidEntryInPSD1" {
-        New-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -ModuleVersion '1.0' -Description "$script:PublishModuleName module" -NestedModules "NonExistingNestedModule"
+        New-ModuleManifest -Path (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion '1.0' -Description "$script:PublishModuleName module" -NestedModules "NonExistingNestedModule"
 
-        Set-Content -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -Value @'
+        Set-Content -Path (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1") -Value @'
     @{
     ModuleVersion = 1.0
     Guid = '680e031b-f318-4534-bdc9-10f1787b2400'
     Copyright = '(c) 2015 manikb. All rights reserved.'
     Description = 'Test module description'
-    Author = 'Manikyam Bavandla (manikb@microsoft.com)'
+    Author = 'Contoso Author (author@contoso.com)'
     FunctionsToExport = '*'
     CmdletsToExport = '*'
     VariablesToExport = '*'
@@ -508,7 +508,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
 
     It "PublishModuleWithPSEditionVariableInPSD1" {
 
-        $Psd1FilePath = "$script:PublishModuleBase\$script:PublishModuleName.psd1"
+        $Psd1FilePath = (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1")
 
         New-ModuleManifest -Path $Psd1FilePath
 
@@ -518,7 +518,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     Guid = '680e031b-f318-4534-bdc9-10f1787b2400'
     Copyright = '(c) 2015 manikb. All rights reserved.'
     Description = 'Test module description'
-    Author = 'Manikyam Bavandla (manikb@microsoft.com)'
+    Author = 'Contoso Author (author@contoso.com)'
     FunctionsToExport = if($PSEdition -eq 'Desktop'){@('A','B')}elseif($PSEdition -eq 'Core'){@('C','D')};
     CmdletsToExport = '*'
     VariablesToExport = '*'
@@ -540,7 +540,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
 
     It "PublishModuleWithPSScriptRootVariableInPSD1" {
 
-        $Psd1FilePath = "$script:PublishModuleBase\$script:PublishModuleName.psd1"
+        $Psd1FilePath = (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1")
 
         New-ModuleManifest -Path $Psd1FilePath
 
@@ -550,7 +550,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     Guid = '680e031b-f318-4534-bdc9-10f1787b2400'
     Copyright = '(c) 2015 manikb. All rights reserved.'
     Description = "Test module description; $PSScriptRoot\ReleaseNotes.md has full description."
-    Author = 'Manikyam Bavandla (manikb@microsoft.com)'
+    Author = 'Contoso Author (author@contoso.com)'
     FunctionsToExport = '*'
     CmdletsToExport = '*'
     VariablesToExport = '*'
@@ -564,7 +564,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
 
     It "PublishModuleWithInvalidVariableInPSD1" {
 
-        $Psd1FilePath = "$script:PublishModuleBase\$script:PublishModuleName.psd1"
+        $Psd1FilePath = (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1")
 
         New-ModuleManifest -Path $Psd1FilePath
 
@@ -574,7 +574,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     Guid = '680e031b-f318-4534-bdc9-10f1787b2400'
     Copyright = '(c) 2015 manikb. All rights reserved.'
     Description = 'Test module description'
-    Author = 'Manikyam Bavandla (manikb@microsoft.com)'
+    Author = 'Contoso Author (author@contoso.com)'
     FunctionsToExport = '*'
     CmdletsToExport = '*'
     VariablesToExport = '*'
@@ -589,7 +589,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
 
     It "GetManifestHashTableWithInvalidVariableInPSD1" {
 
-        $Psd1FilePath = "$script:PublishModuleBase\$script:PublishModuleName.psd1"
+        $Psd1FilePath = (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1")
 
         New-ModuleManifest -Path $Psd1FilePath
 
@@ -599,7 +599,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     Guid = '680e031b-f318-4534-bdc9-10f1787b2400'
     Copyright = '(c) 2015 manikb. All rights reserved.'
     Description = 'Test module description'
-    Author = 'Manikyam Bavandla (manikb@microsoft.com)'
+    Author = 'Contoso Author (author@contoso.com)'
     FunctionsToExport = '*'
     CmdletsToExport = '*'
     VariablesToExport = '*'
@@ -631,7 +631,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         $ModuleBase = Join-Path $script:TempModulesPath $ModuleName
         $null = New-Item -Path $ModuleBase -ItemType Directory -Force
 
-        $version = "1.0"
+        $version = "1.0.0"
         $Description = "$ModuleName module <TestElement> $&*!()[]{}@#"
         $ReleaseNotes = @("$ModuleName release notes", " <TestElement> $&*!()[]{}@#")
         $Tags = "PSGet","Special$&*!()[]{}@#<TestElement>"
@@ -642,7 +642,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         $CompanyName = "CompanyName <TestElement>$&*!()[]{}@#"
         $CopyRight = "CopyRight <TestElement>$&*!()[]{}@#"
 
-        New-ModuleManifest -Path "$ModuleBase\$ModuleName.psd1" -ModuleVersion $version -Description $Description -Author $Author -CompanyName $CompanyName -Copyright $CopyRight
+        New-ModuleManifest -Path (Join-Path -Path $ModuleBase -ChildPath "$ModuleName.psd1") -ModuleVersion $version -Description $Description -Author $Author -CompanyName $CompanyName -Copyright $CopyRight
 
         Publish-Module -Path $ModuleBase -NuGetApiKey $script:ApiKey -ReleaseNotes $ReleaseNotes -Tags $Tags -LicenseUri $LicenseUri -ProjectUri $ProjectUri -WarningAction SilentlyContinue
 
@@ -670,7 +670,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: Publish operation should succeed and Find-Module should get the details as provided in PSData.
     #
     It PublishModulePSDataInManifestFile {
-        $version = "1.0"
+        $version = "1.0.0"
         $Description = "$script:PublishModuleName module"
         $ReleaseNotes = "$script:PublishModuleName release notes"
         $Tags = "PSGet","DSC"
@@ -681,7 +681,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         $CompanyName = "CompanyName"
         $CopyRight = "CopyRight"
 
-        New-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" `
+        New-ModuleManifest -Path (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1") `
                            -ModuleVersion $version `
                            -Description "$script:PublishModuleName module" `
                            -NestedModules "$script:PublishModuleName.psm1" `
@@ -721,7 +721,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: Publish operation should succeed and Find-Module should get the details as provided in PSData and *Uri parameters.
     #
     It PublishModuleWithUriObjectsAndPSDataInManifestFile {
-        $version = "1.0"
+        $version = "1.0.0"
         $Description = "$script:PublishModuleName module"
         $ReleaseNotes = "$script:PublishModuleName release notes"
         $Tags = "PSGet","DSC"
@@ -732,7 +732,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         $CompanyName = "CompanyName"
         $CopyRight = "CopyRight"
 
-        New-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" `
+        New-ModuleManifest -Path (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1") `
                            -ModuleVersion $version `
                            -Description "$script:PublishModuleName module" `
                            -NestedModules "$script:PublishModuleName.psm1" `
@@ -780,32 +780,32 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         CreateAndPublishTestModuleWithVersionFormat -ModuleName $moduleName `
                                                     -NuGetApiKey $script:ApiKey `
                                                     -Repository "PSGallery" `
-                                                    -Versions @('1.0','2.0') `
+                                                    -Versions @('1.0.0','2.0.0') `
                                                     -PSGetFormatVersion '0.0' `
                                                     -ModulesPath $script:TempModulesPath
 
         try
         {
-            $psgetItemInfo = Find-Module -Name $moduleName -RequiredVersion '1.0'
+            $psgetItemInfo = Find-Module -Name $moduleName -RequiredVersion '1.0.0'
             AssertNotNull $psgetItemInfo "Module without PowerShellGetFormatVersion is not found"
             AssertNull $psgetItemInfo.PowerShellGetFormatVersion "PowerShellGetFormatVersion property is not null, $($psgetItemInfo.PowerShellGetFormatVersion)"
 
-            Install-Module -Name $moduleName -RequiredVersion '1.0'
+            Install-Module -Name $moduleName -RequiredVersion '1.0.0'
             $moduleInfo = Get-Module -ListAvailable -Name $moduleName
             AssertEquals $moduleInfo.Name $moduleName "$moduleName Module without PowerShellGetFormatVersion is not installed"
-            AssertEquals $moduleInfo.Version "1.0" "Invalid PowerShellGetFormatVersion value on PSGetModuleInfo, $($moduleInfo.Version)"
+            AssertEquals $moduleInfo.Version "1.0.0" "Invalid PowerShellGetFormatVersion value on PSGetModuleInfo, $($moduleInfo.Version)"
 
-            Update-Module -Name $moduleName -RequiredVersion '2.0'
+            Update-Module -Name $moduleName -RequiredVersion '2.0.0'
             if(Test-ModuleSxSVersionSupport)
             {
-                $moduleInfo = Get-Module -FullyQualifiedName @{ModuleName=$moduleName;RequiredVersion='2.0'} -ListAvailable
+                $moduleInfo = Get-Module -FullyQualifiedName @{ModuleName=$moduleName;RequiredVersion='2.0.0'} -ListAvailable
             }
             else
             {
                 $moduleInfo = Get-Module $moduleName -ListAvailable
             }
             AssertEquals $moduleInfo.Name $moduleName "$moduleName Module without PowerShellGetFormatVersion is not updated properly"
-            AssertEquals $moduleInfo.Version "2.0" "Invalid PowerShellGetFormatVersion value on PSGetModuleInfo, $($moduleInfo.Version)"
+            AssertEquals $moduleInfo.Version "2.0.0" "Invalid PowerShellGetFormatVersion value on PSGetModuleInfo, $($moduleInfo.Version)"
         }
         finally
         {
@@ -830,26 +830,26 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         CreateAndPublishTestModuleWithVersionFormat -ModuleName $moduleName `
                                                     -NuGetApiKey $script:ApiKey `
                                                     -Repository "PSGallery" `
-                                                    -Versions @('1.0','2.0') `
+                                                    -Versions @('1.0.0','2.0.0') `
                                                     -PSGetFormatVersion $PSGetFormatVersion `
                                                     -ModulesPath $script:TempModulesPath
 
         try
         {
-            $psgetItemInfo = Find-Module -Name $moduleName -RequiredVersion '1.0'
+            $psgetItemInfo = Find-Module -Name $moduleName -RequiredVersion '1.0.0'
             AssertNotNull $psgetItemInfo "Module without PowerShellGetFormatVersion is not found"
             AssertEquals $psgetItemInfo.PowerShellGetFormatVersion $PSGetFormatVersion "PowerShellGetFormatVersion property is not null, $($psgetItemInfo.PowerShellGetFormatVersion)"
 
-            Install-Module -Name $moduleName -RequiredVersion '1.0'
+            Install-Module -Name $moduleName -RequiredVersion '1.0.0'
             $moduleInfo = Get-Module -ListAvailable -Name $moduleName
             AssertEquals $moduleInfo.Name $moduleName "$moduleName Module without PowerShellGetFormatVersion is not installed"
-            AssertEquals $moduleInfo.Version "1.0" "Invalid PowerShellGetFormatVersion value on PSGetModuleInfo, $($moduleInfo.Version)"
+            AssertEquals $moduleInfo.Version "1.0.0" "Invalid PowerShellGetFormatVersion value on PSGetModuleInfo, $($moduleInfo.Version)"
 
-            Update-Module -Name $moduleName -RequiredVersion '2.0'
+            Update-Module -Name $moduleName -RequiredVersion '2.0.0'
 
             if(Test-ModuleSxSVersionSupport)
             {
-                $moduleInfo = Get-Module -FullyQualifiedName @{ModuleName=$moduleName;RequiredVersion='2.0'} -ListAvailable
+                $moduleInfo = Get-Module -FullyQualifiedName @{ModuleName=$moduleName;RequiredVersion='2.0.0'} -ListAvailable
             }
             else
             {
@@ -857,7 +857,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
             }
 
             AssertEquals $moduleInfo.Name $moduleName "$moduleName Module without PowerShellGetFormatVersion is not updated properly"
-            AssertEquals $moduleInfo.Version "2.0" "Invalid PowerShellGetFormatVersion value on PSGetModuleInfo, $($moduleInfo.Version)"
+            AssertEquals $moduleInfo.Version "2.0.0" "Invalid PowerShellGetFormatVersion value on PSGetModuleInfo, $($moduleInfo.Version)"
         }
         finally
         {
@@ -881,16 +881,16 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         CreateAndPublishTestModuleWithVersionFormat -ModuleName $moduleName `
                                                     -NuGetApiKey $script:ApiKey `
                                                     -Repository "PSGallery" `
-                                                    -Versions @('1.0','2.0') `
+                                                    -Versions @('1.0.0','2.0.0') `
                                                     -PSGetFormatVersion $PSGetFormatVersion `
                                                     -ModulesPath $script:TempModulesPath `
                                                     -WarningAction SilentlyContinue
 
-        $psgetItemInfo = Find-Module -Name $moduleName -RequiredVersion '1.0'
+        $psgetItemInfo = Find-Module -Name $moduleName -RequiredVersion '1.0.0'
         AssertNotNull $psgetItemInfo "Module without PowerShellGetFormatVersion is not found"
         AssertEquals $psgetItemInfo.PowerShellGetFormatVersion $PSGetFormatVersion "PowerShellGetFormatVersion property is not null, $($psgetItemInfo.PowerShellGetFormatVersion)"
 
-        AssertFullyQualifiedErrorIdEquals -scriptblock {Install-Module -Name $moduleName -RequiredVersion '1.0' -WarningAction SilentlyContinue } `
+        AssertFullyQualifiedErrorIdEquals -scriptblock {Install-Module -Name $moduleName -RequiredVersion '1.0.0' -WarningAction SilentlyContinue } `
                                             -expectedFullyQualifiedErrorId "NotSupportedPowerShellGetFormatVersion,Install-Package,Microsoft.PowerShell.PackageManagement.Cmdlets.InstallPackage"
     }
 
@@ -907,7 +907,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
        $ProjectUri = 'https://contoso.com/'
        $IconUri = 'https://contoso.com/icon'
        $ReleaseNotes = 'Test module for external module dependecies'
-       New-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module" 
+       New-ModuleManifest -Path (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version -Description "$script:PublishModuleName module" 
        #Copy module to $script:ProgramFilesModulesPath
        Copy-Item $script:PublishModuleBase $script:ProgramFilesModulesPath -Recurse -Force
 
@@ -934,9 +934,9 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         $TempModulesPath = Join-Path $script:TempPath "$(Get-Random)"
         $null = New-Item -Path $TempModulesPath -ItemType Directory -Force
     
-
-        Copy-Item -Path ".\TestModules\$ModuleName" -Destination $TempModulesPath -Recurse -Force
-        $ModuleBase = Join-Path $TempModulesPath $ModuleName
+        $TestModuleSourcePath = Join-Path -Path $PSScriptRoot -ChildPath TestModules | Join-Path -ChildPath $ModuleName
+        Copy-Item -Path $TestModuleSourcePath -Destination $TempModulesPath -Recurse -Force
+        $ModuleBase = Join-Path -Path $TempModulesPath -ChildPath $ModuleName
 
         # Create binary module   
         $content = @"  
@@ -964,11 +964,11 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
 
         $binaryDllName = "psgettestbinary_$(Get-Random).dll"
         $testBinaryPath = Join-Path -Path $ModuleBase -ChildPath $binaryDllName
-        Add-Type -TypeDefinition $content -OutputAssembly $testBinaryPath -OutputType Library -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
+        Add-Type -TypeDefinition $content -OutputAssembly $testBinaryPath -OutputType Library
 
         $tags = @("PSGet","DSC","CommandsAndResource", 'Tag1','Tag2', 'Tag3', "Tag-$ModuleName-$version")
-        $manfiestFilePath = "$ModuleBase\$ModuleName.psd1"
-        $version = "2.0"
+        $manfiestFilePath = Join-Path -Path $ModuleBase -ChildPath "$ModuleName.psd1"
+        $version = '2.0.0'
         RemoveItem -path $manfiestFilePath
 
         if($PSVersionTable.PSVersion -ge '5.0.0')
@@ -1001,8 +1001,12 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
                            -ProjectUri "https://$ModuleName.com" `
                            -WarningAction SilentlyContinue `
                            -WarningVariable wa
-    
-        Assert ("$wa".Contains("exported cmdlets")) "Warning messages should include 'exported cmdlets'"
+
+        # https://github.com/PowerShell/PowerShell/issues/5516
+        if($PSEdition -ne 'Core') {
+            Assert ("$wa".Contains("exported cmdlets")) "Warning messages should include 'exported cmdlets'"
+        }
+
         Assert ("$wa".Contains("exported functions")) "Warning messages should include 'exported functions'"
         
         if($PSVersionTable.PSVersion -ge '5.0.0')
@@ -1030,7 +1034,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
     }
 
     BeforeEach {
-        Set-Content "$script:PublishModuleBase\$script:PublishModuleName.psm1" -Value "function Get-$script:PublishModuleName { Get-Date }"
+        Set-Content (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psm1") -Value "function Get-$script:PublishModuleName { Get-Date }"
     }
 
     AfterEach {
@@ -1041,7 +1045,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
 
     It "PublishModuleWithForceAndExistingVersion" {
         $version = "1.0"
-        New-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
+        New-ModuleManifest -Path (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
         Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -WarningAction SilentlyContinue
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $version
         Assert ($psgetItemInfo.Name -eq $script:PublishModuleName) "Publish-Module should publish a module with valid module path, $($psgetItemInfo.Name)"
@@ -1091,7 +1095,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
     #
     It "PublishModuleWithFalseConfirm" {
         $version = "2.0"
-        New-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
+        New-ModuleManifest -Path (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
         Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -ReleaseNotes "$script:PublishModuleName release notes" -Tags PSGet -LicenseUri "https://$script:PublishModuleName.com/license" -ProjectUri "https://$script:PublishModuleName.com" -Confirm:$false -WarningAction SilentlyContinue
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $version
         Assert ($psgetItemInfo.Name -eq $script:PublishModuleName) "Publish-Module should publish a module with valid module path, $($psgetItemInfo.Name)"
@@ -1099,7 +1103,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
 
     It 'PublishModuleWithForceAndConfirm' {
         $version = "2.0"
-        New-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
+        New-ModuleManifest -Path (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
         Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -ReleaseNotes "$script:PublishModuleName release notes" -Tags PSGet -LicenseUri "https://$script:PublishModuleName.com/license" -ProjectUri "https://$script:PublishModuleName.com" -Force -Confirm -WarningAction SilentlyContinue
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $version
         Assert ($psgetItemInfo.Name -eq $script:PublishModuleName) "Publish-Module should publish a module with valid module path, $($psgetItemInfo.Name)"
@@ -1107,7 +1111,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
 
     It 'PublishModuleWithForceAndWhatIf' {
         $version = "2.0"
-        New-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
+        New-ModuleManifest -Path (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
         Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -ReleaseNotes "$script:PublishModuleName release notes" -Tags PSGet -LicenseUri "https://$script:PublishModuleName.com/license" -ProjectUri "https://$script:PublishModuleName.com" -Force -WhatIf -WarningAction SilentlyContinue
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $version
         Assert ($psgetItemInfo.Name -eq $script:PublishModuleName) "Publish-Module should publish a module with valid module path, $($psgetItemInfo.Name)"
@@ -1119,16 +1123,16 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
             Remove-NuGetExe
 
             $outputPath = $script:TempPath
-            $guid =  [system.guid]::newguid().tostring()
+            $guid = [system.guid]::newguid().tostring()
             $outputFilePath = Join-Path $outputPath "$guid"
             $runspace = CreateRunSpace $outputFilePath 1
         	
             # 1 is mapped to No in prompt
-            $Global:proxy.UI.ChoiceToMake=1
+            $Global:proxy.UI.ChoiceToMake = 1
             $content = $null
         	
             $version = "1.0"
-            New-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
+            New-ModuleManifest -Path (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
 	
             # Copy module to $script:ProgramFilesModulesPath
             Copy-Item $script:PublishModuleBase $script:ProgramFilesModulesPath -Recurse -Force
@@ -1136,13 +1140,14 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
 	
             try {
                 $result = ExecuteCommand $runspace "Publish-Module -Name $script:PublishModuleName"
-            } catch {
+            }
+            catch {
                 $err = $_
-            } finally {                        
+            }
+            finally {                        
                 $fileName = "PromptForChoice-0.txt"
                 $path = join-path $outputFilePath $fileName
-                if(Test-Path $path)
-                {
+                if (Test-Path $path) {
                     $content = get-content $path
                 }
         
@@ -1154,8 +1159,8 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
             Assert ($content -and $content.Contains('NuGet.exe')) "Prompt for installing nuget binaries is not working, $content"
 	
             AssertFullyQualifiedErrorIdEquals -Scriptblock {Find-Module $script:PublishModuleName -RequiredVersion $version}`
-                                              -ExpectedFullyQualifiedErrorId 'NoMatchFoundForCriteria,Microsoft.PowerShell.PackageManagement.Cmdlets.FindPackage'
-	    }
+                -ExpectedFullyQualifiedErrorId 'NoMatchFoundForCriteria,Microsoft.PowerShell.PackageManagement.Cmdlets.FindPackage'
+        }
         finally {
             Install-NuGetBinaries
         }
@@ -1168,35 +1173,32 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
             Remove-NuGetExe
 
             $outputPath = $script:TempPath
-            $guid =  [system.guid]::newguid().tostring()
+            $guid = [system.guid]::newguid().tostring()
             $outputFilePath = Join-Path $outputPath "$guid"
             $runspace = CreateRunSpace $outputFilePath 1
 	
             # 0 is mapped to YES in prompt
-            $Global:proxy.UI.ChoiceToMake=0
+            $Global:proxy.UI.ChoiceToMake = 0
             $content = $null
 	
             $version = "1.0"
-            New-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
+            New-ModuleManifest -Path (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
 	
             # Copy module to $script:ProgramFilesModulesPath
             Copy-Item $script:PublishModuleBase $script:ProgramFilesModulesPath -Recurse -Force
-            try
-                    {
-            $result = ExecuteCommand $runspace "Publish-Module -Name $script:PublishModuleName"
-        }
-            finally
-                                                    {                        
-            $fileName = "PromptForChoice-0.txt"
-            $path = join-path $outputFilePath $fileName
-            if(Test-Path $path)
-            {
-                $content = get-content $path
+            try {
+                $result = ExecuteCommand $runspace "Publish-Module -Name $script:PublishModuleName"
             }
+            finally {
+                $fileName = "PromptForChoice-0.txt"
+                $path = join-path $outputFilePath $fileName
+                if (Test-Path $path) {
+                    $content = get-content $path
+                }
 	
-            CloseRunSpace $runspace
-            RemoveItem $outputFilePath
-        }
+                CloseRunSpace $runspace
+                RemoveItem $outputFilePath
+            }
 	
             Assert ($content -and $content.Contains('NuGet.exe')) "Prompt for installing nuget binaries is not working, $content"
             $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $version
@@ -1230,7 +1232,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
             Register-PSRepository -Name '_TempTestRepo_' -SourceLocation 'https://dtlgalleryint.cloudapp.net'
 
             $version = "1.0"
-            New-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
+            New-ModuleManifest -Path (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
             AssertFullyQualifiedErrorIdEquals -scriptblock {Publish-Module -Path $script:PublishModuleBase -Repository '_TempTestRepo_'} `
                                               -expectedFullyQualifiedErrorId 'NuGetApiKeyIsRequiredForNuGetBasedGalleryService,Publish-Module'
         }
@@ -1254,7 +1256,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
             AssertFullyQualifiedErrorIdEquals -scriptblock {Publish-Module -Path $tempmodulebase -NuGetApiKey $script:ApiKey} `
                                               -expectedFullyQualifiedErrorId 'InvalidModulePathToPublish,Publish-Module'
 
-            Set-Content "$tempmodulebase\InvalidModule.psm1" -Value "function foo {'foo'}"
+            Set-Content (Join-Path $tempmodulebase InvalidModule.psm1) -Value "function foo {'foo'}"
 
             if($PSVersionTable.PSVersion -ge '5.0.0')
             {
@@ -1305,7 +1307,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
     # Expected Result: should fail
     #
     It "PublishInvalidModuleFilePathToPSD1" {
-        AssertFullyQualifiedErrorIdEquals -scriptblock {Publish-Module -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -NuGetApiKey $script:ApiKey} `
+        AssertFullyQualifiedErrorIdEquals -scriptblock {Publish-Module -Path (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1") -NuGetApiKey $script:ApiKey} `
                                           -expectedFullyQualifiedErrorId 'PathNotFound,Publish-Module'
     }
 
@@ -1320,7 +1322,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
         $ModuleBase = Join-Path $script:TempModulesPath $ModuleName
         $null = New-Item -Path $ModuleBase -ItemType Directory -Force
         $version = "1.0"
-        New-ModuleManifest -Path "$ModuleBase\$ModuleName.psd1" -ModuleVersion $version
+        New-ModuleManifest -Path (Join-Path -Path $ModuleBase -ChildPath "$ModuleName.psd1") -ModuleVersion $version
 
         try
         {
@@ -1344,7 +1346,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
         $ModuleBase = Join-Path $script:TempModulesPath $ModuleName
         $null = New-Item -Path $ModuleBase -ItemType Directory -Force
         $version = "1.0"
-        New-ModuleManifest -Path "$ModuleBase\$ModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module"
+        New-ModuleManifest -Path (Join-Path -Path $ModuleBase -ChildPath "$ModuleName.psd1") -ModuleVersion $version -Description "$script:PublishModuleName module"
 
         try
         {
@@ -1368,7 +1370,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
         $ModuleBase = Join-Path $script:TempModulesPath $ModuleName
         $null = New-Item -Path $ModuleBase -ItemType Directory -Force
         $version = "1.0"
-        New-ModuleManifest -Path "$ModuleBase\$ModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module"
+        New-ModuleManifest -Path (Join-Path -Path $ModuleBase -ChildPath "$ModuleName.psd1") -ModuleVersion $version -Description "$script:PublishModuleName module"
 
         try
         {
@@ -1392,7 +1394,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
         $ModuleBase = Join-Path $script:TempModulesPath $ModuleName
         $null = New-Item -Path $ModuleBase -ItemType Directory -Force
         $version = "1.0"
-        New-ModuleManifest -Path "$ModuleBase\$ModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module"
+        New-ModuleManifest -Path (Join-Path -Path $ModuleBase -ChildPath "$ModuleName.psd1") -ModuleVersion $version -Description "$script:PublishModuleName module"
 
         try
         {
@@ -1421,7 +1423,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
         CreateAndPublishTestModuleWithVersionFormat -ModuleName $moduleName `
                                                     -NuGetApiKey $script:ApiKey `
                                                     -Repository "PSGallery" `
-                                                    -Versions @('1.0','2.0') `
+                                                    -Versions @('1.0.0','2.0.0') `
                                                     -PSGetFormatVersion $PSGetFormatVersion `
                                                     -ModulesPath $script:TempModulesPath
 
@@ -1471,7 +1473,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
             $RequiredModuleDep, $NestedModuleDep, $ExternalRequiredModuleDep, $ExternalNestedModuleDep | %{
                 $DepModuleBase = Join-Path $script:ProgramFilesModulesPath $_
                 $null = New-Item -Path $DepModuleBase -ItemType Directory -Force
-                New-ModuleManifest -Path "$DepModuleBase\$_.psd1" `
+                New-ModuleManifest -Path (Join-Path $DepModuleBase "$_.psd1") `
                                    -ModuleVersion '1.0' `
                                    -Description "$_ module"        
             }
@@ -1505,7 +1507,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
                 }
 "@ 
 
-            ($psd1Text -replace '__VERSION__',$version) | Out-File -FilePath "$ModuleBase\$ModuleName.psd1" -Force
+            ($psd1Text -replace '__VERSION__',$version) | Out-File -FilePath (Join-Path -Path $ModuleBase -ChildPath "$ModuleName.psd1") -Force
 
             AssertFullyQualifiedErrorIdEquals -scriptblock { Publish-Module -Path $ModuleBase -Repository $repoName -NuGetApiKey $script:ApiKey} `
                                               -expectedFullyQualifiedErrorId 'UnableToResolveModuleDependency,Publish-PSArtifactUtility'
@@ -1528,7 +1530,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P2 -Tags 'P2','OuterLoop' {
     }
 
     BeforeEach {
-        Set-Content "$script:PublishModuleBase\$script:PublishModuleName.psm1" -Value "function Get-$script:PublishModuleName { Get-Date }"
+        Set-Content (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psm1") -Value "function Get-$script:PublishModuleName { Get-Date }"
     }
 
     AfterEach {
@@ -1678,7 +1680,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P2 -Tags 'P2','OuterLoop' {
             $RequiredModuleDep, $NestedModuleDep, $ExternalRequiredModuleDep, $ExternalNestedModuleDep | %{
                 $DepModuleBase = Join-Path $script:ProgramFilesModulesPath $_
                 $null = New-Item -Path $DepModuleBase -ItemType Directory -Force
-                New-ModuleManifest -Path "$DepModuleBase\$_.psd1" `
+                New-ModuleManifest -Path (Join-Path $DepModuleBase "$_.psd1") `
                                    -ModuleVersion '1.0' `
                                    -Description "$_ module"        
             }
@@ -1711,7 +1713,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P2 -Tags 'P2','OuterLoop' {
                 }
 "@ 
 
-            ($psd1Text -replace '__VERSION__',$version) | Out-File -FilePath "$ModuleBase\$ModuleName.psd1" -Force
+            ($psd1Text -replace '__VERSION__',$version) | Out-File -FilePath (Join-Path -Path $ModuleBase -ChildPath "$ModuleName.psd1") -Force
 
             Publish-Module -Path $ModuleBase -Repository $repoName -NuGetApiKey $script:ApiKey
 
@@ -1720,7 +1722,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P2 -Tags 'P2','OuterLoop' {
 
             # Create and Publish 2.0 version of a module with external dependencies in NestedModules and RequiredModules in module manifest
             $version = '2.0'
-            ($psd1Text -replace '__VERSION__',$version) | Out-File -FilePath "$ModuleBase\$ModuleName.psd1" -Force
+            ($psd1Text -replace '__VERSION__',$version) | Out-File -FilePath (Join-Path -Path $ModuleBase -ChildPath "$ModuleName.psd1") -Force
             Publish-Module -Path $ModuleBase -Repository $repoName -NuGetApiKey $script:ApiKey
 
             $res2 = Find-Module -Name $ModuleName -RequiredVersion $version -Repository $repoName

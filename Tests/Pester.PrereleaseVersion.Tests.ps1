@@ -63,16 +63,6 @@ $DscResourceInPrereleaseTestModule = "DscTestResource"
 $RoleCapabilityInPrereleaseTestModule = "Lev1Maintenance"
 
 
-
-function Test-IfOnPSCore
-{
-    ($PSEdition -eq 'Core')
-}
-
-
-
-
-
 #========================
 #    MODULE CMDLETS
 #========================
@@ -342,8 +332,6 @@ Describe "--- Update-ModuleManifest ---" -Tags 'Module','BVT','InnerLoop' {
 
 Describe "--- Publish-Module ---" -Tags 'Module','P1','OuterLoop' {
     
-    if(Test-IfOnPSCore) { return }
-
     BeforeAll {
 
         # Create file-based repository from scratch
@@ -2269,8 +2257,6 @@ Describe "--- Update-ScriptFileInfo ---" -Tags 'Script','BVT','InnerLoop' {
 
 Describe "--- Publish-Script ---" -Tags 'Script','P1','OuterLoop' {
     
-    if(Test-IfOnPSCore) { return }
-
     BeforeAll {
 
         # Create file-based repository from scratch

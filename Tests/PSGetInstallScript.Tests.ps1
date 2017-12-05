@@ -58,7 +58,7 @@ function SuiteSetup {
     $script:UntrustedRepoPublishLocation = 'https://powershell.myget.org/F/powershellget-test-items/api/v2/package'
 
     # Create temp folder for saving the scripts
-    $script:TempSavePath="$env:LocalAppData\temp\PSGet_$(Get-Random)"
+    $script:TempSavePath = Join-Path -Path $script:TempPath -ChildPath "PSGet_$(Get-Random)"
     $null = New-Item -Path $script:TempSavePath -ItemType Directory -Force
 
     $script:AddedAllUsersInstallPath    = Set-PATHVariableForScriptsInstallLocation -Scope AllUsers

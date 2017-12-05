@@ -258,7 +258,7 @@ function Invoke-PowerShellGetTest {
                 Install-PackageProvider -Name NuGet -Force
             }
 
-            Install-Module -Name Pester -MaximumVersion 4.1.0 -Force
+            Install-Module -Name Pester -MaximumVersion 4.1.0 -Force -SkipPublisherCheck -AllowClobber
             Get-Module -Name Pester -ListAvailable;
 
             # Remove PSGetModuleInfo.xml files from the installed module bases to ensure that Update-Module tests executed properly.

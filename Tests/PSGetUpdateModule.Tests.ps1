@@ -350,6 +350,11 @@ Describe PowerShell.PSGet.UpdateModuleTests -Tags 'BVT','InnerLoop' {
 }
 
 Describe PowerShell.PSGet.UpdateModuleTests.P1 -Tags 'P1','OuterLoop' {
+    # Not executing these tests on MacOS as 
+    # the total execution time is exceeding allowed 50 min in TravisCI daily builds.
+    if($IsMacOS) {
+        return
+    }
 
     BeforeAll {
         SuiteSetup
@@ -451,6 +456,12 @@ Describe PowerShell.PSGet.UpdateModuleTests.P1 -Tags 'P1','OuterLoop' {
 }
 
 Describe PowerShell.PSGet.UpdateModuleTests.P2 -Tags 'P2','OuterLoop' {
+
+    # Not executing these tests on MacOS as 
+    # the total execution time is exceeding allowed 50 min in TravisCI daily builds.
+    if($IsMacOS) {
+        return
+    }
 
     BeforeAll {
         SuiteSetup

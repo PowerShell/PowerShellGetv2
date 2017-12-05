@@ -163,7 +163,8 @@ function Invoke-PowerShellGetTest {
     #   -- This option is used only for Daily builds
     $TestScenarios = @()
     if(($script:PowerShellEdition -eq 'Core') -and $IsFullTestPass -and $script:IsWindows){
-        $TestScenarios += 'NoUpdate'
+        # Disabled NoUpdate test scenario on PWSH
+        #$TestScenarios += 'NoUpdate'
     }
     # We should run PSCore_PSGet_TestRun first before updating the PowerShellGet module from current branch.
     $TestScenarios += 'Current'

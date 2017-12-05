@@ -12,6 +12,12 @@
    The local directory based NuGet repository is used for publishing the modules.
 #>
 
+# Not executing these tests on MacOS as 
+# the total execution time is exceeding allowed 50 min in TravisCI daily builds.
+if($IsMacOS) {
+    return
+}
+
 function SuiteSetup {
     Import-Module "$PSScriptRoot\PSGetTestUtils.psm1" -WarningAction SilentlyContinue
     Import-Module "$PSScriptRoot\Asserts.psm1" -WarningAction SilentlyContinue
@@ -1584,6 +1590,12 @@ Foo
 }
 
 Describe PowerShell.PSGet.PublishScriptTests.P2 -Tags 'P2','OuterLoop' {
+    # Not executing these tests on Linux and MacOS as 
+    # the total execution time is exceeding allowed 50 min in TravisCI daily builds.
+    if($IsMacOS -or $IsLinux) {
+        return
+    }
+
     BeforeAll {
         SuiteSetup
     }

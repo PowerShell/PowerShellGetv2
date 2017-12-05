@@ -331,11 +331,16 @@ Describe "--- Update-ModuleManifest ---" -Tags 'Module','BVT','InnerLoop' {
 }
 
 Describe "--- Publish-Module ---" -Tags 'Module','P1','OuterLoop' {
+    # Not executing these tests on MacOS as 
+    # the total execution time is exceeding allowed 50 min in TravisCI daily builds.
+    if($IsMacOS) {
+        return
+    }
     
     BeforeAll {
 
         # Create file-based repository from scratch
-        $script:PSGalleryRepoPath="$env:SystemDrive\PSGalleryRepo"
+        $script:PSGalleryRepoPath = Join-Path -Path $script:TempPath -ChildPath 'PSGalleryRepo'
         RemoveItem $script:PSGalleryRepoPath
         $null = New-Item -Path $script:PSGalleryRepoPath -ItemType Directory -Force
     
@@ -357,11 +362,12 @@ Describe "--- Publish-Module ---" -Tags 'Module','P1','OuterLoop' {
         $script:ApiKey="TestPSGalleryApiKey"
     
         # Create temp module to be published
-        $script:TempModulesPath="$env:LocalAppData\temp\PSGet_$(Get-Random)"
+        $script:TempModulesPath = Join-Path -Path $script:TempPath -ChildPath "PSGet_$(Get-Random)"
         $null = New-Item -Path $script:TempModulesPath -ItemType Directory -Force
         $script:PublishModuleName = "ContosoPublishModule"
         $script:PublishModuleBase = Join-Path $script:TempModulesPath $script:PublishModuleName
         $null = New-Item -Path $script:PublishModuleBase -ItemType Directory -Force
+        $script:PublishModuleNamePSD1FilePath = Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1"
     }
 
     AfterAll {
@@ -382,7 +388,7 @@ Describe "--- Publish-Module ---" -Tags 'Module','P1','OuterLoop' {
     }
 
     BeforeEach {
-        Set-Content "$script:PublishModuleBase\$script:PublishModuleName.psm1" -Value "function Get-$script:PublishModuleName { Get-Date }"
+        Set-Content (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psm1") -Value "function Get-$script:PublishModuleName { Get-Date }"
     }
 
     AfterEach {
@@ -396,8 +402,8 @@ Describe "--- Publish-Module ---" -Tags 'Module','P1','OuterLoop' {
         $version = "1.0.0"
         $prerelease = "-alpha001"
         
-        New-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module" -NestedModules "$script:PublishModuleName.psm1"
-        Update-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -Prerelease $prerelease
+        New-ModuleManifest -Path $script:PublishModuleNamePSD1FilePath -ModuleVersion $version -Description "$script:PublishModuleName module" -NestedModules "$script:PublishModuleName.psm1"
+        Update-ModuleManifest -Path $script:PublishModuleNamePSD1FilePath -Prerelease $prerelease
 
         #Copy module to $script:ProgramFilesModulesPath
         Copy-Item $script:PublishModuleBase $script:ProgramFilesModulesPath -Recurse -Force
@@ -413,8 +419,8 @@ Describe "--- Publish-Module ---" -Tags 'Module','P1','OuterLoop' {
         # Publish new prerelease version
         $prerelease = "-beta002"
 
-        New-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
-        Update-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -Prerelease $prerelease
+        New-ModuleManifest -Path $script:PublishModuleNamePSD1FilePath -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
+        Update-ModuleManifest -Path $script:PublishModuleNamePSD1FilePath -Prerelease $prerelease
 
         #Copy module to $script:ProgramFilesModulesPath
         Copy-Item $script:PublishModuleBase $script:ProgramFilesModulesPath -Recurse -Force
@@ -435,8 +441,8 @@ Describe "--- Publish-Module ---" -Tags 'Module','P1','OuterLoop' {
         $version = "1.0.0"
         $prerelease = "-beta002"
 
-        New-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
-        Update-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -Prerelease $prerelease
+        New-ModuleManifest -Path $script:PublishModuleNamePSD1FilePath -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
+        Update-ModuleManifest -Path $script:PublishModuleNamePSD1FilePath -Prerelease $prerelease
 
         Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -WarningAction SilentlyContinue
 
@@ -449,7 +455,7 @@ Describe "--- Publish-Module ---" -Tags 'Module','P1','OuterLoop' {
 
         # Publish lower prerelease version
         $prerelease = "-alpha001"
-        Update-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -Prerelease $prerelease
+        Update-ModuleManifest -Path $script:PublishModuleNamePSD1FilePath -Prerelease $prerelease
         $scriptBlock = {
             Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -Force
         }
@@ -466,8 +472,8 @@ Describe "--- Publish-Module ---" -Tags 'Module','P1','OuterLoop' {
         $version = "1.0.0"
         $prerelease = "-beta002"
 
-        New-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
-        Update-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -Prerelease $prerelease
+        New-ModuleManifest -Path $script:PublishModuleNamePSD1FilePath -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
+        Update-ModuleManifest -Path $script:PublishModuleNamePSD1FilePath -Prerelease $prerelease
         Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -WarningAction SilentlyContinue
 
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $($version + $prerelease) -AllowPrerelease
@@ -479,7 +485,7 @@ Describe "--- Publish-Module ---" -Tags 'Module','P1','OuterLoop' {
 
         # Publish lower prerelease version
         $prerelease2 = "-alpha001"
-        Update-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -Prerelease $prerelease2
+        Update-ModuleManifest -Path $script:PublishModuleNamePSD1FilePath -Prerelease $prerelease2
         
         $scriptBlock = {
             Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey
@@ -494,8 +500,8 @@ Describe "--- Publish-Module ---" -Tags 'Module','P1','OuterLoop' {
         $version = "1.0.0"
         $prerelease = "-alpha001"
 
-        New-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
-        Update-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -Prerelease $prerelease
+        New-ModuleManifest -Path $script:PublishModuleNamePSD1FilePath -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
+        Update-ModuleManifest -Path $script:PublishModuleNamePSD1FilePath -Prerelease $prerelease
         Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -WarningAction SilentlyContinue
 
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $($version + $prerelease) -AllowPrerelease
@@ -517,8 +523,8 @@ Describe "--- Publish-Module ---" -Tags 'Module','P1','OuterLoop' {
         $version = "1.0.0"
         $prerelease = "-alpha001"
 
-        New-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
-        Update-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -Prerelease $prerelease
+        New-ModuleManifest -Path $script:PublishModuleNamePSD1FilePath -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
+        Update-ModuleManifest -Path $script:PublishModuleNamePSD1FilePath -Prerelease $prerelease
         Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -WarningAction SilentlyContinue
 
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $($version + $prerelease) -AllowPrerelease
@@ -530,7 +536,7 @@ Describe "--- Publish-Module ---" -Tags 'Module','P1','OuterLoop' {
         # Publish the stable version
 
         # create a new module manifest with same version but now no prerelease
-        New-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
+        New-ModuleManifest -Path $script:PublishModuleNamePSD1FilePath -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
 
         $scriptBlock = {
             Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -WarningAction SilentlyContinue
@@ -547,8 +553,8 @@ Describe "--- Publish-Module ---" -Tags 'Module','P1','OuterLoop' {
     It "PublishModuleWithForceNewPrereleaseAfterStableVersion" {
         $version = "1.0.0"
 
-        New-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
-        Update-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1"
+        New-ModuleManifest -Path $script:PublishModuleNamePSD1FilePath -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
+        Update-ModuleManifest -Path $script:PublishModuleNamePSD1FilePath
         
         Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -WarningAction SilentlyContinue
 
@@ -561,7 +567,7 @@ Describe "--- Publish-Module ---" -Tags 'Module','P1','OuterLoop' {
 
         # Publish prerelease version
         $prerelease = "-alpha001"
-        Update-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -Prerelease $prerelease
+        Update-ModuleManifest -Path $script:PublishModuleNamePSD1FilePath -Prerelease $prerelease
         $scriptBlock = {
             Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -Force -WarningAction SilentlyContinue
         }
@@ -576,8 +582,8 @@ Describe "--- Publish-Module ---" -Tags 'Module','P1','OuterLoop' {
 
     It "PublishModuleWithoutForceNewPrereleaseAfterStableVersion" {
         $version = "1.0.0"
-        New-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
-        Update-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1"
+        New-ModuleManifest -Path $script:PublishModuleNamePSD1FilePath -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
+        Update-ModuleManifest -Path $script:PublishModuleNamePSD1FilePath
         Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -WarningAction SilentlyContinue
 
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $version -AllowPrerelease
@@ -589,7 +595,7 @@ Describe "--- Publish-Module ---" -Tags 'Module','P1','OuterLoop' {
 
         # Publish prerelease version
         $prerelease = "-alpha001"
-        Update-ModuleManifest -Path "$script:PublishModuleBase\$script:PublishModuleName.psd1" -Prerelease $prerelease
+        Update-ModuleManifest -Path $script:PublishModuleNamePSD1FilePath -Prerelease $prerelease
         $scriptBlock = {
             Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -WarningAction SilentlyContinue
         }
@@ -631,7 +637,7 @@ Describe "--- Publish-Module ---" -Tags 'Module','P1','OuterLoop' {
     } # End of PrivateData hashtable
 }
 "@
-        Set-Content "$script:PublishModuleBase\$script:PublishModuleName.psd1" -Value $invalidPrereleaseModuleManifestContent
+        Set-Content $script:PublishModuleNamePSD1FilePath -Value $invalidPrereleaseModuleManifestContent
 
         $scriptBlock = {
             Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -WarningAction SilentlyContinue
@@ -674,7 +680,7 @@ Describe "--- Publish-Module ---" -Tags 'Module','P1','OuterLoop' {
     } # End of PrivateData hashtable
 }
 "@
-        Set-Content "$script:PublishModuleBase\$script:PublishModuleName.psd1" -Value $invalidPrereleaseModuleManifestContent
+        Set-Content $script:PublishModuleNamePSD1FilePath -Value $invalidPrereleaseModuleManifestContent
 
         $scriptBlock = {
             Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -WarningAction SilentlyContinue
@@ -717,7 +723,7 @@ Describe "--- Publish-Module ---" -Tags 'Module','P1','OuterLoop' {
     } # End of PrivateData hashtable
 }
 "@
-        Set-Content "$script:PublishModuleBase\$script:PublishModuleName.psd1" -Value $invalidPrereleaseModuleManifestContent
+        Set-Content $script:PublishModuleNamePSD1FilePath -Value $invalidPrereleaseModuleManifestContent
 
         $scriptBlock = {
             Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -WarningAction SilentlyContinue
@@ -760,7 +766,7 @@ Describe "--- Publish-Module ---" -Tags 'Module','P1','OuterLoop' {
     } # End of PrivateData hashtable
 }
 "@
-        Set-Content "$script:PublishModuleBase\$script:PublishModuleName.psd1" -Value $invalidPrereleaseModuleManifestContent
+        Set-Content $script:PublishModuleNamePSD1FilePath -Value $invalidPrereleaseModuleManifestContent
 
         $scriptBlock = {
             Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -WarningAction SilentlyContinue
@@ -803,7 +809,7 @@ Describe "--- Publish-Module ---" -Tags 'Module','P1','OuterLoop' {
     } # End of PrivateData hashtable
 }
 "@
-        Set-Content "$script:PublishModuleBase\$script:PublishModuleName.psd1" -Value $invalidPrereleaseModuleManifestContent
+        Set-Content $script:PublishModuleNamePSD1FilePath -Value $invalidPrereleaseModuleManifestContent
 
         $scriptBlock = {
             Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -WarningAction SilentlyContinue
@@ -846,7 +852,7 @@ Describe "--- Publish-Module ---" -Tags 'Module','P1','OuterLoop' {
     } # End of PrivateData hashtable
 }
 "@
-        Set-Content "$script:PublishModuleBase\$script:PublishModuleName.psd1" -Value $invalidPrereleaseModuleManifestContent
+        Set-Content $script:PublishModuleNamePSD1FilePath -Value $invalidPrereleaseModuleManifestContent
 
         $scriptBlock = {
             Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -ErrorVariable ev -ErrorAction SilentlyContinue
@@ -889,7 +895,7 @@ Describe "--- Publish-Module ---" -Tags 'Module','P1','OuterLoop' {
     } # End of PrivateData hashtable
 }
 "@
-        Set-Content "$script:PublishModuleBase\$script:PublishModuleName.psd1" -Value $validPrereleaseModuleManifestContent
+        Set-Content $script:PublishModuleNamePSD1FilePath -Value $validPrereleaseModuleManifestContent
 
         $scriptBlock = {
             Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey
@@ -935,7 +941,7 @@ Describe "--- Publish-Module ---" -Tags 'Module','P1','OuterLoop' {
     } # End of PrivateData hashtable
 }
 "@
-        Set-Content "$script:PublishModuleBase\$script:PublishModuleName.psd1" -Value $validPrereleaseModuleManifestContent
+        Set-Content $script:PublishModuleNamePSD1FilePath -Value $validPrereleaseModuleManifestContent
 
         $scriptBlock = {
             Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -WarningAction SilentlyContinue
@@ -2256,11 +2262,16 @@ Describe "--- Update-ScriptFileInfo ---" -Tags 'Script','BVT','InnerLoop' {
 }
 
 Describe "--- Publish-Script ---" -Tags 'Script','P1','OuterLoop' {
+    # Not executing these tests on Linux as 
+    # the total execution time is exceeding allowed 50 min in TravisCI daily builds.
+    if($IsLinux) {
+        return
+    }
     
     BeforeAll {
 
         # Create file-based repository from scratch
-        $script:PSGalleryRepoPath="$env:SystemDrive\PSGallery Repo With Spaces\"
+        $script:PSGalleryRepoPath = Join-Path -Path $script:TempPath -ChildPath 'PSGallery Repo With Spaces'
         RemoveItem $script:PSGalleryRepoPath
         $null = New-Item -Path $script:PSGalleryRepoPath -ItemType Directory -Force
     
@@ -2285,7 +2296,7 @@ Describe "--- Publish-Script ---" -Tags 'Script','P1','OuterLoop' {
         $script:ApiKey="TestPSGalleryApiKey"
     
         # Create temp module to be published
-        $script:TempScriptsPath="$env:LocalAppData\temp\PSGet_$(Get-Random)"
+        $script:TempScriptsPath = Join-Path -Path $script:TempPath -ChildPath "PSGet_$(Get-Random)"
         $null = New-Item -Path $script:TempScriptsPath -ItemType Directory -Force
         $script:TempScriptsLiteralPath = Join-Path -Path $script:TempScriptsPath -ChildPath 'Lite[ral]Path'
         $null = New-Item -Path $script:TempScriptsLiteralPath -ItemType Directory -Force

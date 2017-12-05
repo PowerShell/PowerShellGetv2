@@ -97,6 +97,12 @@ Describe PowerShell.PSGet.PSGetRequireLicenseAcceptance.UpdateModuleManifest -Ta
 }
 
 Describe PowerShell.PSGet.PSGetRequireLicenseAcceptance.Publish -Tags 'BVT','InnerLoop' {
+    # Not executing these tests on Linux and MacOS as 
+    # the total execution time is exceeding allowed 50 min in TravisCI daily builds.
+    if($IsMacOS -or $IsLinux) {
+        return
+    }
+
     BeforeAll {
         SuiteSetup
         $ModuleManifestFilePath = Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1"

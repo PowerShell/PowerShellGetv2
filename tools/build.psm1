@@ -170,10 +170,11 @@ function Invoke-PowerShellGetTest {
     $TestScenarios += 'Current'
 
     $PesterTag = '' # Conveys all test priorities
+<# Commented temporarily to validate the daily builds.
     if(-not $IsFullTestPass){
         $PesterTag = 'BVT' # Only BVTs
     }
-
+#>
     $TestResults = @()
 
     foreach ($TestScenario in $TestScenarios){    

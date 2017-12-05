@@ -186,7 +186,6 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     }
 
     # Purpose: Publish a module with -Path
-    # Purpose: Publish a module with -Path
     #
     # Action: Publish-Module -Path <ModulePath> -NuGetApiKey <ApiKey>
     #

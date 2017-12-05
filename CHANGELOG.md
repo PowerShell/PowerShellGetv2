@@ -10,7 +10,8 @@ New features
 
 * Enabled publish cmdlets on PWSH and Nano Server (#196)
   - Dotnet command version 2.0.0 or newer should be installed by the user prior to using the publish cmdlets on PWSH and Windows Nano Server.
-  - Users can install the dotnet command by running *Invoke-WebRequest -Uri 'https://dot.net/v1/dotnet-install.ps1' -OutFile '.\dotnet-install.ps1'; & '.\dotnet-install.ps1' -Channel Current -Version '2.0.0'*
+  - Users can install the dotnet command by following the instructions specified at https://aka.ms/dotnet-install-script .
+  - On Windows, users can install the dotnet command by running *Invoke-WebRequest -Uri 'https://dot.net/v1/dotnet-install.ps1' -OutFile '.\dotnet-install.ps1'; & '.\dotnet-install.ps1' -Channel Current -Version '2.0.0'*
   - Publish cmdlets on Windows PowerShell supports using the dotnet command for publishing operations.
 
 Breaking Change

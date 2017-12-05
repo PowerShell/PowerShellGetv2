@@ -12,9 +12,9 @@
    The local directory based NuGet repository is used for publishing the modules.
 #>
 
-# Not executing these tests on Linux as
+# Not executing these tests on MacOS as
 # the total execution time is exceeding allowed 50 min in TravisCI daily builds.
-if($IsLinux) {
+if($IsMacOS) {
     return
 }
 

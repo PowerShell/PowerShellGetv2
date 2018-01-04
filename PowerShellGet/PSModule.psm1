@@ -1406,7 +1406,10 @@ function Publish-Module
                         # elseif ($currentPSGetItemPrereleaseString -lt $moduleInfoPrerelease) --> allow publish
                     }
                 }
-                elseif(-not $Force -and ($currentPSGetItemVersion -gt $moduleInfoVersion))
+                elseif(-not $Force -and (Compare-PrereleaseVersions -FirstItemVersion $moduleInfoVersion `
+                                                                    -FirstItemPrerelease $moduleInfoPrerelease `
+                                                                    -SecondItemVersion $currentPSGetItemVersion `
+                                                                    -SecondItemPrerelease $currentPSGetItemPrereleaseString))
                 {
                     $message = $LocalizedData.ModuleVersionShouldBeGreaterThanGalleryVersion -f ($moduleInfo.Name, $moduleInfoVersion, $currentPSGetItemFullVersion, $currentPSGetItemInfo.RepositorySourceLocation)
                     ThrowError -ExceptionName "System.InvalidOperationException" `
@@ -3199,7 +3202,10 @@ function Publish-Script
                         # User is trying to publish a newer prerelease version (allowed)
                     }
                 }
-                elseif (-not $Force -and ($galleryScriptVersion -gt $scriptVersion))
+                elseif (-not $Force -and (Compare-PrereleaseVersions -FirstItemVersion $scriptVersion `
+                                                                     -FirstItemPrerelease $scriptPrerelease `
+                                                                     -SecondItemVersion $galleryScriptVersion `
+                                                                     -SecondItemPrerelease $galleryScriptPrerelease))
                 {
                     $message = $LocalizedData.ScriptVersionShouldBeGreaterThanGalleryVersion -f ($scriptName,
                                                                                                  $scriptVersion,
@@ -6930,17 +6936,38 @@ function Validate-VersionParameters
     if ($MinimumVersion)
     {
         $minResult = ValidateAndGet-VersionPrereleaseStrings -Version $MinimumVersion -CallerPSCmdlet $PSCmdlet
-        # ValidateAndGet-VersionPrereleaseStrings will throw error if issue is found
+        if (-not $minResult)
+        {
+            # ValidateAndGet-VersionPrereleaseStrings throws the error.
+            # returning to avoid further execution when different values are specified for -ErrorAction parameter
+            return
+        }
+
+        $minimumVersionVer = $minResult["Version"]
+        $minimumVersionPrerelease = $minResult["Prerelease"]
     }
     if ($MaximumVersion)
     {
         $maxResult = ValidateAndGet-VersionPrereleaseStrings -Version $MaximumVersion -CallerPSCmdlet $PSCmdlet
-        # ValidateAndGet-VersionPrereleaseStrings will throw error if issue is found
+        if (-not $maxResult)
+        {
+            # ValidateAndGet-VersionPrereleaseStrings throws the error.
+            # returning to avoid further execution when different values are specified for -ErrorAction parameter
+            return
+        }
+
+        $maximumVersionVer = $maxResult["Version"]
+        $maximumVersionPrerelease = $maxResult["Prerelease"]
     }
     if ($RequiredVersion)
     {
         $reqResult = ValidateAndGet-VersionPrereleaseStrings -Version $RequiredVersion -CallerPSCmdlet $PSCmdlet
-        # ValidateAndGet-VersionPrereleaseStrings will throw error if issue is found
+        if (-not $reqResult)
+        {
+            # ValidateAndGet-VersionPrereleaseStrings throws the error.
+            # returning to avoid further execution when different values are specified for -ErrorAction parameter
+            return
+        }
     }
 
     if($TestWildcardsInName -and $Name -and (Test-WildcardPattern -Name "$Name"))
@@ -6968,7 +6995,10 @@ function Validate-VersionParameters
                    -CallerPSCmdlet $CallerPSCmdlet `
                    -ErrorCategory InvalidArgument
     }
-    elseif($MinimumVersion -and $MaximumVersion -and ($MinimumVersion -gt $MaximumVersion))
+    elseif($MinimumVersion -and $MaximumVersion -and (Compare-PrereleaseVersions -FirstItemVersion $maximumVersionVer `
+                                                                                 -FirstItemPrerelease $maximumVersionPrerelease `
+                                                                                 -SecondItemVersion $minimumVersionVer `
+                                                                                 -SecondItemPrerelease $minimumVersionPrerelease))
     {
         $Message = $LocalizedData.MinimumVersionIsGreaterThanMaximumVersion -f ($MinimumVersion, $MaximumVersion)
         ThrowError -ExceptionName "System.ArgumentException" `

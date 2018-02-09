@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+Bug fixes
+
+- Always detect and make static reference to latest installed version of the PackageManagement module
+
 ## 1.6.0
 
 New features

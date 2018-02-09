@@ -1610,7 +1610,7 @@ function Find-Module
         }
         
         $PackageManagementModule = Get-NewestInstalledPackageManagement
-		& $PackageManagementModule {Find-Package @PSBoundParameters} | Microsoft.PowerShell.Core\ForEach-Object {
+		& $PackageManagementModule { Find-Package @PSBoundParameters } | Microsoft.PowerShell.Core\ForEach-Object {
 
             $psgetItemInfo = New-PSGetItemInfo -SoftwareIdentity $_ -Type $script:PSArtifactTypeModule 
 
@@ -1837,7 +1837,7 @@ function Save-Module
             }
 
             $PackageManagementModule = Get-NewestInstalledPackageManagement
-            $null = & $PackageManagementModule {Save-Package @PSBoundParameters}
+            $null = & $PackageManagementModule { Save-Package @PSBoundParameters }
         }
         elseif($InputObject)
         {
@@ -2166,8 +2166,8 @@ function Install-Module
                         if($installationPolicy.Equals("trusted", [StringComparison]::OrdinalIgnoreCase) -or $SourceSGrantedTrust.Contains($source) -or $YesToAll -or $Force)
                         {
                             $PSBoundParameters["Force"] = $true
-                            $PackageManagementVersion = Get-NewestInstalledPackageManagementVersion
-	                        $null = PackageManagement\$PackageManagementVersion\Install-Package @PSBoundParameters
+                            $PackageManagementModule = Get-NewestInstalledPackageManagement
+	                        $null = & $PackageManagementModule { Install-Package @PSBoundParameters }
                         }                                  
                     }
                 }
@@ -3423,8 +3423,8 @@ function Find-Script
             }
         }
 
-        $PackageManagementVersion = Get-NewestInstalledPackageManagementVersion
-        PackageManagement\$PackageManagementVersion\Find-Package @PSBoundParameters | Microsoft.PowerShell.Core\ForEach-Object {
+        $PackageManagementModule = Get-NewestInstalledPackageManagement
+        & $PackageManagementModule { Find-Package @PSBoundParameters } | Microsoft.PowerShell.Core\ForEach-Object {
                 $psgetItemInfo = New-PSGetItemInfo -SoftwareIdentity $_ -Type $script:PSArtifactTypeScript 
                                                         
                 if ($AllVersions -and -not $AllowPrerelease)

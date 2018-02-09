@@ -15071,7 +15071,7 @@ function Get-NewestInstalledPackageManagementVersion
     $PackageManagementModule = Get-Module 'PackageManagement' -ListAvailable | `
                                Sort-Object -Descending -Property 'Version'
     $NewestVersion = $PackageManagementModule[0] | ForEach-Object -Process {$_.Version}
-    return $NewestVersion
+    return $NewestVersion.ToString()
 }
 
 #Utility function to help form the content string for PrivateData

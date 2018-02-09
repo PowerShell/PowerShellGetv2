@@ -1609,8 +1609,8 @@ function Find-Module
             }
         }
         
-        $PackageManagementVersion = Get-NewestInstalledPackageManagementVersion
-		PackageManagement\$PackageManagementVersion\Find-Package @PSBoundParameters | Microsoft.PowerShell.Core\ForEach-Object {
+        $PackageManagementModule = Get-NewestInstalledPackageManagement
+		& $PackageManagementModule {Find-Package @PSBoundParameters} | Microsoft.PowerShell.Core\ForEach-Object {
 
             $psgetItemInfo = New-PSGetItemInfo -SoftwareIdentity $_ -Type $script:PSArtifactTypeModule 
 
@@ -1836,8 +1836,8 @@ function Save-Module
                 if($ev) { return }
             }
 
-            $PackageManagementVersion = Get-NewestInstalledPackageManagementVersion
-            $null = PackageManagement\$PackageManagementVersion\Save-Package @PSBoundParameters
+            $PackageManagementModule = Get-NewestInstalledPackageManagement
+            $null = & $PackageManagementModule {Save-Package @PSBoundParameters}
         }
         elseif($InputObject)
         {
@@ -1898,8 +1898,8 @@ function Save-Module
                 $PSBoundParameters['Source'] = $psgetModuleInfo.Repository
                 $PSBoundParameters["PackageManagementProvider"] = (Get-ProviderName -PSCustomObject $psgetModuleInfo)
 
-                $PackageManagementVersion = Get-NewestInstalledPackageManagementVersion
-                $null = PackageManagement\$PackageManagementVersion\Save-Package @PSBoundParameters
+                $PackageManagementModule = Get-NewestInstalledPackageManagement
+                $null = & $PackageManagementModule { Save-Package @PSBoundParameters }
             }
         }
     }
@@ -2061,11 +2061,8 @@ function Install-Module
             }
 
             # Identify latest local version of PackageManagement module
-            $PackageManagementVersion = Get-NewestInstalledPackageManagementVersion
-                Sort-Object -Descending -Property 'Version')[0] | `
-                ForEach-Object -Process {$_.Version}
-
-            $null = PackageManagement\$PackageManagementVersion\Install-Package @PSBoundParameters
+            $PackageManagementModule = Get-NewestInstalledPackageManagement
+            $null = & $PackageManagementModule { Install-Package @PSBoundParameters }
         }
         elseif($PSCmdlet.ParameterSetName -eq "InputObject")
         {
@@ -2358,8 +2355,8 @@ function Update-Module
                 $PSBoundParameters['Scope'] = 'AllUsers'
             }
 
-            $PackageManagementVersion = Get-NewestInstalledPackageManagementVersion
-            $sid = PackageManagement\$PackageManagementVersion\Install-Package @PSBoundParameters
+            $PackageManagementModule = Get-NewestInstalledPackageManagement
+            $sid = & $PackageManagementModule { Install-Package @PSBoundParameters }
         }
     }
 }
@@ -2448,8 +2445,8 @@ function Uninstall-Module
                 $PSBoundParameters["Name"] = $inputValue.Name
                 $PSBoundParameters["RequiredVersion"] = $inputValue.Version
 
-                $PackageManagementVersion = Get-NewestInstalledPackageManagementVersion
-                $null = PackageManagement\$PackageManagementVersion\Uninstall-Package @PSBoundParameters
+                $PackageManagementModule = Get-NewestInstalledPackageManagement
+                $null = & $PackageManagementModule { Uninstall-Package @PSBoundParameters }
             }
         }
         else
@@ -2470,8 +2467,8 @@ function Uninstall-Module
                 return
             }
 
-            $PackageManagementVersion = Get-NewestInstalledPackageManagementVersion
-            $null = PackageManagement\$PackageManagementVersion\Uninstall-Package @PSBoundParameters
+            $PackageManagementModule = Get-NewestInstalledPackageManagement
+            $null = & $PackageManagementModule { Uninstall-Package @PSBoundParameters }
         }
     }
 }
@@ -2537,8 +2534,8 @@ function Get-InstalledModule
         $PSBoundParameters[$script:AllowPrereleaseVersions] = $AllowPrerelease
         $null = $PSBoundParameters.Remove("AllowPrerelease")
 
-        $PackageManagementVersion = Get-NewestInstalledPackageManagementVersion
-        PackageManagement\$PackageManagementVersion\Get-Package @PSBoundParameters | Microsoft.PowerShell.Core\ForEach-Object {New-PSGetItemInfo -SoftwareIdentity $_ -Type $script:PSArtifactTypeModule}  
+        $PackageManagementModule = Get-NewestInstalledPackageManagement
+        & $PackageManagementModule { Get-Package @PSBoundParameters } | Microsoft.PowerShell.Core\ForEach-Object {New-PSGetItemInfo -SoftwareIdentity $_ -Type $script:PSArtifactTypeModule}  
     }
 }
 
@@ -3684,8 +3681,8 @@ function Save-Script
                 }
             }
 
-            $PackageManagementVersion = Get-NewestInstalledPackageManagementVersion
-            $null = PackageManagement\$PackageManagementVersion\Save-Package @PSBoundParameters
+            $PackageManagementModule = Get-NewestInstalledPackageManagement
+            $null = & $PackageManagementModule { Save-Package @PSBoundParameters }
         }
         elseif($InputObject)
         {
@@ -3727,8 +3724,8 @@ function Save-Script
                 $PSBoundParameters['Source'] = $psRepositoryItemInfo.Repository
                 $PSBoundParameters["PackageManagementProvider"] = (Get-ProviderName -PSCustomObject $psRepositoryItemInfo)
 
-                $PackageManagementVersion = Get-NewestInstalledPackageManagementVersion
-                $null = PackageManagement\$PackageManagementVersion\Save-Package @PSBoundParameters
+                $PackageManagementModule = Get-NewestInstalledPackageManagement
+                $null = & $PackageManagementModule { Save-Package @PSBoundParameters }
             }
         }
     }
@@ -3952,8 +3949,8 @@ function Install-Script
                 }
             }
 
-            $PackageManagementVersion = Get-NewestInstalledPackageManagementVersion
-            $null = PackageManagement\$PackageManagementVersion\Install-Package @PSBoundParameters
+            $PackageManagementModule = Get-NewestInstalledPackageManagement
+            $null = & $PackageManagementModule { Install-Package @PSBoundParameters }
         }
         elseif($PSCmdlet.ParameterSetName -eq "InputObject")
         {
@@ -4054,8 +4051,8 @@ function Install-Script
                      if($installationPolicy.Equals("trusted", [StringComparison]::OrdinalIgnoreCase) -or $SourcesGrantedTrust.Contains($source) -or $YesToAll -or $Force)
                      {
                         $PSBoundParameters["Force"] = $true                        
-                        $PackageManagementVersion = Get-NewestInstalledPackageManagementVersion
-                        $null = PackageManagement\$PackageManagementVersion\Install-Package @PSBoundParameters                        
+                        $PackageManagementModule = Get-NewestInstalledPackageManagement
+                        $null = & $PackageManagementModule { Install-Package @PSBoundParameters }
                      }                                  
                 }                   
             }
@@ -4270,8 +4267,8 @@ function Update-Script
 
             Get-PSGalleryApiAvailability -Repository (Get-SourceName -Location $psgetItemInfo.RepositorySourceLocation)
 
-            $PackageManagementVersion = Get-NewestInstalledPackageManagementVersion
-            $sid = PackageManagement\$PackageManagementVersion\Install-Package @PSBoundParameters
+            $PackageManagementModule = Get-NewestInstalledPackageManagement
+            $sid = & $PackageManagementModule { Install-Package @PSBoundParameters }
         }
     }
 }
@@ -4358,7 +4355,8 @@ function Uninstall-Script
                 $PSBoundParameters["Name"] = $inputValue.Name
                 $PSBoundParameters["RequiredVersion"] = $inputValue.Version
 
-                $null = PackageManagement\Uninstall-Package @PSBoundParameters
+                $PackageManagementModule = Get-NewestInstalledPackageManagement
+                $null = & $PackageManagementModule { Uninstall-Package @PSBoundParameters }
             }
         }
         else
@@ -4378,8 +4376,8 @@ function Uninstall-Script
                 return
             }
 
-            $PackageManagementVersion = Get-NewestInstalledPackageManagementVersion
-            $null = PackageManagement\$PackageManagementVersion\Uninstall-Package @PSBoundParameters
+            $PackageManagementModule = Get-NewestInstalledPackageManagement
+            $null = & $PackageManagementModule { Uninstall-Package @PSBoundParameters }
         }
     }
 }
@@ -4440,8 +4438,8 @@ function Get-InstalledScript
         $PSBoundParameters[$script:AllowPrereleaseVersions] = $AllowPrerelease
         $null = $PSBoundParameters.Remove("AllowPrerelease")
 
-        $PackageManagementVersion = Get-NewestInstalledPackageManagementVersion        
-        PackageManagement\$PackageManagementVersion\Get-Package @PSBoundParameters | Microsoft.PowerShell.Core\ForEach-Object {New-PSGetItemInfo -SoftwareIdentity $_ -Type $script:PSArtifactTypeScript}
+        $PackageManagementModule = Get-NewestInstalledPackageManagement
+        & $PackageManagementModule { Get-Package @PSBoundParameters } | Microsoft.PowerShell.Core\ForEach-Object {New-PSGetItemInfo -SoftwareIdentity $_ -Type $script:PSArtifactTypeScript}
     }
 }
 
@@ -4655,8 +4653,8 @@ function Register-PSRepository
         $PSBoundParameters["Provider"] = $script:PSModuleProviderName
         $PSBoundParameters["MessageResolver"] = $script:PackageManagementMessageResolverScriptBlock
 
-        $PackageManagementVersion = Get-NewestInstalledPackageManagementVersion
-        $null = PackageManagement\$PackageManagementVersion\Register-PackageSource @PSBoundParameters
+        $PackageManagementModule = Get-NewestInstalledPackageManagement
+        $null = & $PackageManagementModule { Register-PackageSource @PSBoundParameters }
     }
 }
 
@@ -4856,8 +4854,8 @@ function Set-PSRepository
         $PSBoundParameters["Provider"] = $script:PSModuleProviderName
         $PSBoundParameters["MessageResolver"] = $script:PackageManagementMessageResolverScriptBlock
 
-        $PackageManagementVersion = Get-NewestInstalledPackageManagementVersion
-        $null = PackageManagement\$PackageManagementVersion\Set-PackageSource @PSBoundParameters
+        $PackageManagementModule = Get-NewestInstalledPackageManagement
+        $null = & $PackageManagementModule { Set-PackageSource @PSBoundParameters }
     }
 }
 
@@ -4900,8 +4898,8 @@ function Unregister-PSRepository
 
             $PSBoundParameters["Source"] = $moduleSourceName
 
-            $PackageManagementVersion = Get-NewestInstalledPackageManagementVersion
-            $null = PackageManagement\$PackageManagementVersion\Unregister-PackageSource @PSBoundParameters
+            $PackageManagementModule = Get-NewestInstalledPackageManagement
+            $null = & $PackageManagementModule { Unregister-PackageSource @PSBoundParameters }
         }
     }
 }
@@ -4936,16 +4934,16 @@ function Get-PSRepository
             {
                 $PSBoundParameters["Name"] = $sourceName
                 
-                $PackageManagementVersion = Get-NewestInstalledPackageManagementVersion
-                $packageSources = PackageManagement\$PackageManagementVersion\Get-PackageSource @PSBoundParameters
+                $PackageManagementModule = Get-NewestInstalledPackageManagement
+                $packageSources = & $PackageManagementModule { Get-PackageSource @PSBoundParameters }
 
                 $packageSources | Microsoft.PowerShell.Core\ForEach-Object { New-ModuleSourceFromPackageSource -PackageSource $_ }
             }
         }
         else
         {
-            $PackageManagementVersion = Get-NewestInstalledPackageManagementVersion
-            $packageSources = PackageManagement\$PackageManagementVersion\Get-PackageSource @PSBoundParameters
+            $PackageManagementModule = Get-NewestInstalledPackageManagement
+            $packageSources = & $PackageManagementModule { Get-PackageSource @PSBoundParameters }
 
             $packageSources | Microsoft.PowerShell.Core\ForEach-Object { New-ModuleSourceFromPackageSource -PackageSource $_ }
         }
@@ -15066,12 +15064,13 @@ function Update-ModuleManifest
     }
 }
 
-function Get-NewestInstalledPackageManagementVersion
+function Get-NewestInstalledPackageManagement
 {
     $PackageManagementModule = Get-Module 'PackageManagement' -ListAvailable | `
                                Sort-Object -Descending -Property 'Version'
-    $NewestVersion = $PackageManagementModule[0] | ForEach-Object -Process {$_.Version}
-    return $NewestVersion.ToString()
+    $NewestVersion = ($PackageManagementModule[0] | ForEach-Object -Process {$_.Version}).ToString()
+    $NewestModule = Get-Module -fullyqualifiedname @{modulename="PackageManagement";moduleversion=$NewestVersion}
+    return $NewestModule
 }
 
 #Utility function to help form the content string for PrivateData

@@ -6,10 +6,10 @@ environment:
     PowerShellEdition: Desktop
   - APPVEYOR_BUILD_WORKER_IMAGE: WMF 5
     PowerShellEdition: Desktop
-#  - APPVEYOR_BUILD_WORKER_IMAGE: WMF 4
-#    PowerShellEdition: Desktop
-#  - APPVEYOR_BUILD_WORKER_IMAGE: WMF 4
-#    PowerShellEdition: Core
+  - APPVEYOR_BUILD_WORKER_IMAGE: WMF 4
+    PowerShellEdition: Desktop
+  - APPVEYOR_BUILD_WORKER_IMAGE: WMF 4
+    PowerShellEdition: Core
 
 configuration: Release
 platform: Any CPU

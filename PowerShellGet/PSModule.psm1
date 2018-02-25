@@ -886,7 +886,7 @@ Set-Alias -Name upmo -Value Update-Module
 Set-Alias -Name pumo -Value Publish-Module
 Set-Alias -Name uimo -Value Uninstall-Module
 
-Export-ModuleMember -Alias fimo, inmo, upmo, pumo
+Export-ModuleMember -Alias fimo, inmo, upmo, pumo, uimo
 Export-ModuleMember -Function $PublicFunctions.BaseName
 
 <#

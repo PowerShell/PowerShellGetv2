@@ -34,7 +34,7 @@ FunctionsToExport = @('Install-Module',
                       'Unregister-PSRepository',
                       'Update-ModuleManifest')
 VariablesToExport = "*"
-AliasesToExport = @()
+AliasesToExport = @('inmo','fimo','upmo','pumo')
 FileList = @('PSModule.psm1',
              'PSGet.Format.ps1xml',
              'PSGet.Resource.psd1')

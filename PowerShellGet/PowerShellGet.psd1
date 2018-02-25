@@ -34,10 +34,7 @@ FunctionsToExport = @('Install-Module',
                       'Unregister-PSRepository',
                       'Update-ModuleManifest')
 VariablesToExport = "*"
-AliasesToExport = @('inmo',
-                    'fimo',
-                    'upmo',
-                    'pumo')
+AliasesToExport = @()
 FileList = @('PSModule.psm1',
              'PSGet.Format.ps1xml',
              'PSGet.Resource.psd1')
@@ -56,7 +53,7 @@ PrivateData = @{
         LicenseUri = 'https://go.microsoft.com/fwlink/?LinkId=829061'
         ReleaseNotes = @'
 ## 1.6.0
-        
+
 New features
 * Prerelease Version Support (#185)
   - Implemented prerelease versions functionality in PowerShellGet cmdlets.

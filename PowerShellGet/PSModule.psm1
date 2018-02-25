@@ -834,7 +834,7 @@ $(if($script:IsSafeX509ChainHandleAvailable)
 #endregion
 
 
-#region Load of module functions after split from main .psm1 file issue #37
+#region Load of module functions after split from main .psm1 file issue Fix#37
 
 $PublicFunctions = @( Get-ChildItem -Path $PSScriptRoot\public\*.ps1 -ErrorAction SilentlyContinue )
 $PrivateFunctions = @( Get-ChildItem -Path $PSScriptRoot\private\*.ps1 -ErrorAction SilentlyContinue )

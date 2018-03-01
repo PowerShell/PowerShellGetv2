@@ -22,18 +22,18 @@ Build status
 |-------------------------------------|------------------------------|
 | AppVeyor (Windows - PS 4.0)         | [![d-av-image][]][d-av-site] |
 | AppVeyor (Windows - PS 5.1)         | [![d-av-image][]][d-av-site] |
-| AppVeyor (Windows - PS 6.0.0-Alpha) | [![d-av-image][]][d-av-site] |
-| Travis CI (Linux - PS 6.0.0-Alpha)  | [![d-tv-image][]][d-tv-site] |
-| Travis CI (MacOS - PS 6.0.0-Alpha)  | [![d-tv-image][]][d-tv-site] |
+| AppVeyor (Windows - PS 6.0.0+)      | [![d-av-image][]][d-av-site] |
+| Travis CI (Linux - PS 6.0.0+)       | [![d-tv-image][]][d-tv-site] |
+| Travis CI (MacOS - PS 6.0.0+)       | [![d-tv-image][]][d-tv-site] |
 
 ## Master branch
 |         OS - PS Version             |          Build Status        |
 |-------------------------------------|------------------------------|
 | AppVeyor (Windows - PS 4.0)         | [![m-av-image][]][m-av-site] |
 | AppVeyor (Windows - PS 5.1)         | [![m-av-image][]][m-av-site] |
-| AppVeyor (Windows - PS 6.0.0-Alpha) | [![m-av-image][]][m-av-site] |
-| Travis CI (Linux - PS 6.0.0-Alpha)  | [![m-tv-image][]][m-tv-site] |
-| Travis CI (MacOS - PS 6.0.0-Alpha)  | [![m-tv-image][]][m-tv-site] |
+| AppVeyor (Windows - PS 6.0.0+)      | [![m-av-image][]][m-av-site] |
+| Travis CI (Linux - PS 6.0.0+)       | [![m-tv-image][]][m-tv-site] |
+| Travis CI (MacOS - PS 6.0.0+)       | [![m-tv-image][]][m-tv-site] |
 
 [d-av-image]: https://ci.appveyor.com/api/projects/status/91p7lpjoxit3gw72/branch/development?svg=true
 [d-av-site]: https://ci.appveyor.com/project/PowerShell/powershellget/branch/development
@@ -55,9 +55,9 @@ Daily Build status
 |-------------------------------------|------------------------------|
 | AppVeyor (Windows - PS 4.0)         | [![d-n-av-image][]][d-n-av-site] |
 | AppVeyor (Windows - PS 5.1)         | [![d-n-av-image][]][d-n-av-site] |
-| AppVeyor (Windows - PS 6.0.0-Alpha) | [![d-n-av-image][]][d-n-av-site] |
-| Travis CI (Linux - PS 6.0.0-Alpha)  | [![d-tv-image][]][d-tv-site] |
-| Travis CI (MacOS - PS 6.0.0-Alpha)  | [![d-tv-image][]][d-tv-site] |
+| AppVeyor (Windows - PS 6.0.0+)      | [![d-n-av-image][]][d-n-av-site] |
+| Travis CI (Linux - PS 6.0.0+)       | [![d-tv-image][]][d-tv-site] |
+| Travis CI (MacOS - PS 6.0.0+)       | [![d-tv-image][]][d-tv-site] |
 
 [d-n-av-image]: https://ci.appveyor.com/api/projects/status/58muo6i0x8n38pd3/branch/development?svg=true
 [d-n-av-site]: https://ci.appveyor.com/project/PowerShell/powershellget-0lib3/branch/development

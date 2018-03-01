@@ -2,7 +2,7 @@
 $script:PowerShellGet = 'PowerShellGet'
 $script:IsInbox = $PSHOME.EndsWith('\WindowsPowerShell\v1.0', [System.StringComparison]::OrdinalIgnoreCase)
 $script:IsWindows = (-not (Get-Variable -Name IsWindows -ErrorAction Ignore)) -or $IsWindows
-$script:IsLinux = (Get-Variable -Name IsLinux -ErrorAction Ignore) -and $IsLinux 
+$script:IsLinux = (Get-Variable -Name IsLinux -ErrorAction Ignore) -and $IsLinux
 $script:IsMacOS = (Get-Variable -Name IsMacOS -ErrorAction Ignore) -and $IsMacOS
 $script:IsCoreCLR = $PSVersionTable.ContainsKey('PSEdition') -and $PSVersionTable.PSEdition -eq 'Core'
 
@@ -44,13 +44,13 @@ if($script:IsWindows) {
     $script:PSGetAppLocalPath = "$HOME/.config/powershell/powershellget"
 }
 
-# AppVeyor.yml sets a value to $env:PowerShellEdition variable, 
+# AppVeyor.yml sets a value to $env:PowerShellEdition variable,
 # otherwise set $script:PowerShellEdition value based on the current PowerShell Edition.
 $script:PowerShellEdition = [System.Environment]::GetEnvironmentVariable("PowerShellEdition")
 if(-not $script:PowerShellEdition) {
-    if($script:IsCoreCLR) { 
+    if($script:IsCoreCLR) {
         $script:PowerShellEdition = 'Core'
-    } else { 
+    } else {
         $script:PowerShellEdition = 'Desktop'
     }
 }
@@ -59,7 +59,7 @@ Write-Host "PowerShellEdition value: $script:PowerShellEdition"
 
 function Install-Dependencies {
     # Update build title for daily builds
-    if($script:IsWindows -and (Test-DailyBuild)) {        
+    if($script:IsWindows -and (Test-DailyBuild)) {
         if($env:APPVEYOR_PULL_REQUEST_TITLE)
         {
             $buildName += $env:APPVEYOR_PULL_REQUEST_TITLE
@@ -88,16 +88,16 @@ function Get-PSHome {
         Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri $PowerShellMsiUrl -OutFile $PowerShellMsiPath
         #>
         Start-Process -FilePath "$env:SystemRoot\System32\msiexec.exe" -ArgumentList "/qb INSTALLFOLDER=$PowerShellInstallPath /i $PowerShellMsiPath" -Wait
-        
+
         $PowerShellVersionPath = Get-ChildItem -Path $PowerShellInstallPath -Attributes Directory | Select-Object -First 1 -ErrorAction Ignore
         $PowerShellHome = $null
         if ($PowerShellVersionPath) {
             $PowerShellHome = $PowerShellVersionPath.FullName
         }
-        
+
         if(-not $PowerShellHome -or -not (Microsoft.PowerShell.Management\Test-Path -Path $PowerShellHome -PathType Container))
         {
-            Throw "$PowerShellHome path is not available."  
+            Throw "$PowerShellHome path is not available."
         }
 
         Write-Host ("PowerShell Home Path '{0}'" -f $PowerShellHome)
@@ -106,7 +106,7 @@ function Get-PSHome {
     return $PowerShellHome
 }
 
-function Invoke-PowerShellGetTest {    
+function Invoke-PowerShellGetTest {
 
     Param(
         [Parameter()]
@@ -116,7 +116,7 @@ function Invoke-PowerShellGetTest {
 
     Write-Host -ForegroundColor Green "`$env:PS_DAILY_BUILD value $env:PS_DAILY_BUILD"
     Write-Host -ForegroundColor Green "`$env:APPVEYOR_SCHEDULED_BUILD value $env:APPVEYOR_SCHEDULED_BUILD"
-    Write-Host -ForegroundColor Green "`$env:APPVEYOR_REPO_TAG_NAME value $env:APPVEYOR_REPO_TAG_NAME"    
+    Write-Host -ForegroundColor Green "`$env:APPVEYOR_REPO_TAG_NAME value $env:APPVEYOR_REPO_TAG_NAME"
     Write-Host -ForegroundColor Green "TRAVIS_EVENT_TYPE environment variable value $([System.Environment]::GetEnvironmentVariable('TRAVIS_EVENT_TYPE'))"
 
     if(-not $IsFullTestPass){
@@ -126,7 +126,7 @@ function Invoke-PowerShellGetTest {
     Write-Host -ForegroundColor Green "Test-DailyBuild: $(Test-DailyBuild)"
 
     $env:APPVEYOR_TEST_PASS = $true
-    $ClonedProjectPath = Resolve-Path "$PSScriptRoot\.."    
+    $ClonedProjectPath = Resolve-Path "$PSScriptRoot\.."
     $PowerShellGetTestsPath = "$ClonedProjectPath\Tests\"
     $PowerShellHome = Get-PSHome
     if($script:IsWindows){
@@ -143,13 +143,13 @@ function Invoke-PowerShellGetTest {
     # Bootstrap NuGet.exe
     $NuGetExeName = 'NuGet.exe'
     $NugetExeFilePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $NuGetExeName
-    
+
     if(-not (Test-Path -Path $NugetExeFilePath -PathType Leaf)) {
         if(-not (Microsoft.PowerShell.Management\Test-Path -Path $script:PSGetProgramDataPath))
         {
             $null = Microsoft.PowerShell.Management\New-Item -Path $script:PSGetProgramDataPath -ItemType Directory -Force
         }
-        
+
         # Download the NuGet.exe from https://nuget.org/NuGet.exe
         Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri https://nuget.org/NuGet.exe -OutFile $NugetExeFilePath
     }
@@ -157,8 +157,8 @@ function Invoke-PowerShellGetTest {
     Get-ChildItem -Path $NugetExeFilePath -File
 
     # Test Environment
-    # - PowerShellGet from Current branch 
-    # - PowerShellGet packaged with PowerShellCore build: 
+    # - PowerShellGet from Current branch
+    # - PowerShellGet packaged with PowerShellCore build:
     #   -- Where PowerShellGet module was installed from MyGet feed https://powershell.myget.org/F/powershellmodule/api/v2/
     #   -- This option is used only for Daily builds
     $TestScenarios = @()
@@ -176,8 +176,8 @@ function Invoke-PowerShellGetTest {
 
     $TestResults = @()
 
-    foreach ($TestScenario in $TestScenarios){    
-        
+    foreach ($TestScenario in $TestScenarios){
+
         Write-Host "TestScenario: $TestScenario"
 
         if($TestScenario -eq 'Current') {
@@ -213,13 +213,13 @@ function Invoke-PowerShellGetTest {
                     & $NugetExeFilePath install $OneGetModuleName -source https://www.powershellgallery.com/api/v2 -outputDirectory $TempModulePath -verbosity detailed
                     $OneGetWithVersion = Microsoft.PowerShell.Management\Get-ChildItem -Path $TempModulePath -Directory
                     $OneGetVersion = ($OneGetWithVersion.Name.Split('.',2))[1]
-        
+
                     $OneGetModulePath = Microsoft.PowerShell.Management\Join-Path -Path  $AllUsersModulesPath -ChildPath $OneGetModuleName
                     if($PSVersionTable.PSVersion -ge '5.0.0')
                     {
                         $OneGetModulePath = Microsoft.PowerShell.Management\Join-Path -Path $OneGetModulePath -ChildPath $OneGetVersion
                     }
-        
+
                     $null = Microsoft.PowerShell.Management\New-Item -Path $OneGetModulePath -Force -ItemType Directory
                     Microsoft.PowerShell.Management\Copy-Item -Path "$($OneGetWithVersion.FullName)\*" -Destination "$OneGetModulePath\" -Recurse -Force
                     Get-Module -ListAvailable -Name $OneGetModuleName | Microsoft.PowerShell.Core\Where-Object {$_.Version -eq $OneGetVersion}
@@ -229,8 +229,8 @@ function Invoke-PowerShellGetTest {
                     Remove-Item -Path $TempModulePath -Recurse -Force
                 }
             }
-        
-            # Copy OneGet and PSGet modules to PSHOME    
+
+            # Copy OneGet and PSGet modules to PSHOME
             $PowerShellGetSourcePath = Microsoft.PowerShell.Management\Join-Path -Path $ClonedProjectPath -ChildPath $script:PowerShellGet
             $PowerShellGetModuleInfo = Test-ModuleManifest "$PowerShellGetSourcePath\PowerShellGet.psd1" -ErrorAction Ignore
             $ModuleVersion = "$($PowerShellGetModuleInfo.Version)"
@@ -263,7 +263,7 @@ function Invoke-PowerShellGetTest {
             Get-Module -Name Pester -ListAvailable;
 
             # Remove PSGetModuleInfo.xml files from the installed module bases to ensure that Update-Module tests executed properly.
-            Get-InstalledModule -Name Pester,PackageManagement -ErrorAction SilentlyContinue | Foreach-Object {
+            Get-InstalledModule -Name Pester,PackageManagement, DockerMsftProvider  -ErrorAction SilentlyContinue | Foreach-Object {
                 $PSGetModuleInfoXmlPath = Join-Path -Path $_.InstalledLocation -ChildPath 'PSGetModuleInfo.xml'
                 Remove-Item -Path $PSGetModuleInfoXmlPath -Force -Verbose
             }
@@ -311,7 +311,7 @@ function Invoke-PowerShellGetTest {
     # Packing
     $stagingDirectory = Microsoft.PowerShell.Management\Split-Path $ClonedProjectPath.Path -Parent
     $zipFile = Microsoft.PowerShell.Management\Join-Path $stagingDirectory "$(Split-Path $ClonedProjectPath.Path -Leaf).zip"
-    
+
     if($PSEdition -ne 'Core')
     {
         Add-Type -assemblyname System.IO.Compression.FileSystem
@@ -336,11 +336,11 @@ function Test-DailyBuild
     # https://docs.travis-ci.com/user/environment-variables/
     # TRAVIS_EVENT_TYPE: Indicates how the build was triggered.
     # One of push, pull_request, api, cron.
-    $TRAVIS_EVENT_TYPE = [System.Environment]::GetEnvironmentVariable('TRAVIS_EVENT_TYPE')    
-    if(($env:PS_DAILY_BUILD -eq 'True') -or 
-       ($env:APPVEYOR_SCHEDULED_BUILD -eq 'True') -or 
+    $TRAVIS_EVENT_TYPE = [System.Environment]::GetEnvironmentVariable('TRAVIS_EVENT_TYPE')
+    if(($env:PS_DAILY_BUILD -eq 'True') -or
+       ($env:APPVEYOR_SCHEDULED_BUILD -eq 'True') -or
        ($env:APPVEYOR_REPO_TAG_NAME) -or
-       ($TRAVIS_EVENT_TYPE -eq 'cron') -or 
+       ($TRAVIS_EVENT_TYPE -eq 'cron') -or
        ($TRAVIS_EVENT_TYPE -eq 'api'))
     {
         return $true
@@ -365,7 +365,7 @@ function Get-PowerShellCoreBuild {
         $Destination = 'C:\projects'
     )
 
-    $appVeyorConstants =  @{ 
+    $appVeyorConstants =  @{
         AccountName = 'powershell'
         ApiUrl = 'https://ci.appveyor.com/api'
     }
@@ -397,10 +397,10 @@ function Get-PowerShellCoreBuild {
                 $foundGood = $true
 
                 Write-Host "Uri = $($appVeyorConstants.ApiUrl)/projects/$($appVeyorConstants.AccountName)/$AppVeyorProjectName/build/$version"
-                $project = Invoke-RestMethod -Method Get -Uri "$($appVeyorConstants.ApiUrl)/projects/$($appVeyorConstants.AccountName)/$AppVeyorProjectName/build/$version" 
+                $project = Invoke-RestMethod -Method Get -Uri "$($appVeyorConstants.ApiUrl)/projects/$($appVeyorConstants.AccountName)/$AppVeyorProjectName/build/$version"
                 break
             }
-            else 
+            else
             {
                 Write-Warning "There is a newer PowerShell build, $version, which is in status: $status"
             }
@@ -418,13 +418,13 @@ function Get-PowerShellCoreBuild {
 
     $jobId = $project.build.jobs[0].jobId
     Write-Verbose "jobId=$jobId"
-    
+
     Write-Verbose "$project.build.jobs[0]"
 
     $artifactsUrl = "$($appVeyorConstants.ApiUrl)/buildjobs/$jobId/artifacts"
 
     Write-Verbose "Uri=$artifactsUrl"
-    $artifacts = Invoke-RestMethod -Method Get -Uri $artifactsUrl 
+    $artifacts = Invoke-RestMethod -Method Get -Uri $artifactsUrl
 
     if (-not $artifacts) {
         throw "Cannot find artifacts in $artifactsUrl"
@@ -440,7 +440,7 @@ function Get-PowerShellCoreBuild {
         $artifactPath = $artifact[0].fileName
         $artifactFileName = Split-Path -Path $artifactPath -Leaf
 
-        # artifact will be downloaded as 
+        # artifact will be downloaded as
         $tempLocalArtifactPath = "$Destination\Temp-$artifactFileName-$jobId.msi"
         $localArtifactPath = "$Destination\$artifactFileName-$jobId.msi"
         if(!(Test-Path $localArtifactPath))
@@ -448,15 +448,15 @@ function Get-PowerShellCoreBuild {
             # download artifact
             # -OutFile - is local file name where artifact will be downloaded into
 
-            try 
+            try
             {
                 Write-Host "PowerShell MSI URL: $($appVeyorConstants.ApiUrl)/buildjobs/$jobId/artifacts/$artifactPath"
                 $ProgressPreference = 'SilentlyContinue'
                 Invoke-WebRequest -Method Get -Uri "$($appVeyorConstants.ApiUrl)/buildjobs/$jobId/artifacts/$artifactPath" `
                     -OutFile $tempLocalArtifactPath  -UseBasicParsing -DisableKeepAlive
 
-                Move-Item -Path $tempLocalArtifactPath -Destination $localArtifactPath   
-            } 
+                Move-Item -Path $tempLocalArtifactPath -Destination $localArtifactPath
+            }
             finally
             {
                 $ProgressPreference = 'Continue'
@@ -464,7 +464,7 @@ function Get-PowerShellCoreBuild {
                 {
                     remove-item $tempLocalArtifactPath
                 }
-            } 
+            }
         }
     }
 

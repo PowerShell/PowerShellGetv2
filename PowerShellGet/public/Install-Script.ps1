@@ -1,7 +1,7 @@
 function Install-Script
 {
     <#
-    .ExternalHelp PSModule-help.xml
+    .ExternalHelp ..\PSModule-help.xml
     #>
     [CmdletBinding(DefaultParameterSetName='NameParameterSet',
                    HelpUri='https://go.microsoft.com/fwlink/?LinkId=619784',

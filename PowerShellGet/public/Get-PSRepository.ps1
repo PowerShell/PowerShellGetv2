@@ -1,7 +1,7 @@
 function Get-PSRepository
 {
     <#
-    .ExternalHelp PSModule-help.xml
+    .ExternalHelp ..\PSModule-help.xml
     #>
     [CmdletBinding(HelpUri='https://go.microsoft.com/fwlink/?LinkID=517127')]
     Param

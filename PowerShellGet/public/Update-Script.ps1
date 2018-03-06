@@ -1,7 +1,7 @@
 function Update-Script
 {
     <#
-    .ExternalHelp PSModule-help.xml
+    .ExternalHelp ..\PSModule-help.xml
     #>
     [CmdletBinding(SupportsShouldProcess=$true,
                    HelpUri='https://go.microsoft.com/fwlink/?LinkId=619787')]

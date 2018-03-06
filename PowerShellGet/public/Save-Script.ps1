@@ -1,7 +1,7 @@
 function Save-Script
 {
     <#
-    .ExternalHelp PSModule-help.xml
+    .ExternalHelp ..\PSModule-help.xml
     #>
     [CmdletBinding(DefaultParameterSetName='NameAndPathParameterSet',
                    HelpUri='https://go.microsoft.com/fwlink/?LinkId=619786',

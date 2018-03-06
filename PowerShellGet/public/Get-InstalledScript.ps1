@@ -1,7 +1,7 @@
 function Get-InstalledScript
 {
     <#
-    .ExternalHelp PSModule-help.xml
+    .ExternalHelp ..\PSModule-help.xml
     #>
     [CmdletBinding(HelpUri='https://go.microsoft.com/fwlink/?LinkId=619790')]
     Param

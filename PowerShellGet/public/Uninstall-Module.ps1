@@ -1,7 +1,7 @@
 function Uninstall-Module
 {
     <#
-    .ExternalHelp PSModule-help.xml
+    .ExternalHelp ..\PSModule-help.xml
     #>
     [CmdletBinding(DefaultParameterSetName='NameParameterSet',
                    SupportsShouldProcess=$true,

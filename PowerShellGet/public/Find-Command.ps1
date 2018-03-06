@@ -1,7 +1,7 @@
 function Find-Command
 {
     <#
-    .ExternalHelp PSModule-help.xml
+    .ExternalHelp ..\PSModule-help.xml
     #>
     [CmdletBinding(HelpUri = 'https://go.microsoft.com/fwlink/?LinkId=733636')]
     [outputtype('PSCustomObject[]')]

@@ -1,6 +1,6 @@
 ﻿@{
 RootModule = 'PSModule.psm1'
-ModuleVersion = '1.6.0'
+ModuleVersion = '1.6.1'
 GUID = '1d73a601-4a6c-43c5-ba3f-619b18bbb404'
 Author = 'Microsoft Corporation'
 CompanyName = 'Microsoft Corporation'
@@ -34,10 +34,7 @@ FunctionsToExport = @('Install-Module',
                       'Unregister-PSRepository',
                       'Update-ModuleManifest')
 VariablesToExport = "*"
-AliasesToExport = @('inmo',
-                    'fimo',
-                    'upmo',
-                    'pumo')
+AliasesToExport = @('inmo','fimo','upmo','pumo')
 FileList = @('PSModule.psm1',
              'PSGet.Format.ps1xml',
              'PSGet.Resource.psd1')
@@ -56,7 +53,7 @@ PrivateData = @{
         LicenseUri = 'https://go.microsoft.com/fwlink/?LinkId=829061'
         ReleaseNotes = @'
 ## 1.6.0
-        
+
 New features
 * Prerelease Version Support (#185)
   - Implemented prerelease versions functionality in PowerShellGet cmdlets.

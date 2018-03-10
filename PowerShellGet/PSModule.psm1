@@ -880,6 +880,19 @@ if(-not (Microsoft.PowerShell.Management\Test-Path -Path $script:MyDocumentsInst
                                                      -WhatIf:$false
 }
 
+#region private functions imported via build script
+
+#buildScriptPrivateFunctionsGoHere
+
+#endregion
+
+#region public functions imported via build script
+
+#buildScriptPublicFunctionsGoHere
+
+#endregion
+
+#region module exports
 Set-Alias -Name fimo -Value Find-Module
 Set-Alias -Name inmo -Value Install-Module
 Set-Alias -Name upmo -Value Update-Module
@@ -887,45 +900,7 @@ Set-Alias -Name pumo -Value Publish-Module
 Set-Alias -Name uimo -Value Uninstall-Module
 
 Export-ModuleMember -Alias fimo, inmo, upmo, pumo, uimo
-Export-ModuleMember -Function $PublicFunctions.BaseName
 
-<#
-Export-ModuleMember -Function Find-Module, `
-                              Save-Module, `
-                              Install-Module, `
-                              Update-Module, `
-                              Publish-Module, `
-                              Uninstall-Module, `
-                              Get-InstalledModule, `
-                              Find-Command, `
-                              Find-DscResource, `
-                              Find-RoleCapability, `
-                              Install-Script, `
-                              Find-Script, `
-                              Save-Script, `
-                              Update-Script, `
-                              Publish-Script,  `
-                              Get-InstalledScript, `
-                              Uninstall-Script, `
-                              Test-ScriptFileInfo, `
-                              New-ScriptFileInfo, `
-                              Update-ScriptFileInfo, `
-                              Get-PSRepository, `
-                              Register-PSRepository, `
-                              Unregister-PSRepository, `
-                              Set-PSRepository, `
-                              Find-Package, `
-                              Get-PackageDependencies, `
-                              Download-Package, `
-                              Install-Package, `
-                              Uninstall-Package, `
-                              Get-InstalledPackage, `
-                              Remove-PackageSource, `
-                              Resolve-PackageSource, `
-                              Add-PackageSource, `
-                              Get-DynamicOptions, `
-                              Initialize-Provider, `
-                              Get-Feature, `
-                              Get-PackageProviderName, `
-                              Update-ModuleManifest
-#>
+#buildScriptExportFunctionsGoHere
+
+#endregion

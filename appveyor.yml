@@ -22,9 +22,11 @@ init:
 
 # Install Pester and PackageManagement modules
 install:
-    - ps: | 
+    - ps: |
         Import-Module .\tools\build.psm1
         Install-Dependencies
+        Merge-FunctionsIntoPSMFile
+        Remove-FunctionFolders
 
 # to run your custom scripts instead of automatic MSBuild
 #build_script:

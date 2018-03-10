@@ -6,6 +6,14 @@ $script:IsLinux = (Get-Variable -Name IsLinux -ErrorAction Ignore) -and $IsLinux
 $script:IsMacOS = (Get-Variable -Name IsMacOS -ErrorAction Ignore) -and $IsMacOS
 $script:IsCoreCLR = $PSVersionTable.ContainsKey('PSEdition') -and $PSVersionTable.PSEdition -eq 'Core'
 
+$script:ProjectRoot = Split-Path -Path $PSScriptRoot -Parent
+$script:ModuleRoot = Join-Path -Path $ProjectRoot -ChildPath "PowerShellGet"
+$script:ModuleFile = Join-Path -Path $ModuleRoot -ChildPath "PSModule.psm1"
+
+$script:PublicFunctions = @( Get-ChildItem -Path $ModuleRoot\public\*.ps1 -ErrorAction SilentlyContinue )
+$script:PrivateFunctions = @( Get-ChildItem -Path $ModuleRoot\private\*.ps1 -ErrorAction SilentlyContinue )
+
+
 if($script:IsInbox) {
     $script:ProgramFilesPSPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramFiles -ChildPath "WindowsPowerShell"
 } else {
@@ -95,6 +103,36 @@ function Get-PSHome {
     }
 
     return $PowerShellHome
+}
+function Merge-FunctionsIntoPSMFile {
+    Write-Verbose -Message "Public Functions:`n$($PublicFunctions.BaseName)"
+    Write-Verbose -Message "Private Functions:`n$($PrivateFunctions.BaseName)"
+
+    $PublicFunctionContent = Get-Content $PublicFunctions | Out-String
+    $PrivateFunctionContent = Get-Content $PrivateFunctions | Out-String
+
+    foreach ($PublicFunction in $PublicFunctions.BaseName) {
+        $publicFunctionsString += "$PublicFunction,"
+    }
+
+    $publicFunctionsString = $publicFunctionsString.TrimEnd(",")
+    $FunctionExportString = "Export-ModuleMember -Function $publicFunctionsString"
+
+    $ModuleFileContent = Get-Content -Path $ModuleFile
+    $ModuleFileContent = $ModuleFileContent.Replace("#buildScriptPrivateFunctionsGoHere", $PrivateFunctionContent)
+    $ModuleFileContent = $ModuleFileContent.Replace("#buildScriptPublicFunctionsGoHere", $PublicFunctionContent)
+    $ModuleFileContent = $ModuleFileContent.Replace("#buildScriptExportFunctionsGoHere", $FunctionExportString)
+
+    Write-Verbose -Message "Writing functions to PSM1 file"
+    Set-Content -Path $ModuleFile -Value $ModuleFileContent
+
+    Write-Verbose -Message "Updating module manifest file"
+    Update-ModuleManifest -Path "$ModuleRoot\PowerShellGet.psd1" -FunctionsToExport $PublicFunctions.BaseName
+}
+
+function Remove-FunctionFolders {
+    Remove-Item -Path $ModuleRoot\public -Recurse -Force
+    Remove-Item -Path $ModuleRoot\private -Recurse -Force
 }
 
 function Invoke-PowerShellGetTest {

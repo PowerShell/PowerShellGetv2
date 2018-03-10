@@ -1,7 +1,7 @@
 function Test-ScriptFileInfo
 {
     <#
-    .ExternalHelp ..\PSModule-help.xml
+    .ExternalHelp PSModule-help.xml
     #>
     [CmdletBinding(PositionalBinding=$false,
                    DefaultParameterSetName='PathParameterSet',

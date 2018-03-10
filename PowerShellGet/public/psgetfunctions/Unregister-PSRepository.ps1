@@ -1,7 +1,7 @@
 function Unregister-PSRepository
 {
     <#
-    .ExternalHelp ..\PSModule-help.xml
+    .ExternalHelp PSModule-help.xml
     #>
     [CmdletBinding(HelpUri='https://go.microsoft.com/fwlink/?LinkID=517130')]
     Param

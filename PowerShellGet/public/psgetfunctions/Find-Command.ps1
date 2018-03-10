@@ -1,9 +1,9 @@
-function Find-RoleCapability
+function Find-Command
 {
     <#
-    .ExternalHelp ..\PSModule-help.xml
+    .ExternalHelp PSModule-help.xml
     #>
-    [CmdletBinding(HelpUri = 'https://go.microsoft.com/fwlink/?LinkId=718029')]
+    [CmdletBinding(HelpUri = 'https://go.microsoft.com/fwlink/?LinkId=733636')]
     [outputtype('PSCustomObject[]')]
     Param
     (
@@ -68,12 +68,14 @@ function Find-RoleCapability
 
     Process
     {
-        $PSBoundParameters['Includes'] = 'RoleCapability'
-
         if($PSBoundParameters.ContainsKey('Name'))
         {
-            $PSBoundParameters['RoleCapability'] = $Name
+            $PSBoundParameters['Command'] = $Name
             $null = $PSBoundParameters.Remove('Name')
+        }
+        else
+        {
+            $PSBoundParameters['Includes'] = @('Cmdlet','Function')
         }
 
         if($PSBoundParameters.ContainsKey('ModuleName'))
@@ -82,16 +84,17 @@ function Find-RoleCapability
             $null = $PSBoundParameters.Remove('ModuleName')
         }
 
+
         PowerShellGet\Find-Module @PSBoundParameters |
             Microsoft.PowerShell.Core\ForEach-Object {
                 $psgetModuleInfo = $_
-                $psgetModuleInfo.Includes.RoleCapability | Microsoft.PowerShell.Core\ForEach-Object {
-                    if($Name -and ($Name -notcontains $_))
+                $psgetModuleInfo.Includes.Command | Microsoft.PowerShell.Core\ForEach-Object {
+                    if(($_ -eq "*") -or ($Name -and ($Name -notcontains $_)))
                     {
                         return
                     }
 
-                    $psgetRoleCapabilityInfo = Microsoft.PowerShell.Utility\New-Object PSCustomObject -Property ([ordered]@{
+                    $psgetCommandInfo = Microsoft.PowerShell.Utility\New-Object PSCustomObject -Property ([ordered]@{
                             Name            = $_
                             Version         = $psgetModuleInfo.Version
                             ModuleName      = $psgetModuleInfo.Name
@@ -99,8 +102,8 @@ function Find-RoleCapability
                             PSGetModuleInfo = $psgetModuleInfo
                     })
 
-                    $psgetRoleCapabilityInfo.PSTypeNames.Insert(0, 'Microsoft.PowerShell.Commands.PSGetRoleCapabilityInfo')
-                    $psgetRoleCapabilityInfo
+                    $psgetCommandInfo.PSTypeNames.Insert(0, 'Microsoft.PowerShell.Commands.PSGetCommandInfo')
+                    $psgetCommandInfo
                 }
             }
     }

@@ -1,7 +1,7 @@
 function Update-ModuleManifest
 {
     <#
-    .ExternalHelp ..\PSModule-help.xml
+    .ExternalHelp PSModule-help.xml
     #>
     [CmdletBinding(SupportsShouldProcess=$true,
                    PositionalBinding=$false,

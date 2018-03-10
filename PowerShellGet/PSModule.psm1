@@ -833,22 +833,28 @@ $(if($script:IsSafeX509ChainHandleAvailable)
 
 #endregion
 
+#region private functions imported via build script
 
-#region Load of module functions after split from main .psm1 file issue Fix#37
+#buildScriptPrivateFunctionsGoHere
 
-$PublicFunctions = @( Get-ChildItem -Path $PSScriptRoot\public\*.ps1 -ErrorAction SilentlyContinue )
-$PrivateFunctions = @( Get-ChildItem -Path $PSScriptRoot\private\*.ps1 -ErrorAction SilentlyContinue )
+#endregion
 
-# Load the separate function files from the private and public folders.
-$AllFunctions = $PublicFunctions + $PrivateFunctions
-foreach($function in $AllFunctions) {
-    try {
-        . $function.Fullname
-    }
-    catch {
-        Write-Error -Message "Failed to import function $($function.fullname): $_"
-    }
-}
+#region public functions imported via build script
+
+#buildScriptPublicFunctionsGoHere
+
+#endregion
+
+#region module exports
+Set-Alias -Name fimo -Value Find-Module
+Set-Alias -Name inmo -Value Install-Module
+Set-Alias -Name upmo -Value Update-Module
+Set-Alias -Name pumo -Value Publish-Module
+Set-Alias -Name uimo -Value Uninstall-Module
+
+Export-ModuleMember -Alias fimo, inmo, upmo, pumo, uimo
+
+#buildScriptExportFunctionsGoHere
 
 #endregion
 
@@ -879,28 +885,3 @@ if(-not (Microsoft.PowerShell.Management\Test-Path -Path $script:MyDocumentsInst
                                                      -Confirm:$false `
                                                      -WhatIf:$false
 }
-
-#region private functions imported via build script
-
-#buildScriptPrivateFunctionsGoHere
-
-#endregion
-
-#region public functions imported via build script
-
-#buildScriptPublicFunctionsGoHere
-
-#endregion
-
-#region module exports
-Set-Alias -Name fimo -Value Find-Module
-Set-Alias -Name inmo -Value Install-Module
-Set-Alias -Name upmo -Value Update-Module
-Set-Alias -Name pumo -Value Publish-Module
-Set-Alias -Name uimo -Value Uninstall-Module
-
-Export-ModuleMember -Alias fimo, inmo, upmo, pumo, uimo
-
-#buildScriptExportFunctionsGoHere
-
-#endregion

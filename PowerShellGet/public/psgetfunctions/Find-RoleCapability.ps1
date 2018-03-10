@@ -1,9 +1,9 @@
-function Find-DscResource
+function Find-RoleCapability
 {
     <#
-    .ExternalHelp ..\PSModule-help.xml
+    .ExternalHelp PSModule-help.xml
     #>
-    [CmdletBinding(HelpUri = 'https://go.microsoft.com/fwlink/?LinkId=517196')]
+    [CmdletBinding(HelpUri = 'https://go.microsoft.com/fwlink/?LinkId=718029')]
     [outputtype('PSCustomObject[]')]
     Param
     (
@@ -68,11 +68,11 @@ function Find-DscResource
 
     Process
     {
-        $PSBoundParameters['Includes'] = 'DscResource'
+        $PSBoundParameters['Includes'] = 'RoleCapability'
 
         if($PSBoundParameters.ContainsKey('Name'))
         {
-            $PSBoundParameters['DscResource'] = $Name
+            $PSBoundParameters['RoleCapability'] = $Name
             $null = $PSBoundParameters.Remove('Name')
         }
 
@@ -83,25 +83,25 @@ function Find-DscResource
         }
 
         PowerShellGet\Find-Module @PSBoundParameters |
-        Microsoft.PowerShell.Core\ForEach-Object {
-            $psgetModuleInfo = $_
-            $psgetModuleInfo.Includes.DscResource | Microsoft.PowerShell.Core\ForEach-Object {
-                if($Name -and ($Name -notcontains $_))
-                {
-                    return
+            Microsoft.PowerShell.Core\ForEach-Object {
+                $psgetModuleInfo = $_
+                $psgetModuleInfo.Includes.RoleCapability | Microsoft.PowerShell.Core\ForEach-Object {
+                    if($Name -and ($Name -notcontains $_))
+                    {
+                        return
+                    }
+
+                    $psgetRoleCapabilityInfo = Microsoft.PowerShell.Utility\New-Object PSCustomObject -Property ([ordered]@{
+                            Name            = $_
+                            Version         = $psgetModuleInfo.Version
+                            ModuleName      = $psgetModuleInfo.Name
+                            Repository      = $psgetModuleInfo.Repository
+                            PSGetModuleInfo = $psgetModuleInfo
+                    })
+
+                    $psgetRoleCapabilityInfo.PSTypeNames.Insert(0, 'Microsoft.PowerShell.Commands.PSGetRoleCapabilityInfo')
+                    $psgetRoleCapabilityInfo
                 }
-
-                $psgetDscResourceInfo = Microsoft.PowerShell.Utility\New-Object PSCustomObject -Property ([ordered]@{
-                        Name            = $_
-                        Version         = $psgetModuleInfo.Version
-                        ModuleName      = $psgetModuleInfo.Name
-                        Repository      = $psgetModuleInfo.Repository
-                        PSGetModuleInfo = $psgetModuleInfo
-                })
-
-                $psgetDscResourceInfo.PSTypeNames.Insert(0, 'Microsoft.PowerShell.Commands.PSGetDscResourceInfo')
-                $psgetDscResourceInfo
             }
-        }
     }
 }

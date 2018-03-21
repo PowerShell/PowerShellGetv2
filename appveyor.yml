@@ -25,8 +25,7 @@ install:
     - ps: |
         Import-Module .\tools\build.psm1
         Install-Dependencies
-        Merge-FunctionsIntoPSMFile
-        Remove-FunctionFolders
+        Update-ModuleManifestFunctions
 
 # to run your custom scripts instead of automatic MSBuild
 #build_script:
@@ -51,8 +50,11 @@ test_script:
 # Upload the project along with TestResults as a zip archive
 on_finish:
     - ps: |
-        $stagingDirectory = (Resolve-Path ..).Path
-        $zipFile = Join-Path $stagingDirectory "$(Split-Path $pwd -Leaf).zip"
+        Publish-ModuleArtifacts
+        $zipFile = ".\dist\PowerShellGet.zip"
+        #$stagingDirectory = (Resolve-Path ..).Path
+        #$zipFile = Join-Path $stagingDirectory "$(Split-Path $pwd -Leaf).zip"
+
         @(
             # You can add other artifacts here
             (ls $zipFile)

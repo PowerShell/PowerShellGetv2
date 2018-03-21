@@ -9,10 +9,11 @@ $script:IsCoreCLR = $PSVersionTable.ContainsKey('PSEdition') -and $PSVersionTabl
 $script:ProjectRoot = Split-Path -Path $PSScriptRoot -Parent
 $script:ModuleRoot = Join-Path -Path $ProjectRoot -ChildPath "PowerShellGet"
 $script:ModuleFile = Join-Path -Path $ModuleRoot -ChildPath "PSModule.psm1"
+$script:ArtifactRoot = "$ProjectRoot\dist"
 
 $script:PublicPSGetFunctions = @( Get-ChildItem -Path $ModuleRoot\public\psgetfunctions\*.ps1 -ErrorAction SilentlyContinue )
 $script:PublicProviderFunctions = @( Get-ChildItem -Path $ModuleRoot\public\providerfunctions\*.ps1 -ErrorAction SilentlyContinue )
-$script:PrivateFunctions = @( Get-ChildItem -Path $ModuleRoot\private\*.ps1 -ErrorAction SilentlyContinue )
+$script:PrivateFunctions = @( Get-ChildItem -Path $ModuleRoot\private\functions\*.ps1 -ErrorAction SilentlyContinue )
 
 
 if($script:IsInbox) {
@@ -104,19 +105,22 @@ function Get-PSHome {
 
     return $PowerShellHome
 }
-function Merge-FunctionsIntoPSMFile {
-    # Backup the files that will be modified by this function (.psm1 and .psd1 file). These can be reverted to a pre-
-    # merged state with the Restore-PreMergedModuleFiles function in this build module.
-    New-Item -Path "$ModuleRoot\temp" -ItemType Directory -Force | Out-Null
-    Copy-Item -Path "$ModuleRoot\PSModule.psm1" -Destination "$ModuleRoot\temp" -Force | Out-Null
-    Copy-Item -Path "$ModuleRoot\PowerShellGet.psd1" -Destination "$ModuleRoot\temp" -Force | Out-Null
+function New-ModulePSMFile {
+    $moduleFile = New-Item -Path $ArtifactRoot\PowerShellGet\PSModule.psm1 -ItemType File -Force
 
-    Write-Verbose -Message "Private Functions:`n$($PrivateFunctions.BaseName)"
+    # Add the first part of the distributed .psm1 file from template.
+    Get-Content -Path "$ModuleRoot\private\modulefile\PartOne.ps1" | Out-File -FilePath $moduleFile
 
-    $PublicProviderFunctionContent = Get-Content $PublicProviderFunctions | Out-String
-    $PublicPSGetFunctionContent = Get-Content $PublicPSGetFunctions | Out-String
-    $PublicFunctionContent = $PublicPSGetFunctionContent + $PublicProviderFunctionContent
-    $PrivateFunctionContent = Get-Content $PrivateFunctions | Out-String
+    # Add a region and write out the private functions.
+    "`n#region Private Functions" | Out-File -FilePath $moduleFile -Append
+    Get-Content $PrivateFunctions | Out-String | Out-File -FilePath $moduleFile -Append
+    "#endregion`n" | Out-File -FilePath $moduleFile -Append
+
+    # Add a region and write out the public functions
+    "#region Public Functions" | Out-File -FilePath $moduleFile -Append
+    Get-Content $PublicPSGetFunctions | Out-String | Out-File -FilePath $moduleFile -Append
+    Get-Content $PublicProviderFunctions | Out-String | Out-File -FilePath $moduleFile -Append
+    "#endregion`n" | Out-File -FilePath $moduleFile -Append
 
     # Build a string to export only /public/psmexports functions from the PSModule.psm1 file.
     $publicFunctionNames = $PublicProviderFunctions.BaseName + $PublicPSGetFunctions.BaseName
@@ -125,23 +129,20 @@ function Merge-FunctionsIntoPSMFile {
     }
 
     $functionNameString = $functionNameString.TrimEnd(",")
-    $functionNameString = "Export-ModuleMember -Function $functionNameString"
+    $functionNameString = "Export-ModuleMember -Function $functionNameString`n"
 
-    # Replace placeholders in the PSModule.psm1 file.
-    $ModuleFileContent = Get-Content -Path $ModuleFile
-    $ModuleFileContent = $ModuleFileContent.Replace("#buildScriptPrivateFunctionsGoHere", $PrivateFunctionContent)
-    $ModuleFileContent = $ModuleFileContent.Replace("#buildScriptPublicFunctionsGoHere", $PublicFunctionContent)
-    $ModuleFileContent = $ModuleFileContent.Replace("#buildScriptExportFunctionsGoHere", $functionNameString)
+    # Add the export module member string to the module file.
+    $functionNameString | Out-File -FilePath $moduleFile -Append
 
-    Write-Verbose -Message "Writing functions to PSM1 file"
+    # Add the remaining part of the psm1 file from template.
+    Get-Content -Path "$ModuleRoot\private\modulefile\PartTwo.ps1" | Out-File -FilePath $moduleFile -Append
 
-    # Update the PowerShellGet.psd1 module manifest to export only /public/psmexports functions.
-    Set-Content -Path $ModuleFile -Value $ModuleFileContent
-
+}
+function Update-ModuleManifestFunctions {
     if($PSVersionTable.PSVersion.Major -lt 5) {
         # Update the psd1 file by replacing @(#functionsToExportGoHere) in psd1 file.
         # Update-ModuleManifest is not available in older powershell.
-        $ManifestFileContent = Get-Content -Path "$ModuleRoot\PowerShellGet.psd1"
+        $ManifestFileContent = Get-Content -Path "$ArtifactRoot\PowerShellGet\PowerShellGet.psd1"
 
         # FunctionsToExport string needs to be array definition with function names surrounded by quotes.
         $formatedFunctionNames = @()
@@ -156,24 +157,49 @@ function Merge-FunctionsIntoPSMFile {
 
         # Do the string replacement in the manifest file with the formated function names.
         $ManifestFileContent = $ManifestFileContent.Replace('FunctionsToExport = @()', $ManifestFunctionExportString)
-        Set-Content -Path "$ModuleRoot\PowerShellGet.psd1" -Value $ManifestFileContent
+        Set-Content -Path "$ArtifactRoot\PowerShellGet\PowerShellGet.psd1" -Value $ManifestFileContent
     } else {
-        Update-ModuleManifest -Path "$ModuleRoot\PowerShellGet.psd1" -FunctionsToExport $PublicPSGetFunctions.BaseName
+        Update-ModuleManifest -Path "$ArtifactRoot\PowerShellGet\PowerShellGet.psd1" -FunctionsToExport $PublicPSGetFunctions.BaseName
     }
 }
-function Restore-PreMergedModuleFiles {
-    $ModuleFileBackupFolder = "$ModuleRoot\temp\"
-    if(Test-Path -Path $ModuleFileBackupFolder) {
-        Move-Item -Path $ModuleFileBackupFolder\PowerShellGet.psd1 -Destination $ModuleRoot -Force
-        Move-Item -Path $ModuleFileBackupFolder\PSModule.psm1 -Destination $ModuleRoot -Force
-    } else {
-        Write-Warning -Message "Unable to restore pre-merged psm1 file, not found in $ModuleFileBackupFolder"
-    }
+function Remove-ModuleManifestFunctions ($Path) {
+    #.\dist\PowerShellGet\PowerShellGet.psd1
+    $rawFile = Get-Content -Path $Path -Raw
+    $arrFile = Get-Content -Path $Path
+
+    $functionsStartPos = ($arrFile | Select-String -Pattern 'FunctionsToExport').LineNumber -1
+    $functionsEndPos = ($arrFile | Select-String -Pattern 'Cmdlets to export').LineNumber -1
+
+    $functionsExportString = $arrFile[$functionsStartPos..$functionsEndPos] | Out-String
+
+    $rawFile = $rawFile.Replace($functionsExportString, "FunctionsToExport = @()`n`n")
+
+    $rawFile
 }
-function Remove-FunctionFolders {
-    Remove-Item -Path $ModuleRoot\public -Recurse -Force
-    Remove-Item -Path $ModuleRoot\private -Recurse -Force
-    Remove-Item -Path $ModuleRoot\temp -Recurse -Force
+function Publish-ModuleArtifacts {
+
+    if(-Not(Test-Path -Path $ArtifactRoot)) {
+        New-Item -Path $ArtifactRoot -ItemType Directory | Out-Null
+    }
+
+    if(Test-Path -Path $ArtifactRoot\PowerShellGet) {
+        Remove-Item -Path $ArtifactRoot\PowerShellGet -Recurse -Force
+    }
+
+    # Copy the module into the dist folder
+    #New-Item -Path $ArtifactRoot -ItemType Directory
+    Copy-Item -Path $ModuleRoot -Destination $ArtifactRoot -Recurse
+
+    # Remove the private and public folders from the distribution and the developer .psm1 file.
+    Remove-Item -Path $ArtifactRoot\PowerShellGet\public -Recurse -Force
+    Remove-Item -Path $ArtifactRoot\PowerShellGet\PSModule.psm1 -Force
+    Remove-Item -Path $ArtifactRoot\PowerShellGet\private -Recurse -Force
+
+    # Construct the distributed .psm1 file.
+    New-ModulePSMFile
+
+    # Update the manifest file with publicly exposed functions.
+    #Update-ModuleManifestFunctions
 }
 function Invoke-PowerShellGetTest {
 

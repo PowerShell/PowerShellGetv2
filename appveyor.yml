@@ -43,7 +43,6 @@ branches:
 # Run Pester tests and store the results
 test_script:
     - ps: |
-        Import-Module .\tools\build.psm1
         Invoke-PowerShellGetTest
 
 

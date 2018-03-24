@@ -139,42 +139,48 @@ function New-ModulePSMFile {
 
 }
 function Update-ModuleManifestFunctions {
-    if($PSVersionTable.PSVersion.Major -lt 5) {
-        # Update the psd1 file by replacing @(#functionsToExportGoHere) in psd1 file.
-        # Update-ModuleManifest is not available in older powershell.
-        $ManifestFileContent = Get-Content -Path "$ArtifactRoot\PowerShellGet\PowerShellGet.psd1"
+    # Update the psd1 file with the /public/psgetfunctions
+    # Update-ModuleManifest is not used because a) it is not availabe for ps version <5.0 and b) it is destructive.
+    # First a helper method removes the functions and replaces with the standard FunctionsToExport = @()
+    # then this string is replaced by another string built from /public/psgetfunctions
 
-        # FunctionsToExport string needs to be array definition with function names surrounded by quotes.
-        $formatedFunctionNames = @()
-        foreach($function in $PublicPSGetFunctions.basename) {
-            $function = "`'$function`'"
-            $formatedFunctionNames += $function
-        }
+    $ManifestFile = "$ModuleRoot\PowerShellGet.psd1"
 
-        # Tabbing and new lines to make the psd1 consistent
-        $formatedFunctionNames = $formatedFunctionNames -join ",`n`t"
-        $ManifestFunctionExportString = "FunctionsToExport = @(`n`t$formatedFunctionNames)`n"
+    # Call helper function to replace with an empty FunctionsToExport = @()
+    Remove-ModuleManifestFunctions -Path $ManifestFile
 
-        # Do the string replacement in the manifest file with the formated function names.
-        $ManifestFileContent = $ManifestFileContent.Replace('FunctionsToExport = @()', $ManifestFunctionExportString)
-        Set-Content -Path "$ArtifactRoot\PowerShellGet\PowerShellGet.psd1" -Value $ManifestFileContent
-    } else {
-        Update-ModuleManifest -Path "$ArtifactRoot\PowerShellGet\PowerShellGet.psd1" -FunctionsToExport $PublicPSGetFunctions.BaseName
+    $ManifestFileContent = Get-Content -Path "$ManifestFile"
+
+    # FunctionsToExport string needs to be array definition with function names surrounded by quotes.
+    $formatedFunctionNames = @()
+    foreach($function in $PublicPSGetFunctions.basename) {
+        $function = "`'$function`'"
+        $formatedFunctionNames += $function
     }
+
+    # Tabbing and new lines to make the psd1 consistent
+    $formatedFunctionNames = $formatedFunctionNames -join ",`n`t"
+    $ManifestFunctionExportString = "FunctionsToExport = @(`n`t$formatedFunctionNames)`n"
+
+    # Do the string replacement in the manifest file with the formated function names.
+    $ManifestFileContent = $ManifestFileContent.Replace('FunctionsToExport = @()', $ManifestFunctionExportString)
+    Set-Content -Path "$ManifestFile" -Value $ManifestFileContent
 }
 function Remove-ModuleManifestFunctions ($Path) {
-    #.\dist\PowerShellGet\PowerShellGet.psd1
+    # Utility method to remove the list of functions from a manifest. This is specific to this modules manifest and
+    # assumes the next item in the manifest file after the functions is a comment containing 'VariablesToExport'.
+
     $rawFile = Get-Content -Path $Path -Raw
     $arrFile = Get-Content -Path $Path
 
     $functionsStartPos = ($arrFile | Select-String -Pattern 'FunctionsToExport').LineNumber -1
-    $functionsEndPos = ($arrFile | Select-String -Pattern 'Cmdlets to export').LineNumber -1
+    $functionsEndPos = ($arrFile | Select-String -Pattern 'VariablesToExport').LineNumber -2
 
     $functionsExportString = $arrFile[$functionsStartPos..$functionsEndPos] | Out-String
 
-    $rawFile = $rawFile.Replace($functionsExportString, "FunctionsToExport = @()`n`n")
+    $rawFile = $rawFile.Replace($functionsExportString, "FunctionsToExport = @()`n")
 
-    $rawFile
+    Set-Content -Path $Path -Value $rawFile
 }
 function Publish-ModuleArtifacts {
 
@@ -197,9 +203,6 @@ function Publish-ModuleArtifacts {
 
     # Construct the distributed .psm1 file.
     New-ModulePSMFile
-
-    # Update the manifest file with publicly exposed functions.
-    #Update-ModuleManifestFunctions
 }
 function Invoke-PowerShellGetTest {
 

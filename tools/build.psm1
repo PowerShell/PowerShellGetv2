@@ -9,7 +9,8 @@ $script:IsCoreCLR = $PSVersionTable.ContainsKey('PSEdition') -and $PSVersionTabl
 $script:ProjectRoot = Split-Path -Path $PSScriptRoot -Parent
 $script:ModuleRoot = Join-Path -Path $ProjectRoot -ChildPath "PowerShellGet"
 $script:ModuleFile = Join-Path -Path $ModuleRoot -ChildPath "PSModule.psm1"
-$script:ArtifactRoot = "$ProjectRoot\dist"
+$script:ArtifactRoot = if($script:IsWindows) { "$ProjectRoot\dist" } else { "$ProjectRoot/dist" }
+
 
 $script:PublicPSGetFunctions = @( Get-ChildItem -Path $ModuleRoot\public\psgetfunctions\*.ps1 -ErrorAction SilentlyContinue )
 $script:PublicProviderFunctions = @( Get-ChildItem -Path $ModuleRoot\public\providerfunctions\*.ps1 -ErrorAction SilentlyContinue )
@@ -439,11 +440,11 @@ function Publish-ModuleArtifacts {
         Add-Type -assemblyname System.IO.Compression.FileSystem
     }
 
-    if(Test-Path -Path $env:tmp\$zipFileName) {
-        Remove-Item -Path $env:tmp\$zipFileName -Force
+    if(Test-Path -Path $TempPath\$zipFileName) {
+        Remove-Item -Path $TempPath\$zipFileName -Force
     }
 
     Write-Verbose "Zipping module artifacts in $ArtifactRoot"
-    [System.IO.Compression.ZipFile]::CreateFromDirectory($ArtifactRoot,"$env:tmp\PowerShellGet.zip")
-    Move-Item -Path $env:tmp\PowerShellGet.zip -Destination $ArtifactRoot -Force
+    [System.IO.Compression.ZipFile]::CreateFromDirectory($ArtifactRoot,"$TempPath\PowerShellGet.zip")
+    Move-Item -Path $TempPath\PowerShellGet.zip -Destination $ArtifactRoot -Force
 }

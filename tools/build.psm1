@@ -16,7 +16,6 @@ $script:PublicPSGetFunctions = @( Get-ChildItem -Path $ModuleRoot\public\psgetfu
 $script:PublicProviderFunctions = @( Get-ChildItem -Path $ModuleRoot\public\providerfunctions\*.ps1 -ErrorAction SilentlyContinue )
 $script:PrivateFunctions = @( Get-ChildItem -Path $ModuleRoot\private\functions\*.ps1 -ErrorAction SilentlyContinue )
 
-
 if($script:IsInbox) {
     $script:ProgramFilesPSPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramFiles -ChildPath "WindowsPowerShell"
 } else {

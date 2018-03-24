@@ -413,13 +413,11 @@ function Test-DailyBuild{
 }
 function Publish-ModuleArtifacts {
 
-    if(-Not(Test-Path -Path $ArtifactRoot)) {
-        New-Item -Path $ArtifactRoot -ItemType Directory | Out-Null
+    if(Test-Path -Path $ArtifactRoot) {
+        Remove-Item -Path $ArtifactRoot -Recurse -Force
     }
 
-    if(Test-Path -Path $ArtifactRoot\PowerShellGet) {
-        Remove-Item -Path $ArtifactRoot\PowerShellGet -Recurse -Force
-    }
+    New-Item -Path $ArtifactRoot -ItemType Directory | Out-Null
 
     # Copy the module into the dist folder
     #New-Item -Path $ArtifactRoot -ItemType Directory
@@ -441,10 +439,11 @@ function Publish-ModuleArtifacts {
         Add-Type -assemblyname System.IO.Compression.FileSystem
     }
 
-    if(Test-Path -Path $zipFileName) {
-        Remove-Item -Path $zipFileName -Force
+    if(Test-Path -Path $env:tmp\$zipFileName) {
+        Remove-Item -Path $env:tmp\$zipFileName -Force
     }
 
     Write-Verbose "Zipping module artifacts in $ArtifactRoot"
-    [System.IO.Compression.ZipFile]::CreateFromDirectory($ArtifactRoot, $zipFileName)
+    [System.IO.Compression.ZipFile]::CreateFromDirectory($ArtifactRoot,"$env:tmp\PowerShellGet.zip")
+    Move-Item -Path $env:tmp\PowerShellGet.zip -Destination $ArtifactRoot -Force
 }

@@ -19,7 +19,8 @@ matrix:
 
 addons:
   artifacts:
-    paths: $(ls ./../dist/PowerShellGet.zip | tr "\n" ":")
+    #paths: $(ls ./../dist/PowerShellGet.zip | tr "\n" ":")
+    paths: ./dist/PowerShellGet.zip
 
 
 install:

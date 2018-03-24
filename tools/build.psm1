@@ -182,28 +182,6 @@ function Remove-ModuleManifestFunctions ($Path) {
 
     Set-Content -Path $Path -Value $rawFile
 }
-function Publish-ModuleArtifacts {
-
-    if(-Not(Test-Path -Path $ArtifactRoot)) {
-        New-Item -Path $ArtifactRoot -ItemType Directory | Out-Null
-    }
-
-    if(Test-Path -Path $ArtifactRoot\PowerShellGet) {
-        Remove-Item -Path $ArtifactRoot\PowerShellGet -Recurse -Force
-    }
-
-    # Copy the module into the dist folder
-    #New-Item -Path $ArtifactRoot -ItemType Directory
-    Copy-Item -Path $ModuleRoot -Destination $ArtifactRoot -Recurse
-
-    # Remove the private and public folders from the distribution and the developer .psm1 file.
-    Remove-Item -Path $ArtifactRoot\PowerShellGet\public -Recurse -Force
-    Remove-Item -Path $ArtifactRoot\PowerShellGet\PSModule.psm1 -Force
-    Remove-Item -Path $ArtifactRoot\PowerShellGet\private -Recurse -Force
-
-    # Construct the distributed .psm1 file.
-    New-ModulePSMFile
-}
 function Invoke-PowerShellGetTest {
 
     Param(
@@ -406,18 +384,6 @@ function Invoke-PowerShellGetTest {
         }
     }
 
-    # Packing
-    $stagingDirectory = Microsoft.PowerShell.Management\Split-Path $ClonedProjectPath.Path -Parent
-    $zipFile = Microsoft.PowerShell.Management\Join-Path $stagingDirectory "$(Split-Path $ClonedProjectPath.Path -Leaf).zip"
-
-    if($PSEdition -ne 'Core')
-    {
-        Add-Type -assemblyname System.IO.Compression.FileSystem
-    }
-
-    Write-Verbose "Zipping $ClonedProjectPath into $zipFile"
-    [System.IO.Compression.ZipFile]::CreateFromDirectory($ClonedProjectPath.Path, $zipFile)
-
     $FailedTestCount = 0
     $TestResults | ForEach-Object { $FailedTestCount += ([int]$_.'test-results'.failures) }
     if ($FailedTestCount)
@@ -425,12 +391,11 @@ function Invoke-PowerShellGetTest {
         throw "$FailedTestCount tests failed"
     }
 }
-
 # tests if we should run a daily build
 # returns true if the build is scheduled
 # or is a pushed tag
-function Test-DailyBuild
-{
+function Test-DailyBuild{
+
     # https://docs.travis-ci.com/user/environment-variables/
     # TRAVIS_EVENT_TYPE: Indicates how the build was triggered.
     # One of push, pull_request, api, cron.
@@ -445,4 +410,41 @@ function Test-DailyBuild
     }
 
     return $false
+}
+function Publish-ModuleArtifacts {
+
+    if(-Not(Test-Path -Path $ArtifactRoot)) {
+        New-Item -Path $ArtifactRoot -ItemType Directory | Out-Null
+    }
+
+    if(Test-Path -Path $ArtifactRoot\PowerShellGet) {
+        Remove-Item -Path $ArtifactRoot\PowerShellGet -Recurse -Force
+    }
+
+    # Copy the module into the dist folder
+    #New-Item -Path $ArtifactRoot -ItemType Directory
+    Copy-Item -Path $ModuleRoot -Destination $ArtifactRoot -Recurse
+
+    # Remove the private and public folders from the distribution and the developer .psm1 file.
+    Remove-Item -Path $ArtifactRoot\PowerShellGet\public -Recurse -Force
+    Remove-Item -Path $ArtifactRoot\PowerShellGet\PSModule.psm1 -Force
+    Remove-Item -Path $ArtifactRoot\PowerShellGet\private -Recurse -Force
+
+    # Construct the distributed .psm1 file.
+    New-ModulePSMFile
+
+    # Package the module in /dist
+    $zipFileName = "$ArtifactRoot\PowerShellGet.zip"
+
+    if($PSEdition -ne 'Core')
+    {
+        Add-Type -assemblyname System.IO.Compression.FileSystem
+    }
+
+    if(Test-Path -Path $zipFileName) {
+        Remove-Item -Path $zipFileName -Force
+    }
+
+    Write-Verbose "Zipping module artifacts in $ArtifactRoot"
+    [System.IO.Compression.ZipFile]::CreateFromDirectory($ArtifactRoot, $zipFileName)
 }

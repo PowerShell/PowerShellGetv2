@@ -51,13 +51,15 @@ on_finish:
     - ps: |
         Publish-ModuleArtifacts
         $zipFile = ".\dist\PowerShellGet.zip"
+        Push-AppveyorArtifact $zipFile
+
         #$stagingDirectory = (Resolve-Path ..).Path
         #$zipFile = Join-Path $stagingDirectory "$(Split-Path $pwd -Leaf).zip"
 
-        @(
+        #@(
             # You can add other artifacts here
-            (ls $zipFile)
-        ) | % { Push-AppveyorArtifact $_.FullName }
+        #    (ls $zipFile)
+        #) | % { Push-AppveyorArtifact $_.FullName }
 
         Get-ChildItem -Path .\Tests\ -Filter 'TestResults*.xml' -File | ForEach-Object {
             (New-Object 'System.Net.WebClient').UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", "$($_.FullName)")

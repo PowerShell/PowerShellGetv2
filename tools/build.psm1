@@ -420,7 +420,6 @@ function Publish-ModuleArtifacts {
     New-Item -Path $ArtifactRoot -ItemType Directory | Out-Null
 
     # Copy the module into the dist folder
-    #New-Item -Path $ArtifactRoot -ItemType Directory
     Copy-Item -Path $ModuleRoot -Destination $ArtifactRoot -Recurse
 
     # Remove the private and public folders from the distribution and the developer .psm1 file.
@@ -444,6 +443,10 @@ function Publish-ModuleArtifacts {
     }
 
     Write-Verbose "Zipping module artifacts in $ArtifactRoot"
-    [System.IO.Compression.ZipFile]::CreateFromDirectory($ArtifactRoot,"$TempPath\PowerShellGet.zip")
+    if($IsWindows) {
+        [System.IO.Compression.ZipFile]::CreateFromDirectory($ArtifactRoot,"$TempPath\PowerShellGet.zip")
+    } else {
+        [System.IO.Compression.ZipFile]::CreateFromDirectory($ArtifactRoot,"$TempPath/PowerShellGet.zip")
+    }
     Move-Item -Path $TempPath\PowerShellGet.zip -Destination $ArtifactRoot -Force
 }

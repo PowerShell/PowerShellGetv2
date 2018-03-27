@@ -65,6 +65,12 @@ if(-not $script:PowerShellEdition) {
     }
 }
 Write-Host "PowerShellEdition value: $script:PowerShellEdition"
+
+$AllUsersModulesPath = $script:ProgramFilesModulesPath
+<# if(($script:PowerShellEdition -eq 'Core') -and $script:IsWindows)
+{
+    $AllUsersModulesPath = Join-Path -Path $PowerShellHome -ChildPath 'Modules'
+} #>
 #endregion script variables
 
 function Install-Dependencies {
@@ -180,11 +186,7 @@ function Invoke-PowerShellGetTest {
         Write-Host "TestScenario: $TestScenario"
 
         if($TestScenario -eq 'Current') {
-            $AllUsersModulesPath = $script:ProgramFilesModulesPath
-            if(($script:PowerShellEdition -eq 'Core') -and $script:IsWindows)
-            {
-                $AllUsersModulesPath = Microsoft.PowerShell.Management\Join-Path -Path $PowerShellHome -ChildPath 'Modules'
-            }
+
 
             # Install latest PackageManagement from Gallery
             $OneGetModuleName = 'PackageManagement'
@@ -228,23 +230,7 @@ function Invoke-PowerShellGetTest {
                     Remove-Item -Path $TempModulePath -Recurse -Force
                 }
             }
-
-            # Copy OneGet and PSGet modules to PSHOME
-            $PowerShellGetSourcePath = Microsoft.PowerShell.Management\Join-Path -Path $ClonedProjectPath -ChildPath $script:PowerShellGet
-            $PowerShellGetModuleInfo = Test-ModuleManifest "$PowerShellGetSourcePath\PowerShellGet.psd1" -ErrorAction Ignore
-            $ModuleVersion = "$($PowerShellGetModuleInfo.Version)"
-
-            $InstallLocation =  Microsoft.PowerShell.Management\Join-Path -Path $AllUsersModulesPath -ChildPath 'PowerShellGet'
-
-            if(($script:PowerShellEdition -eq 'Core') -or ($PSVersionTable.PSVersion -ge '5.0.0'))
-            {
-                $InstallLocation = Microsoft.PowerShell.Management\Join-Path -Path $InstallLocation -ChildPath $ModuleVersion
-            }
-            $null = New-Item -Path $InstallLocation -ItemType Directory -Force
-            Microsoft.PowerShell.Management\Copy-Item -Path "$PowerShellGetSourcePath\*" -Destination $InstallLocation -Recurse -Force
-
-            Write-Host "Copied latest PowerShellGet to $InstallLocation"
-        }
+       }
 
         & $PowerShellExePath -Command @'
             $env:PSModulePath;
@@ -337,8 +323,10 @@ function Test-DailyBuild{
 function New-ModulePSMFile {
     $moduleFile = New-Item -Path $ArtifactRoot\PowerShellGet\PSModule.psm1 -ItemType File -Force
 
+    # Add the localized data
+    'Import-LocalizedData LocalizedData -filename PSGet.Resource.psd1' | Out-File -FilePath $moduleFile
     # Add the first part of the distributed .psm1 file from template.
-    Get-Content -Path "$ModuleRoot\private\modulefile\PartOne.ps1" | Out-File -FilePath $moduleFile
+    Get-Content -Path "$ModuleRoot\private\modulefile\PartOne.ps1" | Out-File -FilePath $moduleFile -Append
 
     # Add a region and write out the private functions.
     "`n#region Private Functions" | Out-File -FilePath $moduleFile -Append
@@ -448,4 +436,20 @@ function Publish-ModuleArtifacts {
     [System.IO.Compression.ZipFile]::CreateFromDirectory($ArtifactRoot,$tempZipfile)
 
     Move-Item -Path $tempZipfile -Destination $artifactZipFile -Force
+}
+function Install-PublishedModule {
+    # function to install the merged module artifact from /dist into the module path.
+    $moduleFolder = Join-Path -Path $ArtifactRoot -ChildPath 'PowerShellGet'
+    $PowerShellGetModuleInfo = Test-ModuleManifest "$moduleFolder\PowerShellGet.psd1" -ErrorAction Ignore
+    $ModuleVersion = "$($PowerShellGetModuleInfo.Version)"
+    $InstallLocation = Join-Path -Path $AllUsersModulesPath -ChildPath 'PowerShellGet'
+
+    if(($script:PowerShellEdition -eq 'Core') -or ($PSVersionTable.PSVersion -ge '5.0.0'))
+    {
+        $InstallLocation = Join-Path -Path $InstallLocation -ChildPath $ModuleVersion
+    }
+    New-Item -Path $InstallLocation -ItemType Directory -Force | Out-Null
+    Copy-Item -Path "$moduleFolder\*" -Destination $InstallLocation -Recurse -Force
+
+    Write-Verbose -Message "Copied module artifacts from $moduleFolder merged module artifact to`n$InstallLocation"
 }

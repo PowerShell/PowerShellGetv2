@@ -105,83 +105,6 @@ function Get-PSHome {
 
     return $PowerShellHome
 }
-function New-ModulePSMFile {
-    $moduleFile = New-Item -Path $ArtifactRoot\PowerShellGet\PSModule.psm1 -ItemType File -Force
-
-    # Add the first part of the distributed .psm1 file from template.
-    Get-Content -Path "$ModuleRoot\private\modulefile\PartOne.ps1" | Out-File -FilePath $moduleFile
-
-    # Add a region and write out the private functions.
-    "`n#region Private Functions" | Out-File -FilePath $moduleFile -Append
-    Get-Content $PrivateFunctions | Out-String | Out-File -FilePath $moduleFile -Append
-    "#endregion`n" | Out-File -FilePath $moduleFile -Append
-
-    # Add a region and write out the public functions
-    "#region Public Functions" | Out-File -FilePath $moduleFile -Append
-    Get-Content $PublicPSGetFunctions | Out-String | Out-File -FilePath $moduleFile -Append
-    Get-Content $PublicProviderFunctions | Out-String | Out-File -FilePath $moduleFile -Append
-    "#endregion`n" | Out-File -FilePath $moduleFile -Append
-
-    # Build a string to export only /public/psmexports functions from the PSModule.psm1 file.
-    $publicFunctionNames = $PublicProviderFunctions.BaseName + $PublicPSGetFunctions.BaseName
-    foreach ($publicFunction in $publicFunctionNames) {
-        $functionNameString += "$publicFunction,"
-    }
-
-    $functionNameString = $functionNameString.TrimEnd(",")
-    $functionNameString = "Export-ModuleMember -Function $functionNameString`n"
-
-    # Add the export module member string to the module file.
-    $functionNameString | Out-File -FilePath $moduleFile -Append
-
-    # Add the remaining part of the psm1 file from template.
-    Get-Content -Path "$ModuleRoot\private\modulefile\PartTwo.ps1" | Out-File -FilePath $moduleFile -Append
-
-}
-function Update-ModuleManifestFunctions {
-    # Update the psd1 file with the /public/psgetfunctions
-    # Update-ModuleManifest is not used because a) it is not availabe for ps version <5.0 and b) it is destructive.
-    # First a helper method removes the functions and replaces with the standard FunctionsToExport = @()
-    # then this string is replaced by another string built from /public/psgetfunctions
-
-    $ManifestFile = "$ModuleRoot\PowerShellGet.psd1"
-
-    # Call helper function to replace with an empty FunctionsToExport = @()
-    Remove-ModuleManifestFunctions -Path $ManifestFile
-
-    $ManifestFileContent = Get-Content -Path "$ManifestFile"
-
-    # FunctionsToExport string needs to be array definition with function names surrounded by quotes.
-    $formatedFunctionNames = @()
-    foreach($function in $PublicPSGetFunctions.basename) {
-        $function = "`'$function`'"
-        $formatedFunctionNames += $function
-    }
-
-    # Tabbing and new lines to make the psd1 consistent
-    $formatedFunctionNames = $formatedFunctionNames -join ",`n`t"
-    $ManifestFunctionExportString = "FunctionsToExport = @(`n`t$formatedFunctionNames)`n"
-
-    # Do the string replacement in the manifest file with the formated function names.
-    $ManifestFileContent = $ManifestFileContent.Replace('FunctionsToExport = @()', $ManifestFunctionExportString)
-    Set-Content -Path "$ManifestFile" -Value $ManifestFileContent
-}
-function Remove-ModuleManifestFunctions ($Path) {
-    # Utility method to remove the list of functions from a manifest. This is specific to this modules manifest and
-    # assumes the next item in the manifest file after the functions is a comment containing 'VariablesToExport'.
-
-    $rawFile = Get-Content -Path $Path -Raw
-    $arrFile = Get-Content -Path $Path
-
-    $functionsStartPos = ($arrFile | Select-String -Pattern 'FunctionsToExport').LineNumber -1
-    $functionsEndPos = ($arrFile | Select-String -Pattern 'VariablesToExport').LineNumber -2
-
-    $functionsExportString = $arrFile[$functionsStartPos..$functionsEndPos] | Out-String
-
-    $rawFile = $rawFile.Replace($functionsExportString, "FunctionsToExport = @()`n")
-
-    Set-Content -Path $Path -Value $rawFile
-}
 function Invoke-PowerShellGetTest {
 
     Param(
@@ -410,6 +333,83 @@ function Test-DailyBuild{
     }
 
     return $false
+}
+function New-ModulePSMFile {
+    $moduleFile = New-Item -Path $ArtifactRoot\PowerShellGet\PSModule.psm1 -ItemType File -Force
+
+    # Add the first part of the distributed .psm1 file from template.
+    Get-Content -Path "$ModuleRoot\private\modulefile\PartOne.ps1" | Out-File -FilePath $moduleFile
+
+    # Add a region and write out the private functions.
+    "`n#region Private Functions" | Out-File -FilePath $moduleFile -Append
+    Get-Content $PrivateFunctions | Out-String | Out-File -FilePath $moduleFile -Append
+    "#endregion`n" | Out-File -FilePath $moduleFile -Append
+
+    # Add a region and write out the public functions
+    "#region Public Functions" | Out-File -FilePath $moduleFile -Append
+    Get-Content $PublicPSGetFunctions | Out-String | Out-File -FilePath $moduleFile -Append
+    Get-Content $PublicProviderFunctions | Out-String | Out-File -FilePath $moduleFile -Append
+    "#endregion`n" | Out-File -FilePath $moduleFile -Append
+
+    # Build a string to export only /public/psmexports functions from the PSModule.psm1 file.
+    $publicFunctionNames = $PublicProviderFunctions.BaseName + $PublicPSGetFunctions.BaseName
+    foreach ($publicFunction in $publicFunctionNames) {
+        $functionNameString += "$publicFunction,"
+    }
+
+    $functionNameString = $functionNameString.TrimEnd(",")
+    $functionNameString = "Export-ModuleMember -Function $functionNameString`n"
+
+    # Add the export module member string to the module file.
+    $functionNameString | Out-File -FilePath $moduleFile -Append
+
+    # Add the remaining part of the psm1 file from template.
+    Get-Content -Path "$ModuleRoot\private\modulefile\PartTwo.ps1" | Out-File -FilePath $moduleFile -Append
+
+}
+function Update-ModuleManifestFunctions {
+    # Update the psd1 file with the /public/psgetfunctions
+    # Update-ModuleManifest is not used because a) it is not availabe for ps version <5.0 and b) it is destructive.
+    # First a helper method removes the functions and replaces with the standard FunctionsToExport = @()
+    # then this string is replaced by another string built from /public/psgetfunctions
+
+    $ManifestFile = "$ModuleRoot\PowerShellGet.psd1"
+
+    # Call helper function to replace with an empty FunctionsToExport = @()
+    Remove-ModuleManifestFunctions -Path $ManifestFile
+
+    $ManifestFileContent = Get-Content -Path "$ManifestFile"
+
+    # FunctionsToExport string needs to be array definition with function names surrounded by quotes.
+    $formatedFunctionNames = @()
+    foreach($function in $PublicPSGetFunctions.basename) {
+        $function = "`'$function`'"
+        $formatedFunctionNames += $function
+    }
+
+    # Tabbing and new lines to make the psd1 consistent
+    $formatedFunctionNames = $formatedFunctionNames -join ",`n`t"
+    $ManifestFunctionExportString = "FunctionsToExport = @(`n`t$formatedFunctionNames)`n"
+
+    # Do the string replacement in the manifest file with the formated function names.
+    $ManifestFileContent = $ManifestFileContent.Replace('FunctionsToExport = @()', $ManifestFunctionExportString)
+    Set-Content -Path "$ManifestFile" -Value $ManifestFileContent
+}
+function Remove-ModuleManifestFunctions ($Path) {
+    # Utility method to remove the list of functions from a manifest. This is specific to this modules manifest and
+    # assumes the next item in the manifest file after the functions is a comment containing 'VariablesToExport'.
+
+    $rawFile = Get-Content -Path $Path -Raw
+    $arrFile = Get-Content -Path $Path
+
+    $functionsStartPos = ($arrFile | Select-String -Pattern 'FunctionsToExport').LineNumber -1
+    $functionsEndPos = ($arrFile | Select-String -Pattern 'VariablesToExport').LineNumber -2
+
+    $functionsExportString = $arrFile[$functionsStartPos..$functionsEndPos] | Out-String
+
+    $rawFile = $rawFile.Replace($functionsExportString, "FunctionsToExport = @()`n")
+
+    Set-Content -Path $Path -Value $rawFile
 }
 function Publish-ModuleArtifacts {
 

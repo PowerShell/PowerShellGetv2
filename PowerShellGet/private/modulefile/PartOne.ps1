@@ -461,9 +461,6 @@ function PackageManagementMessageResolverForScripts($MsgID, $Message) {
 
 #endregion Script message resolvers
 
-$baseDirectory = Split-Path -Path (Split-Path -Path $PSScriptRoot -Parent) -Parent
-Microsoft.PowerShell.Utility\Import-LocalizedData LocalizedData -filename PSGet.Resource.psd1 -BaseDirectory $baseDirectory
-
 #region Add .Net type for Telemetry APIs and WebProxy
 
 # Check and add InternalWebProxy type

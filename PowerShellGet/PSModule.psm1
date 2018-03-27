@@ -1,4 +1,7 @@
-﻿# Dot source the first part of this file from .\private\modulefile\PartOne.ps1
+﻿# Load localized data
+Import-LocalizedData LocalizedData -filename PSGet.Resource.psd1
+
+# Dot source the first part of this file from .\private\modulefile\PartOne.ps1
 . "$PSScriptRoot\private\modulefile\PartOne.ps1"
 
 # region Load of module functions after split from main .psm1 file issue Fix#37

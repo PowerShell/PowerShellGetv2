@@ -26,6 +26,8 @@ install:
         Import-Module .\tools\build.psm1
         Install-Dependencies
         Update-ModuleManifestFunctions
+        Publish-ModuleArtifacts
+        Install-PublishedModule
 
 # to run your custom scripts instead of automatic MSBuild
 #build_script:
@@ -49,7 +51,6 @@ test_script:
 # Upload the project along with TestResults as a zip archive
 on_finish:
     - ps: |
-        Publish-ModuleArtifacts
         $zipFile = ".\dist\PowerShellGet.zip"
         Push-AppveyorArtifact $zipFile
 

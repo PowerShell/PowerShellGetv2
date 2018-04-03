@@ -87,6 +87,52 @@ function Install-Dependencies {
             Update-AppveyorBuild -message "[Daily] $buildName"
         }
     }
+
+    Install-PackageManagement
+}
+function Install-PackageManagement {
+    # Install latest PackageManagement from Gallery
+    $OneGetModuleName = 'PackageManagement'
+    $OneGetModuleInfo = Get-Module -ListAvailable -Name $OneGetModuleName | Select-Object -First 1
+    if ($OneGetModuleInfo)
+    {
+        $NuGetProvider = Get-PackageProvider | Where-Object { $_.Name -eq 'NuGet' }
+        if(-not $NuGetProvider) {
+            Install-PackageProvider -Name NuGet -Force
+        }
+
+        $LatestOneGetInPSGallery = Find-Module -Name $OneGetModuleName
+        if($LatestOneGetInPSGallery.Version -gt $OneGetModuleInfo.Version) {
+            Install-Module -InputObject $LatestOneGetInPSGallery -Force
+        }
+    }
+    else
+    {
+        # Install latest PackageManagement module from PSGallery
+        $TempModulePath = Microsoft.PowerShell.Management\Join-Path -Path $script:TempPath -ChildPath "$(Get-Random)"
+        $null = Microsoft.PowerShell.Management\New-Item -Path $TempModulePath -Force -ItemType Directory
+        $OneGetModuleName = 'PackageManagement'
+        try
+        {
+            & $NugetExeFilePath install $OneGetModuleName -source https://www.powershellgallery.com/api/v2 -outputDirectory $TempModulePath -verbosity detailed
+            $OneGetWithVersion = Microsoft.PowerShell.Management\Get-ChildItem -Path $TempModulePath -Directory
+            $OneGetVersion = ($OneGetWithVersion.Name.Split('.',2))[1]
+
+            $OneGetModulePath = Microsoft.PowerShell.Management\Join-Path -Path  $AllUsersModulesPath -ChildPath $OneGetModuleName
+            if($PSVersionTable.PSVersion -ge '5.0.0')
+            {
+                $OneGetModulePath = Microsoft.PowerShell.Management\Join-Path -Path $OneGetModulePath -ChildPath $OneGetVersion
+            }
+
+            $null = Microsoft.PowerShell.Management\New-Item -Path $OneGetModulePath -Force -ItemType Directory
+            Microsoft.PowerShell.Management\Copy-Item -Path "$($OneGetWithVersion.FullName)\*" -Destination "$OneGetModulePath\" -Recurse -Force
+            Get-Module -ListAvailable -Name $OneGetModuleName | Microsoft.PowerShell.Core\Where-Object {$_.Version -eq $OneGetVersion}
+        }
+        finally
+        {
+            Remove-Item -Path $TempModulePath -Recurse -Force
+        }
+    }
 }
 function Get-PSHome {
     $PowerShellHome = $PSHOME
@@ -184,53 +230,6 @@ function Invoke-PowerShellGetTest {
     foreach ($TestScenario in $TestScenarios){
 
         Write-Host "TestScenario: $TestScenario"
-
-        if($TestScenario -eq 'Current') {
-
-
-            # Install latest PackageManagement from Gallery
-            $OneGetModuleName = 'PackageManagement'
-            $OneGetModuleInfo = Get-Module -ListAvailable -Name $OneGetModuleName | Select-Object -First 1
-            if ($OneGetModuleInfo)
-            {
-                $NuGetProvider = Get-PackageProvider | Where-Object { $_.Name -eq 'NuGet' }
-                if(-not $NuGetProvider) {
-                    Install-PackageProvider -Name NuGet -Force
-                }
-
-                $LatestOneGetInPSGallery = Find-Module -Name $OneGetModuleName
-                if($LatestOneGetInPSGallery.Version -gt $OneGetModuleInfo.Version) {
-                    Install-Module -InputObject $LatestOneGetInPSGallery -Force
-                }
-            }
-            else
-            {
-                # Install latest PackageManagement module from PSGallery
-                $TempModulePath = Microsoft.PowerShell.Management\Join-Path -Path $script:TempPath -ChildPath "$(Get-Random)"
-                $null = Microsoft.PowerShell.Management\New-Item -Path $TempModulePath -Force -ItemType Directory
-                $OneGetModuleName = 'PackageManagement'
-                try
-                {
-                    & $NugetExeFilePath install $OneGetModuleName -source https://www.powershellgallery.com/api/v2 -outputDirectory $TempModulePath -verbosity detailed
-                    $OneGetWithVersion = Microsoft.PowerShell.Management\Get-ChildItem -Path $TempModulePath -Directory
-                    $OneGetVersion = ($OneGetWithVersion.Name.Split('.',2))[1]
-
-                    $OneGetModulePath = Microsoft.PowerShell.Management\Join-Path -Path  $AllUsersModulesPath -ChildPath $OneGetModuleName
-                    if($PSVersionTable.PSVersion -ge '5.0.0')
-                    {
-                        $OneGetModulePath = Microsoft.PowerShell.Management\Join-Path -Path $OneGetModulePath -ChildPath $OneGetVersion
-                    }
-
-                    $null = Microsoft.PowerShell.Management\New-Item -Path $OneGetModulePath -Force -ItemType Directory
-                    Microsoft.PowerShell.Management\Copy-Item -Path "$($OneGetWithVersion.FullName)\*" -Destination "$OneGetModulePath\" -Recurse -Force
-                    Get-Module -ListAvailable -Name $OneGetModuleName | Microsoft.PowerShell.Core\Where-Object {$_.Version -eq $OneGetVersion}
-                }
-                finally
-                {
-                    Remove-Item -Path $TempModulePath -Recurse -Force
-                }
-            }
-       }
 
         & $PowerShellExePath -Command @'
             $env:PSModulePath;

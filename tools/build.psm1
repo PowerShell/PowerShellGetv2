@@ -88,6 +88,23 @@ function Install-Dependencies {
     Install-PackageManagement
 }
 function Install-PackageManagement {
+
+    # Bootstrap NuGet.exe
+    $NuGetExeName = 'NuGet.exe'
+    $NugetExeFilePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $NuGetExeName
+
+    if(-not (Test-Path -Path $NugetExeFilePath -PathType Leaf)) {
+        if(-not (Microsoft.PowerShell.Management\Test-Path -Path $script:PSGetProgramDataPath))
+        {
+            $null = Microsoft.PowerShell.Management\New-Item -Path $script:PSGetProgramDataPath -ItemType Directory -Force
+        }
+
+        # Download the NuGet.exe from https://nuget.org/NuGet.exe
+        Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri https://nuget.org/NuGet.exe -OutFile $NugetExeFilePath
+    }
+
+    Get-ChildItem -Path $NugetExeFilePath -File
+
     # Install latest PackageManagement from Gallery
     $OneGetModuleName = 'PackageManagement'
     $OneGetModuleInfo = Get-Module -ListAvailable -Name $OneGetModuleName | Select-Object -First 1
@@ -187,22 +204,6 @@ function Invoke-PowerShellGetTest {
     } else {
         $PowerShellExePath = 'pwsh'
     }
-
-    # Bootstrap NuGet.exe
-    $NuGetExeName = 'NuGet.exe'
-    $NugetExeFilePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $NuGetExeName
-
-    if(-not (Test-Path -Path $NugetExeFilePath -PathType Leaf)) {
-        if(-not (Microsoft.PowerShell.Management\Test-Path -Path $script:PSGetProgramDataPath))
-        {
-            $null = Microsoft.PowerShell.Management\New-Item -Path $script:PSGetProgramDataPath -ItemType Directory -Force
-        }
-
-        # Download the NuGet.exe from https://nuget.org/NuGet.exe
-        Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri https://nuget.org/NuGet.exe -OutFile $NugetExeFilePath
-    }
-
-    Get-ChildItem -Path $NugetExeFilePath -File
 
     # Test Environment
     # - PowerShellGet from Current branch

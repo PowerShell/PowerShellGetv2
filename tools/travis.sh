@@ -9,7 +9,7 @@ if [ $TRAVIS_EVENT_TYPE = cron ] || [ $TRAVIS_EVENT_TYPE = api ]; then
                   Update-ModuleManifestFunctions;
                   Publish-ModuleArtifacts;
                   Install-PublishedModule;
-                  Invoke-PowerShellGetTest;"
+                  Invoke-PowerShellGetTest -IsFullTestPass;"
 else
     sudo pwsh -c "Import-Module ./tools/build.psm1;
                   Install-Dependencies;

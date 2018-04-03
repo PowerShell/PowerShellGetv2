@@ -1,11 +1,11 @@
-function Uninstall-Script
+function Uninstall-Module
 {
     <#
-    .ExternalHelp ..\PSModule-help.xml
+    .ExternalHelp PSModule-help.xml
     #>
     [CmdletBinding(DefaultParameterSetName='NameParameterSet',
                    SupportsShouldProcess=$true,
-                   HelpUri='https://go.microsoft.com/fwlink/?LinkId=619789')]
+                   HelpUri='https://go.microsoft.com/fwlink/?LinkId=526864')]
     Param
     (
         [Parameter(ValueFromPipelineByPropertyName=$true,
@@ -43,22 +43,24 @@ function Uninstall-Script
         [string]
         $MaximumVersion,
 
+        [Parameter(ParameterSetName='NameParameterSet')]
+        [switch]
+        $AllVersions,
+
         [Parameter()]
         [Switch]
         $Force,
 
         [Parameter(ParameterSetName='NameParameterSet')]
-        [Switch]
+        [switch]
         $AllowPrerelease
     )
 
     Process
     {
         $PSBoundParameters["Provider"] = $script:PSModuleProviderName
-        $PSBoundParameters["MessageResolver"] = $script:PackageManagementUnInstallScriptMessageResolverScriptBlock
-        $PSBoundParameters[$script:PSArtifactType] = $script:PSArtifactTypeScript
-        $PSBoundParameters[$script:AllowPrereleaseVersions] = $AllowPrerelease
-        $null = $PSBoundParameters.Remove("AllowPrerelease")
+        $PSBoundParameters["MessageResolver"] = $script:PackageManagementUnInstallModuleMessageResolverScriptBlock
+        $PSBoundParameters[$script:PSArtifactType] = $script:PSArtifactTypeModule
 
         if($PSCmdlet.ParameterSetName -eq "InputObject")
         {
@@ -91,6 +93,7 @@ function Uninstall-Script
                                                            -MinimumVersion $MinimumVersion `
                                                            -MaximumVersion $MaximumVersion `
                                                            -RequiredVersion $RequiredVersion `
+                                                           -AllVersions:$AllVersions `
                                                            -AllowPrerelease:$AllowPrerelease
 
             if(-not $ValidationResult)

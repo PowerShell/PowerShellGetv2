@@ -1,9 +1,9 @@
-function Find-Command
+function Find-DscResource
 {
     <#
-    .ExternalHelp ..\PSModule-help.xml
+    .ExternalHelp PSModule-help.xml
     #>
-    [CmdletBinding(HelpUri = 'https://go.microsoft.com/fwlink/?LinkId=733636')]
+    [CmdletBinding(HelpUri = 'https://go.microsoft.com/fwlink/?LinkId=517196')]
     [outputtype('PSCustomObject[]')]
     Param
     (
@@ -68,14 +68,12 @@ function Find-Command
 
     Process
     {
+        $PSBoundParameters['Includes'] = 'DscResource'
+
         if($PSBoundParameters.ContainsKey('Name'))
         {
-            $PSBoundParameters['Command'] = $Name
+            $PSBoundParameters['DscResource'] = $Name
             $null = $PSBoundParameters.Remove('Name')
-        }
-        else
-        {
-            $PSBoundParameters['Includes'] = @('Cmdlet','Function')
         }
 
         if($PSBoundParameters.ContainsKey('ModuleName'))
@@ -84,27 +82,26 @@ function Find-Command
             $null = $PSBoundParameters.Remove('ModuleName')
         }
 
-
         PowerShellGet\Find-Module @PSBoundParameters |
-            Microsoft.PowerShell.Core\ForEach-Object {
-                $psgetModuleInfo = $_
-                $psgetModuleInfo.Includes.Command | Microsoft.PowerShell.Core\ForEach-Object {
-                    if(($_ -eq "*") -or ($Name -and ($Name -notcontains $_)))
-                    {
-                        return
-                    }
-
-                    $psgetCommandInfo = Microsoft.PowerShell.Utility\New-Object PSCustomObject -Property ([ordered]@{
-                            Name            = $_
-                            Version         = $psgetModuleInfo.Version
-                            ModuleName      = $psgetModuleInfo.Name
-                            Repository      = $psgetModuleInfo.Repository
-                            PSGetModuleInfo = $psgetModuleInfo
-                    })
-
-                    $psgetCommandInfo.PSTypeNames.Insert(0, 'Microsoft.PowerShell.Commands.PSGetCommandInfo')
-                    $psgetCommandInfo
+        Microsoft.PowerShell.Core\ForEach-Object {
+            $psgetModuleInfo = $_
+            $psgetModuleInfo.Includes.DscResource | Microsoft.PowerShell.Core\ForEach-Object {
+                if($Name -and ($Name -notcontains $_))
+                {
+                    return
                 }
+
+                $psgetDscResourceInfo = Microsoft.PowerShell.Utility\New-Object PSCustomObject -Property ([ordered]@{
+                        Name            = $_
+                        Version         = $psgetModuleInfo.Version
+                        ModuleName      = $psgetModuleInfo.Name
+                        Repository      = $psgetModuleInfo.Repository
+                        PSGetModuleInfo = $psgetModuleInfo
+                })
+
+                $psgetDscResourceInfo.PSTypeNames.Insert(0, 'Microsoft.PowerShell.Commands.PSGetDscResourceInfo')
+                $psgetDscResourceInfo
             }
+        }
     }
 }

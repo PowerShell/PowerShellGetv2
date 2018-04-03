@@ -22,9 +22,12 @@ init:
 
 # Install Pester and PackageManagement modules
 install:
-    - ps: | 
+    - ps: |
         Import-Module .\tools\build.psm1
         Install-Dependencies
+        Update-ModuleManifestFunctions
+        Publish-ModuleArtifacts
+        Install-PublishedModule
 
 # to run your custom scripts instead of automatic MSBuild
 #build_script:
@@ -42,19 +45,14 @@ branches:
 # Run Pester tests and store the results
 test_script:
     - ps: |
-        Import-Module .\tools\build.psm1
         Invoke-PowerShellGetTest
 
 
 # Upload the project along with TestResults as a zip archive
 on_finish:
     - ps: |
-        $stagingDirectory = (Resolve-Path ..).Path
-        $zipFile = Join-Path $stagingDirectory "$(Split-Path $pwd -Leaf).zip"
-        @(
-            # You can add other artifacts here
-            (ls $zipFile)
-        ) | % { Push-AppveyorArtifact $_.FullName }
+        $zipFile = ".\dist\PowerShellGet.zip"
+        Push-AppveyorArtifact $zipFile
 
         Get-ChildItem -Path .\Tests\ -Filter 'TestResults*.xml' -File | ForEach-Object {
             (New-Object 'System.Net.WebClient').UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", "$($_.FullName)")

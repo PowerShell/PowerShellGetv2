@@ -1,7 +1,7 @@
 function New-ScriptFileInfo
 {
     <#
-    .ExternalHelp ..\PSModule-help.xml
+    .ExternalHelp PSModule-help.xml
     #>
     [CmdletBinding(PositionalBinding=$false,
                    SupportsShouldProcess=$true,

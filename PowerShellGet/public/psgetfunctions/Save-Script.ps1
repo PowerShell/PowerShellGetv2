@@ -1,10 +1,10 @@
-function Save-Module
+function Save-Script
 {
     <#
-    .ExternalHelp ..\PSModule-help.xml
+    .ExternalHelp PSModule-help.xml
     #>
     [CmdletBinding(DefaultParameterSetName='NameAndPathParameterSet',
-                   HelpUri='https://go.microsoft.com/fwlink/?LinkId=531351',
+                   HelpUri='https://go.microsoft.com/fwlink/?LinkId=619786',
                    SupportsShouldProcess=$true)]
     Param
     (
@@ -66,13 +66,23 @@ function Save-Module
         [string[]]
         $Repository,
 
-        [Parameter(Mandatory=$true, ParameterSetName='NameAndPathParameterSet')]
-        [Parameter(Mandatory=$true, ParameterSetName='InputOjectAndPathParameterSet')]
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   ParameterSetName='NameAndPathParameterSet')]
+
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   ParameterSetName='InputOjectAndPathParameterSet')]
         [string]
         $Path,
 
-        [Parameter(Mandatory=$true, ParameterSetName='NameAndLiteralPathParameterSet')]
-        [Parameter(Mandatory=$true, ParameterSetName='InputOjectAndLiteralPathParameterSet')]
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   ParameterSetName='NameAndLiteralPathParameterSet')]
+
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   ParameterSetName='InputOjectAndLiteralPathParameterSet')]
         [string]
         $LiteralPath,
 
@@ -109,15 +119,15 @@ function Save-Module
 
         Install-NuGetClientBinaries -CallerPSCmdlet $PSCmdlet -Proxy $Proxy -ProxyCredential $ProxyCredential
 
-        # Module names already tried in the current pipeline for InputObject parameterset
-        $moduleNamesInPipeline = @()
+        # Script names already tried in the current pipeline for InputObject parameterset
+        $scriptNamesInPipeline = @()
     }
 
     Process
     {
         $PSBoundParameters["Provider"] = $script:PSModuleProviderName
-        $PSBoundParameters["MessageResolver"] = $script:PackageManagementSaveModuleMessageResolverScriptBlock
-        $PSBoundParameters[$script:PSArtifactType] = $script:PSArtifactTypeModule
+        $PSBoundParameters["MessageResolver"] = $script:PackageManagementSaveScriptMessageResolverScriptBlock
+        $PSBoundParameters[$script:PSArtifactType] = $script:PSArtifactTypeScript
         $PSBoundParameters[$script:AllowPrereleaseVersions] = $AllowPrerelease
         $null = $PSBoundParameters.Remove("AllowPrerelease")
 
@@ -126,7 +136,8 @@ function Save-Module
         {
             if($Path)
             {
-                $destinationPath = Resolve-PathHelper -Path $Path -CallerPSCmdlet $PSCmdlet | Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
+                $destinationPath = Resolve-PathHelper -Path $Path -CallerPSCmdlet $PSCmdlet |
+                                       Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
 
                 if(-not $destinationPath -or -not (Microsoft.PowerShell.Management\Test-path $destinationPath))
                 {
@@ -143,7 +154,8 @@ function Save-Module
             }
             else
             {
-                $destinationPath = Resolve-PathHelper -Path $LiteralPath -IsLiteralPath -CallerPSCmdlet $PSCmdlet | Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
+                $destinationPath = Resolve-PathHelper -Path $LiteralPath -IsLiteralPath -CallerPSCmdlet $PSCmdlet |
+                                       Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
 
                 if(-not $destinationPath -or -not (Microsoft.PowerShell.Management\Test-Path -LiteralPath $destinationPath))
                 {
@@ -183,8 +195,29 @@ function Save-Module
                 $null = $PSBoundParameters.Remove("Repository")
 
                 $ev = $null
-                $null = Get-PSRepository -Name $Repository -ErrorVariable ev -verbose:$false
+                $repositories = Get-PSRepository -Name $Repository -ErrorVariable ev -verbose:$false
                 if($ev) { return }
+
+                $RepositoriesWithoutScriptSourceLocation = $false
+                foreach($repo in $repositories)
+                {
+                    if(-not $repo.ScriptSourceLocation)
+                    {
+                        $message = $LocalizedData.ScriptSourceLocationIsMissing -f ($repo.Name)
+                        Write-Error -Message $message `
+                                    -ErrorId 'ScriptSourceLocationIsMissing' `
+                                    -Category InvalidArgument `
+                                    -TargetObject $repo.Name `
+                                    -Exception 'System.ArgumentException'
+
+                        $RepositoriesWithoutScriptSourceLocation = $true
+                    }
+                }
+
+                if($RepositoriesWithoutScriptSourceLocation)
+                {
+                    return
+                }
             }
 
             $null = PackageManagement\Save-Package @PSBoundParameters
@@ -196,14 +229,7 @@ function Save-Module
             foreach($inputValue in $InputObject)
             {
                 if (($inputValue.PSTypeNames -notcontains "Microsoft.PowerShell.Commands.PSRepositoryItemInfo") -and
-                    ($inputValue.PSTypeNames -notcontains "Deserialized.Microsoft.PowerShell.Commands.PSRepositoryItemInfo") -and
-                    ($inputValue.PSTypeNames -notcontains "Microsoft.PowerShell.Commands.PSGetCommandInfo") -and
-                    ($inputValue.PSTypeNames -notcontains "Deserialized.Microsoft.PowerShell.Commands.PSGetCommandInfo") -and
-                    ($inputValue.PSTypeNames -notcontains "Microsoft.PowerShell.Commands.PSGetDscResourceInfo") -and
-                    ($inputValue.PSTypeNames -notcontains "Deserialized.Microsoft.PowerShell.Commands.PSGetDscResourceInfo") -and
-                    ($inputValue.PSTypeNames -notcontains "Microsoft.PowerShell.Commands.PSGetRoleCapabilityInfo") -and
-                    ($inputValue.PSTypeNames -notcontains "Deserialized.Microsoft.PowerShell.Commands.PSGetRoleCapabilityInfo"))
-
+                    ($inputValue.PSTypeNames -notcontains "Deserialized.Microsoft.PowerShell.Commands.PSRepositoryItemInfo"))
                 {
                     ThrowError -ExceptionName "System.ArgumentException" `
                                 -ExceptionMessage $LocalizedData.InvalidInputObjectValue `
@@ -213,40 +239,28 @@ function Save-Module
                                 -ExceptionObject $inputValue
                 }
 
-                if( ($inputValue.PSTypeNames -contains "Microsoft.PowerShell.Commands.PSGetDscResourceInfo") -or
-                    ($inputValue.PSTypeNames -contains "Deserialized.Microsoft.PowerShell.Commands.PSGetDscResourceInfo") -or
-                    ($inputValue.PSTypeNames -contains "Microsoft.PowerShell.Commands.PSGetCommandInfo") -or
-                    ($inputValue.PSTypeNames -contains "Deserialized.Microsoft.PowerShell.Commands.PSGetCommandInfo") -or
-                    ($inputValue.PSTypeNames -contains "Microsoft.PowerShell.Commands.PSGetRoleCapabilityInfo") -or
-                    ($inputValue.PSTypeNames -contains "Deserialized.Microsoft.PowerShell.Commands.PSGetRoleCapabilityInfo"))
-                {
-                    $psgetModuleInfo = $inputValue.PSGetModuleInfo
-                }
-                else
-                {
-                    $psgetModuleInfo = $inputValue
-                }
+                $psRepositoryItemInfo = $inputValue
 
-                # Skip the module name if it is already tried in the current pipeline
-                if($moduleNamesInPipeline -contains $psgetModuleInfo.Name)
+                # Skip the script name if it is already tried in the current pipeline
+                if($scriptNamesInPipeline -contains $psRepositoryItemInfo.Name)
                 {
                     continue
                 }
 
-                $moduleNamesInPipeline += $psgetModuleInfo.Name
+                $scriptNamesInPipeline += $psRepositoryItemInfo.Name
 
-                if ($psgetModuleInfo.PowerShellGetFormatVersion -and
-                    ($script:SupportedPSGetFormatVersionMajors -notcontains $psgetModuleInfo.PowerShellGetFormatVersion.Major))
+                if ($psRepositoryItemInfo.PowerShellGetFormatVersion -and
+                    ($script:SupportedPSGetFormatVersionMajors -notcontains $psRepositoryItemInfo.PowerShellGetFormatVersion.Major))
                 {
-                    $message = $LocalizedData.NotSupportedPowerShellGetFormatVersion -f ($psgetModuleInfo.Name, $psgetModuleInfo.PowerShellGetFormatVersion, $psgetModuleInfo.Name)
+                    $message = $LocalizedData.NotSupportedPowerShellGetFormatVersionScripts -f ($psRepositoryItemInfo.Name, $psRepositoryItemInfo.PowerShellGetFormatVersion, $psRepositoryItemInfo.Name)
                     Write-Error -Message $message -ErrorId "NotSupportedPowerShellGetFormatVersion" -Category InvalidOperation
                     continue
                 }
 
-                $PSBoundParameters["Name"] = $psgetModuleInfo.Name
-                $PSBoundParameters["RequiredVersion"] = $psgetModuleInfo.Version
-                $PSBoundParameters['Source'] = $psgetModuleInfo.Repository
-                $PSBoundParameters["PackageManagementProvider"] = (Get-ProviderName -PSCustomObject $psgetModuleInfo)
+                $PSBoundParameters["Name"] = $psRepositoryItemInfo.Name
+                $PSBoundParameters["RequiredVersion"] = $psRepositoryItemInfo.Version
+                $PSBoundParameters['Source'] = $psRepositoryItemInfo.Repository
+                $PSBoundParameters["PackageManagementProvider"] = (Get-ProviderName -PSCustomObject $psRepositoryItemInfo)
 
                 $null = PackageManagement\Save-Package @PSBoundParameters
             }

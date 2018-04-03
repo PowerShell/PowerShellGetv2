@@ -6,6 +6,16 @@ $script:IsLinux = (Get-Variable -Name IsLinux -ErrorAction Ignore) -and $IsLinux
 $script:IsMacOS = (Get-Variable -Name IsMacOS -ErrorAction Ignore) -and $IsMacOS
 $script:IsCoreCLR = $PSVersionTable.ContainsKey('PSEdition') -and $PSVersionTable.PSEdition -eq 'Core'
 
+$script:ProjectRoot = Split-Path -Path $PSScriptRoot -Parent
+$script:ModuleRoot = Join-Path -Path $ProjectRoot -ChildPath "PowerShellGet"
+$script:ModuleFile = Join-Path -Path $ModuleRoot -ChildPath "PSModule.psm1"
+$script:ArtifactRoot = Join-Path -Path $ProjectRoot -ChildPath "dist"
+
+
+$script:PublicPSGetFunctions = @( Get-ChildItem -Path $ModuleRoot\public\psgetfunctions\*.ps1 -ErrorAction SilentlyContinue )
+$script:PublicProviderFunctions = @( Get-ChildItem -Path $ModuleRoot\public\providerfunctions\*.ps1 -ErrorAction SilentlyContinue )
+$script:PrivateFunctions = @( Get-ChildItem -Path $ModuleRoot\private\functions\*.ps1 -ErrorAction SilentlyContinue )
+
 if($script:IsInbox) {
     $script:ProgramFilesPSPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramFiles -ChildPath "WindowsPowerShell"
 } else {
@@ -55,6 +65,9 @@ if(-not $script:PowerShellEdition) {
     }
 }
 Write-Host "PowerShellEdition value: $script:PowerShellEdition"
+
+$AllUsersModulesPath = $script:ProgramFilesModulesPath
+
 #endregion script variables
 
 function Install-Dependencies {
@@ -71,8 +84,70 @@ function Install-Dependencies {
             Update-AppveyorBuild -message "[Daily] $buildName"
         }
     }
-}
 
+    Install-PackageManagement
+}
+function Install-PackageManagement {
+
+    # Bootstrap NuGet.exe
+    $NuGetExeName = 'NuGet.exe'
+    $NugetExeFilePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $NuGetExeName
+
+    if(-not (Test-Path -Path $NugetExeFilePath -PathType Leaf)) {
+        if(-not (Microsoft.PowerShell.Management\Test-Path -Path $script:PSGetProgramDataPath))
+        {
+            $null = Microsoft.PowerShell.Management\New-Item -Path $script:PSGetProgramDataPath -ItemType Directory -Force
+        }
+
+        # Download the NuGet.exe from https://nuget.org/NuGet.exe
+        Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri https://nuget.org/NuGet.exe -OutFile $NugetExeFilePath
+    }
+
+    Get-ChildItem -Path $NugetExeFilePath -File
+
+    # Install latest PackageManagement from Gallery
+    $OneGetModuleName = 'PackageManagement'
+    $OneGetModuleInfo = Get-Module -ListAvailable -Name $OneGetModuleName | Select-Object -First 1
+    if ($OneGetModuleInfo)
+    {
+        $NuGetProvider = Get-PackageProvider | Where-Object { $_.Name -eq 'NuGet' }
+        if(-not $NuGetProvider) {
+            Install-PackageProvider -Name NuGet -Force
+        }
+
+        $LatestOneGetInPSGallery = Find-Module -Name $OneGetModuleName
+        if($LatestOneGetInPSGallery.Version -gt $OneGetModuleInfo.Version) {
+            Install-Module -InputObject $LatestOneGetInPSGallery -Force
+        }
+    }
+    else
+    {
+        # Install latest PackageManagement module from PSGallery
+        $TempModulePath = Microsoft.PowerShell.Management\Join-Path -Path $script:TempPath -ChildPath "$(Get-Random)"
+        $null = Microsoft.PowerShell.Management\New-Item -Path $TempModulePath -Force -ItemType Directory
+        $OneGetModuleName = 'PackageManagement'
+        try
+        {
+            & $NugetExeFilePath install $OneGetModuleName -source https://www.powershellgallery.com/api/v2 -outputDirectory $TempModulePath -verbosity detailed
+            $OneGetWithVersion = Microsoft.PowerShell.Management\Get-ChildItem -Path $TempModulePath -Directory
+            $OneGetVersion = ($OneGetWithVersion.Name.Split('.',2))[1]
+
+            $OneGetModulePath = Microsoft.PowerShell.Management\Join-Path -Path  $AllUsersModulesPath -ChildPath $OneGetModuleName
+            if($PSVersionTable.PSVersion -ge '5.0.0')
+            {
+                $OneGetModulePath = Microsoft.PowerShell.Management\Join-Path -Path $OneGetModulePath -ChildPath $OneGetVersion
+            }
+
+            $null = Microsoft.PowerShell.Management\New-Item -Path $OneGetModulePath -Force -ItemType Directory
+            Microsoft.PowerShell.Management\Copy-Item -Path "$($OneGetWithVersion.FullName)\*" -Destination "$OneGetModulePath\" -Recurse -Force
+            Get-Module -ListAvailable -Name $OneGetModuleName | Microsoft.PowerShell.Core\Where-Object {$_.Version -eq $OneGetVersion}
+        }
+        finally
+        {
+            Remove-Item -Path $TempModulePath -Recurse -Force
+        }
+    }
+}
 function Get-PSHome {
     $PowerShellHome = $PSHOME
 
@@ -96,7 +171,6 @@ function Get-PSHome {
 
     return $PowerShellHome
 }
-
 function Invoke-PowerShellGetTest {
 
     Param(
@@ -131,22 +205,6 @@ function Invoke-PowerShellGetTest {
         $PowerShellExePath = 'pwsh'
     }
 
-    # Bootstrap NuGet.exe
-    $NuGetExeName = 'NuGet.exe'
-    $NugetExeFilePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $NuGetExeName
-
-    if(-not (Test-Path -Path $NugetExeFilePath -PathType Leaf)) {
-        if(-not (Microsoft.PowerShell.Management\Test-Path -Path $script:PSGetProgramDataPath))
-        {
-            $null = Microsoft.PowerShell.Management\New-Item -Path $script:PSGetProgramDataPath -ItemType Directory -Force
-        }
-
-        # Download the NuGet.exe from https://nuget.org/NuGet.exe
-        Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri https://nuget.org/NuGet.exe -OutFile $NugetExeFilePath
-    }
-
-    Get-ChildItem -Path $NugetExeFilePath -File
-
     # Test Environment
     # - PowerShellGet from Current branch
     # - PowerShellGet packaged with PowerShellCore build:
@@ -170,73 +228,6 @@ function Invoke-PowerShellGetTest {
     foreach ($TestScenario in $TestScenarios){
 
         Write-Host "TestScenario: $TestScenario"
-
-        if($TestScenario -eq 'Current') {
-            $AllUsersModulesPath = $script:ProgramFilesModulesPath
-            if(($script:PowerShellEdition -eq 'Core') -and $script:IsWindows)
-            {
-                $AllUsersModulesPath = Microsoft.PowerShell.Management\Join-Path -Path $PowerShellHome -ChildPath 'Modules'
-            }
-
-            # Install latest PackageManagement from Gallery
-            $OneGetModuleName = 'PackageManagement'
-            $OneGetModuleInfo = Get-Module -ListAvailable -Name $OneGetModuleName | Select-Object -First 1
-            if ($OneGetModuleInfo)
-            {
-                $NuGetProvider = Get-PackageProvider | Where-Object { $_.Name -eq 'NuGet' }
-                if(-not $NuGetProvider) {
-                    Install-PackageProvider -Name NuGet -Force
-                }
-
-                $LatestOneGetInPSGallery = Find-Module -Name $OneGetModuleName
-                if($LatestOneGetInPSGallery.Version -gt $OneGetModuleInfo.Version) {
-                    Install-Module -InputObject $LatestOneGetInPSGallery -Force
-                }
-            }
-            else
-            {
-                # Install latest PackageManagement module from PSGallery
-                $TempModulePath = Microsoft.PowerShell.Management\Join-Path -Path $script:TempPath -ChildPath "$(Get-Random)"
-                $null = Microsoft.PowerShell.Management\New-Item -Path $TempModulePath -Force -ItemType Directory
-                $OneGetModuleName = 'PackageManagement'
-                try
-                {
-                    & $NugetExeFilePath install $OneGetModuleName -source https://www.powershellgallery.com/api/v2 -outputDirectory $TempModulePath -verbosity detailed
-                    $OneGetWithVersion = Microsoft.PowerShell.Management\Get-ChildItem -Path $TempModulePath -Directory
-                    $OneGetVersion = ($OneGetWithVersion.Name.Split('.',2))[1]
-
-                    $OneGetModulePath = Microsoft.PowerShell.Management\Join-Path -Path  $AllUsersModulesPath -ChildPath $OneGetModuleName
-                    if($PSVersionTable.PSVersion -ge '5.0.0')
-                    {
-                        $OneGetModulePath = Microsoft.PowerShell.Management\Join-Path -Path $OneGetModulePath -ChildPath $OneGetVersion
-                    }
-
-                    $null = Microsoft.PowerShell.Management\New-Item -Path $OneGetModulePath -Force -ItemType Directory
-                    Microsoft.PowerShell.Management\Copy-Item -Path "$($OneGetWithVersion.FullName)\*" -Destination "$OneGetModulePath\" -Recurse -Force
-                    Get-Module -ListAvailable -Name $OneGetModuleName | Microsoft.PowerShell.Core\Where-Object {$_.Version -eq $OneGetVersion}
-                }
-                finally
-                {
-                    Remove-Item -Path $TempModulePath -Recurse -Force
-                }
-            }
-
-            # Copy OneGet and PSGet modules to PSHOME
-            $PowerShellGetSourcePath = Microsoft.PowerShell.Management\Join-Path -Path $ClonedProjectPath -ChildPath $script:PowerShellGet
-            $PowerShellGetModuleInfo = Test-ModuleManifest "$PowerShellGetSourcePath\PowerShellGet.psd1" -ErrorAction Ignore
-            $ModuleVersion = "$($PowerShellGetModuleInfo.Version)"
-
-            $InstallLocation =  Microsoft.PowerShell.Management\Join-Path -Path $AllUsersModulesPath -ChildPath 'PowerShellGet'
-
-            if(($script:PowerShellEdition -eq 'Core') -or ($PSVersionTable.PSVersion -ge '5.0.0'))
-            {
-                $InstallLocation = Microsoft.PowerShell.Management\Join-Path -Path $InstallLocation -ChildPath $ModuleVersion
-            }
-            $null = New-Item -Path $InstallLocation -ItemType Directory -Force
-            Microsoft.PowerShell.Management\Copy-Item -Path "$PowerShellGetSourcePath\*" -Destination $InstallLocation -Recurse -Force
-
-            Write-Host "Copied latest PowerShellGet to $InstallLocation"
-        }
 
         & $PowerShellExePath -Command @'
             $env:PSModulePath;
@@ -299,18 +290,6 @@ function Invoke-PowerShellGetTest {
         }
     }
 
-    # Packing
-    $stagingDirectory = Microsoft.PowerShell.Management\Split-Path $ClonedProjectPath.Path -Parent
-    $zipFile = Microsoft.PowerShell.Management\Join-Path $stagingDirectory "$(Split-Path $ClonedProjectPath.Path -Leaf).zip"
-
-    if($PSEdition -ne 'Core')
-    {
-        Add-Type -assemblyname System.IO.Compression.FileSystem
-    }
-
-    Write-Verbose "Zipping $ClonedProjectPath into $zipFile"
-    [System.IO.Compression.ZipFile]::CreateFromDirectory($ClonedProjectPath.Path, $zipFile)
-
     $FailedTestCount = 0
     $TestResults | ForEach-Object { $FailedTestCount += ([int]$_.'test-results'.failures) }
     if ($FailedTestCount)
@@ -318,12 +297,11 @@ function Invoke-PowerShellGetTest {
         throw "$FailedTestCount tests failed"
     }
 }
-
 # tests if we should run a daily build
 # returns true if the build is scheduled
 # or is a pushed tag
-function Test-DailyBuild
-{
+function Test-DailyBuild{
+
     # https://docs.travis-ci.com/user/environment-variables/
     # TRAVIS_EVENT_TYPE: Indicates how the build was triggered.
     # One of push, pull_request, api, cron.
@@ -338,4 +316,137 @@ function Test-DailyBuild
     }
 
     return $false
+}
+function New-ModulePSMFile {
+    $moduleFile = New-Item -Path $ArtifactRoot\PowerShellGet\PSModule.psm1 -ItemType File -Force
+
+    # Add the localized data
+    'Import-LocalizedData LocalizedData -filename PSGet.Resource.psd1' | Out-File -FilePath $moduleFile
+    # Add the first part of the distributed .psm1 file from template.
+    Get-Content -Path "$ModuleRoot\private\modulefile\PartOne.ps1" | Out-File -FilePath $moduleFile -Append
+
+    # Add a region and write out the private functions.
+    "`n#region Private Functions" | Out-File -FilePath $moduleFile -Append
+    Get-Content $PrivateFunctions | Out-String | Out-File -FilePath $moduleFile -Append
+    "#endregion`n" | Out-File -FilePath $moduleFile -Append
+
+    # Add a region and write out the public functions
+    "#region Public Functions" | Out-File -FilePath $moduleFile -Append
+    Get-Content $PublicPSGetFunctions | Out-String | Out-File -FilePath $moduleFile -Append
+    Get-Content $PublicProviderFunctions | Out-String | Out-File -FilePath $moduleFile -Append
+    "#endregion`n" | Out-File -FilePath $moduleFile -Append
+
+    # Build a string to export only /public/psmexports functions from the PSModule.psm1 file.
+    $publicFunctionNames = $PublicProviderFunctions.BaseName + $PublicPSGetFunctions.BaseName
+    foreach ($publicFunction in $publicFunctionNames) {
+        $functionNameString += "$publicFunction,"
+    }
+
+    $functionNameString = $functionNameString.TrimEnd(",")
+    $functionNameString = "Export-ModuleMember -Function $functionNameString`n"
+
+    # Add the export module member string to the module file.
+    $functionNameString | Out-File -FilePath $moduleFile -Append
+
+    # Add the remaining part of the psm1 file from template.
+    Get-Content -Path "$ModuleRoot\private\modulefile\PartTwo.ps1" | Out-File -FilePath $moduleFile -Append
+
+}
+function Update-ModuleManifestFunctions {
+    # Update the psd1 file with the /public/psgetfunctions
+    # Update-ModuleManifest is not used because a) it is not availabe for ps version <5.0 and b) it is destructive.
+    # First a helper method removes the functions and replaces with the standard FunctionsToExport = @()
+    # then this string is replaced by another string built from /public/psgetfunctions
+
+    $ManifestFile = "$ModuleRoot\PowerShellGet.psd1"
+
+    # Call helper function to replace with an empty FunctionsToExport = @()
+    Remove-ModuleManifestFunctions -Path $ManifestFile
+
+    $ManifestFileContent = Get-Content -Path "$ManifestFile"
+
+    # FunctionsToExport string needs to be array definition with function names surrounded by quotes.
+    $formatedFunctionNames = @()
+    foreach($function in $PublicPSGetFunctions.basename) {
+        $function = "`'$function`'"
+        $formatedFunctionNames += $function
+    }
+
+    # Tabbing and new lines to make the psd1 consistent
+    $formatedFunctionNames = $formatedFunctionNames -join ",`n`t"
+    $ManifestFunctionExportString = "FunctionsToExport = @(`n`t$formatedFunctionNames)`n"
+
+    # Do the string replacement in the manifest file with the formated function names.
+    $ManifestFileContent = $ManifestFileContent.Replace('FunctionsToExport = @()', $ManifestFunctionExportString)
+    Set-Content -Path "$ManifestFile" -Value $ManifestFileContent
+}
+function Remove-ModuleManifestFunctions ($Path) {
+    # Utility method to remove the list of functions from a manifest. This is specific to this modules manifest and
+    # assumes the next item in the manifest file after the functions is a comment containing 'VariablesToExport'.
+
+    $rawFile = Get-Content -Path $Path -Raw
+    $arrFile = Get-Content -Path $Path
+
+    $functionsStartPos = ($arrFile | Select-String -Pattern 'FunctionsToExport').LineNumber -1
+    $functionsEndPos = ($arrFile | Select-String -Pattern 'VariablesToExport').LineNumber -2
+
+    $functionsExportString = $arrFile[$functionsStartPos..$functionsEndPos] | Out-String
+
+    $rawFile = $rawFile.Replace($functionsExportString, "FunctionsToExport = @()`n")
+
+    Set-Content -Path $Path -Value $rawFile
+}
+function Publish-ModuleArtifacts {
+
+    if(Test-Path -Path $ArtifactRoot) {
+        Remove-Item -Path $ArtifactRoot -Recurse -Force
+    }
+
+    New-Item -Path $ArtifactRoot -ItemType Directory | Out-Null
+
+    # Copy the module into the dist folder
+    Copy-Item -Path $ModuleRoot -Destination $ArtifactRoot -Recurse
+
+    # Remove the private and public folders from the distribution and the developer .psm1 file.
+    Remove-Item -Path $ArtifactRoot\PowerShellGet\public -Recurse -Force
+    Remove-Item -Path $ArtifactRoot\PowerShellGet\PSModule.psm1 -Force
+    Remove-Item -Path $ArtifactRoot\PowerShellGet\private -Recurse -Force
+
+    # Construct the distributed .psm1 file.
+    New-ModulePSMFile
+
+    # Package the module in /dist
+    $zipFileName = "PowerShellGet.zip"
+    $artifactZipFile = Join-Path -Path $ArtifactRoot -ChildPath $zipFileName
+    $tempZipfile = Join-Path -Path $TempPath -ChildPath $zipFileName
+
+    if($PSEdition -ne 'Core')
+    {
+        Add-Type -assemblyname System.IO.Compression.FileSystem
+    }
+
+    if(Test-Path -Path $tempZipfile) {
+        Remove-Item -Path $tempZipfile -Force
+    }
+
+    Write-Verbose "Zipping module artifacts in $ArtifactRoot"
+    [System.IO.Compression.ZipFile]::CreateFromDirectory($ArtifactRoot,$tempZipfile)
+
+    Move-Item -Path $tempZipfile -Destination $artifactZipFile -Force
+}
+function Install-PublishedModule {
+    # function to install the merged module artifact from /dist into the module path.
+    $moduleFolder = Join-Path -Path $ArtifactRoot -ChildPath 'PowerShellGet'
+    $PowerShellGetModuleInfo = Test-ModuleManifest "$moduleFolder\PowerShellGet.psd1" -ErrorAction Ignore
+    $ModuleVersion = "$($PowerShellGetModuleInfo.Version)"
+    $InstallLocation = Join-Path -Path $AllUsersModulesPath -ChildPath 'PowerShellGet'
+
+    if(($script:PowerShellEdition -eq 'Core') -or ($PSVersionTable.PSVersion -ge '5.0.0'))
+    {
+        $InstallLocation = Join-Path -Path $InstallLocation -ChildPath $ModuleVersion
+    }
+    New-Item -Path $InstallLocation -ItemType Directory -Force | Out-Null
+    Copy-Item -Path "$moduleFolder\*" -Destination $InstallLocation -Recurse -Force
+
+    Write-Verbose -Message "Copied module artifacts from $moduleFolder merged module artifact to`n$InstallLocation"
 }

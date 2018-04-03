@@ -1,7 +1,7 @@
 function Register-PSRepository
 {
     <#
-    .ExternalHelp ..\PSModule-help.xml
+    .ExternalHelp PSModule-help.xml
     #>
     [CmdletBinding(DefaultParameterSetName='NameParameterSet',
                    HelpUri='https://go.microsoft.com/fwlink/?LinkID=517129')]

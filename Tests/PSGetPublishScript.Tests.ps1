@@ -904,7 +904,6 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
     #
     # Expected Result: should fail
     #
-
     It "InstallScriptWithExistingCommand" {
         $scriptName = 'Get-ChildItem'
         $scriptFilePath = Join-Path -Path $script:TempScriptsPath -ChildPath "$scriptName.ps1"

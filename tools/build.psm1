@@ -67,10 +67,7 @@ if(-not $script:PowerShellEdition) {
 Write-Host "PowerShellEdition value: $script:PowerShellEdition"
 
 $AllUsersModulesPath = $script:ProgramFilesModulesPath
-<# if(($script:PowerShellEdition -eq 'Core') -and $script:IsWindows)
-{
-    $AllUsersModulesPath = Join-Path -Path $PowerShellHome -ChildPath 'Modules'
-} #>
+
 #endregion script variables
 
 function Install-Dependencies {

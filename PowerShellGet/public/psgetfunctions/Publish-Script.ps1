@@ -37,6 +37,15 @@ function Publish-Script
         [PSCredential]
         $Credential,
 
+        [Parameter(ValueFromPipelineByPropertyName=$true)]
+        [ValidateNotNullOrEmpty()]
+        [Uri]
+        $Proxy,
+
+        [Parameter(ValueFromPipelineByPropertyName=$true)]
+        [PSCredential]
+        $ProxyCredential,
+
         [Parameter()]
         [switch]
         $Force
@@ -46,7 +55,7 @@ function Publish-Script
     {
         Get-PSGalleryApiAvailability -Repository $Repository
 
-        Install-NuGetClientBinaries -CallerPSCmdlet $PSCmdlet -BootstrapNuGetExe -Force:$Force
+        Install-NuGetClientBinaries -CallerPSCmdlet $PSCmdlet -BootstrapNuGetExe  -Proxy $Proxy -ProxyCredential $ProxyCredential -Force:$Force
     }
 
     Process

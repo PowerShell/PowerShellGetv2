@@ -71,6 +71,15 @@ function Publish-Module
         [Uri]
         $ProjectUri,
 
+        [Parameter(ValueFromPipelineByPropertyName=$true)]
+        [ValidateNotNullOrEmpty()]
+        [Uri]
+        $Proxy,
+
+        [Parameter(ValueFromPipelineByPropertyName=$true)]
+        [PSCredential]
+        $ProxyCredential,
+
         [Parameter()]
         [switch]
         $Force,
@@ -117,7 +126,7 @@ function Publish-Module
                         -ExceptionObject $ProjectUri
         }
 
-        Install-NuGetClientBinaries -CallerPSCmdlet $PSCmdlet -BootstrapNuGetExe -Force:$Force
+        Install-NuGetClientBinaries -CallerPSCmdlet $PSCmdlet -BootstrapNuGetExe -Proxy $Proxy -ProxyCredential $ProxyCredential -Force:$Force
     }
 
     Process

@@ -55,11 +55,61 @@ function SuiteSetup {
 
     # Create temp module to be published
     $script:TempModulesPath = Join-Path -Path $script:TempPath -ChildPath "PSGet_$(Get-Random)"
+    $script:TestPSModulePath = Join-Path -Path $script:TempPath -ChildPath "PSGet_$(Get-Random)"
     $null = New-Item -Path $script:TempModulesPath -ItemType Directory -Force
+    $null = New-Item -Path $script:TestPSModulePath -ItemType Directory -Force
 
     $script:PublishModuleName = "ContosoPublishModule"
     $script:PublishModuleBase = Join-Path $script:TempModulesPath $script:PublishModuleName
     $null = New-Item -Path $script:PublishModuleBase -ItemType Directory -Force
+
+    # Set up signed modules if signing is available
+    if ((Get-Module PKI -ListAvailable)) {
+        $pesterv1 = Join-Path -Path $PSScriptRoot -ChildPath "TestModules" | Join-Path -ChildPath "PesterTemp" | Join-Path -ChildPath "99.99.99.98"
+        $pesterv2 = Join-Path -Path $PSScriptRoot -ChildPath "TestModules" | Join-Path -ChildPath "PesterTemp" | Join-Path -ChildPath "99.99.99.99"
+        $pesterDestination = Join-Path -Path $script:TempModulesPath -ChildPath "Pester"
+        $pesterv1Destination = Join-Path -Path $pesterDestination -ChildPath "99.99.99.98"
+        $pesterv2Destination = Join-Path -Path $pesterDestination -ChildPath "99.99.99.99"
+        if (Test-Path -Path $pesterDestination) {
+            $null = Remove-Item -Path $pesterDestination -Force
+        }
+
+        $null = New-Item -Path $pesterDestination -Force -ItemType Directory
+
+        # Move Pester 3.4.0 to $script:TestPSModulePath
+        # If it doesn't exist, attempt to download it.
+        # If this is run offline, just fail the test for now.
+        # This module is expected to be Microsoft-signed.
+        # This is essentially a test hook to get around the hardcoded whitelist.
+        $signedPester = (Get-Module Pester -ListAvailable | Where-Object { $_.Version -eq '3.4.0' }).ModuleBase
+        if (-not $signedPester) {
+            $psName = [System.Guid]::NewGuid().ToString()
+            Register-PackageSource -Name $psName -Location "https://www.powershellgallery.com/api/v2" -ProviderName PowerShellGet -Trusted
+            try {
+                Save-Module Pester -RequiredVersion 3.4.0 -Repository $psName -Path $script:TestPSModulePath
+            } finally {
+                Unregister-PackageSource -Name $psName
+            }
+        } else {
+            $signedPesterDestination = Join-Path -Path $script:TestPSModulePath -ChildPath "Pester"
+            if (-not (Test-Path -Path $signedPesterDestination)) {
+                $null = New-Item -Path $signedPesterDestination -ItemType Directory
+            }
+            Copy-Item -Path $signedPester -Destination $signedPesterDestination -Recurse -Force
+        }
+        
+        Copy-Item -Path $pesterv1 -Destination $pesterDestination -Recurse -Force
+        Copy-Item -Path $pesterv2 -Destination $pesterDestination -Recurse -Force
+
+        $csCert = Get-CodeSigningCert
+        if (-not $csCert) {
+            Create-CodeSigningCert
+            $csCert = Get-CodeSigningCert
+        }
+
+        $null = Set-AuthenticodeSignature -FilePath (Join-Path -Path $pesterv1Destination -ChildPath "Pester.psd1") -Certificate $csCert
+        $null = Set-AuthenticodeSignature -FilePath (Join-Path -Path $pesterv2Destination -ChildPath "Pester.psd1") -Certificate $csCert
+    }
 }
 
 function SuiteCleanup {
@@ -77,6 +127,7 @@ function SuiteCleanup {
 
     RemoveItem $script:PSGalleryRepoPath
     RemoveItem $script:TempModulesPath
+    RemoveItem $script:TestPSModulePath
 }
 
 Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
@@ -1027,6 +1078,56 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         Assert ($itemInfo.Includes.RoleCapability -contains 'Lev2Maintenance') "Publish-Module was not able to populate the RoleCapability Names: $($itemInfo.Includes.RoleCapability)"
     } `
     -Skip:$($PSCulture -ne 'en-US')
+
+    It 'InstallNonMsSignedModuleOverMsSignedModule' {
+        $psgetPath = (Get-Module PowerShellGet).Path
+        $pesterRoot = Join-Path -Path $script:TempModulesPath -ChildPath "Pester"
+        $v1Path = Join-Path -Path $pesterRoot -ChildPath "99.99.99.98"
+        $v2Path = Join-Path -Path $pesterRoot -ChildPath "99.99.99.99"
+        # Publish signed modules
+        Publish-Module -Path $v1Path -Repository PSGallery
+        Publish-Module -Path $v2Path -Repository PSGallery
+        $oldPSModulePath = $env:PSModulePath
+        $env:PSModulePath = $script:TestPSModulePath
+        try {
+            # Install v1 of signed module
+            Install-Module Pester -RequiredVersion 99.99.99.98 -Repository PSGallery -ErrorVariable iev -WarningVariable iwv
+            # Expect: Warning and Success
+            $iev | should be $null
+            $iwv | should not be $null
+
+            # Fix PSModulePath
+            # This is done before installing v2 because
+            # PSGet will install to hardcoded paths regardless of PSModulePath
+            # Meaning the hacked $env:PSModulePath won't have the new 99.99.99.98 module
+            $env:PSModulePath = $oldPSModulePath
+
+            # Install v2 of signed module
+            Install-Module Pester -RequiredVersion 99.99.99.99 -Repository PSGallery -ErrorVariable iev -WarningVariable iwv
+            # Expect: No warning and Success
+            $iev | should be $null
+            $iwv | should be $null
+        } finally {
+            # If v1 exists, uninstall
+            if (Get-Module Pester -ListAvailable | Where-Object { $_.Version -eq '99.99.99.98' }) {
+                $moduleBase = (Get-Module Pester -ListAvailable | Where-Object { $_.Version -eq '99.99.99.98' }).ModuleBase
+                $null = Remove-Item -Path $moduleBase -Force -Recurse
+                if (Get-Module Pester -ListAvailable | Where-Object { $_.Version -eq '99.99.99.98' }) {
+                    Write-Error "Failed to uninstall v1"
+                }
+            }
+
+            # If v2 exists, uninstall
+            if (Get-Module Pester -ListAvailable | Where-Object { $_.Version -eq '99.99.99.99' }) {
+                $moduleBase = (Get-Module Pester -ListAvailable | Where-Object { $_.Version -eq '99.99.99.99' }).ModuleBase
+                $null = Remove-Item -Path $moduleBase -Force -Recurse
+                if (Get-Module Pester -ListAvailable | Where-Object { $_.Version -eq '99.99.99.99' }) {
+                    Write-Error "Failed to uninstall v2"
+                }
+            }
+        }
+    } `
+    -Skip:$(-not (Get-Module PKI -ListAvailable))
 }
 
 Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {

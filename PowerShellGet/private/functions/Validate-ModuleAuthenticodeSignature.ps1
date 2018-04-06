@@ -1,3 +1,9 @@
+# Modules allowed to install non-Microsoft signed modules over Microsoft signed modules
+$script:WhitelistedModules = @{
+    "Pester"     = $true
+    "PSReadline" = $true
+}
+
 function Validate-ModuleAuthenticodeSignature
 {
     [CmdletBinding()]
@@ -114,14 +120,20 @@ function Validate-ModuleAuthenticodeSignature
                 }
                 else
                 {
-                    $Message = $LocalizedData.PublishersMismatch -f ($InstalledModuleInfo.Name, $InstalledModuleVersion, $CurrentModuleInfo.Name, $CurrentModuleAuthenticodePublisher, $CurrentModuleInfo.Version)
-                    ThrowError -ExceptionName 'System.InvalidOperationException' `
-                               -ExceptionMessage $message `
-                               -ErrorId 'PublishersMismatch' `
-                               -CallerPSCmdlet $PSCmdlet `
-                               -ErrorCategory InvalidOperation
+                    if (-not $script:WhitelistedModules.ContainsKey($CurrentModuleInfo.Name)) {
+                        $Message = $LocalizedData.PublishersMismatch -f ($InstalledModuleInfo.Name, $InstalledModuleVersion, $CurrentModuleInfo.Name, $CurrentModuleAuthenticodePublisher, $CurrentModuleInfo.Version)
+                        ThrowError -ExceptionName 'System.InvalidOperationException' `
+                                -ExceptionMessage $message `
+                                -ErrorId 'PublishersMismatch' `
+                                -CallerPSCmdlet $PSCmdlet `
+                                -ErrorCategory InvalidOperation
 
-                    return $false
+                        return $false
+                    }
+
+                    $Message = $LocalizedData.PublishersMismatchAsWarning -f ($InstalledModuleInfo.Name, $InstalledModuleVersion, $CurrentModuleInfo.Name, $CurrentModuleAuthenticodePublisher, $CurrentModuleInfo.Version)
+                    Write-Warning $Message
+                    return $true
                 }
             }
             else

@@ -117,6 +117,8 @@ Run following commands in PowerShell Console with Administrator privileges.
 Import-Module "$ClonePath\tools\build.psm1"
 
 Install-Dependencies
+# Execute the following, replacing $ClonePath, when testing PSGet changes
+# $env:PSModulePath = "$ClonePath;$env:PSModulePath"
 
 Invoke-PowerShellGetTest
 ```

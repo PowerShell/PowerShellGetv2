@@ -67,7 +67,7 @@ function SuiteSetup {
     RemoveItem $script:PSGalleryRepoPath
     $null = New-Item -Path $script:PSGalleryRepoPath -ItemType Directory -Force
 
-    Set-PSGallerySourceLocation -Name $script:localGalleryName -Location $script:PSGalleryRepoPath -PublishLocation $script:PSGalleryRepoPath
+    Set-PSGallerySourceLocation -Name $script:localGalleryName -Location $script:PSGalleryRepoPath -PublishLocation $script:PSGalleryRepoPath -UseExistingModuleSourcesFile
 
     # Set up signed modules if signing is available
     if ((Get-Module PKI -ListAvailable)) {

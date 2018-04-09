@@ -1065,10 +1065,19 @@ function Set-PSGallerySourceLocation
 
         [Parameter()]
         [string]
-        $ScriptPublishLocation
+        $ScriptPublishLocation,
+
+        [Parameter()]
+        [switch]
+        $UseExistingModuleSourcesFile
     )
 
-    $PSGetModuleSources = [ordered]@{}
+    if ($UseExistingModuleSourcesFile) {
+        $PSGetModuleSources = Import-CliXml -Path $script:moduleSourcesFilePath
+    } else {
+        $PSGetModuleSources = [ordered]@{}
+    }
+    
     $moduleSource = New-Object PSCustomObject -Property ([ordered]@{
             Name = $Name
             SourceLocation =  $Location

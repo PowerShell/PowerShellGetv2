@@ -71,8 +71,6 @@ function SuiteSetup {
 
     # Set up signed modules if signing is available
     if ((Get-Module PKI -ListAvailable)) {
-        $pesterv1 = Join-Path -Path $PSScriptRoot -ChildPath "TestModules" | Join-Path -ChildPath "PesterTemp" | Join-Path -ChildPath "99.99.99.98"
-        $pesterv2 = Join-Path -Path $PSScriptRoot -ChildPath "TestModules" | Join-Path -ChildPath "PesterTemp" | Join-Path -ChildPath "99.99.99.99"
         $pesterDestination = Join-Path -Path $script:TempModulesPath -ChildPath "Pester"
         $pesterv1Destination = Join-Path -Path $pesterDestination -ChildPath "99.99.99.98"
         $pesterv2Destination = Join-Path -Path $pesterDestination -ChildPath "99.99.99.99"
@@ -81,6 +79,11 @@ function SuiteSetup {
         }
 
         $null = New-Item -Path $pesterDestination -Force -ItemType Directory
+        $null = New-Item -Path $pesterv1Destination -Force -ItemType Directory
+        $null = New-Item -Path $pesterv2Destination -Force -ItemType Directory
+
+        $null = New-ModuleManifest -Path (Join-Path -Path $pesterv1Destination -ChildPath "Pester.psd1") -Description "Test signed module v1" -ModuleVersion 99.99.99.98
+        $null = New-ModuleManifest -Path (Join-Path -Path $pesterv2Destination -ChildPath "Pester.psd1") -Description "Test signed module v2" -ModuleVersion 99.99.99.99
 
         # Move Pester 3.4.0 to $script:TestPSModulePath
         # If it doesn't exist, attempt to download it.
@@ -103,9 +106,6 @@ function SuiteSetup {
             }
             Copy-Item -Path $signedPester -Destination $signedPesterDestination -Recurse -Force
         }
-        
-        Copy-Item -Path $pesterv1 -Destination $pesterDestination -Recurse -Force
-        Copy-Item -Path $pesterv2 -Destination $pesterDestination -Recurse -Force
 
         $csCert = Get-CodeSigningCert -IncludeLocalMachineCerts
         if (-not $csCert) {

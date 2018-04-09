@@ -1044,6 +1044,11 @@ function RemoveItem
 function Set-PSGallerySourceLocation
 {
     Param(    
+        [Parameter(Mandatory=$false)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Name = 'PSGallery',
+
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
         [string]
@@ -1065,7 +1070,7 @@ function Set-PSGallerySourceLocation
 
     $PSGetModuleSources = [ordered]@{}
     $moduleSource = New-Object PSCustomObject -Property ([ordered]@{
-            Name = 'PSGallery'
+            Name = $Name
             SourceLocation =  $Location
             PublishLocation = $PublishLocation
             ScriptSourceLocation =  $ScriptSourceLocation
@@ -1078,7 +1083,7 @@ function Set-PSGallerySourceLocation
         })
 
     $moduleSource.PSTypeNames.Insert(0, "Microsoft.PowerShell.Commands.PSRepository")
-    $PSGetModuleSources.Add("PSGallery", $moduleSource)
+    $PSGetModuleSources.Add($Name, $moduleSource)
     
     if(-not (Test-Path $script:PSGetAppLocalPath))
     {
@@ -1299,7 +1304,7 @@ function Get-CodeSigningCert
     if ((-not $cert) -and $IncludeLocalMachineCerts) {
         $cert = @(get-childitem cert:\LocalMachine\My -codesigning | Where-Object {(Set-AuthenticodeSignature $scriptName -cert $_).Status -eq "Valid"})[0];
     }
-    
+
     del $scriptName
     $cert
 }

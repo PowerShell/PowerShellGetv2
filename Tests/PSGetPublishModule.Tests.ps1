@@ -101,10 +101,10 @@ function SuiteSetup {
         Copy-Item -Path $pesterv1 -Destination $pesterDestination -Recurse -Force
         Copy-Item -Path $pesterv2 -Destination $pesterDestination -Recurse -Force
 
-        $csCert = Get-CodeSigningCert
+        $csCert = Get-CodeSigningCert -IncludeLocalMachineCerts
         if (-not $csCert) {
             Create-CodeSigningCert
-            $csCert = Get-CodeSigningCert
+            $csCert = Get-CodeSigningCert -IncludeLocalMachineCerts
         }
 
         $null = Set-AuthenticodeSignature -FilePath (Join-Path -Path $pesterv1Destination -ChildPath "Pester.psd1") -Certificate $csCert

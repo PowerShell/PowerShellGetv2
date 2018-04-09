@@ -1,9 +1,3 @@
-# Modules allowed to install non-Microsoft signed modules over Microsoft signed modules
-$script:WhitelistedModules = @{
-    "Pester"     = $true
-    "PSReadline" = $true
-}
-
 function Validate-ModuleAuthenticodeSignature
 {
     [CmdletBinding()]

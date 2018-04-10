@@ -906,7 +906,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         $env:PSModulePath = $script:TestPSModulePath
         try {
             # Install v1 of signed module
-            Install-Module Pester -RequiredVersion 99.99.99.98 -Repository $script:localGalleryName -ErrorVariable iev -WarningVariable iwv
+            Install-Module Pester -RequiredVersion 99.99.99.98 -Repository $script:localGalleryName -ErrorVariable iev -WarningVariable iwv -Force
             # Expect: Warning and Success
             $iev | should be $null
             $iwv | should not be $null
@@ -918,7 +918,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
             $env:PSModulePath = $oldPSModulePath
 
             # Install v2 of signed module
-            Install-Module Pester -RequiredVersion 99.99.99.99 -Repository $script:localGalleryName -ErrorVariable iev -WarningVariable iwv
+            Install-Module Pester -RequiredVersion 99.99.99.99 -Repository $script:localGalleryName -ErrorVariable iev -WarningVariable iwv -Force
             # Expect: No warning and Success
             $iev | should be $null
             $iwv | should be $null

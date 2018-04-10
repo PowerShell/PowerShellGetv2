@@ -896,6 +896,10 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: Warning and installed
     #
     It 'InstallNonMsSignedModuleOverMsSignedModule' {
+        Write-Host "START: AppVeyor image info dump"
+        Write-Host $($PSVersionTable | fl * | Out-String)
+        Write-Host $([Environment]::OSVersion | fl * | Out-String)
+        Write-Host "END: AppVeyor image info dump"
         $pesterRoot = Join-Path -Path $script:TempModulesPath -ChildPath "Pester"
         $v1Path = Join-Path -Path $pesterRoot -ChildPath "99.99.99.98"
         $v2Path = Join-Path -Path $pesterRoot -ChildPath "99.99.99.99"

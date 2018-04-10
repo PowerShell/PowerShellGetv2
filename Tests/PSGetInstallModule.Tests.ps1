@@ -923,6 +923,9 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
             $iev | should be $null
             $iwv | should be $null
         } finally {
+            # Fix PSModulePath again in case the fix in the try-block didn't work
+            $env:PSModulePath = $oldPSModulePath
+
             # If v1 exists, uninstall
             if (Get-Module Pester -ListAvailable | Where-Object { $_.Version -eq '99.99.99.98' }) {
                 $moduleBase = (Get-Module Pester -ListAvailable | Where-Object { $_.Version -eq '99.99.99.98' }).ModuleBase

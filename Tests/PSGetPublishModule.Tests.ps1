@@ -55,9 +55,7 @@ function SuiteSetup {
 
     # Create temp module to be published
     $script:TempModulesPath = Join-Path -Path $script:TempPath -ChildPath "PSGet_$(Get-Random)"
-    $script:TestPSModulePath = Join-Path -Path $script:TempPath -ChildPath "PSGet_$(Get-Random)"
     $null = New-Item -Path $script:TempModulesPath -ItemType Directory -Force
-    $null = New-Item -Path $script:TestPSModulePath -ItemType Directory -Force
 
     $script:PublishModuleName = "ContosoPublishModule"
     $script:PublishModuleBase = Join-Path $script:TempModulesPath $script:PublishModuleName
@@ -79,7 +77,6 @@ function SuiteCleanup {
 
     RemoveItem $script:PSGalleryRepoPath
     RemoveItem $script:TempModulesPath
-    RemoveItem $script:TestPSModulePath
 }
 
 Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {

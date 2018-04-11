@@ -329,6 +329,12 @@ $script:PackageManagementUpdateModuleMessageResolverScriptBlock =  {
                                                 }
                                             }
 
+# Modules allowed to install non-Microsoft signed modules over Microsoft signed modules
+$script:WhitelistedModules = @{
+    "Pester"     = $true
+    "PSReadline" = $true
+}
+
 function PackageManagementMessageResolver($MsgID, $Message) {
               	$NoMatchFound = $LocalizedData.NoMatchFound
               	$SourceNotFound = $LocalizedData.SourceNotFound

@@ -254,6 +254,7 @@ ConvertFrom-StringData @'
         RequiredScriptVersoinFormat=<ScriptName>, <ScriptName>:<MinimumVersion>, <ScriptName>:[<RequiredVersion>], <ScriptName>:[<MinimumVersion>,<MaximumVersion>], <ScriptName>:[,<MaximumVersion>]
         FailedToParseRequiredScripts=Cannot parse REQUIREDSCRIPTS '{0}'. Acceptable formats are: '{1}'.
         FailedToParseRequiredScriptsVersion=Version format error: {0}, '{1}'. Acceptable formats are: '{2}'. 
+        PublishersMismatchAsWarning=Module '{0}' version '{1}' published by '{2}' will be superceded by version '{3}' published by '{4}'. If you do not trust the new publisher, uninstall the module.
 ###PSLOC
 '@
 

@@ -945,7 +945,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
             }
         }
     } `
-    -Skip:$((-not (Get-Module PKI -ListAvailable)) -and ([Environment]::OSVersion.Version -ge '10.0'))
+    -Skip:$((-not (Get-Module PKI -ListAvailable)) -or ([Environment]::OSVersion.Version -ge '10.0'))
 }
 
 Describe PowerShell.PSGet.InstallModuleTests.P1 -Tags 'P1','OuterLoop' {

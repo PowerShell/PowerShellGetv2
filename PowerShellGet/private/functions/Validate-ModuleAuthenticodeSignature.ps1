@@ -125,7 +125,7 @@ function Validate-ModuleAuthenticodeSignature
                         return $false
                     }
 
-                    $Message = $LocalizedData.PublishersMismatchAsWarning -f ($InstalledModuleInfo.Name, $InstalledModuleVersion, $CurrentModuleInfo.Name, $CurrentModuleAuthenticodePublisher, $CurrentModuleInfo.Version)
+                    $Message = $LocalizedData.PublishersMismatchAsWarning -f ($InstalledModuleInfo.Name, $InstalledModuleVersion, $InstalledModuleAuthenticodePublisher, $CurrentModuleInfo.Version, $CurrentModuleAuthenticodePublisher)
                     Write-Warning $Message
                     return $true
                 }

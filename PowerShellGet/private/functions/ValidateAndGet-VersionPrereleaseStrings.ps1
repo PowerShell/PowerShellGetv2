@@ -72,10 +72,10 @@ function ValidateAndGet-VersionPrereleaseStrings
                    -ExceptionObject $Version
     }
 
-    $fullVersion = if ($Prerelease) { "$Version-$Prerelease" } else { $Version }
+    $fullVersion = if ($Prerelease) { "$VersionVersion-$Prerelease" } else { "$VersionVersion" }
 
     $results = @{
-        Version = $Version
+        Version = "$VersionVersion"
         Prerelease = $Prerelease
         FullVersion = $fullVersion
     }

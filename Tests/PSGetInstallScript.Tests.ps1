@@ -1754,4 +1754,16 @@ Describe PowerShell.PSGet.InstallScriptTests.P1 -Tags 'P1','OuterLoop' {
         }
     } `
     -Skip:$($PSCulture -ne 'en-US')
+
+    It "Get-InstalledScript cmdlet with leading zeros in RequiredVersion value" {
+        $scriptName = 'Fabrikam-ServerScript'
+        $version = '1.2'
+        Install-Script $scriptName -RequiredVersion $version
+        $res = Get-InstalledScript $scriptName -RequiredVersion '1.02'
+        $res.Name | Should Be $scriptName
+        $res.Version | Should Be $version
+
+        $res = Get-InstalledScript $scriptName -RequiredVersion $version
+        $res.Version | Should Be $version
+    }
 }

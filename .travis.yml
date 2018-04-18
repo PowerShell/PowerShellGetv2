@@ -19,7 +19,8 @@ matrix:
 
 addons:
   artifacts:
-    paths: $(ls ./../PowerShellGet.zip | tr "\n" ":")
+    #paths: $(ls ./../dist/PowerShellGet.zip | tr "\n" ":")
+    paths: ./dist/PowerShellGet.zip
 
 
 install:
@@ -31,10 +32,10 @@ install:
     fi
   - bash <(wget -O - https://raw.githubusercontent.com/PowerShell/PowerShell/master/tools/install-powershell.sh)
   - pushd tools
-  - chmod +x travis.sh  
+  - chmod +x travis.sh
   - popd
 
-script: 
+script:
   - echo "TRAVIS_EVENT_TYPE value $TRAVIS_EVENT_TYPE"
   - ./tools/travis.sh
 

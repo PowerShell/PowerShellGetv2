@@ -2,9 +2,19 @@
 $script:PowerShellGet = 'PowerShellGet'
 $script:IsInbox = $PSHOME.EndsWith('\WindowsPowerShell\v1.0', [System.StringComparison]::OrdinalIgnoreCase)
 $script:IsWindows = (-not (Get-Variable -Name IsWindows -ErrorAction Ignore)) -or $IsWindows
-$script:IsLinux = (Get-Variable -Name IsLinux -ErrorAction Ignore) -and $IsLinux 
+$script:IsLinux = (Get-Variable -Name IsLinux -ErrorAction Ignore) -and $IsLinux
 $script:IsMacOS = (Get-Variable -Name IsMacOS -ErrorAction Ignore) -and $IsMacOS
 $script:IsCoreCLR = $PSVersionTable.ContainsKey('PSEdition') -and $PSVersionTable.PSEdition -eq 'Core'
+
+$script:ProjectRoot = Split-Path -Path $PSScriptRoot -Parent
+$script:ModuleRoot = Join-Path -Path $ProjectRoot -ChildPath "PowerShellGet"
+$script:ModuleFile = Join-Path -Path $ModuleRoot -ChildPath "PSModule.psm1"
+$script:ArtifactRoot = Join-Path -Path $ProjectRoot -ChildPath "dist"
+
+
+$script:PublicPSGetFunctions = @( Get-ChildItem -Path $ModuleRoot\public\psgetfunctions\*.ps1 -ErrorAction SilentlyContinue )
+$script:PublicProviderFunctions = @( Get-ChildItem -Path $ModuleRoot\public\providerfunctions\*.ps1 -ErrorAction SilentlyContinue )
+$script:PrivateFunctions = @( Get-ChildItem -Path $ModuleRoot\private\functions\*.ps1 -ErrorAction SilentlyContinue )
 
 if($script:IsInbox) {
     $script:ProgramFilesPSPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramFiles -ChildPath "WindowsPowerShell"
@@ -44,22 +54,25 @@ if($script:IsWindows) {
     $script:PSGetAppLocalPath = "$HOME/.config/powershell/powershellget"
 }
 
-# AppVeyor.yml sets a value to $env:PowerShellEdition variable, 
+# AppVeyor.yml sets a value to $env:PowerShellEdition variable,
 # otherwise set $script:PowerShellEdition value based on the current PowerShell Edition.
 $script:PowerShellEdition = [System.Environment]::GetEnvironmentVariable("PowerShellEdition")
 if(-not $script:PowerShellEdition) {
-    if($script:IsCoreCLR) { 
+    if($script:IsCoreCLR) {
         $script:PowerShellEdition = 'Core'
-    } else { 
+    } else {
         $script:PowerShellEdition = 'Desktop'
     }
 }
 Write-Host "PowerShellEdition value: $script:PowerShellEdition"
+
+$AllUsersModulesPath = $script:ProgramFilesModulesPath
+
 #endregion script variables
 
 function Install-Dependencies {
     # Update build title for daily builds
-    if($script:IsWindows -and (Test-DailyBuild)) {        
+    if($script:IsWindows -and (Test-DailyBuild)) {
         if($env:APPVEYOR_PULL_REQUEST_TITLE)
         {
             $buildName += $env:APPVEYOR_PULL_REQUEST_TITLE
@@ -71,33 +84,86 @@ function Install-Dependencies {
             Update-AppveyorBuild -message "[Daily] $buildName"
         }
     }
-}
 
+    Install-PackageManagement
+}
+function Install-PackageManagement {
+
+    # Bootstrap NuGet.exe
+    $NuGetExeName = 'NuGet.exe'
+    $NugetExeFilePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $NuGetExeName
+
+    if(-not (Test-Path -Path $NugetExeFilePath -PathType Leaf)) {
+        if(-not (Microsoft.PowerShell.Management\Test-Path -Path $script:PSGetProgramDataPath))
+        {
+            $null = Microsoft.PowerShell.Management\New-Item -Path $script:PSGetProgramDataPath -ItemType Directory -Force
+        }
+
+        # Download the NuGet.exe from https://nuget.org/NuGet.exe
+        Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri https://nuget.org/NuGet.exe -OutFile $NugetExeFilePath
+    }
+
+    Get-ChildItem -Path $NugetExeFilePath -File
+
+    # Install latest PackageManagement from Gallery
+    $OneGetModuleName = 'PackageManagement'
+    $OneGetModuleInfo = Get-Module -ListAvailable -Name $OneGetModuleName | Select-Object -First 1
+    if ($OneGetModuleInfo)
+    {
+        $NuGetProvider = Get-PackageProvider | Where-Object { $_.Name -eq 'NuGet' }
+        if(-not $NuGetProvider) {
+            Install-PackageProvider -Name NuGet -Force
+        }
+
+        $LatestOneGetInPSGallery = Find-Module -Name $OneGetModuleName
+        if($LatestOneGetInPSGallery.Version -gt $OneGetModuleInfo.Version) {
+            Install-Module -InputObject $LatestOneGetInPSGallery -Force
+        }
+    }
+    else
+    {
+        # Install latest PackageManagement module from PSGallery
+        $TempModulePath = Microsoft.PowerShell.Management\Join-Path -Path $script:TempPath -ChildPath "$(Get-Random)"
+        $null = Microsoft.PowerShell.Management\New-Item -Path $TempModulePath -Force -ItemType Directory
+        $OneGetModuleName = 'PackageManagement'
+        try
+        {
+            & $NugetExeFilePath install $OneGetModuleName -source https://www.powershellgallery.com/api/v2 -outputDirectory $TempModulePath -verbosity detailed
+            $OneGetWithVersion = Microsoft.PowerShell.Management\Get-ChildItem -Path $TempModulePath -Directory
+            $OneGetVersion = ($OneGetWithVersion.Name.Split('.',2))[1]
+
+            $OneGetModulePath = Microsoft.PowerShell.Management\Join-Path -Path  $AllUsersModulesPath -ChildPath $OneGetModuleName
+            if($PSVersionTable.PSVersion -ge '5.0.0')
+            {
+                $OneGetModulePath = Microsoft.PowerShell.Management\Join-Path -Path $OneGetModulePath -ChildPath $OneGetVersion
+            }
+
+            $null = Microsoft.PowerShell.Management\New-Item -Path $OneGetModulePath -Force -ItemType Directory
+            Microsoft.PowerShell.Management\Copy-Item -Path "$($OneGetWithVersion.FullName)\*" -Destination "$OneGetModulePath\" -Recurse -Force
+            Get-Module -ListAvailable -Name $OneGetModuleName | Microsoft.PowerShell.Core\Where-Object {$_.Version -eq $OneGetVersion}
+        }
+        finally
+        {
+            Remove-Item -Path $TempModulePath -Recurse -Force
+        }
+    }
+}
 function Get-PSHome {
     $PowerShellHome = $PSHOME
 
-    # Install PowerShell Core MSI on Windows.
+    # Install PowerShell Core on Windows.
     if(($script:PowerShellEdition -eq 'Core') -and $script:IsWindows)
     {
-        $PowerShellMsiPath = Get-PowerShellCoreBuild -AppVeyorProjectName 'PowerShell'
-        $PowerShellInstallPath = "$env:SystemDrive\PowerShellCore"
-        <#
-        $PowerShellMsiUrl = 'https://github.com/PowerShell/PowerShell/releases/download/v6.0.0-alpha.11/PowerShell_6.0.0.11-alpha.11-win81-x64.msi'
-        $PowerShellMsiName = 'PowerShell_6.0.0.11-alpha.11-win81-x64.msi'
-        $PowerShellMsiPath = Microsoft.PowerShell.Management\Join-Path -Path $PSScriptRoot -ChildPath $PowerShellMsiName
-        Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri $PowerShellMsiUrl -OutFile $PowerShellMsiPath
-        #>
-        Start-Process -FilePath "$env:SystemRoot\System32\msiexec.exe" -ArgumentList "/qb INSTALLFOLDER=$PowerShellInstallPath /i $PowerShellMsiPath" -Wait
-        
-        $PowerShellVersionPath = Get-ChildItem -Path $PowerShellInstallPath -Attributes Directory | Select-Object -First 1 -ErrorAction Ignore
-        $PowerShellHome = $null
-        if ($PowerShellVersionPath) {
-            $PowerShellHome = $PowerShellVersionPath.FullName
-        }
-        
+        $InstallPSCoreUrl = 'https://aka.ms/install-pscore'
+        $InstallPSCorePath = Microsoft.PowerShell.Management\Join-Path -Path $PSScriptRoot -ChildPath 'install-powershell.ps1'
+        Microsoft.PowerShell.Utility\Invoke-RestMethod -Uri $InstallPSCoreUrl -OutFile $InstallPSCorePath
+
+        $PowerShellHome = "$env:SystemDrive\PowerShellCore"
+        & $InstallPSCorePath -Destination $PowerShellHome -Daily
+
         if(-not $PowerShellHome -or -not (Microsoft.PowerShell.Management\Test-Path -Path $PowerShellHome -PathType Container))
         {
-            Throw "$PowerShellHome path is not available."  
+            Throw "$PowerShellHome path is not available."
         }
 
         Write-Host ("PowerShell Home Path '{0}'" -f $PowerShellHome)
@@ -105,8 +171,7 @@ function Get-PSHome {
 
     return $PowerShellHome
 }
-
-function Invoke-PowerShellGetTest {    
+function Invoke-PowerShellGetTest {
 
     Param(
         [Parameter()]
@@ -116,7 +181,7 @@ function Invoke-PowerShellGetTest {
 
     Write-Host -ForegroundColor Green "`$env:PS_DAILY_BUILD value $env:PS_DAILY_BUILD"
     Write-Host -ForegroundColor Green "`$env:APPVEYOR_SCHEDULED_BUILD value $env:APPVEYOR_SCHEDULED_BUILD"
-    Write-Host -ForegroundColor Green "`$env:APPVEYOR_REPO_TAG_NAME value $env:APPVEYOR_REPO_TAG_NAME"    
+    Write-Host -ForegroundColor Green "`$env:APPVEYOR_REPO_TAG_NAME value $env:APPVEYOR_REPO_TAG_NAME"
     Write-Host -ForegroundColor Green "TRAVIS_EVENT_TYPE environment variable value $([System.Environment]::GetEnvironmentVariable('TRAVIS_EVENT_TYPE'))"
 
     if(-not $IsFullTestPass){
@@ -126,7 +191,7 @@ function Invoke-PowerShellGetTest {
     Write-Host -ForegroundColor Green "Test-DailyBuild: $(Test-DailyBuild)"
 
     $env:APPVEYOR_TEST_PASS = $true
-    $ClonedProjectPath = Resolve-Path "$PSScriptRoot\.."    
+    $ClonedProjectPath = Resolve-Path "$PSScriptRoot\.."
     $PowerShellGetTestsPath = "$ClonedProjectPath\Tests\"
     $PowerShellHome = Get-PSHome
     if($script:IsWindows){
@@ -140,25 +205,9 @@ function Invoke-PowerShellGetTest {
         $PowerShellExePath = 'pwsh'
     }
 
-    # Bootstrap NuGet.exe
-    $NuGetExeName = 'NuGet.exe'
-    $NugetExeFilePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $NuGetExeName
-    
-    if(-not (Test-Path -Path $NugetExeFilePath -PathType Leaf)) {
-        if(-not (Microsoft.PowerShell.Management\Test-Path -Path $script:PSGetProgramDataPath))
-        {
-            $null = Microsoft.PowerShell.Management\New-Item -Path $script:PSGetProgramDataPath -ItemType Directory -Force
-        }
-        
-        # Download the NuGet.exe from https://nuget.org/NuGet.exe
-        Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri https://nuget.org/NuGet.exe -OutFile $NugetExeFilePath
-    }
-
-    Get-ChildItem -Path $NugetExeFilePath -File
-
     # Test Environment
-    # - PowerShellGet from Current branch 
-    # - PowerShellGet packaged with PowerShellCore build: 
+    # - PowerShellGet from Current branch
+    # - PowerShellGet packaged with PowerShellCore build:
     #   -- Where PowerShellGet module was installed from MyGet feed https://powershell.myget.org/F/powershellmodule/api/v2/
     #   -- This option is used only for Daily builds
     $TestScenarios = @()
@@ -176,76 +225,9 @@ function Invoke-PowerShellGetTest {
 
     $TestResults = @()
 
-    foreach ($TestScenario in $TestScenarios){    
-        
+    foreach ($TestScenario in $TestScenarios){
+
         Write-Host "TestScenario: $TestScenario"
-
-        if($TestScenario -eq 'Current') {
-            $AllUsersModulesPath = $script:ProgramFilesModulesPath
-            if(($script:PowerShellEdition -eq 'Core') -and $script:IsWindows)
-            {
-                $AllUsersModulesPath = Microsoft.PowerShell.Management\Join-Path -Path $PowerShellHome -ChildPath 'Modules'
-            }
-
-            # Install latest PackageManagement from Gallery
-            $OneGetModuleName = 'PackageManagement'
-            $OneGetModuleInfo = Get-Module -ListAvailable -Name $OneGetModuleName | Select-Object -First 1
-            if ($OneGetModuleInfo)
-            {
-                $NuGetProvider = Get-PackageProvider | Where-Object { $_.Name -eq 'NuGet' }
-                if(-not $NuGetProvider) {
-                    Install-PackageProvider -Name NuGet -Force
-                }
-
-                $LatestOneGetInPSGallery = Find-Module -Name $OneGetModuleName
-                if($LatestOneGetInPSGallery.Version -gt $OneGetModuleInfo.Version) {
-                    Install-Module -InputObject $LatestOneGetInPSGallery -Force
-                }
-            }
-            else
-            {
-                # Install latest PackageManagement module from PSGallery
-                $TempModulePath = Microsoft.PowerShell.Management\Join-Path -Path $script:TempPath -ChildPath "$(Get-Random)"
-                $null = Microsoft.PowerShell.Management\New-Item -Path $TempModulePath -Force -ItemType Directory
-                $OneGetModuleName = 'PackageManagement'
-                try
-                {
-                    & $NugetExeFilePath install $OneGetModuleName -source https://www.powershellgallery.com/api/v2 -outputDirectory $TempModulePath -verbosity detailed
-                    $OneGetWithVersion = Microsoft.PowerShell.Management\Get-ChildItem -Path $TempModulePath -Directory
-                    $OneGetVersion = ($OneGetWithVersion.Name.Split('.',2))[1]
-        
-                    $OneGetModulePath = Microsoft.PowerShell.Management\Join-Path -Path  $AllUsersModulesPath -ChildPath $OneGetModuleName
-                    if($PSVersionTable.PSVersion -ge '5.0.0')
-                    {
-                        $OneGetModulePath = Microsoft.PowerShell.Management\Join-Path -Path $OneGetModulePath -ChildPath $OneGetVersion
-                    }
-        
-                    $null = Microsoft.PowerShell.Management\New-Item -Path $OneGetModulePath -Force -ItemType Directory
-                    Microsoft.PowerShell.Management\Copy-Item -Path "$($OneGetWithVersion.FullName)\*" -Destination "$OneGetModulePath\" -Recurse -Force
-                    Get-Module -ListAvailable -Name $OneGetModuleName | Microsoft.PowerShell.Core\Where-Object {$_.Version -eq $OneGetVersion}
-                }
-                finally
-                {
-                    Remove-Item -Path $TempModulePath -Recurse -Force
-                }
-            }
-        
-            # Copy OneGet and PSGet modules to PSHOME    
-            $PowerShellGetSourcePath = Microsoft.PowerShell.Management\Join-Path -Path $ClonedProjectPath -ChildPath $script:PowerShellGet
-            $PowerShellGetModuleInfo = Test-ModuleManifest "$PowerShellGetSourcePath\PowerShellGet.psd1" -ErrorAction Ignore
-            $ModuleVersion = "$($PowerShellGetModuleInfo.Version)"
-
-            $InstallLocation =  Microsoft.PowerShell.Management\Join-Path -Path $AllUsersModulesPath -ChildPath 'PowerShellGet'
-
-            if(($script:PowerShellEdition -eq 'Core') -or ($PSVersionTable.PSVersion -ge '5.0.0'))
-            {
-                $InstallLocation = Microsoft.PowerShell.Management\Join-Path -Path $InstallLocation -ChildPath $ModuleVersion
-            }
-            $null = New-Item -Path $InstallLocation -ItemType Directory -Force
-            Microsoft.PowerShell.Management\Copy-Item -Path "$PowerShellGetSourcePath\*" -Destination $InstallLocation -Recurse -Force
-
-            Write-Host "Copied latest PowerShellGet to $InstallLocation"
-        }
 
         & $PowerShellExePath -Command @'
             $env:PSModulePath;
@@ -263,7 +245,7 @@ function Invoke-PowerShellGetTest {
             Get-Module -Name Pester -ListAvailable;
 
             # Remove PSGetModuleInfo.xml files from the installed module bases to ensure that Update-Module tests executed properly.
-            Get-InstalledModule -Name Pester,PackageManagement -ErrorAction SilentlyContinue | Foreach-Object {
+            Get-InstalledModule -Name Pester,PackageManagement,DockerMsftProvider -ErrorAction SilentlyContinue | Foreach-Object {
                 $PSGetModuleInfoXmlPath = Join-Path -Path $_.InstalledLocation -ChildPath 'PSGetModuleInfo.xml'
                 Remove-Item -Path $PSGetModuleInfoXmlPath -Force -Verbose
             }
@@ -308,18 +290,6 @@ function Invoke-PowerShellGetTest {
         }
     }
 
-    # Packing
-    $stagingDirectory = Microsoft.PowerShell.Management\Split-Path $ClonedProjectPath.Path -Parent
-    $zipFile = Microsoft.PowerShell.Management\Join-Path $stagingDirectory "$(Split-Path $ClonedProjectPath.Path -Leaf).zip"
-    
-    if($PSEdition -ne 'Core')
-    {
-        Add-Type -assemblyname System.IO.Compression.FileSystem
-    }
-
-    Write-Verbose "Zipping $ClonedProjectPath into $zipFile"
-    [System.IO.Compression.ZipFile]::CreateFromDirectory($ClonedProjectPath.Path, $zipFile)
-
     $FailedTestCount = 0
     $TestResults | ForEach-Object { $FailedTestCount += ([int]$_.'test-results'.failures) }
     if ($FailedTestCount)
@@ -327,20 +297,19 @@ function Invoke-PowerShellGetTest {
         throw "$FailedTestCount tests failed"
     }
 }
-
 # tests if we should run a daily build
 # returns true if the build is scheduled
 # or is a pushed tag
-function Test-DailyBuild
-{
+function Test-DailyBuild{
+
     # https://docs.travis-ci.com/user/environment-variables/
     # TRAVIS_EVENT_TYPE: Indicates how the build was triggered.
     # One of push, pull_request, api, cron.
-    $TRAVIS_EVENT_TYPE = [System.Environment]::GetEnvironmentVariable('TRAVIS_EVENT_TYPE')    
-    if(($env:PS_DAILY_BUILD -eq 'True') -or 
-       ($env:APPVEYOR_SCHEDULED_BUILD -eq 'True') -or 
+    $TRAVIS_EVENT_TYPE = [System.Environment]::GetEnvironmentVariable('TRAVIS_EVENT_TYPE')
+    if(($env:PS_DAILY_BUILD -eq 'True') -or
+       ($env:APPVEYOR_SCHEDULED_BUILD -eq 'True') -or
        ($env:APPVEYOR_REPO_TAG_NAME) -or
-       ($TRAVIS_EVENT_TYPE -eq 'cron') -or 
+       ($TRAVIS_EVENT_TYPE -eq 'cron') -or
        ($TRAVIS_EVENT_TYPE -eq 'api'))
     {
         return $true
@@ -348,126 +317,136 @@ function Test-DailyBuild
 
     return $false
 }
+function New-ModulePSMFile {
+    $moduleFile = New-Item -Path $ArtifactRoot\PowerShellGet\PSModule.psm1 -ItemType File -Force
 
-function Get-PowerShellCoreBuild {
-    [CmdletBinding()]
-    param(
-        [Parameter()]
-        [string]
-        $AppVeyorProjectName = 'powershell-f975h',
+    # Add the localized data
+    'Import-LocalizedData LocalizedData -filename PSGet.Resource.psd1' | Out-File -FilePath $moduleFile
+    # Add the first part of the distributed .psm1 file from template.
+    Get-Content -Path "$ModuleRoot\private\modulefile\PartOne.ps1" | Out-File -FilePath $moduleFile -Append
 
-        [Parameter()]
-        [string]
-        $GitHubBranchName = 'master',
+    # Add a region and write out the private functions.
+    "`n#region Private Functions" | Out-File -FilePath $moduleFile -Append
+    Get-Content $PrivateFunctions | Out-String | Out-File -FilePath $moduleFile -Append
+    "#endregion`n" | Out-File -FilePath $moduleFile -Append
 
-        [Parameter()]
-        [string]
-        $Destination = 'C:\projects'
-    )
+    # Add a region and write out the public functions
+    "#region Public Functions" | Out-File -FilePath $moduleFile -Append
+    Get-Content $PublicPSGetFunctions | Out-String | Out-File -FilePath $moduleFile -Append
+    Get-Content $PublicProviderFunctions | Out-String | Out-File -FilePath $moduleFile -Append
+    "#endregion`n" | Out-File -FilePath $moduleFile -Append
 
-    $appVeyorConstants =  @{ 
-        AccountName = 'powershell'
-        ApiUrl = 'https://ci.appveyor.com/api'
+    # Build a string to export only /public/psmexports functions from the PSModule.psm1 file.
+    $publicFunctionNames = $PublicProviderFunctions.BaseName + $PublicPSGetFunctions.BaseName
+    foreach ($publicFunction in $publicFunctionNames) {
+        $functionNameString += "$publicFunction,"
     }
 
-    $foundGood = $false
-    $records = 20
-    $lastBuildId = $null
-    $project = $null
+    $functionNameString = $functionNameString.TrimEnd(",")
+    $functionNameString = "Export-ModuleMember -Function $functionNameString`n"
 
-    while(!$foundGood)
+    # Add the export module member string to the module file.
+    $functionNameString | Out-File -FilePath $moduleFile -Append
+
+    # Add the remaining part of the psm1 file from template.
+    Get-Content -Path "$ModuleRoot\private\modulefile\PartTwo.ps1" | Out-File -FilePath $moduleFile -Append
+
+}
+function Update-ModuleManifestFunctions {
+    # Update the psd1 file with the /public/psgetfunctions
+    # Update-ModuleManifest is not used because a) it is not availabe for ps version <5.0 and b) it is destructive.
+    # First a helper method removes the functions and replaces with the standard FunctionsToExport = @()
+    # then this string is replaced by another string built from /public/psgetfunctions
+
+    $ManifestFile = "$ModuleRoot\PowerShellGet.psd1"
+
+    # Call helper function to replace with an empty FunctionsToExport = @()
+    Remove-ModuleManifestFunctions -Path $ManifestFile
+
+    $ManifestFileContent = Get-Content -Path "$ManifestFile"
+
+    # FunctionsToExport string needs to be array definition with function names surrounded by quotes.
+    $formatedFunctionNames = @()
+    foreach($function in $PublicPSGetFunctions.basename) {
+        $function = "`'$function`'"
+        $formatedFunctionNames += $function
+    }
+
+    # Tabbing and new lines to make the psd1 consistent
+    $formatedFunctionNames = $formatedFunctionNames -join ",`n`t"
+    $ManifestFunctionExportString = "FunctionsToExport = @(`n`t$formatedFunctionNames)`n"
+
+    # Do the string replacement in the manifest file with the formated function names.
+    $ManifestFileContent = $ManifestFileContent.Replace('FunctionsToExport = @()', $ManifestFunctionExportString)
+    Set-Content -Path "$ManifestFile" -Value $ManifestFileContent
+}
+function Remove-ModuleManifestFunctions ($Path) {
+    # Utility method to remove the list of functions from a manifest. This is specific to this modules manifest and
+    # assumes the next item in the manifest file after the functions is a comment containing 'VariablesToExport'.
+
+    $rawFile = Get-Content -Path $Path -Raw
+    $arrFile = Get-Content -Path $Path
+
+    $functionsStartPos = ($arrFile | Select-String -Pattern 'FunctionsToExport').LineNumber -1
+    $functionsEndPos = ($arrFile | Select-String -Pattern 'VariablesToExport').LineNumber -2
+
+    $functionsExportString = $arrFile[$functionsStartPos..$functionsEndPos] | Out-String
+
+    $rawFile = $rawFile.Replace($functionsExportString, "FunctionsToExport = @()`n")
+
+    Set-Content -Path $Path -Value $rawFile
+}
+function Publish-ModuleArtifacts {
+
+    if(Test-Path -Path $ArtifactRoot) {
+        Remove-Item -Path $ArtifactRoot -Recurse -Force
+    }
+
+    New-Item -Path $ArtifactRoot -ItemType Directory | Out-Null
+
+    # Copy the module into the dist folder
+    Copy-Item -Path $ModuleRoot -Destination $ArtifactRoot -Recurse
+
+    # Remove the private and public folders from the distribution and the developer .psm1 file.
+    Remove-Item -Path $ArtifactRoot\PowerShellGet\public -Recurse -Force
+    Remove-Item -Path $ArtifactRoot\PowerShellGet\PSModule.psm1 -Force
+    Remove-Item -Path $ArtifactRoot\PowerShellGet\private -Recurse -Force
+
+    # Construct the distributed .psm1 file.
+    New-ModulePSMFile
+
+    # Package the module in /dist
+    $zipFileName = "PowerShellGet.zip"
+    $artifactZipFile = Join-Path -Path $ArtifactRoot -ChildPath $zipFileName
+    $tempZipfile = Join-Path -Path $TempPath -ChildPath $zipFileName
+
+    if($PSEdition -ne 'Core')
     {
-        $startBuildIdString = [string]::Empty
-        if($lastBuildId)
-        {
-            $startBuildIdString = "&startBuildId=$lastBuildId"
-        }
-
-
-        $project = Invoke-RestMethod -Method Get -Uri "$($appVeyorConstants.ApiUrl)/projects/$($appVeyorConstants.AccountName)/$AppVeyorProjectName/history?recordsNumber=$records$startBuildIdString&branch=$GitHubBranchName"
-
-        foreach($build in $project.builds)
-        {
-            $version = $build.version
-            $status = $build.status
-            if($status -ieq 'success')
-            {
-                Write-Verbose "Using PowerShell Version: $version"
-
-                $foundGood = $true
-
-                Write-Host "Uri = $($appVeyorConstants.ApiUrl)/projects/$($appVeyorConstants.AccountName)/$AppVeyorProjectName/build/$version"
-                $project = Invoke-RestMethod -Method Get -Uri "$($appVeyorConstants.ApiUrl)/projects/$($appVeyorConstants.AccountName)/$AppVeyorProjectName/build/$version" 
-                break
-            }
-            else 
-            {
-                Write-Warning "There is a newer PowerShell build, $version, which is in status: $status"
-            }
-        }
+        Add-Type -assemblyname System.IO.Compression.FileSystem
     }
 
-    # get project with last build details
-    if (-not $project) {
-
-        throw "Cannot find a good build for $GitHubBranchName"
+    if(Test-Path -Path $tempZipfile) {
+        Remove-Item -Path $tempZipfile -Force
     }
 
-    # we assume here that build has a single job
-    # get this job id
+    Write-Verbose "Zipping module artifacts in $ArtifactRoot"
+    [System.IO.Compression.ZipFile]::CreateFromDirectory($ArtifactRoot,$tempZipfile)
 
-    $jobId = $project.build.jobs[0].jobId
-    Write-Verbose "jobId=$jobId"
-    
-    Write-Verbose "$project.build.jobs[0]"
+    Move-Item -Path $tempZipfile -Destination $artifactZipFile -Force
+}
+function Install-PublishedModule {
+    # function to install the merged module artifact from /dist into the module path.
+    $moduleFolder = Join-Path -Path $ArtifactRoot -ChildPath 'PowerShellGet'
+    $PowerShellGetModuleInfo = Test-ModuleManifest "$moduleFolder\PowerShellGet.psd1" -ErrorAction Ignore
+    $ModuleVersion = "$($PowerShellGetModuleInfo.Version)"
+    $InstallLocation = Join-Path -Path $AllUsersModulesPath -ChildPath 'PowerShellGet'
 
-    $artifactsUrl = "$($appVeyorConstants.ApiUrl)/buildjobs/$jobId/artifacts"
-
-    Write-Verbose "Uri=$artifactsUrl"
-    $artifacts = Invoke-RestMethod -Method Get -Uri $artifactsUrl 
-
-    if (-not $artifacts) {
-        throw "Cannot find artifacts in $artifactsUrl"
-    }
-
-    # Get PowerShellCore.msi artifacts for Windows
-    $artifacts = $artifacts | where-object { $_.filename -like '*powershell*.msi'}
-    $returnArtifactsLocation = @{}
-
-    #download artifacts to a temp location
-    foreach($artifact in $artifacts)
+    if(($script:PowerShellEdition -eq 'Core') -or ($PSVersionTable.PSVersion -ge '5.0.0'))
     {
-        $artifactPath = $artifact[0].fileName
-        $artifactFileName = Split-Path -Path $artifactPath -Leaf
-
-        # artifact will be downloaded as 
-        $tempLocalArtifactPath = "$Destination\Temp-$artifactFileName-$jobId.msi"
-        $localArtifactPath = "$Destination\$artifactFileName-$jobId.msi"
-        if(!(Test-Path $localArtifactPath))
-        {
-            # download artifact
-            # -OutFile - is local file name where artifact will be downloaded into
-
-            try 
-            {
-                Write-Host "PowerShell MSI URL: $($appVeyorConstants.ApiUrl)/buildjobs/$jobId/artifacts/$artifactPath"
-                $ProgressPreference = 'SilentlyContinue'
-                Invoke-WebRequest -Method Get -Uri "$($appVeyorConstants.ApiUrl)/buildjobs/$jobId/artifacts/$artifactPath" `
-                    -OutFile $tempLocalArtifactPath  -UseBasicParsing -DisableKeepAlive
-
-                Move-Item -Path $tempLocalArtifactPath -Destination $localArtifactPath   
-            } 
-            finally
-            {
-                $ProgressPreference = 'Continue'
-                if(test-path $tempLocalArtifactPath)
-                {
-                    remove-item $tempLocalArtifactPath
-                }
-            } 
-        }
+        $InstallLocation = Join-Path -Path $InstallLocation -ChildPath $ModuleVersion
     }
+    New-Item -Path $InstallLocation -ItemType Directory -Force | Out-Null
+    Copy-Item -Path "$moduleFolder\*" -Destination $InstallLocation -Recurse -Force
 
-    Write-Verbose $localArtifactPath
-    return $localArtifactPath
+    Write-Verbose -Message "Copied module artifacts from $moduleFolder merged module artifact to`n$InstallLocation"
 }

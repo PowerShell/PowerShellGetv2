@@ -1044,6 +1044,11 @@ function RemoveItem
 function Set-PSGallerySourceLocation
 {
     Param(    
+        [Parameter(Mandatory=$false)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Name = 'PSGallery',
+
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
         [string]
@@ -1060,12 +1065,21 @@ function Set-PSGallerySourceLocation
 
         [Parameter()]
         [string]
-        $ScriptPublishLocation
+        $ScriptPublishLocation,
+
+        [Parameter()]
+        [switch]
+        $UseExistingModuleSourcesFile
     )
 
-    $PSGetModuleSources = [ordered]@{}
+    if ($UseExistingModuleSourcesFile) {
+        $PSGetModuleSources = Import-CliXml -Path $script:moduleSourcesFilePath
+    } else {
+        $PSGetModuleSources = [ordered]@{}
+    }
+    
     $moduleSource = New-Object PSCustomObject -Property ([ordered]@{
-            Name = 'PSGallery'
+            Name = $Name
             SourceLocation =  $Location
             PublishLocation = $PublishLocation
             ScriptSourceLocation =  $ScriptSourceLocation
@@ -1078,7 +1092,7 @@ function Set-PSGallerySourceLocation
         })
 
     $moduleSource.PSTypeNames.Insert(0, "Microsoft.PowerShell.Commands.PSRepository")
-    $PSGetModuleSources.Add("PSGallery", $moduleSource)
+    $PSGetModuleSources.Add($Name, $moduleSource)
     
     if(-not (Test-Path $script:PSGetAppLocalPath))
     {
@@ -1287,10 +1301,19 @@ function Set-PATHVariableForScriptsInstallLocation
 
 function Get-CodeSigningCert
 {
+    param(
+        [switch]
+        $IncludeLocalMachineCerts
+    )
+
     $cert = $null;
     $scriptName = Join-Path $script:TempPath  "$([IO.Path]::GetRandomFileName()).ps1"  
     "get-date" >$scriptName  
     $cert = @(get-childitem cert:\CurrentUser\My -codesigning | Where-Object {(Set-AuthenticodeSignature $scriptName -cert $_).Status -eq "Valid"})[0];  
+    if ((-not $cert) -and $IncludeLocalMachineCerts) {
+        $cert = @(get-childitem cert:\LocalMachine\My -codesigning | Where-Object {(Set-AuthenticodeSignature $scriptName -cert $_).Status -eq "Valid"})[0];
+    }
+
     del $scriptName
     $cert
 }

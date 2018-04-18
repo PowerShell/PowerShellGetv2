@@ -66,8 +66,8 @@ function Save-Module
         [string[]]
         $Repository,
 
-        [Parameter(Mandatory=$true, ParameterSetName='NameAndPathParameterSet')]
-        [Parameter(Mandatory=$true, ParameterSetName='InputOjectAndPathParameterSet')]
+        [Parameter(Mandatory=$true, Position=1, ParameterSetName='NameAndPathParameterSet')]
+        [Parameter(Mandatory=$true, Position=1, ParameterSetName='InputOjectAndPathParameterSet')]
         [string]
         $Path,
 

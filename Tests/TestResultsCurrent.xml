@@ -1,0 +1,475 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<test-results xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="nunit_schema_2.5.xsd" name="Pester" total="301" errors="0" failures="1" not-run="0" inconclusive="0" ignored="6" skipped="0" invalid="0" date="2018-04-18" time="10:18:01">
+  <environment user="Administrator" machine-name="DESKTOP-SMRM8CB" cwd="C:\Users\Administrator\Source\Repos\PowerShellGet\Tests" user-domain="DESKTOP-SMRM8CB" platform="Microsoft Windows 10 Enterprise|C:\windows|\Device\Harddisk0\Partition3" nunit-version="2.5.8.0" os-version="10.0.15063" clr-version="4.0.30319.42000" />
+  <culture-info current-culture="en-US" current-uiculture="en-US" />
+  <test-suite type="TestFixture" name="Pester" executed="True" result="Failure" success="False" time="1875.1676" asserts="0" description="Pester">
+    <results>
+      <test-suite type="TestFixture" name="C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\Pester.CatalogSignedModules.Tests.ps1" executed="True" result="Success" success="True" time="114.1131" asserts="0" description="C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\Pester.CatalogSignedModules.Tests.ps1">
+        <results>
+          <test-suite type="TestFixture" name="Install-Module --- Microsoft signed versions of Microsoft.PowerShell.Archive module" executed="True" result="Success" success="True" time="65.1604" asserts="0" description="Install-Module --- Microsoft signed versions of Microsoft.PowerShell.Archive module">
+            <results>
+              <test-case description="Install-Module Microsoft.PowerShell.Archive -- valid catalog signed module version with a previous version under System32 path: Should work" name="Install-Module --- Microsoft signed versions of Microsoft.PowerShell.Archive module.Install-Module Microsoft.PowerShell.Archive -- valid catalog signed module version with a previous version under System32 path: Should work" time="14.2152" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="Install-Module Microsoft.PowerShell.Archive -- Authenticode publisher is different from the previously installed module version: Should fail" name="Install-Module --- Microsoft signed versions of Microsoft.PowerShell.Archive module.Install-Module Microsoft.PowerShell.Archive -- Authenticode publisher is different from the previously installed module version: Should fail" time="11.6173" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="Install-Module Microsoft.PowerShell.Archive -- Catalog authenticode signature is missing in the version: Should fail" name="Install-Module --- Microsoft signed versions of Microsoft.PowerShell.Archive module.Install-Module Microsoft.PowerShell.Archive -- Catalog authenticode signature is missing in the version: Should fail" time="7.7931" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="Install-Module Microsoft.PowerShell.Archive -- catalog authenticode signature is invalid: Should fail" name="Install-Module --- Microsoft signed versions of Microsoft.PowerShell.Archive module.Install-Module Microsoft.PowerShell.Archive -- catalog authenticode signature is invalid: Should fail" time="4.1549" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="Install-Module Microsoft.PowerShell.Archive -- catalog file is invalid: Should fail" name="Install-Module --- Microsoft signed versions of Microsoft.PowerShell.Archive module.Install-Module Microsoft.PowerShell.Archive -- catalog file is invalid: Should fail" time="4.1709" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="Install-Module Microsoft.PowerShell.Archive -SkipPublisherCheck -- Catalog authenticode signature is missing in the version: Should work" name="Install-Module --- Microsoft signed versions of Microsoft.PowerShell.Archive module.Install-Module Microsoft.PowerShell.Archive -SkipPublisherCheck -- Catalog authenticode signature is missing in the version: Should work" time="4.2504" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="Install-Module Microsoft.PowerShell.Archive -SkipPublisherCheck -- catalog authenticode signature is invalid: Should work" name="Install-Module --- Microsoft signed versions of Microsoft.PowerShell.Archive module.Install-Module Microsoft.PowerShell.Archive -SkipPublisherCheck -- catalog authenticode signature is invalid: Should work" time="8.3909" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="Install-Module Microsoft.PowerShell.Archive -SkipPublisherCheck -- catalog file is invalid: Should work" name="Install-Module --- Microsoft signed versions of Microsoft.PowerShell.Archive module.Install-Module Microsoft.PowerShell.Archive -SkipPublisherCheck -- catalog file is invalid: Should work" time="10.5676" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+          <test-suite type="TestFixture" name="Update-Module --- Microsoft signed versions of Microsoft.PowerShell.Archive module" executed="True" result="Success" success="True" time="48.9527" asserts="0" description="Update-Module --- Microsoft signed versions of Microsoft.PowerShell.Archive module">
+            <results>
+              <test-case description="Update-Module Microsoft.PowerShell.Archive -- Update a catalog signed module: Should work" name="Update-Module --- Microsoft signed versions of Microsoft.PowerShell.Archive module.Update-Module Microsoft.PowerShell.Archive -- Update a catalog signed module: Should work" time="16.4259" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="Update-Module Microsoft.PowerShell.Archive -- Update a catalog signed module without specifying a name: Should work" name="Update-Module --- Microsoft signed versions of Microsoft.PowerShell.Archive module.Update-Module Microsoft.PowerShell.Archive -- Update a catalog signed module without specifying a name: Should work" time="11.7738" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="Update-Module Microsoft.PowerShell.Archive -- Catalog authenticode signature is missing in the version: Should fail" name="Update-Module --- Microsoft signed versions of Microsoft.PowerShell.Archive module.Update-Module Microsoft.PowerShell.Archive -- Catalog authenticode signature is missing in the version: Should fail" time="12.3502" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="Update-Module Microsoft.PowerShell.Archive -- catalog authenticode signature is invalid: Should fail" name="Update-Module --- Microsoft signed versions of Microsoft.PowerShell.Archive module.Update-Module Microsoft.PowerShell.Archive -- catalog authenticode signature is invalid: Should fail" time="4.2355" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="Update-Module Microsoft.PowerShell.Archive -- catalog file is invalid: Should fail" name="Update-Module --- Microsoft signed versions of Microsoft.PowerShell.Archive module.Update-Module Microsoft.PowerShell.Archive -- catalog file is invalid: Should fail" time="4.1673" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\Pester.PrereleaseVersion.Tests.ps1" executed="True" result="Failure" success="False" time="14.2951" asserts="0" description="C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\Pester.PrereleaseVersion.Tests.ps1">
+        <results>
+          <test-case description="Error occurred in test script 'C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\Pester.PrereleaseVersion.Tests.ps1'" name="Error occurred in test script 'C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\Pester.PrereleaseVersion.Tests.ps1'" time="14.2951" asserts="0" success="False" result="Failure" executed="True">
+            <failure>
+              <message>Could not register test repository.</message>
+              <stack-trace>at RegisterTestRepository, C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\Pester.PrereleaseVersion.Tests.ps1: line 13</stack-trace>
+            </failure>
+          </test-case>
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\Pester.PSRepository.Tests.ps1" executed="True" result="Success" success="True" time="181.7352" asserts="0" description="C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\Pester.PSRepository.Tests.ps1">
+        <results>
+          <test-suite type="TestFixture" name="Test Register-PSRepository and Register-PackageSource for PSGallery repository" executed="True" result="Success" success="True" time="41.616" asserts="0" description="Test Register-PSRepository and Register-PackageSource for PSGallery repository">
+            <results>
+              <test-case description="Register-PSRepository -Default: Should work" name="Test Register-PSRepository and Register-PackageSource for PSGallery repository.Register-PSRepository -Default: Should work" time="7.8205" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="Register-PSRepository -Default-InstallationPolicy Untrusted : Should work" name="Test Register-PSRepository and Register-PackageSource for PSGallery repository.Register-PSRepository -Default-InstallationPolicy Untrusted : Should work" time="4.4269" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="Register-PSRepository -Default -InstallationPolicy Trusted : Should work" name="Test Register-PSRepository and Register-PackageSource for PSGallery repository.Register-PSRepository -Default -InstallationPolicy Trusted : Should work" time="3.6975" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="Reregister PSGallery again: Should fail" name="Test Register-PSRepository and Register-PackageSource for PSGallery repository.Reregister PSGallery again: Should fail" time="4.0472" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="Register-PSRepository -Default:$false : Should not register" name="Test Register-PSRepository and Register-PackageSource for PSGallery repository.Register-PSRepository -Default:$false : Should not register" time="1.1373" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="Register-PSRepository -Name PSGallery -SourceLocation $SourceLocation : Should fail" name="Test Register-PSRepository and Register-PackageSource for PSGallery repository.Register-PSRepository -Name PSGallery -SourceLocation $SourceLocation : Should fail" time="2.1534" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="Register-PSRepository -Name PSGallery -SourceLocation $SourceLocation -PublishLocation $PublishLocation : Should fail" name="Test Register-PSRepository and Register-PackageSource for PSGallery repository.Register-PSRepository -Name PSGallery -SourceLocation $SourceLocation -PublishLocation $PublishLocation : Should fail" time="2.0732" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="Register-PSRepository -Name PSGallery -SourceLocation $SourceLocation -ScriptPublishLocation $ScriptPublishLocation : Should fail" name="Test Register-PSRepository and Register-PackageSource for PSGallery repository.Register-PSRepository -Name PSGallery -SourceLocation $SourceLocation -ScriptPublishLocation $ScriptPublishLocation : Should fail" time="2.324" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="Register-PSRepository -Name PSGallery -SourceLocation $SourceLocation -ScriptSourceLocation $ScriptSourceLocation : Should fail" name="Test Register-PSRepository and Register-PackageSource for PSGallery repository.Register-PSRepository -Name PSGallery -SourceLocation $SourceLocation -ScriptSourceLocation $ScriptSourceLocation : Should fail" time="2.0139" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="Register-PackageSource -ProviderName PowerShellGet -Name PSGallery : Should work, default installation policy should be untrusted" name="Test Register-PSRepository and Register-PackageSource for PSGallery repository.Register-PackageSource -ProviderName PowerShellGet -Name PSGallery : Should work, default installation policy should be untrusted" time="3.5815" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="Register-PackageSource -ProviderName PowerShellGet -Name PSGallery -Trusted : Should work" name="Test Register-PSRepository and Register-PackageSource for PSGallery repository.Register-PackageSource -ProviderName PowerShellGet -Name PSGallery -Trusted : Should work" time="3.7417" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="Register-PackageSource -ProviderName PowerShellGet -Name PSGallery -Location $SourceLocation : Should fail" name="Test Register-PSRepository and Register-PackageSource for PSGallery repository.Register-PackageSource -ProviderName PowerShellGet -Name PSGallery -Location $SourceLocation : Should fail" time="1.1823" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="Register-PackageSource -ProviderName PowerShellGet -Name PSGallery -PublishLocation $PublishLocation : Should fail" name="Test Register-PSRepository and Register-PackageSource for PSGallery repository.Register-PackageSource -ProviderName PowerShellGet -Name PSGallery -PublishLocation $PublishLocation : Should fail" time="1.1302" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="Register-PackageSource -ProviderName PowerShellGet -Name PSGallery -ScriptPublishLocation $ScriptPublishLocation : should fail" name="Test Register-PSRepository and Register-PackageSource for PSGallery repository.Register-PackageSource -ProviderName PowerShellGet -Name PSGallery -ScriptPublishLocation $ScriptPublishLocation : should fail" time="1.161" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="Register-PackageSource -ProviderName PowerShellGet -Name PSGallery -ScriptSourceLocation $ScriptSourceLocation : should fail" name="Test Register-PSRepository and Register-PackageSource for PSGallery repository.Register-PackageSource -ProviderName PowerShellGet -Name PSGallery -ScriptSourceLocation $ScriptSourceLocation : should fail" time="1.1255" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+          <test-suite type="TestFixture" name="Test Set-PSRepository and Set-PackageSource for PSGallery repository" executed="True" result="Success" success="True" time="140.1192" asserts="0" description="Test Set-PSRepository and Set-PackageSource for PSGallery repository">
+            <results>
+              <test-case description="Set-PSRepository -Name PSGallery -InstallationPolicy Trusted : should work" name="Test Set-PSRepository and Set-PackageSource for PSGallery repository.Set-PSRepository -Name PSGallery -InstallationPolicy Trusted : should work" time="16.3203" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="Set-PSRepository -Name PSGallery -InstallationPolicy Untrusted : should work" name="Test Set-PSRepository and Set-PackageSource for PSGallery repository.Set-PSRepository -Name PSGallery -InstallationPolicy Untrusted : should work" time="19.4141" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="Set-PSRepository -Name PSGallery -SourceLocation $SourceLocation : should fail" name="Test Set-PSRepository and Set-PackageSource for PSGallery repository.Set-PSRepository -Name PSGallery -SourceLocation $SourceLocation : should fail" time="9.838" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="Set-PSRepository -Name PSGallery -PublishLocation $PublishLocation : should fail" name="Test Set-PSRepository and Set-PackageSource for PSGallery repository.Set-PSRepository -Name PSGallery -PublishLocation $PublishLocation : should fail" time="14.8529" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="Set-PSRepository -Name PSGallery -ScriptPublishLocation $ScriptPublishLocation : should fail" name="Test Set-PSRepository and Set-PackageSource for PSGallery repository.Set-PSRepository -Name PSGallery -ScriptPublishLocation $ScriptPublishLocation : should fail" time="14.8091" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="Set-PSRepository -Name PSGallery -ScriptSourceLocation $ScriptSourceLocation : should fail" name="Test Set-PSRepository and Set-PackageSource for PSGallery repository.Set-PSRepository -Name PSGallery -ScriptSourceLocation $ScriptSourceLocation : should fail" time="14.5301" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="Set-PackageSource -ProviderName PowerShellGet -Name PSGallery : should work actually this is a no-op. Installation policy should not be changed" name="Test Set-PSRepository and Set-PackageSource for PSGallery repository.Set-PackageSource -ProviderName PowerShellGet -Name PSGallery : should work actually this is a no-op. Installation policy should not be changed" time="13.976" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="Set-PackageSource -ProviderName PowerShellGet -Name PSGallery -Trusted : should work" name="Test Set-PSRepository and Set-PackageSource for PSGallery repository.Set-PackageSource -ProviderName PowerShellGet -Name PSGallery -Trusted : should work" time="9.1752" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="Set-PackageSource -ProviderName PowerShellGet -Name PSGallery -SourceLocation $SourceLocation : should fail" name="Test Set-PSRepository and Set-PackageSource for PSGallery repository.Set-PackageSource -ProviderName PowerShellGet -Name PSGallery -SourceLocation $SourceLocation : should fail" time="6.7737" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="Set-PackageSource -ProviderName PowerShellGet -Name PSGallery -PublishLocation $PublishLocation : should fail" name="Test Set-PSRepository and Set-PackageSource for PSGallery repository.Set-PackageSource -ProviderName PowerShellGet -Name PSGallery -PublishLocation $PublishLocation : should fail" time="6.6684" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="Set-PackageSource -ProviderName PowerShellGet -Name PSGallery -ScriptPublishLocation $ScriptPublishLocation : should fail" name="Test Set-PSRepository and Set-PackageSource for PSGallery repository.Set-PackageSource -ProviderName PowerShellGet -Name PSGallery -ScriptPublishLocation $ScriptPublishLocation : should fail" time="6.7231" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="Set-PackageSource -ProviderName PowerShellGet -Name PSGallery -ScriptSourceLocation $ScriptSourceLocation : should fail" name="Test Set-PSRepository and Set-PackageSource for PSGallery repository.Set-PackageSource -ProviderName PowerShellGet -Name PSGallery -ScriptSourceLocation $ScriptSourceLocation : should fail" time="7.0384" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\PowerShellGet.Tests.ps1" executed="True" result="Success" success="True" time="8.3755" asserts="0" description="C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\PowerShellGet.Tests.ps1">
+        <results>
+          <test-suite type="TestFixture" name="PowerShellGet Type tests" executed="True" result="Success" success="True" time="8.3755" asserts="0" description="PowerShellGet Type tests">
+            <results>
+              <test-case description="Ensure PowerShellGet Types are available" name="PowerShellGet Type tests.Ensure PowerShellGet Types are available" time="8.3755" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\PSGetFindModule.Tests.ps1" executed="True" result="Success" success="True" time="57.4576" asserts="0" description="C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\PSGetFindModule.Tests.ps1">
+        <results>
+          <test-suite type="TestFixture" name="PowerShell.PSGet.FindModuleTests" executed="True" result="Success" success="True" time="57.4576" asserts="0" description="PowerShell.PSGet.FindModuleTests">
+            <results>
+              <test-case description="FindModuleWithoutAnyParameterValues" name="PowerShell.PSGet.FindModuleTests.FindModuleWithoutAnyParameterValues" time="12.4771" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="FindASpecificModule" name="PowerShell.PSGet.FindModuleTests.FindASpecificModule" time="1.7922" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="FindModuleWithRangeWildCards" name="PowerShell.PSGet.FindModuleTests.FindModuleWithRangeWildCards" time="2.1614" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="FindNotAvaialableModuleWithWildCards" name="PowerShell.PSGet.FindModuleTests.FindNotAvaialableModuleWithWildCards" time="2.1171" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="FindModuleNonExistentModule" name="PowerShell.PSGet.FindModuleTests.FindModuleNonExistentModule" time="1.8036" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="FindModuleWithVersionParams" name="PowerShell.PSGet.FindModuleTests.FindModuleWithVersionParams" time="0.026" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="FindModuleWithMinVersion" name="PowerShell.PSGet.FindModuleTests.FindModuleWithMinVersion" time="2.8481" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="FindModuleWithMinVersionNotAvailable" name="PowerShell.PSGet.FindModuleTests.FindModuleWithMinVersionNotAvailable" time="1.7828" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="FindModuleWithReqVersionNotAvailable" name="PowerShell.PSGet.FindModuleTests.FindModuleWithReqVersionNotAvailable" time="1.8218" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="FindModuleWithRequiredVersion" name="PowerShell.PSGet.FindModuleTests.FindModuleWithRequiredVersion" time="1.8416" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="FindModuleWithMultipleModuleNamesAndReqVersion" name="PowerShell.PSGet.FindModuleTests.FindModuleWithMultipleModuleNamesAndReqVersion" time="0.0212" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="FindModuleWithMultipleModuleNamesAndMinVersion" name="PowerShell.PSGet.FindModuleTests.FindModuleWithMultipleModuleNamesAndMinVersion" time="0.0274" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="FindModuleWithWildcardNameAndReqVersion" name="PowerShell.PSGet.FindModuleTests.FindModuleWithWildcardNameAndReqVersion" time="0.0498" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="FindModuleWithWildcardNameAndMinVersion" name="PowerShell.PSGet.FindModuleTests.FindModuleWithWildcardNameAndMinVersion" time="0.0255" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="FindModuleWithMultiNames" name="PowerShell.PSGet.FindModuleTests.FindModuleWithMultiNames" time="2.4937" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="FindModuleWithAllVersions" name="PowerShell.PSGet.FindModuleTests.FindModuleWithAllVersions" time="2.076" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="FindModuleUsingFilter" name="PowerShell.PSGet.FindModuleTests.FindModuleUsingFilter" time="1.836" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="FindModuleUsingIncludesRoleCapability" name="PowerShell.PSGet.FindModuleTests.FindModuleUsingIncludesRoleCapability" time="2.3158" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="FindModuleUsingIncludesDscResource" name="PowerShell.PSGet.FindModuleTests.FindModuleUsingIncludesDscResource" time="1.8309" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="FindModuleUsingIncludesCmdlet" name="PowerShell.PSGet.FindModuleTests.FindModuleUsingIncludesCmdlet" time="3.0387" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="FindModuleUsingIncludesFunction" name="PowerShell.PSGet.FindModuleTests.FindModuleUsingIncludesFunction" time="1.8931" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="FindRoleCapabilityWithSingleRoleCapabilityName" name="PowerShell.PSGet.FindModuleTests.FindRoleCapabilityWithSingleRoleCapabilityName" time="1.9468" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="FindRoleCapabilityWithTwoRoleCapabilityNames" name="PowerShell.PSGet.FindModuleTests.FindRoleCapabilityWithTwoRoleCapabilityNames" time="2.4749" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="FindDscResourceWithSingleResourceName" name="PowerShell.PSGet.FindModuleTests.FindDscResourceWithSingleResourceName" time="1.8974" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="FindDscResourceWithTwoResourceNames" name="PowerShell.PSGet.FindModuleTests.FindDscResourceWithTwoResourceNames" time="2.4278" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="FindCommandWithSingleCommandName" name="PowerShell.PSGet.FindModuleTests.FindCommandWithSingleCommandName" time="1.9269" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="FindCommandWithTwoResourceNames" name="PowerShell.PSGet.FindModuleTests.FindCommandWithTwoResourceNames" time="2.5041" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\PSGetFindScript.Tests.ps1" executed="True" result="Success" success="True" time="36.8606" asserts="0" description="C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\PSGetFindScript.Tests.ps1">
+        <results>
+          <test-suite type="TestFixture" name="PowerShell.PSGet.FindScriptTests" executed="True" result="Success" success="True" time="36.8606" asserts="0" description="PowerShell.PSGet.FindScriptTests">
+            <results>
+              <test-case description="FindScriptWithoutAnyParameterValues" name="PowerShell.PSGet.FindScriptTests.FindScriptWithoutAnyParameterValues" time="11.5586" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="FindASpecificScript" name="PowerShell.PSGet.FindScriptTests.FindASpecificScript" time="1.8254" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="FindScriptWithRangeWildCards" name="PowerShell.PSGet.FindScriptTests.FindScriptWithRangeWildCards" time="2.1266" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="FindNotAvaialableScriptWithWildCards" name="PowerShell.PSGet.FindScriptTests.FindNotAvaialableScriptWithWildCards" time="2.0838" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="FindScriptNonExistentScript" name="PowerShell.PSGet.FindScriptTests.FindScriptNonExistentScript" time="1.8104" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="FindScriptWithMinVersion" name="PowerShell.PSGet.FindScriptTests.FindScriptWithMinVersion" time="1.8266" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="FindScriptWithRequiredVersion" name="PowerShell.PSGet.FindScriptTests.FindScriptWithRequiredVersion" time="1.8139" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="FindScriptWithMultiNames" name="PowerShell.PSGet.FindScriptTests.FindScriptWithMultiNames" time="2.4911" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="FindScriptWithAllVersions" name="PowerShell.PSGet.FindScriptTests.FindScriptWithAllVersions" time="1.9472" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="FindScriptUsingFilter" name="PowerShell.PSGet.FindScriptTests.FindScriptUsingFilter" time="1.855" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="FindScriptUsingIncludesWorkflow" name="PowerShell.PSGet.FindScriptTests.FindScriptUsingIncludesWorkflow" time="2.0133" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="FindScriptUsingIncludesFunction" name="PowerShell.PSGet.FindScriptTests.FindScriptUsingIncludesFunction" time="1.8448" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="FindScriptUsingTag" name="PowerShell.PSGet.FindScriptTests.FindScriptUsingTag" time="1.8213" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="FindScriptUsingCommand" name="PowerShell.PSGet.FindScriptTests.FindScriptUsingCommand" time="1.8428" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\PSGetInstallModule.Tests.ps1" executed="True" result="Ignored" success="True" time="216.7617" asserts="0" description="C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\PSGetInstallModule.Tests.ps1">
+        <results>
+          <test-suite type="TestFixture" name="PowerShell.PSGet.InstallModuleTests" executed="True" result="Ignored" success="True" time="216.7617" asserts="0" description="PowerShell.PSGet.InstallModuleTests">
+            <results>
+              <test-case description="InstallNotAvailableModuleWithWildCard" name="PowerShell.PSGet.InstallModuleTests.InstallNotAvailableModuleWithWildCard" time="8.745" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallModuleWithVersionParams" name="PowerShell.PSGet.InstallModuleTests.InstallModuleWithVersionParams" time="0.0731" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallMultipleNamesWithReqVersion" name="PowerShell.PSGet.InstallModuleTests.InstallMultipleNamesWithReqVersion" time="0.0761" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallMultipleNamesWithMinVersion" name="PowerShell.PSGet.InstallModuleTests.InstallMultipleNamesWithMinVersion" time="0.0698" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallMultipleModules" name="PowerShell.PSGet.InstallModuleTests.InstallMultipleModules" time="4.4474" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallSingleModule" name="PowerShell.PSGet.InstallModuleTests.InstallSingleModule" time="3.0153" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallAModuleWithMinVersion" name="PowerShell.PSGet.InstallModuleTests.InstallAModuleWithMinVersion" time="2.426" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallAModuleWithReqVersion" name="PowerShell.PSGet.InstallModuleTests.InstallAModuleWithReqVersion" time="2.4739" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallModuleShouldFailIfReqVersionNotAlreadyInstalled" name="PowerShell.PSGet.InstallModuleTests.InstallModuleShouldFailIfReqVersionNotAlreadyInstalled" time="4.9909" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallModuleShouldFailIfMinVersionNotAlreadyInstalled" name="PowerShell.PSGet.InstallModuleTests.InstallModuleShouldFailIfMinVersionNotAlreadyInstalled" time="3.9493" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallModuleShouldNotFailIfReqVersionAlreadyInstalled" name="PowerShell.PSGet.InstallModuleTests.InstallModuleShouldNotFailIfReqVersionAlreadyInstalled" time="3.6887" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallModuleShouldNotFailIfMinVersionAlreadyInstalled" name="PowerShell.PSGet.InstallModuleTests.InstallModuleShouldNotFailIfMinVersionAlreadyInstalled" time="4.2939" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallModuleWithForce" name="PowerShell.PSGet.InstallModuleTests.InstallModuleWithForce" time="5.6065" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallModuleSameVersionWithForce" name="PowerShell.PSGet.InstallModuleTests.InstallModuleSameVersionWithForce" time="4.8636" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallModuleWithNotAvailableMinVersion" name="PowerShell.PSGet.InstallModuleTests.InstallModuleWithNotAvailableMinVersion" time="1.2424" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallModuleWithNotAvailableReqVersion" name="PowerShell.PSGet.InstallModuleTests.InstallModuleWithNotAvailableReqVersion" time="1.2902" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallModuleWithReqVersion" name="PowerShell.PSGet.InstallModuleTests.InstallModuleWithReqVersion" time="2.449" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallModuleWithMinVersion" name="PowerShell.PSGet.InstallModuleTests.InstallModuleWithMinVersion" time="2.3904" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallNotAvailableModule" name="PowerShell.PSGet.InstallModuleTests.InstallNotAvailableModule" time="1.2705" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallModuleWithPipelineInput" name="PowerShell.PSGet.InstallModuleTests.InstallModuleWithPipelineInput" time="4.878" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallMultipleModulesWithPipelineInput" name="PowerShell.PSGet.InstallModuleTests.InstallMultipleModulesWithPipelineInput" time="12.8564" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallMultipleModulesUsingInputObjectParam" name="PowerShell.PSGet.InstallModuleTests.InstallMultipleModulesUsingInputObjectParam" time="8.3787" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallToCurrentUserScopeWithPipelineInput" name="PowerShell.PSGet.InstallModuleTests.InstallToCurrentUserScopeWithPipelineInput" time="4.8058" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallToCurrentUserScope" name="PowerShell.PSGet.InstallModuleTests.InstallToCurrentUserScope" time="2.49" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallModuleWithForceAndDifferentScope" name="PowerShell.PSGet.InstallModuleTests.InstallModuleWithForceAndDifferentScope" time="5.4392" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallModuleWithForceAllowClobberAndDifferentScope" name="PowerShell.PSGet.InstallModuleTests.InstallModuleWithForceAllowClobberAndDifferentScope" time="4.8483" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallModuleNeedsCurrentUserScopeParameterForNonAdminUser" name="PowerShell.PSGet.InstallModuleTests.InstallModuleNeedsCurrentUserScopeParameterForNonAdminUser" time="0.0449" asserts="0" success="True" result="Ignored" executed="False" />
+              <test-case description="ValidateModuleIsInUseError" name="PowerShell.PSGet.InstallModuleTests.ValidateModuleIsInUseError" time="15.2491" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallModuleWithWhatIf" name="PowerShell.PSGet.InstallModuleTests.InstallModuleWithWhatIf" time="3.5556" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallModuleWithConfirmAndNoToPrompt" name="PowerShell.PSGet.InstallModuleTests.InstallModuleWithConfirmAndNoToPrompt" time="5.7108" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallModuleWithConfirmAndYesToPrompt" name="PowerShell.PSGet.InstallModuleTests.InstallModuleWithConfirmAndYesToPrompt" time="9.6227" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="ValidatePSGetPropertiesOnPSModuleInfoFromGetModule" name="PowerShell.PSGet.InstallModuleTests.ValidatePSGetPropertiesOnPSModuleInfoFromGetModule" time="3.1084" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallModuleUsingFindRoleCapabilityOutput" name="PowerShell.PSGet.InstallModuleTests.InstallModuleUsingFindRoleCapabilityOutput" time="5.7539" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallModuleUsingFindDscResourceOutput" name="PowerShell.PSGet.InstallModuleTests.InstallModuleUsingFindDscResourceOutput" time="5.682" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="ValidateGetInstalledModuleCmdlet" name="PowerShell.PSGet.InstallModuleTests.ValidateGetInstalledModuleCmdlet" time="11.5052" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="ValidateGetInstalledModuleAndUninstallModuleCmdletsWithMinimumVersion" name="PowerShell.PSGet.InstallModuleTests.ValidateGetInstalledModuleAndUninstallModuleCmdletsWithMinimumVersion" time="7.853" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="ValidateGetInstalledModuleAndUninstallModuleCmdletWithMinMaxRange" name="PowerShell.PSGet.InstallModuleTests.ValidateGetInstalledModuleAndUninstallModuleCmdletWithMinMaxRange" time="7.3359" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="ValidateGetInstalledModuleAndUninstallModuleCmdletWithRequiredVersion" name="PowerShell.PSGet.InstallModuleTests.ValidateGetInstalledModuleAndUninstallModuleCmdletWithRequiredVersion" time="7.1584" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="ValidateGetInstalledModuleAndUninstallModuleCmdletWithMiximumVersion" name="PowerShell.PSGet.InstallModuleTests.ValidateGetInstalledModuleAndUninstallModuleCmdletWithMiximumVersion" time="7.2913" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallModuleUsingFindCommandOutput" name="PowerShell.PSGet.InstallModuleTests.InstallModuleUsingFindCommandOutput" time="12.8462" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallNonMsSignedModuleOverMsSignedModule" name="PowerShell.PSGet.InstallModuleTests.InstallNonMsSignedModuleOverMsSignedModule" time="12.986" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\PSGetInstallScript.Tests.ps1" executed="True" result="Ignored" success="True" time="243.2129" asserts="0" description="C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\PSGetInstallScript.Tests.ps1">
+        <results>
+          <test-suite type="TestFixture" name="PowerShell.PSGet.InstallScriptTests" executed="True" result="Ignored" success="True" time="243.2129" asserts="0" description="PowerShell.PSGet.InstallScriptTests">
+            <results>
+              <test-case description="InstallScriptWithRangeWildCards" name="PowerShell.PSGet.InstallScriptTests.InstallScriptWithRangeWildCards" time="10.6713" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallNotAvailableScriptWithWildCard" name="PowerShell.PSGet.InstallScriptTests.InstallNotAvailableScriptWithWildCard" time="3.5494" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallMultipleScripts" name="PowerShell.PSGet.InstallScriptTests.InstallMultipleScripts" time="8.4774" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallSingleScript" name="PowerShell.PSGet.InstallScriptTests.InstallSingleScript" time="7.1959" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallAScriptWithMinVersion" name="PowerShell.PSGet.InstallScriptTests.InstallAScriptWithMinVersion" time="5.3877" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallAScriptWithReqVersion" name="PowerShell.PSGet.InstallScriptTests.InstallAScriptWithReqVersion" time="5.4221" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallScriptShouldNotFailIfReqVersionAlreadyInstalled" name="PowerShell.PSGet.InstallScriptTests.InstallScriptShouldNotFailIfReqVersionAlreadyInstalled" time="6.037" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallScriptShouldNotFailIfMinVersionAlreadyInstalled" name="PowerShell.PSGet.InstallScriptTests.InstallScriptShouldNotFailIfMinVersionAlreadyInstalled" time="5.9843" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallScriptWithForce" name="PowerShell.PSGet.InstallScriptTests.InstallScriptWithForce" time="8.4064" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallScriptSameVersionWithForce" name="PowerShell.PSGet.InstallScriptTests.InstallScriptSameVersionWithForce" time="7.8969" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallScriptWithNotAvailableMinVersion" name="PowerShell.PSGet.InstallScriptTests.InstallScriptWithNotAvailableMinVersion" time="2.8932" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallScriptWithNotAvailableReqVersion" name="PowerShell.PSGet.InstallScriptTests.InstallScriptWithNotAvailableReqVersion" time="2.8889" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallScriptWithReqVersion" name="PowerShell.PSGet.InstallScriptTests.InstallScriptWithReqVersion" time="5.4152" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallScriptWithMinVersion" name="PowerShell.PSGet.InstallScriptTests.InstallScriptWithMinVersion" time="5.2912" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallNotAvailableScript" name="PowerShell.PSGet.InstallScriptTests.InstallNotAvailableScript" time="2.9474" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallScriptWithPipelineInput" name="PowerShell.PSGet.InstallScriptTests.InstallScriptWithPipelineInput" time="7.8525" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallMultipleScriptsWithPipelineInput" name="PowerShell.PSGet.InstallScriptTests.InstallMultipleScriptsWithPipelineInput" time="16.4334" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallMultipleScriptsUsingInputObjectParam" name="PowerShell.PSGet.InstallScriptTests.InstallMultipleScriptsUsingInputObjectParam" time="11.859" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallToAllUsersScopeWithPipelineInput" name="PowerShell.PSGet.InstallScriptTests.InstallToAllUsersScopeWithPipelineInput" time="7.7878" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallToCurrentUserScope" name="PowerShell.PSGet.InstallScriptTests.InstallToCurrentUserScope" time="5.3598" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallScriptWithForceAndDifferentScope" name="PowerShell.PSGet.InstallScriptTests.InstallScriptWithForceAndDifferentScope" time="8.2112" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallScriptNeedsCurrentUserScopeParameterForNonAdminUser" name="PowerShell.PSGet.InstallScriptTests.InstallScriptNeedsCurrentUserScopeParameterForNonAdminUser" time="0.0377" asserts="0" success="True" result="Ignored" executed="False" />
+              <test-case description="InstallScript_AllUsers_NO_toThePromptForAddingtoPATHVariable" name="PowerShell.PSGet.InstallScriptTests.InstallScript_AllUsers_NO_toThePromptForAddingtoPATHVariable" time="9.5829" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallScript_AllUsers_YES_toThePromptForAddingtoPATHVariable" name="PowerShell.PSGet.InstallScriptTests.InstallScript_AllUsers_YES_toThePromptForAddingtoPATHVariable" time="9.7291" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallScript_CurrentUser_NoPathUpdate_NoPromptForAddingtoPATHVariable" name="PowerShell.PSGet.InstallScriptTests.InstallScript_CurrentUser_NoPathUpdate_NoPromptForAddingtoPATHVariable" time="6.499" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallScript_CurrentUser_Force_NoPromptForAddingtoPATHVariable" name="PowerShell.PSGet.InstallScriptTests.InstallScript_CurrentUser_Force_NoPromptForAddingtoPATHVariable" time="8.3046" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallScript_CurrentUser_NO_toThePromptForAddingtoPATHVariable" name="PowerShell.PSGet.InstallScriptTests.InstallScript_CurrentUser_NO_toThePromptForAddingtoPATHVariable" time="10.0518" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallScript_CurrentUser_YES_toThePromptForAddingtoPATHVariable" name="PowerShell.PSGet.InstallScriptTests.InstallScript_CurrentUser_YES_toThePromptForAddingtoPATHVariable" time="9.8904" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallScriptWithWhatIf" name="PowerShell.PSGet.InstallScriptTests.InstallScriptWithWhatIf" time="8.0924" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallScriptWithConfirmAndNoToPrompt" name="PowerShell.PSGet.InstallScriptTests.InstallScriptWithConfirmAndNoToPrompt" time="8.5" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallScriptWithConfirmAndYesToPrompt" name="PowerShell.PSGet.InstallScriptTests.InstallScriptWithConfirmAndYesToPrompt" time="13.0662" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="ValidateGetInstalledScriptCmdlet" name="PowerShell.PSGet.InstallScriptTests.ValidateGetInstalledScriptCmdlet" time="13.4911" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\PSGetModuleSource.Tests.ps1" executed="True" result="Success" success="True" time="38.8101" asserts="0" description="C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\PSGetModuleSource.Tests.ps1">
+        <results>
+          <test-suite type="TestFixture" name="PowerShell.PSGet.ModuleSourceTests" executed="True" result="Success" success="True" time="38.8101" asserts="0" description="PowerShell.PSGet.ModuleSourceTests">
+            <results>
+              <test-case description="RegisterAngGetModuleSource" name="PowerShell.PSGet.ModuleSourceTests.RegisterAngGetModuleSource" time="21.6872" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="RegisterSMBShareRepository" name="PowerShell.PSGet.ModuleSourceTests.RegisterSMBShareRepository" time="3.0066" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="SetPSRepositoryWithSMBSharePath" name="PowerShell.PSGet.ModuleSourceTests.SetPSRepositoryWithSMBSharePath" time="5.4243" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UnregisterModuleSource" name="PowerShell.PSGet.ModuleSourceTests.UnregisterModuleSource" time="4.4994" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="CheckGetPSGalleryApiAvailabilityStage1" name="PowerShell.PSGet.ModuleSourceTests.CheckGetPSGalleryApiAvailabilityStage1" time="0.6436" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="CheckGetPSGalleryApiAvailabilityStage2" name="PowerShell.PSGet.ModuleSourceTests.CheckGetPSGalleryApiAvailabilityStage2" time="1.5246" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="CheckGetPSGalleryApiAvailabilityStage3" name="PowerShell.PSGet.ModuleSourceTests.CheckGetPSGalleryApiAvailabilityStage3" time="1.0289" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="CheckGetPSGalleryUnavailable" name="PowerShell.PSGet.ModuleSourceTests.CheckGetPSGalleryUnavailable" time="0.94" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="GetPSGalleryApiAvailabilityNoRepositorySpecified" name="PowerShell.PSGet.ModuleSourceTests.GetPSGalleryApiAvailabilityNoRepositorySpecified" time="0.0341" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="GetPSGalleryApiAvailabilityDifferentRepositorySpecified" name="PowerShell.PSGet.ModuleSourceTests.GetPSGalleryApiAvailabilityDifferentRepositorySpecified" time="0.0215" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\PSGetOneGet.Tests.ps1" executed="True" result="Success" success="True" time="0" asserts="0" description="C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\PSGetOneGet.Tests.ps1">
+        <results />
+      </test-suite>
+      <test-suite type="TestFixture" name="C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\PSGetPublishModule.Tests.ps1" executed="True" result="Success" success="True" time="126.3935" asserts="0" description="C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\PSGetPublishModule.Tests.ps1">
+        <results>
+          <test-suite type="TestFixture" name="PowerShell.PSGet.PublishModuleTests" executed="True" result="Success" success="True" time="126.3935" asserts="0" description="PowerShell.PSGet.PublishModuleTests">
+            <results>
+              <test-case description="PublishModuleWithName" name="PowerShell.PSGet.PublishModuleTests.PublishModuleWithName" time="7.6832" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="PublishModuleWithNameForSxSVersion" name="PowerShell.PSGet.PublishModuleTests.PublishModuleWithNameForSxSVersion" time="5.2618" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="PublishModuleWithNameRequiredVersionForSxSVersion" name="PowerShell.PSGet.PublishModuleTests.PublishModuleWithNameRequiredVersionForSxSVersion" time="5.3965" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="PublishModuleWithPath" name="PowerShell.PSGet.PublishModuleTests.PublishModuleWithPath" time="5.3706" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="PublishModuleWithRelativePath" name="PowerShell.PSGet.PublishModuleTests.PublishModuleWithRelativePath" time="5.2947" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="PublishModulePathWithoutVersion" name="PowerShell.PSGet.PublishModuleTests.PublishModulePathWithoutVersion" time="5.2521" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="PublishModuleWithAmbiguousPathWithoutVersion" name="PowerShell.PSGet.PublishModuleTests.PublishModuleWithAmbiguousPathWithoutVersion" time="0.6585" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="PublishModuleWithPathForSxSVersion" name="PowerShell.PSGet.PublishModuleTests.PublishModuleWithPathForSxSVersion" time="5.1978" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="PublishModuleWithConfirmAndNoToPrompt" name="PowerShell.PSGet.PublishModuleTests.PublishModuleWithConfirmAndNoToPrompt" time="5.5862" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="PublishModuleWithConfirmAndYesToPrompt" name="PowerShell.PSGet.PublishModuleTests.PublishModuleWithConfirmAndYesToPrompt" time="7.839" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="PublishModuleWithWhatIf" name="PowerShell.PSGet.PublishModuleTests.PublishModuleWithWhatIf" time="5.2462" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="PublishModuleMultipleVersions" name="PowerShell.PSGet.PublishModuleTests.PublishModuleMultipleVersions" time="10.7972" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="PublishModuleWithNonExistingNestedModule" name="PowerShell.PSGet.PublishModuleTests.PublishModuleWithNonExistingNestedModule" time="4.3628" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="PublishModuleWithInvalidEntryInPSD1" name="PowerShell.PSGet.PublishModuleTests.PublishModuleWithInvalidEntryInPSD1" time="0.6573" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="PublishModuleWithPSEditionVariableInPSD1" name="PowerShell.PSGet.PublishModuleTests.PublishModuleWithPSEditionVariableInPSD1" time="5.2901" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="PublishModuleWithPSScriptRootVariableInPSD1" name="PowerShell.PSGet.PublishModuleTests.PublishModuleWithPSScriptRootVariableInPSD1" time="5.3288" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="PublishModuleWithInvalidVariableInPSD1" name="PowerShell.PSGet.PublishModuleTests.PublishModuleWithInvalidVariableInPSD1" time="0.6479" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="GetManifestHashTableWithInvalidVariableInPSD1" name="PowerShell.PSGet.PublishModuleTests.GetManifestHashTableWithInvalidVariableInPSD1" time="0.0637" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="PublishModuleWithXMLSpecialCharacters" name="PowerShell.PSGet.PublishModuleTests.PublishModuleWithXMLSpecialCharacters" time="5.3737" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="PublishModulePSDataInManifestFile" name="PowerShell.PSGet.PublishModuleTests.PublishModulePSDataInManifestFile" time="5.3732" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="PublishModuleWithUriObjectsAndPSDataInManifestFile" name="PowerShell.PSGet.PublishModuleTests.PublishModuleWithUriObjectsAndPSDataInManifestFile" time="5.3046" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="ValidateWithoutPSGetFormatVersion" name="PowerShell.PSGet.PublishModuleTests.ValidateWithoutPSGetFormatVersion" time="5.4757" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="ValidateCompatiblePSGetFormatVersion" name="PowerShell.PSGet.PublishModuleTests.ValidateCompatiblePSGetFormatVersion" time="5.4168" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="ValidateIncompatiblePSGetFormatVersion" name="PowerShell.PSGet.PublishModuleTests.ValidateIncompatiblePSGetFormatVersion" time="3.4691" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="PublishModuleWithSupportedParameter" name="PowerShell.PSGet.PublishModuleTests.PublishModuleWithSupportedParameter" time="4.3106" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="PublishModuleWithAsteriskInExportedProperties" name="PowerShell.PSGet.PublishModuleTests.PublishModuleWithAsteriskInExportedProperties" time="5.7354" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\PSGetPublishScript.Tests.ps1" executed="True" result="Ignored" success="True" time="159.3889" asserts="0" description="C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\PSGetPublishScript.Tests.ps1">
+        <results>
+          <test-suite type="TestFixture" name="PowerShell.PSGet.PublishScriptTests" executed="True" result="Ignored" success="True" time="159.3889" asserts="0" description="PowerShell.PSGet.PublishScriptTests">
+            <results>
+              <test-case description="PublishScriptWithVersionedRequiredScriptDependencies" name="PowerShell.PSGet.PublishScriptTests.PublishScriptWithVersionedRequiredScriptDependencies" time="103.1593" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="PublishScriptWithPath" name="PowerShell.PSGet.PublishScriptTests.PublishScriptWithPath" time="5.6452" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="PublishScriptWithRelativePath" name="PowerShell.PSGet.PublishScriptTests.PublishScriptWithRelativePath" time="5.6793" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="PublishScriptWithLiteralPath" name="PowerShell.PSGet.PublishScriptTests.PublishScriptWithLiteralPath" time="5.8057" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="PublishScriptWithConfirmAndNoToPrompt" name="PowerShell.PSGet.PublishScriptTests.PublishScriptWithConfirmAndNoToPrompt" time="6.0546" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="PublishScriptWithConfirmAndYesToPrompt" name="PowerShell.PSGet.PublishScriptTests.PublishScriptWithConfirmAndYesToPrompt" time="7.2984" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="PublishScriptWithWhatIf" name="PowerShell.PSGet.PublishScriptTests.PublishScriptWithWhatIf" time="5.8677" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="PublishScriptWithXMLSpecialCharacters" name="PowerShell.PSGet.PublishScriptTests.PublishScriptWithXMLSpecialCharacters" time="5.853" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="ValidateTestScriptFileInfoForAllProperties" name="PowerShell.PSGet.PublishScriptTests.ValidateTestScriptFileInfoForAllProperties" time="0.2139" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="ValidateUpdateScriptFileInfoWithExistingValuesForAllProperties" name="PowerShell.PSGet.PublishScriptTests.ValidateUpdateScriptFileInfoWithExistingValuesForAllProperties" time="0.367" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="ValidateUpdateScriptFileInfoWithoutExistingValuesForAllProperties" name="PowerShell.PSGet.PublishScriptTests.ValidateUpdateScriptFileInfoWithoutExistingValuesForAllProperties" time="0.2222" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="NewScriptFileInfoWithPassThru" name="PowerShell.PSGet.PublishScriptTests.NewScriptFileInfoWithPassThru" time="0.0799" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateScriptFileInfoWithoutAnyChanges" name="PowerShell.PSGet.PublishScriptTests.UpdateScriptFileInfoWithoutAnyChanges" time="0.1577" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallScriptWithExistingCommand" name="PowerShell.PSGet.PublishScriptTests.InstallScriptWithExistingCommand" time="6.3915" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="ScriptFileCreatedWithoutUsingNewScriptFileInfo" name="PowerShell.PSGet.PublishScriptTests.ScriptFileCreatedWithoutUsingNewScriptFileInfo" time="6.5867" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="PublishScriptWithoutDotnetCommandShouldThrowError" name="PowerShell.PSGet.PublishScriptTests.PublishScriptWithoutDotnetCommandShouldThrowError" time="0.0068" asserts="0" success="True" result="Ignored" executed="False" />
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\PSGetRequireLicenseAcceptance.Tests.ps1" executed="True" result="Success" success="True" time="237.906" asserts="0" description="C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\PSGetRequireLicenseAcceptance.Tests.ps1">
+        <results>
+          <test-suite type="TestFixture" name="PowerShell.PSGet.PSGetRequireLicenseAcceptance.UpdateModuleManifest" executed="True" result="Success" success="True" time="1.2561" asserts="0" description="PowerShell.PSGet.PSGetRequireLicenseAcceptance.UpdateModuleManifest">
+            <results>
+              <test-case description="UpdateModuleManifestWithRequireLicenseAcceptance" name="PowerShell.PSGet.PSGetRequireLicenseAcceptance.UpdateModuleManifest.UpdateModuleManifestWithRequireLicenseAcceptance" time="1.2561" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+          <test-suite type="TestFixture" name="PowerShell.PSGet.PSGetRequireLicenseAcceptance.Publish" executed="True" result="Success" success="True" time="17.2774" asserts="0" description="PowerShell.PSGet.PSGetRequireLicenseAcceptance.Publish">
+            <results>
+              <test-case description="PublishModuleRequiresLicenseAcceptance" name="PowerShell.PSGet.PSGetRequireLicenseAcceptance.Publish.PublishModuleRequiresLicenseAcceptance" time="6.5375" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="PublishModuleWithoutLicenseTxt" name="PowerShell.PSGet.PSGetRequireLicenseAcceptance.Publish.PublishModuleWithoutLicenseTxt" time="2.6558" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="PublishModuleWithoutLicenseUri" name="PowerShell.PSGet.PSGetRequireLicenseAcceptance.Publish.PublishModuleWithoutLicenseUri" time="2.5664" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="PublishModuleNoRequireLicenseAcceptance" name="PowerShell.PSGet.PSGetRequireLicenseAcceptance.Publish.PublishModuleNoRequireLicenseAcceptance" time="5.5177" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+          <test-suite type="TestFixture" name="PowerShell.PSGet.PSGetRequireLicenseAcceptance.InstallSaveUpdate" executed="True" result="Success" success="True" time="219.3725" asserts="0" description="PowerShell.PSGet.PSGetRequireLicenseAcceptance.InstallSaveUpdate">
+            <results>
+              <test-case description="InstallModuleRequiringLicenseAcceptanceAndNoToPrompt" name="PowerShell.PSGet.PSGetRequireLicenseAcceptance.InstallSaveUpdate.InstallModuleRequiringLicenseAcceptanceAndNoToPrompt" time="15.1757" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallModuleRequiringLicenseAcceptanceAndYesToPrompt" name="PowerShell.PSGet.PSGetRequireLicenseAcceptance.InstallSaveUpdate.InstallModuleRequiringLicenseAcceptanceAndYesToPrompt" time="6.6067" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallModuleAcceptLicense" name="PowerShell.PSGet.PSGetRequireLicenseAcceptance.InstallSaveUpdate.InstallModuleAcceptLicense" time="4.7656" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallModuleForce" name="PowerShell.PSGet.PSGetRequireLicenseAcceptance.InstallSaveUpdate.InstallModuleForce" time="3.5167" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallModuleWithDependencyAndYesToPrompt" name="PowerShell.PSGet.PSGetRequireLicenseAcceptance.InstallSaveUpdate.InstallModuleWithDependencyAndYesToPrompt" time="19.3455" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallModuleWithDependencyAndNoToPrompt" name="PowerShell.PSGet.PSGetRequireLicenseAcceptance.InstallSaveUpdate.InstallModuleWithDependencyAndNoToPrompt" time="12.4269" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallModuleWithDependencyAcceptLicense" name="PowerShell.PSGet.PSGetRequireLicenseAcceptance.InstallSaveUpdate.InstallModuleWithDependencyAcceptLicense" time="11.635" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallScriptAndYesToPrompt" name="PowerShell.PSGet.PSGetRequireLicenseAcceptance.InstallSaveUpdate.InstallScriptAndYesToPrompt" time="13.3752" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallScriptAndNoToPrompt" name="PowerShell.PSGet.PSGetRequireLicenseAcceptance.InstallSaveUpdate.InstallScriptAndNoToPrompt" time="16.3989" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="InstallScriptAcceptLicense" name="PowerShell.PSGet.PSGetRequireLicenseAcceptance.InstallSaveUpdate.InstallScriptAcceptLicense" time="7.0353" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="SaveModuleRequiringLicenseAcceptanceAndNoToPrompt" name="PowerShell.PSGet.PSGetRequireLicenseAcceptance.InstallSaveUpdate.SaveModuleRequiringLicenseAcceptanceAndNoToPrompt" time="9.0286" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="SaveModuleRequiringLicenseAcceptanceAndYesToPrompt" name="PowerShell.PSGet.PSGetRequireLicenseAcceptance.InstallSaveUpdate.SaveModuleRequiringLicenseAcceptanceAndYesToPrompt" time="8.8176" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="SaveModuleAcceptLicense" name="PowerShell.PSGet.PSGetRequireLicenseAcceptance.InstallSaveUpdate.SaveModuleAcceptLicense" time="3.5472" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="SaveModuleForce" name="PowerShell.PSGet.PSGetRequireLicenseAcceptance.InstallSaveUpdate.SaveModuleForce" time="3.4791" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="SaveModuleWithDependencyAndYesToPrompt" name="PowerShell.PSGet.PSGetRequireLicenseAcceptance.InstallSaveUpdate.SaveModuleWithDependencyAndYesToPrompt" time="13.3939" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="SaveModuleWithDependencyAndNoToPrompt" name="PowerShell.PSGet.PSGetRequireLicenseAcceptance.InstallSaveUpdate.SaveModuleWithDependencyAndNoToPrompt" time="13.8282" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="SaveModuleWithDependencyAcceptLicense" name="PowerShell.PSGet.PSGetRequireLicenseAcceptance.InstallSaveUpdate.SaveModuleWithDependencyAcceptLicense" time="3.5534" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="SaveScriptAndYesToPrompt" name="PowerShell.PSGet.PSGetRequireLicenseAcceptance.InstallSaveUpdate.SaveScriptAndYesToPrompt" time="13.6169" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="SaveScriptAcceptLicense" name="PowerShell.PSGet.PSGetRequireLicenseAcceptance.InstallSaveUpdate.SaveScriptAcceptLicense" time="3.4538" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateModuleRequiringLicenseAcceptanceAndNoToPrompt" name="PowerShell.PSGet.PSGetRequireLicenseAcceptance.InstallSaveUpdate.UpdateModuleRequiringLicenseAcceptanceAndNoToPrompt" time="11.2396" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateModuleRequiringLicenseAcceptanceAndYesToPrompt" name="PowerShell.PSGet.PSGetRequireLicenseAcceptance.InstallSaveUpdate.UpdateModuleRequiringLicenseAcceptanceAndYesToPrompt" time="11.6098" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateModuleAcceptLicnese" name="PowerShell.PSGet.PSGetRequireLicenseAcceptance.InstallSaveUpdate.UpdateModuleAcceptLicnese" time="6.6864" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateModuleForce" name="PowerShell.PSGet.PSGetRequireLicenseAcceptance.InstallSaveUpdate.UpdateModuleForce" time="6.8366" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\PSGetUnInstallModule.Tests.ps1" executed="True" result="Ignored" success="True" time="48.0519" asserts="0" description="C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\PSGetUnInstallModule.Tests.ps1">
+        <results>
+          <test-suite type="TestFixture" name="PowerShell.PSGet.UnInstallModuleTests" executed="True" result="Ignored" success="True" time="48.0519" asserts="0" description="PowerShell.PSGet.UnInstallModuleTests">
+            <results>
+              <test-case description="UnInstallModuleWithWhatIf" name="PowerShell.PSGet.UnInstallModuleTests.UnInstallModuleWithWhatIf" time="14.9838" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UnInstallModuleWithConfirmAndNoToPrompt" name="PowerShell.PSGet.UnInstallModuleTests.UnInstallModuleWithConfirmAndNoToPrompt" time="6.4733" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UnInstallModuleWithConfirmAndYesToPrompt" name="PowerShell.PSGet.UnInstallModuleTests.UnInstallModuleWithConfirmAndYesToPrompt" time="11.6842" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="ValidateGetInstalledAndUninstallModuleCmdletsWithAllVersions" name="PowerShell.PSGet.UnInstallModuleTests.ValidateGetInstalledAndUninstallModuleCmdletsWithAllVersions" time="14.87" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="ValidateModuleIsInUseErrorDuringUninstallModule" name="PowerShell.PSGet.UnInstallModuleTests.ValidateModuleIsInUseErrorDuringUninstallModule" time="0.0406" asserts="0" success="True" result="Ignored" executed="False" />
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\PSGetUnInstallScript.Tests.ps1" executed="True" result="Success" success="True" time="56.7986" asserts="0" description="C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\PSGetUnInstallScript.Tests.ps1">
+        <results>
+          <test-suite type="TestFixture" name="PowerShell.PSGet.UninstallScriptTests" executed="True" result="Success" success="True" time="56.7986" asserts="0" description="PowerShell.PSGet.UninstallScriptTests">
+            <results>
+              <test-case description="ValidateGetInstalledScriptAndUninstallScriptCmdletsWithMinimumVersion" name="PowerShell.PSGet.UninstallScriptTests.ValidateGetInstalledScriptAndUninstallScriptCmdletsWithMinimumVersion" time="13.1834" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="ValidateGetInstalledScriptAndUninstallScriptCmdletWithMinMaxRange" name="PowerShell.PSGet.UninstallScriptTests.ValidateGetInstalledScriptAndUninstallScriptCmdletWithMinMaxRange" time="5.0978" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="ValidateGetInstalledScriptAndUninstallScriptCmdletWithRequiredVersion" name="PowerShell.PSGet.UninstallScriptTests.ValidateGetInstalledScriptAndUninstallScriptCmdletWithRequiredVersion" time="5.2803" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="ValidateGetInstalledScriptAndUninstallScriptCmdletWithMiximumVersion" name="PowerShell.PSGet.UninstallScriptTests.ValidateGetInstalledScriptAndUninstallScriptCmdletWithMiximumVersion" time="5.2662" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UninstallScriptWithWhatIf" name="PowerShell.PSGet.UninstallScriptTests.UninstallScriptWithWhatIf" time="10.0959" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UninstallScriptWithConfirmAndNoToPrompt" name="PowerShell.PSGet.UninstallScriptTests.UninstallScriptWithConfirmAndNoToPrompt" time="8.3237" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UninstallScriptWithConfirmAndYesToPrompt" name="PowerShell.PSGet.UninstallScriptTests.UninstallScriptWithConfirmAndYesToPrompt" time="9.5513" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\PSGetUpdateModule.Tests.ps1" executed="True" result="Success" success="True" time="123.2244" asserts="0" description="C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\PSGetUpdateModule.Tests.ps1">
+        <results>
+          <test-suite type="TestFixture" name="PowerShell.PSGet.UpdateModuleTests" executed="True" result="Success" success="True" time="123.2244" asserts="0" description="PowerShell.PSGet.UpdateModuleTests">
+            <results>
+              <test-case description="UpdateModuleWithWhatIf" name="PowerShell.PSGet.UpdateModuleTests.UpdateModuleWithWhatIf" time="15.4972" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateModuleWithFalseConfirm" name="PowerShell.PSGet.UpdateModuleTests.UpdateModuleWithFalseConfirm" time="6.155" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateModuleWithForce" name="PowerShell.PSGet.UpdateModuleTests.UpdateModuleWithForce" time="5.4128" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateMultipleModulesWithReqVersion" name="PowerShell.PSGet.UpdateModuleTests.UpdateMultipleModulesWithReqVersion" time="4.2568" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateModulesWithReqVersionAndWildcard" name="PowerShell.PSGet.UpdateModuleTests.UpdateModulesWithReqVersionAndWildcard" time="2.4483" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateModuleWithWildcardName" name="PowerShell.PSGet.UpdateModuleTests.UpdateModuleWithWildcardName" time="5.4267" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateNotInstalledModule" name="PowerShell.PSGet.UpdateModuleTests.UpdateNotInstalledModule" time="0.6363" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateAModuleNotInstalledUsingPSGet" name="PowerShell.PSGet.UpdateModuleTests.UpdateAModuleNotInstalledUsingPSGet" time="0.6648" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateModuleWithReqVersion" name="PowerShell.PSGet.UpdateModuleTests.UpdateModuleWithReqVersion" time="48.7748" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateModuleWithReqVersionAndForceToDowngradeVersion" name="PowerShell.PSGet.UpdateModuleTests.UpdateModuleWithReqVersionAndForceToDowngradeVersion" time="5.5854" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateModuleWithLowerReqVersionShouldNotUpdate" name="PowerShell.PSGet.UpdateModuleTests.UpdateModuleWithLowerReqVersionShouldNotUpdate" time="5.4617" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateMultipleModules" name="PowerShell.PSGet.UpdateModuleTests.UpdateMultipleModules" time="12.5594" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateAllModules" name="PowerShell.PSGet.UpdateModuleTests.UpdateAllModules" time="10.3453" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\PSGetUpdateModuleManifest.Tests.ps1" executed="True" result="Ignored" success="True" time="43.6014" asserts="0" description="C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\PSGetUpdateModuleManifest.Tests.ps1">
+        <results>
+          <test-suite type="TestFixture" name="PowerShell.PSGet.UpdateModuleManifest" executed="True" result="Ignored" success="True" time="43.6014" asserts="0" description="PowerShell.PSGet.UpdateModuleManifest">
+            <results>
+              <test-case description="UpdateModuleManifestWithNoAdditionalParameters" name="PowerShell.PSGet.UpdateModuleManifest.UpdateModuleManifestWithNoAdditionalParameters" time="18.6158" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateModuleManifestWithDefaultCommandPrefix" name="PowerShell.PSGet.UpdateModuleManifest.UpdateModuleManifestWithDefaultCommandPrefix" time="0.0876" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateModuleManifestWithSameFields" name="PowerShell.PSGet.UpdateModuleManifest.UpdateModuleManifestWithSameFields" time="12.8795" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateModuleManifestWithAllFields" name="PowerShell.PSGet.UpdateModuleManifest.UpdateModuleManifestWithAllFields" time="8.7637" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateModuleManifestWithPrivataData" name="PowerShell.PSGet.UpdateModuleManifest.UpdateModuleManifestWithPrivataData" time="0.0987" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateModuleManifestWithExternalModuleDependenciesAndPackageManagementProviders" name="PowerShell.PSGet.UpdateModuleManifest.UpdateModuleManifestWithExternalModuleDependenciesAndPackageManagementProviders" time="0.0901" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateModuleManifesWithExportedDSCResourcesInLowerPowerShellVersion" name="PowerShell.PSGet.UpdateModuleManifest.UpdateModuleManifesWithExportedDSCResourcesInLowerPowerShellVersion" time="0.0589" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateModuleManifestWithValidExportedDSCResources" name="PowerShell.PSGet.UpdateModuleManifest.UpdateModuleManifestWithValidExportedDSCResources" time="0.0809" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateModuleManifestWithInvalidExternalModuleDependencies" name="PowerShell.PSGet.UpdateModuleManifest.UpdateModuleManifestWithInvalidExternalModuleDependencies" time="0.0747" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateModuleManifestWithInvalidModuleManifestPath" name="PowerShell.PSGet.UpdateModuleManifest.UpdateModuleManifestWithInvalidModuleManifestPath" time="0.0253" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateModuleManifestWithInvalidFileList" name="PowerShell.PSGet.UpdateModuleManifest.UpdateModuleManifestWithInvalidFileList" time="0.058" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateModuleManifestWithInvalidFileList2" name="PowerShell.PSGet.UpdateModuleManifest.UpdateModuleManifestWithInvalidFileList2" time="0.0531" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateModuleManifestWithInvalidModuleProperties" name="PowerShell.PSGet.UpdateModuleManifest.UpdateModuleManifestWithInvalidModuleProperties" time="0.0608" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateModuleManifestWithInvalidPackageManagementProviders" name="PowerShell.PSGet.UpdateModuleManifest.UpdateModuleManifestWithInvalidPackageManagementProviders" time="0.0707" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateModuleManifestWithInvalidManifest" name="PowerShell.PSGet.UpdateModuleManifest.UpdateModuleManifestWithInvalidManifest" time="0.0531" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateModuleManifestWithWhatIf" name="PowerShell.PSGet.UpdateModuleManifest.UpdateModuleManifestWithWhatIf" time="0.8395" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateModuleManifestWithFalseConfirm" name="PowerShell.PSGet.UpdateModuleManifest.UpdateModuleManifestWithFalseConfirm" time="0.0915" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateModuleManifestWithConfirmAndYesToPrompt" name="PowerShell.PSGet.UpdateModuleManifest.UpdateModuleManifestWithConfirmAndYesToPrompt" time="0.9863" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateModuleManifestWithReadOnlyManifest" name="PowerShell.PSGet.UpdateModuleManifest.UpdateModuleManifestWithReadOnlyManifest" time="0.1587" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateModuleManifestWithFileBeingUsed" name="PowerShell.PSGet.UpdateModuleManifest.UpdateModuleManifestWithFileBeingUsed" time="0.0676" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateModuleManifestWithSingleQuoteInReleaseNotes" name="PowerShell.PSGet.UpdateModuleManifest.UpdateModuleManifestWithSingleQuoteInReleaseNotes" time="0.0784" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateModuleManifestWithSingleQuoteInExistingReleaseNotes" name="PowerShell.PSGet.UpdateModuleManifest.UpdateModuleManifestWithSingleQuoteInExistingReleaseNotes" time="0.084" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateModuleManifestWithMultipleLinesReleaseNotes" name="PowerShell.PSGet.UpdateModuleManifest.UpdateModuleManifestWithMultipleLinesReleaseNotes" time="0.0846" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateModuleManifestWithMultipleLinesReleaseNotes2" name="PowerShell.PSGet.UpdateModuleManifest.UpdateModuleManifestWithMultipleLinesReleaseNotes2" time="0.0035" asserts="0" success="True" result="Ignored" executed="False" />
+              <test-case description="UpdateModuleManifesWithCompatiblePSEditionsInLowerPowerShellVersion" name="PowerShell.PSGet.UpdateModuleManifest.UpdateModuleManifesWithCompatiblePSEditionsInLowerPowerShellVersion" time="0.0516" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateModuleManifestWithValidCompatiblePSEditions" name="PowerShell.PSGet.UpdateModuleManifest.UpdateModuleManifestWithValidCompatiblePSEditions" time="0.0848" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\PSGetUpdateScript.Tests.ps1" executed="True" result="Ignored" success="True" time="168.181" asserts="0" description="C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\PSGetUpdateScript.Tests.ps1">
+        <results>
+          <test-suite type="TestFixture" name="PowerShell.PSGet.UpdateScriptTests" executed="True" result="Ignored" success="True" time="168.181" asserts="0" description="PowerShell.PSGet.UpdateScriptTests">
+            <results>
+              <test-case description="UpdateScriptWithConfirmAndNoToPrompt" name="PowerShell.PSGet.UpdateScriptTests.UpdateScriptWithConfirmAndNoToPrompt" time="17.6677" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateScriptWithConfirmAndYesToPrompt" name="PowerShell.PSGet.UpdateScriptTests.UpdateScriptWithConfirmAndYesToPrompt" time="14.5444" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateScriptWithWhatIf" name="PowerShell.PSGet.UpdateScriptTests.UpdateScriptWithWhatIf" time="10.0179" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateScriptWithFalseConfirm" name="PowerShell.PSGet.UpdateScriptTests.UpdateScriptWithFalseConfirm" time="7.099" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateScriptWithForce" name="PowerShell.PSGet.UpdateScriptTests.UpdateScriptWithForce" time="7.7895" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateMultipleScriptsWithReqVersion" name="PowerShell.PSGet.UpdateScriptTests.UpdateMultipleScriptsWithReqVersion" time="6.4345" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateScriptsWithReqVersionAndWildcard" name="PowerShell.PSGet.UpdateScriptTests.UpdateScriptsWithReqVersionAndWildcard" time="4.1511" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateScriptWithWildcardName" name="PowerShell.PSGet.UpdateScriptTests.UpdateScriptWithWildcardName" time="7.082" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateMultipleScriptsWithWildcard" name="PowerShell.PSGet.UpdateScriptTests.UpdateMultipleScriptsWithWildcard" time="13.7021" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateNotInstalledScript" name="PowerShell.PSGet.UpdateScriptTests.UpdateNotInstalledScript" time="1.195" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateScriptWithReqVersion" name="PowerShell.PSGet.UpdateScriptTests.UpdateScriptWithReqVersion" time="7.1741" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateScriptWithNotAvailableReqVersion" name="PowerShell.PSGet.UpdateScriptTests.UpdateScriptWithNotAvailableReqVersion" time="5.3564" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateScriptWithReqVersionAndForceToDowngradeVersion" name="PowerShell.PSGet.UpdateScriptTests.UpdateScriptWithReqVersionAndForceToDowngradeVersion" time="7.1628" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="AdminPrivilegesAreRequiredForUpdatingAllUsersScript" name="PowerShell.PSGet.UpdateScriptTests.AdminPrivilegesAreRequiredForUpdatingAllUsersScript" time="0.0413" asserts="0" success="True" result="Ignored" executed="False" />
+              <test-case description="UpdateScriptWithLowerReqVersionShouldNotUpdate" name="PowerShell.PSGet.UpdateScriptTests.UpdateScriptWithLowerReqVersionShouldNotUpdate" time="6.2697" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateMultipleScripts" name="PowerShell.PSGet.UpdateScriptTests.UpdateMultipleScripts" time="12.5335" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateAllScripts" name="PowerShell.PSGet.UpdateScriptTests.UpdateAllScripts" time="12.5169" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateMultipleScriptsWithForce" name="PowerShell.PSGet.UpdateScriptTests.UpdateMultipleScriptsWithForce" time="13.0631" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateScriptUnderCurrentUserScope" name="PowerShell.PSGet.UpdateScriptTests.UpdateScriptUnderCurrentUserScope" time="7.0781" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="UpdateScriptUnderAllUsersScope" name="PowerShell.PSGet.UpdateScriptTests.UpdateScriptUnderAllUsersScope" time="7.3017" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\PSGetUpdateScriptInfo.Tests.ps1" executed="True" result="Success" success="True" time="0" asserts="0" description="C:\Users\Administrator\Source\Repos\PowerShellGet\Tests\PSGetUpdateScriptInfo.Tests.ps1">
+        <results />
+      </test-suite>
+    </results>
+  </test-suite>
+</test-results>

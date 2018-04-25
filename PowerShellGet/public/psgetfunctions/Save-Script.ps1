@@ -68,10 +68,12 @@ function Save-Script
 
         [Parameter(Mandatory=$true,
                    ValueFromPipelineByPropertyName=$true,
+                   Position=1,
                    ParameterSetName='NameAndPathParameterSet')]
 
         [Parameter(Mandatory=$true,
                    ValueFromPipelineByPropertyName=$true,
+                   Position=1,
                    ParameterSetName='InputOjectAndPathParameterSet')]
         [string]
         $Path,

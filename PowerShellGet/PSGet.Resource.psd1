@@ -223,7 +223,7 @@ ConvertFrom-StringData @'
         RegisterVSTSFeedAsNuGetPackageSource=Publishing to a VSTS package management feed '{0}' requires it to be registered as a NuGet package source. Retry after adding this source '{0}' as NuGet package source by following the instructions specified at '{1}'        
         InvalidModuleAuthenticodeSignature=The module '{0}' cannot be installed or updated because the authenticode signature of the file '{1}' is not valid.
         InvalidCatalogSignature=The module '{0}' cannot be installed because the catalog signature in '{1}' does not match the hash generated from the module.
-        AuthenticodeIssuerMismatch=Authenticode issuer '{0}' of the new module '{1}' with version '{2}' is not matching with the authenticode issuer '{3}' of the previously-installed module '{4}' with version '{5}'. If you still want to install or update, use -SkipPublisherCheck parameter.
+        AuthenticodeIssuerMismatch=Authenticode issuer '{0}' of the new module '{1}' with version '{2}' from root certificate authority '{3}' is not matching with the authenticode issuer '{4}' of the previously-installed module '{5}' with version '{6}' from root certificate authority '{7}'. If you still want to install or update, use -SkipPublisherCheck parameter.
         ModuleCommandAlreadyAvailable=The following commands are already available on this system:'{0}'. This module '{1}' may override the existing commands. If you still want to install this module '{1}', use -AllowClobber parameter.
         CatalogFileFound=Found the catalog file '{0}' in the module '{1}' contents.        
         CatalogFileNotFoundInAvailableModule=Catalog file '{0}' is not found in the contents of the previously-installed module '{1}' with the same name.

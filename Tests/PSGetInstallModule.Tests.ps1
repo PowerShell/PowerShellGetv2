@@ -981,7 +981,6 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         }
     } `
 
-<#  HERE   #>
     # Purpose: Install a new non-Microsoft signed module over current module 
     #
     # Action: Install-Module -Name Foo 
@@ -1594,7 +1593,7 @@ Describe PowerShell.PSGet.InstallModuleTests.P2 -Tags 'P2','OuterLoop' {
         }
         finally
         {
-           F | PowerShellGet\Uninstall-Module -Force
+            Get-InstalledModule -Name $res1.Name -AllVersions | PowerShellGet\Uninstall-Module -Force 
             $DepencyModuleNames | ForEach-Object { Get-InstalledModule -Name $_ -AllVersions | PowerShellGet\Uninstall-Module -Force }
         }
     }

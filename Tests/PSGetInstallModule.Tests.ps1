@@ -910,6 +910,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
             # Expect: Warning and Success
             $iev | should be $null
             $iwv | should not be $null
+            $iwv | should not belike "*root*authority*"
 
             # Fix PSModulePath
             # This is done before installing v2 because

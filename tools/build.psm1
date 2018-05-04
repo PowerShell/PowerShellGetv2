@@ -2,8 +2,6 @@
 $script:PowerShellGet = 'PowerShellGet'
 $script:IsInbox = $PSHOME.EndsWith('\WindowsPowerShell\v1.0', [System.StringComparison]::OrdinalIgnoreCase)
 $script:IsWindows = (-not (Get-Variable -Name IsWindows -ErrorAction Ignore)) -or $IsWindows
-$script:IsLinux = (Get-Variable -Name IsLinux -ErrorAction Ignore) -and $IsLinux
-$script:IsMacOS = (Get-Variable -Name IsMacOS -ErrorAction Ignore) -and $IsMacOS
 $script:IsCoreCLR = $PSVersionTable.ContainsKey('PSEdition') -and $PSVersionTable.PSEdition -eq 'Core'
 
 $script:ProjectRoot = Split-Path -Path $PSScriptRoot -Parent
@@ -16,71 +14,61 @@ $script:PublicPSGetFunctions = @( Get-ChildItem -Path $ModuleRoot\public\psgetfu
 $script:PublicProviderFunctions = @( Get-ChildItem -Path $ModuleRoot\public\providerfunctions\*.ps1 -ErrorAction SilentlyContinue )
 $script:PrivateFunctions = @( Get-ChildItem -Path $ModuleRoot\private\functions\*.ps1 -ErrorAction SilentlyContinue )
 
-if($script:IsInbox) {
+if ($script:IsInbox) {
     $script:ProgramFilesPSPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramFiles -ChildPath "WindowsPowerShell"
-} else {
-    $script:ProgramFilesPSPath = $PSHome
 }
-
-if($script:IsInbox) {
-    try {
-        $script:MyDocumentsFolderPath = [Environment]::GetFolderPath("MyDocuments")
-    } catch {
-        $script:MyDocumentsFolderPath = $null
+elseif ($script:IsCoreCLR) {
+    if ($script:IsWindows) {
+        $script:ProgramFilesPSPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramFiles -ChildPath 'PowerShell'
     }
-
-    $script:MyDocumentsPSPath = if($script:MyDocumentsFolderPath) {
-                                    Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsFolderPath -ChildPath "WindowsPowerShell"
-                                } else {
-                                    Microsoft.PowerShell.Management\Join-Path -Path $env:USERPROFILE -ChildPath "Documents\WindowsPowerShell"
-                                }
-} elseif($script:IsWindows) {
-    $script:MyDocumentsPSPath = Microsoft.PowerShell.Management\Join-Path -Path $HOME -ChildPath 'Documents\PowerShell'
-} else {
-    $script:MyDocumentsPSPath = Microsoft.PowerShell.Management\Join-Path -Path $HOME -ChildPath ".local/share/powershell"
+    else {
+        $script:ProgramFilesPSPath = Split-Path -Path ([System.Management.Automation.Platform]::SelectProductNameForDirectory('SHARED_MODULES')) -Parent
+    }
 }
 
 $script:ProgramFilesModulesPath = Microsoft.PowerShell.Management\Join-Path -Path $script:ProgramFilesPSPath -ChildPath "Modules"
-$script:MyDocumentsModulesPath = Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsPSPath -ChildPath "Modules"
-$script:ProgramFilesScriptsPath = Microsoft.PowerShell.Management\Join-Path -Path $script:ProgramFilesPSPath -ChildPath "Scripts"
-$script:MyDocumentsScriptsPath = Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsPSPath -ChildPath "Scripts"
-$script:TempPath = if($script:IsWindows) { ([System.IO.DirectoryInfo]$env:TEMP).FullName } else { '/tmp' }
+$script:TempPath = [System.IO.Path]::GetTempPath()
 
-if($script:IsWindows) {
+if ($script:IsWindows) {
     $script:PSGetProgramDataPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramData -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
-    $script:PSGetAppLocalPath = Microsoft.PowerShell.Management\Join-Path -Path $env:LOCALAPPDATA -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
-} else {
-    $script:PSGetProgramDataPath = "$HOME/.config/powershell/powershellget"
-    $script:PSGetAppLocalPath = "$HOME/.config/powershell/powershellget"
 }
+else {
+    $script:PSGetProgramDataPath = Join-Path -Path ([System.Management.Automation.Platform]::SelectProductNameForDirectory('CONFIG')) -ChildPath 'PowerShellGet'
+}
+
+$AllUsersModulesPath = $script:ProgramFilesModulesPath
 
 # AppVeyor.yml sets a value to $env:PowerShellEdition variable,
 # otherwise set $script:PowerShellEdition value based on the current PowerShell Edition.
 $script:PowerShellEdition = [System.Environment]::GetEnvironmentVariable("PowerShellEdition")
-if(-not $script:PowerShellEdition) {
-    if($script:IsCoreCLR) {
+if (-not $script:PowerShellEdition) {
+    if ($script:IsCoreCLR) {
         $script:PowerShellEdition = 'Core'
-    } else {
+    }
+    else {
         $script:PowerShellEdition = 'Desktop'
     }
 }
+elseif (($script:PowerShellEdition -eq 'Core') -and ($script:IsWindows)) {
+    # In AppVeyor test runs, OneGet and PSGet modules are installed from Windows PowerShell process
+    # Set AllUsersModulesPath to $env:ProgramFiles\PowerShell\Modules
+    $AllUsersModulesPath = Join-Path -Path $env:ProgramFiles -ChildPath 'PowerShell' | Join-Path -ChildPath 'Modules'
+}
 Write-Host "PowerShellEdition value: $script:PowerShellEdition"
-
-$AllUsersModulesPath = $script:ProgramFilesModulesPath
 
 #endregion script variables
 
 function Install-Dependencies {
     # Update build title for daily builds
-    if($script:IsWindows -and (Test-DailyBuild)) {
-        if($env:APPVEYOR_PULL_REQUEST_TITLE)
-        {
+    if ($script:IsWindows -and (Test-DailyBuild)) {
+        if ($env:APPVEYOR_PULL_REQUEST_TITLE) {
             $buildName += $env:APPVEYOR_PULL_REQUEST_TITLE
-        } else {
+        }
+        else {
             $buildName += $env:APPVEYOR_REPO_COMMIT_MESSAGE
         }
 
-        if(-not ($buildName.StartsWith("[Daily]", [System.StringComparison]::OrdinalIgnoreCase))) {
+        if (-not ($buildName.StartsWith("[Daily]", [System.StringComparison]::OrdinalIgnoreCase))) {
             Update-AppveyorBuild -message "[Daily] $buildName"
         }
     }
@@ -93,9 +81,8 @@ function Install-PackageManagement {
     $NuGetExeName = 'NuGet.exe'
     $NugetExeFilePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $NuGetExeName
 
-    if(-not (Test-Path -Path $NugetExeFilePath -PathType Leaf)) {
-        if(-not (Microsoft.PowerShell.Management\Test-Path -Path $script:PSGetProgramDataPath))
-        {
+    if (-not (Test-Path -Path $NugetExeFilePath -PathType Leaf)) {
+        if (-not (Microsoft.PowerShell.Management\Test-Path -Path $script:PSGetProgramDataPath)) {
             $null = Microsoft.PowerShell.Management\New-Item -Path $script:PSGetProgramDataPath -ItemType Directory -Force
         }
 
@@ -108,33 +95,29 @@ function Install-PackageManagement {
     # Install latest PackageManagement from Gallery
     $OneGetModuleName = 'PackageManagement'
     $OneGetModuleInfo = Get-Module -ListAvailable -Name $OneGetModuleName | Select-Object -First 1
-    if ($OneGetModuleInfo)
-    {
+    if ($OneGetModuleInfo) {
         $NuGetProvider = Get-PackageProvider | Where-Object { $_.Name -eq 'NuGet' }
-        if(-not $NuGetProvider) {
+        if (-not $NuGetProvider) {
             Install-PackageProvider -Name NuGet -Force
         }
 
         $LatestOneGetInPSGallery = Find-Module -Name $OneGetModuleName
-        if($LatestOneGetInPSGallery.Version -gt $OneGetModuleInfo.Version) {
+        if ($LatestOneGetInPSGallery.Version -gt $OneGetModuleInfo.Version) {
             Install-Module -InputObject $LatestOneGetInPSGallery -Force
         }
     }
-    else
-    {
+    else {
         # Install latest PackageManagement module from PSGallery
         $TempModulePath = Microsoft.PowerShell.Management\Join-Path -Path $script:TempPath -ChildPath "$(Get-Random)"
         $null = Microsoft.PowerShell.Management\New-Item -Path $TempModulePath -Force -ItemType Directory
         $OneGetModuleName = 'PackageManagement'
-        try
-        {
+        try {
             & $NugetExeFilePath install $OneGetModuleName -source https://www.powershellgallery.com/api/v2 -outputDirectory $TempModulePath -verbosity detailed
             $OneGetWithVersion = Microsoft.PowerShell.Management\Get-ChildItem -Path $TempModulePath -Directory
-            $OneGetVersion = ($OneGetWithVersion.Name.Split('.',2))[1]
+            $OneGetVersion = ($OneGetWithVersion.Name.Split('.', 2))[1]
 
             $OneGetModulePath = Microsoft.PowerShell.Management\Join-Path -Path  $AllUsersModulesPath -ChildPath $OneGetModuleName
-            if($PSVersionTable.PSVersion -ge '5.0.0')
-            {
+            if ($PSVersionTable.PSVersion -ge '5.0.0') {
                 $OneGetModulePath = Microsoft.PowerShell.Management\Join-Path -Path $OneGetModulePath -ChildPath $OneGetVersion
             }
 
@@ -142,8 +125,7 @@ function Install-PackageManagement {
             Microsoft.PowerShell.Management\Copy-Item -Path "$($OneGetWithVersion.FullName)\*" -Destination "$OneGetModulePath\" -Recurse -Force
             Get-Module -ListAvailable -Name $OneGetModuleName | Microsoft.PowerShell.Core\Where-Object {$_.Version -eq $OneGetVersion}
         }
-        finally
-        {
+        finally {
             Remove-Item -Path $TempModulePath -Recurse -Force
         }
     }
@@ -152,8 +134,7 @@ function Get-PSHome {
     $PowerShellHome = $PSHOME
 
     # Install PowerShell Core on Windows.
-    if(($script:PowerShellEdition -eq 'Core') -and $script:IsWindows)
-    {
+    if (($script:PowerShellEdition -eq 'Core') -and $script:IsWindows) {
         $InstallPSCoreUrl = 'https://aka.ms/install-pscore'
         $InstallPSCorePath = Microsoft.PowerShell.Management\Join-Path -Path $PSScriptRoot -ChildPath 'install-powershell.ps1'
         Microsoft.PowerShell.Utility\Invoke-RestMethod -Uri $InstallPSCoreUrl -OutFile $InstallPSCorePath
@@ -161,8 +142,7 @@ function Get-PSHome {
         $PowerShellHome = "$env:SystemDrive\PowerShellCore"
         & $InstallPSCorePath -Destination $PowerShellHome -Daily
 
-        if(-not $PowerShellHome -or -not (Microsoft.PowerShell.Management\Test-Path -Path $PowerShellHome -PathType Container))
-        {
+        if (-not $PowerShellHome -or -not (Microsoft.PowerShell.Management\Test-Path -Path $PowerShellHome -PathType Container)) {
             Throw "$PowerShellHome path is not available."
         }
 
@@ -184,7 +164,7 @@ function Invoke-PowerShellGetTest {
     Write-Host -ForegroundColor Green "`$env:APPVEYOR_REPO_TAG_NAME value $env:APPVEYOR_REPO_TAG_NAME"
     Write-Host -ForegroundColor Green "TRAVIS_EVENT_TYPE environment variable value $([System.Environment]::GetEnvironmentVariable('TRAVIS_EVENT_TYPE'))"
 
-    if(-not $IsFullTestPass){
+    if (-not $IsFullTestPass) {
         $IsFullTestPass = Test-DailyBuild
     }
     Write-Host -ForegroundColor Green "`$IsFullTestPass value $IsFullTestPass"
@@ -194,14 +174,15 @@ function Invoke-PowerShellGetTest {
     $ClonedProjectPath = Resolve-Path "$PSScriptRoot\.."
     $PowerShellGetTestsPath = "$ClonedProjectPath\Tests\"
     $PowerShellHome = Get-PSHome
-    if($script:IsWindows){
+    if ($script:IsWindows) {
         if ($script:PowerShellEdition -eq 'Core') {
             $PowerShellExePath = Join-Path -Path $PowerShellHome -ChildPath 'pwsh.exe'
         }
         else {
             $PowerShellExePath = Join-Path -Path $PowerShellHome -ChildPath 'PowerShell.exe'
         }
-    } else {
+    }
+    else {
         $PowerShellExePath = 'pwsh'
     }
 
@@ -211,7 +192,7 @@ function Invoke-PowerShellGetTest {
     #   -- Where PowerShellGet module was installed from MyGet feed https://powershell.myget.org/F/powershellmodule/api/v2/
     #   -- This option is used only for Daily builds
     $TestScenarios = @()
-    if(($script:PowerShellEdition -eq 'Core') -and $IsFullTestPass -and $script:IsWindows){
+    if (($script:PowerShellEdition -eq 'Core') -and $IsFullTestPass -and $script:IsWindows) {
         # Disabled NoUpdate test scenario on PWSH
         #$TestScenarios += 'NoUpdate'
     }
@@ -219,13 +200,13 @@ function Invoke-PowerShellGetTest {
     $TestScenarios += 'Current'
 
     $PesterTag = '' # Conveys all test priorities
-    if(-not $IsFullTestPass){
+    if (-not $IsFullTestPass) {
         $PesterTag = 'BVT' # Only BVTs
     }
 
     $TestResults = @()
 
-    foreach ($TestScenario in $TestScenarios){
+    foreach ($TestScenario in $TestScenarios) {
 
         Write-Host "TestScenario: $TestScenario"
 
@@ -292,26 +273,24 @@ function Invoke-PowerShellGetTest {
 
     $FailedTestCount = 0
     $TestResults | ForEach-Object { $FailedTestCount += ([int]$_.'test-results'.failures) }
-    if ($FailedTestCount)
-    {
+    if ($FailedTestCount) {
         throw "$FailedTestCount tests failed"
     }
 }
 # tests if we should run a daily build
 # returns true if the build is scheduled
 # or is a pushed tag
-function Test-DailyBuild{
+function Test-DailyBuild {
 
     # https://docs.travis-ci.com/user/environment-variables/
     # TRAVIS_EVENT_TYPE: Indicates how the build was triggered.
     # One of push, pull_request, api, cron.
     $TRAVIS_EVENT_TYPE = [System.Environment]::GetEnvironmentVariable('TRAVIS_EVENT_TYPE')
-    if(($env:PS_DAILY_BUILD -eq 'True') -or
-       ($env:APPVEYOR_SCHEDULED_BUILD -eq 'True') -or
-       ($env:APPVEYOR_REPO_TAG_NAME) -or
-       ($TRAVIS_EVENT_TYPE -eq 'cron') -or
-       ($TRAVIS_EVENT_TYPE -eq 'api'))
-    {
+    if (($env:PS_DAILY_BUILD -eq 'True') -or
+        ($env:APPVEYOR_SCHEDULED_BUILD -eq 'True') -or
+        ($env:APPVEYOR_REPO_TAG_NAME) -or
+        ($TRAVIS_EVENT_TYPE -eq 'cron') -or
+        ($TRAVIS_EVENT_TYPE -eq 'api')) {
         return $true
     }
 
@@ -367,7 +346,7 @@ function Update-ModuleManifestFunctions {
 
     # FunctionsToExport string needs to be array definition with function names surrounded by quotes.
     $formatedFunctionNames = @()
-    foreach($function in $PublicPSGetFunctions.basename) {
+    foreach ($function in $PublicPSGetFunctions.basename) {
         $function = "`'$function`'"
         $formatedFunctionNames += $function
     }
@@ -387,8 +366,8 @@ function Remove-ModuleManifestFunctions ($Path) {
     $rawFile = Get-Content -Path $Path -Raw
     $arrFile = Get-Content -Path $Path
 
-    $functionsStartPos = ($arrFile | Select-String -Pattern 'FunctionsToExport').LineNumber -1
-    $functionsEndPos = ($arrFile | Select-String -Pattern 'VariablesToExport').LineNumber -2
+    $functionsStartPos = ($arrFile | Select-String -Pattern 'FunctionsToExport').LineNumber - 1
+    $functionsEndPos = ($arrFile | Select-String -Pattern 'VariablesToExport').LineNumber - 2
 
     $functionsExportString = $arrFile[$functionsStartPos..$functionsEndPos] | Out-String
 
@@ -398,7 +377,7 @@ function Remove-ModuleManifestFunctions ($Path) {
 }
 function Publish-ModuleArtifacts {
 
-    if(Test-Path -Path $ArtifactRoot) {
+    if (Test-Path -Path $ArtifactRoot) {
         Remove-Item -Path $ArtifactRoot -Recurse -Force
     }
 
@@ -420,17 +399,16 @@ function Publish-ModuleArtifacts {
     $artifactZipFile = Join-Path -Path $ArtifactRoot -ChildPath $zipFileName
     $tempZipfile = Join-Path -Path $TempPath -ChildPath $zipFileName
 
-    if($PSEdition -ne 'Core')
-    {
+    if ($PSEdition -ne 'Core') {
         Add-Type -assemblyname System.IO.Compression.FileSystem
     }
 
-    if(Test-Path -Path $tempZipfile) {
+    if (Test-Path -Path $tempZipfile) {
         Remove-Item -Path $tempZipfile -Force
     }
 
     Write-Verbose "Zipping module artifacts in $ArtifactRoot"
-    [System.IO.Compression.ZipFile]::CreateFromDirectory($ArtifactRoot,$tempZipfile)
+    [System.IO.Compression.ZipFile]::CreateFromDirectory($ArtifactRoot, $tempZipfile)
 
     Move-Item -Path $tempZipfile -Destination $artifactZipFile -Force
 }
@@ -441,8 +419,7 @@ function Install-PublishedModule {
     $ModuleVersion = "$($PowerShellGetModuleInfo.Version)"
     $InstallLocation = Join-Path -Path $AllUsersModulesPath -ChildPath 'PowerShellGet'
 
-    if(($script:PowerShellEdition -eq 'Core') -or ($PSVersionTable.PSVersion -ge '5.0.0'))
-    {
+    if (($script:PowerShellEdition -eq 'Core') -or ($PSVersionTable.PSVersion -ge '5.0.0')) {
         $InstallLocation = Join-Path -Path $InstallLocation -ChildPath $ModuleVersion
     }
     New-Item -Path $InstallLocation -ItemType Directory -Force | Out-Null

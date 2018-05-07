@@ -1356,22 +1356,17 @@ Describe PowerShell.PSGet.InstallModuleTests.P1 -Tags 'P1','OuterLoop' {
     # Expected Result: Should save the module
     #
     It SaveModuleWithPathPositionalParameter {
-        Install-Module ContosoClient
         $ModuleName = "ContosoClient"
-
-        $res1 = Find-Module -Name $ModuleName -RequiredVersion "2.5"
 
         try
         {
-            AssertEquals $res1.Name $ModuleName "Find-Module didn't find the exact module, $res1"
-
-            Find-Module -Name $ModuleName -RequiredVersion "2.5" | Save-Module $ModuleName $script:TempPath
-            $ActualModuleDetails = Get-InstalledModule -Name $ModuleName -RequiredVersion $res1.Version
+            Find-Module -Name $ModuleName -RequiredVersion "2.5" | Save-Module $ModuleName $script:MyDocumentsModulesPath
+            $ActualModuleDetails = Get-InstalledModule -Name $ModuleName -RequiredVersion "2.5"
             AssertNotNull $ActualModuleDetails "$ModuleName module is not saved properly"
         }
         finally
         {
-            Get-InstalledModule -Name $res1.Name -AllVersions | PowerShellGet\Uninstall-Module -Force
+           $ModuleName  | ForEach-Object {PSGetTestUtils\Uninstall-Module $_}
         }
     }
 }

@@ -121,6 +121,7 @@ function SuiteCleanup {
     }
 }
 
+
 Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
 
     BeforeAll {
@@ -982,6 +983,29 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
         $scripts2 = Get-InstalledScript
         AssertEquals $scripts1.count $scripts2.count "script count should be same before and after updating a script, before: $($scripts1.count), after: $($scripts2.count)"
     }
+
+    # Purpose: Validate Save-Script cmdlet with a script with positional parmater for path
+    #
+    # Action: Find-Script -Name Fabrikam-ClientScript | Save-Script
+    #
+    # Expected Result: Should save the script
+    #
+    It SaveScriptWithPathPositionalParameter {
+        $ScriptName = 'Fabrikam-ClientScript'
+
+        try
+        {
+            Find-Script -Name $ScriptName -RequiredVersion "2.5" | Save-Script $ScriptName $script:TempSavePath
+            $fileName = Join-Path $script:TempSavePath ($ScriptName + ".ps1")
+            $TestPath = Test-Path $fileName
+       
+            $TestPath | Should -Be $true
+        }
+        finally
+        {
+            Remove-Item -Path "$script:TempSavePath\*" -Recurse -Force -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
+        }
+    }
 }
 
 Describe PowerShell.PSGet.InstallScriptTests.P1 -Tags 'P1','OuterLoop' {
@@ -1765,31 +1789,5 @@ Describe PowerShell.PSGet.InstallScriptTests.P1 -Tags 'P1','OuterLoop' {
 
         $res = Get-InstalledScript $scriptName -RequiredVersion $version
         $res.Version | Should Be $version
-    }
-
-    # Purpose: Validate Save-Script cmdlet with a script with positional parmater for path
-    #
-    # Action: Find-Script -Name ModuleWithDependencies1 | Save-Script
-    #
-    # Expected Result: Should save the script
-    #
-    It SaveScriptWithPathPositionalParameter {
-        $ScriptName = 'Fabrikam-ClientScript'
-        Install-Script -Name $ScriptName
-
-        $res1 = Get-InstalledScript -Name $ScriptName -RequiredVersion "2.5"
-                
-        try
-        {
-            AssertEquals $res1.Name $ScriptName "Get-InstalledScript didn't find the exact script, $res1"
-
-            Get-InstalledScript -Name $ScriptName -RequiredVersion "2.5" | Save-Script $ScriptName $script:TempPath
-            $ActualScriptDetails = Get-InstalledScript -Name $ScriptName -RequiredVersion $res1.Version
-            AssertNotNull $ActualScriptDetails "$ScriptName script is not saved properly"
-        }
-        finally
-        {
-            Get-InstalledScript -Name $res1.Name | PowerShellGet\Uninstall-Script -Force
-        }
     }
 }

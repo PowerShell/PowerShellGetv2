@@ -22,6 +22,7 @@ function SuiteSetup {
     $script:MyDocumentsModulesPath = Get-CurrentUserModulesPath
     $script:PSGetLocalAppDataPath = Get-PSGetLocalAppDataPath
     $script:TempPath = Get-TempPath
+
     $null = New-Item -Path $script:MyDocumentsModulesPath -ItemType Directory -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
     #Bootstrap NuGet binaries
     Install-NuGetBinaries
@@ -78,13 +79,32 @@ function SuiteSetup {
             $null = Remove-Item -Path $pesterDestination -Force
         }
 
+        $fooDestination = Join-Path -Path $script:TempModulesPath -ChildPath "Foo"
+        $foov1Destination = Join-Path -Path $FooDestination -ChildPath "99.99.99.96"
+        $foov2Destination = Join-Path -Path $FooDestination -ChildPath "99.99.99.97"
+        $foov3Destination = Join-Path -Path $FooDestination -ChildPath "99.99.99.98"
+        $foov4Destination = Join-Path -Path $FooDestination -ChildPath "99.99.99.99"
+        if (Test-Path -Path $FooDestination) {
+            $null = Remove-Item -Path $FooDestination -Force
+        }
+
         $null = New-Item -Path $pesterDestination -Force -ItemType Directory
         $null = New-Item -Path $pesterv1Destination -Force -ItemType Directory
         $null = New-Item -Path $pesterv2Destination -Force -ItemType Directory
+        $null = New-Item -Path $FooDestination -Force -ItemType Directory
+        $null = New-Item -Path $foov1Destination -Force -ItemType Directory
+        $null = New-Item -Path $foov2Destination -Force -ItemType Directory
+        $null = New-Item -Path $foov3Destination -Force -ItemType Directory
+        $null = New-Item -Path $foov4Destination -Force -ItemType Directory
+
 
         $null = New-ModuleManifest -Path (Join-Path -Path $pesterv1Destination -ChildPath "Pester.psd1") -Description "Test signed module v1" -ModuleVersion 99.99.99.98
         $null = New-ModuleManifest -Path (Join-Path -Path $pesterv2Destination -ChildPath "Pester.psd1") -Description "Test signed module v2" -ModuleVersion 99.99.99.99
-
+        $null = New-ModuleManifest -Path (Join-Path -Path $foov1Destination -ChildPath "Foo.psd1") -Description "Test signed Foo module v1" -ModuleVersion 99.99.99.96
+        $null = New-ModuleManifest -Path (Join-Path -Path $foov2Destination -ChildPath "Foo.psd1") -Description "Test signed Foo module v2" -ModuleVersion 99.99.99.97
+        $null = New-ModuleManifest -Path (Join-Path -Path $foov3Destination -ChildPath "Foo.psd1") -Description "Test signed Foo module v3" -ModuleVersion 99.99.99.98
+        $null = New-ModuleManifest -Path (Join-Path -Path $foov4Destination -ChildPath "Foo.psd1") -Description "Test signed Foo module v4" -ModuleVersion 99.99.99.99
+        
         # Move Pester 3.4.0 to $script:TestPSModulePath
         # If it doesn't exist, attempt to download it.
         # If this is run offline, just fail the test for now.
@@ -113,8 +133,22 @@ function SuiteSetup {
             $csCert = Get-CodeSigningCert -IncludeLocalMachineCerts
         }
 
+        Create-CodeSigningCert -storeName "Cert:\LocalMachine\My" -subject "AliceTest" 
+        $alice1Cert = (Get-ChildItem cert: -CodeSigningCert -Recurse | Where-Object Subject -match "AliceTest" | Select-Object -First 1) 
+        Create-CodeSigningCert -subject "AliceTest" -CertRA "Other Root Authority" 
+        $alice2Cert = (Get-ChildItem cert: -CodeSigningCert -Recurse | Where-Object Issuer -match "Other" | Select-Object -First 1) 
+        Create-CodeSigningCert -subject "BobTest"
+        $bobCert = (Get-ChildItem cert: -CodeSigningCert -Recurse | Where-Object Subject -match "BobTest" | Select-Object -First 1)
+        
         $null = Set-AuthenticodeSignature -FilePath (Join-Path -Path $pesterv1Destination -ChildPath "Pester.psd1") -Certificate $csCert
         $null = Set-AuthenticodeSignature -FilePath (Join-Path -Path $pesterv2Destination -ChildPath "Pester.psd1") -Certificate $csCert
+        $null = Set-AuthenticodeSignature -FilePath (Join-Path -Path $foov1Destination -ChildPath "Foo.psd1") -Certificate $alice1Cert
+        $null = Set-AuthenticodeSignature -FilePath (Join-Path -Path $foov2Destination -ChildPath "Foo.psd1") -Certificate $alice2Cert
+        $null = Set-AuthenticodeSignature -FilePath (Join-Path -Path $foov3Destination -ChildPath "Foo.psd1") -Certificate $bobCert
+        $null = Set-AuthenticodeSignature -FilePath (Join-Path -Path $foov4Destination -ChildPath "Foo.psd1") -Certificate $alice1Cert
+
+        Cleanup-CodeSigningCert -subject "AliceTest"
+        Cleanup-CodeSigningCert -subject "BobTest"
     }
 }
 
@@ -910,6 +944,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
             # Expect: Warning and Success
             $iev | should be $null
             $iwv | should not be $null
+            $iwv | should not belike "*root*authority*"
 
             # Fix PSModulePath
             # This is done before installing v2 because
@@ -944,6 +979,79 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
                 }
             }
         }
+    } `
+
+    # Purpose: Install a new non-Microsoft signed module over current module 
+    #
+    # Action: Install-Module -Name Foo 
+    #
+    # Expected Result: Warning and installed
+    #
+    It 'InstallNonMsSignedModuleOverNonMsSignedModuleWithSameCertificateSubject' {
+        # If v1 exists, uninstall
+        if (Get-Module Foo -ListAvailable | Where-Object { $_.Version -eq '99.99.99.96' }) {
+            $moduleBase = (Get-Module Foo -ListAvailable | Where-Object { $_.Version -eq '99.99.99.96' }).ModuleBase
+            $null = Remove-Item -Path $moduleBase -Force -Recurse
+            if (Get-Module Foo -ListAvailable | Where-Object { $_.Version -eq '99.99.99.96' }) {
+                Write-Error "Failed to uninstall Foo v1"
+            }
+        }
+
+        $fooRoot = Join-Path -Path $script:TempModulesPath -ChildPath "Foo"
+        $foov1Path = Join-Path -Path $fooRoot -ChildPath "99.99.99.96"  
+        $foov2Path = Join-Path -Path $fooRoot -ChildPath "99.99.99.97"  
+        $foov3Path = Join-Path -Path $fooRoot -ChildPath "99.99.99.98"  
+        $foov4Path = Join-Path -Path $fooRoot -ChildPath "99.99.99.99"
+   
+        # Publish signed modules
+        Publish-Module -Path $foov1Path -Repository $script:localGalleryName -Force
+        # Install v1 of signed module                  
+        Install-Module Foo -RequiredVersion 99.99.99.96 -Repository $script:localGalleryName -ErrorVariable iev -WarningVariable iwv -Force
+        # Expect: No warning and Success
+        $iev | should be $null
+        $iwv | should be $null
+
+        # Publish v2 signed modules
+        Publish-Module -Path $foov2Path -Repository $script:localGalleryName -Force
+        Install-Module Foo -ErrorVariable iev -WarningVariable iwv -Force   
+        #Update-Module Foo -ErrorVariable iev -WarningVariable iwv -verbose -debug -Force
+        # Expect: Warning and Success
+        $iev | should not be $null
+        $iwv | should be $null
+        
+        # Publish v3 signed modules
+        Publish-Module -Path $foov3Path -Repository $script:localGalleryName -Force
+        Install-Module Foo -ErrorVariable iev -WarningVariable iwv -Force   
+        #Update-Module Foo -ErrorVariable iev -WarningVariable iwv -verbose -debug -Force
+        # Expect: Warning and Success
+        $iev | should not be $null
+        $iwv | should be $null
+
+        # Publish v4 signed modules
+        Publish-Module -Path $foov4Path -Repository $script:localGalleryName -Force
+        Install-Module Foo -ErrorVariable iev -WarningVariable iwv -Force   
+        #Update-Module Foo -ErrorVariable iev -WarningVariable iwv -verbose -debug -Force
+        # Expect: Warning and Success
+        $iev | should be $null
+        $iwv | should be $null
+
+        # If v1 exists, uninstall
+        if (Get-Module Foo -ListAvailable | Where-Object { $_.Version -eq '99.99.99.98' }) {
+            $moduleBase = (Get-Module Foo -ListAvailable | Where-Object { $_.Version -eq '99.99.99.98' }).ModuleBase
+            $null = Remove-Item -Path $moduleBase -Force -Recurse
+            if (Get-Module Foo -ListAvailable | Where-Object { $_.Version -eq '99.99.99.98' }) {
+                Write-Error "Failed to uninstall Foo v1"
+            }
+        }
+
+        # If v2 exists, uninstall
+        if (Get-Module Foo -ListAvailable | Where-Object { $_.Version -eq '99.99.99.99' }) {
+            $moduleBase = (Get-Module Foo -ListAvailable | Where-Object { $_.Version -eq '99.99.99.99' }).ModuleBase
+            $null = Remove-Item -Path $moduleBase -Force -Recurse
+            if (Get-Module Foo -ListAvailable | Where-Object { $_.Version -eq '99.99.99.99' }) {
+                Write-Error "Failed to uninstall v2"
+            }
+        }       
     } `
     -Skip:$((-not (Get-Module PKI -ListAvailable)) -or ([Environment]::OSVersion.Version -lt '10.0'))
 }
@@ -1086,7 +1194,7 @@ Describe PowerShell.PSGet.InstallModuleTests.P1 -Tags 'P1','OuterLoop' {
         }
     } -Skip:$(($PSCulture -ne 'en-US') -or ($PSVersionTable.PSVersion -lt '4.0.0') -or ($PSEdition -eq 'Core'))
 
-    # Purpose: Install a modul from an untrusted repository and press YES to the prompt
+    # Purpose: Install a module from an untrusted repository and press YES to the prompt
     #
     # Action: Install-Module ContosoServer -Repostory UntrustedTestRepo
     #
@@ -1485,7 +1593,7 @@ Describe PowerShell.PSGet.InstallModuleTests.P2 -Tags 'P2','OuterLoop' {
         }
         finally
         {
-            Get-InstalledModule -Name $res1.Name -AllVersions | PowerShellGet\Uninstall-Module -Force
+            Get-InstalledModule -Name $res1.Name -AllVersions | PowerShellGet\Uninstall-Module -Force 
             $DepencyModuleNames | ForEach-Object { Get-InstalledModule -Name $_ -AllVersions | PowerShellGet\Uninstall-Module -Force }
         }
     }

@@ -88,6 +88,9 @@ function Validate-ModuleAuthenticodeSignature
         Write-Debug -Message "Is previously-installed module signed by Microsoft: $IsInstalledModuleSignedByMicrosoft"
         Write-Debug -Message "Is current module signed by Microsoft: $IsCurrentModuleSignedByMicrosoft"
 
+        $InstalledModuleRootCA = Get-RootCertificateAuthority $InstalledModuleDetails.AuthenticodeSignature 
+        $CurrentModuleRootCA = Get-RootCertificateAuthority $CurrentModuleDetails.AuthenticodeSignature 
+
         if($InstalledModuleAuthenticodePublisher)
         {
             if(-not $CurrentModuleAuthenticodePublisher)
@@ -100,7 +103,7 @@ function Validate-ModuleAuthenticodeSignature
                             -ErrorCategory InvalidOperation
                 return $false
             }
-            elseif($InstalledModuleAuthenticodePublisher -eq $CurrentModuleAuthenticodePublisher)
+            elseif($InstalledModuleAuthenticodePublisher -eq $CurrentModuleAuthenticodePublisher -and $InstalledModuleRootCA -eq $CurrentModuleRootCA)
             {
                 $Message = $LocalizedData.AuthenticodeIssuerMatch -f ($CurrentModuleAuthenticodePublisher, $CurrentModuleInfo.Name, $CurrentModuleInfo.Version, $InstalledModuleAuthenticodePublisher, $InstalledModuleInfo.Name, $InstalledModuleVersion)
                 Write-Verbose -Message $message
@@ -129,10 +132,10 @@ function Validate-ModuleAuthenticodeSignature
                     Write-Warning $Message
                     return $true
                 }
-            }
+            } 
             else
             {
-                $Message = $LocalizedData.AuthenticodeIssuerMismatch -f ($CurrentModuleAuthenticodePublisher, $CurrentModuleInfo.Name, $CurrentModuleInfo.Version, $InstalledModuleAuthenticodePublisher, $InstalledModuleInfo.Name, $InstalledModuleVersion)
+                $Message = $LocalizedData.AuthenticodeIssuerMismatch -f ($CurrentModuleAuthenticodePublisher, $CurrentModuleInfo.Name, $CurrentModuleInfo.Version, $CurrentModuleRootCA, $InstalledModuleAuthenticodePublisher, $InstalledModuleInfo.Name, $InstalledModuleVersion, $InstalledModuleRootCA)
                 ThrowError -ExceptionName 'System.InvalidOperationException' `
                             -ExceptionMessage $message `
                             -ErrorId 'AuthenticodeIssuerMismatch' `
@@ -142,6 +145,6 @@ function Validate-ModuleAuthenticodeSignature
             }
         }
     }
-
+    
     return $true
 }

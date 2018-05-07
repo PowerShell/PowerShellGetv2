@@ -1348,27 +1348,6 @@ Describe PowerShell.PSGet.InstallModuleTests.P1 -Tags 'P1','OuterLoop' {
             $res1.ModuleName  | ForEach-Object {PSGetTestUtils\Uninstall-Module $_}
         }
     }
-
-    # Purpose: Validate Save-Module cmdlet with a module with positional parmater for path
-    #
-    # Action: Find-Module -Name ContosoClient | Save-Module 
-    #
-    # Expected Result: Should save the module
-    #
-    It SaveModuleWithPathPositionalParameter {
-        $ModuleName = "ContosoClient"
-
-        try
-        {
-            Find-Module -Name $ModuleName -RequiredVersion "2.5" | Save-Module $ModuleName $script:MyDocumentsModulesPath
-            $ActualModuleDetails = Get-InstalledModule -Name $ModuleName -RequiredVersion "2.5"
-            AssertNotNull $ActualModuleDetails "$ModuleName module is not saved properly"
-        }
-        finally
-        {
-           $ModuleName  | ForEach-Object {PSGetTestUtils\Uninstall-Module $_}
-        }
-    }
 }
 
 Describe PowerShell.PSGet.InstallModuleTests.P2 -Tags 'P2','OuterLoop' {
@@ -1496,7 +1475,7 @@ Describe PowerShell.PSGet.InstallModuleTests.P2 -Tags 'P2','OuterLoop' {
             AssertEquals $res1.Name $ModuleName "Find-Module didn't find the exact module which has dependencies, $res1"
             $DepencyModuleNames = $res1.Dependencies.Name
 
-            Save-Module -Name $ModuleName -MaximumVersion "1.0" -MinimumVersion "0.1" -Path $script:MyDocumentsModulesPath
+            Save-Module -Name $ModuleName -MaximumVersion "1.0" -MinimumVersion "0.1" $script:MyDocumentsModulesPath
             $ActualModuleDetails = Get-InstalledModule -Name $ModuleName -RequiredVersion $res1.Version
             AssertNotNull $ActualModuleDetails "$ModuleName module with dependencies is not saved properly"
 

@@ -51,11 +51,13 @@ function Validate-ModuleAuthenticodeSignature
     if($InstalledModuleInfo)
     {
         $CurrentModuleAuthenticodePublisher = $null
+        $CurrentModuleRootCA = $null
         $IsCurrentModuleSignedByMicrosoft = $false
 
         if($CurrentModuleDetails)
         {
             $CurrentModuleAuthenticodePublisher = $CurrentModuleDetails.Publisher
+            $CurrentModuleRootCA = $CurrentModuleDetails.RootCertificateAuthority
             $IsCurrentModuleSignedByMicrosoft = $CurrentModuleDetails.IsMicrosoftCertificate
 
             $message = $LocalizedData.NewModuleVersionDetailsForPublisherValidation -f ($CurrentModuleInfo.Name,
@@ -66,12 +68,14 @@ function Validate-ModuleAuthenticodeSignature
         }
 
         $InstalledModuleAuthenticodePublisher = $null
+        $InstalledModuleRootCA = $null 
         $IsInstalledModuleSignedByMicrosoft = $false
         $InstalledModuleVersion = [Version]'0.0'
 
         if($InstalledModuleDetails)
         {
             $InstalledModuleAuthenticodePublisher = $InstalledModuleDetails.Publisher
+            $InstalledModuleRootCA = $InstalledModuleDetails.RootCertificateAuthority
             $IsInstalledModuleSignedByMicrosoft = $InstalledModuleDetails.IsMicrosoftCertificate
             $InstalledModuleVersion = $InstalledModuleDetails.Version
 
@@ -88,7 +92,7 @@ function Validate-ModuleAuthenticodeSignature
         Write-Debug -Message "Is previously-installed module signed by Microsoft: $IsInstalledModuleSignedByMicrosoft"
         Write-Debug -Message "Is current module signed by Microsoft: $IsCurrentModuleSignedByMicrosoft"
 
-        if($InstalledModuleAuthenticodePublisher)
+       if($InstalledModuleAuthenticodePublisher)
         {
             if(-not $CurrentModuleAuthenticodePublisher)
             {
@@ -102,8 +106,10 @@ function Validate-ModuleAuthenticodeSignature
             }
             elseif($InstalledModuleAuthenticodePublisher -eq $CurrentModuleAuthenticodePublisher)
             {
-                $Message = $LocalizedData.AuthenticodeIssuerMatch -f ($CurrentModuleAuthenticodePublisher, $CurrentModuleInfo.Name, $CurrentModuleInfo.Version, $InstalledModuleAuthenticodePublisher, $InstalledModuleInfo.Name, $InstalledModuleVersion)
-                Write-Verbose -Message $message
+                if ($InstalledModuleRootCA -and $CurrentModuleRootCA -and ($InstalledModuleRootCA -eq $CurrentModuleRootCA)) {
+                    $Message = $LocalizedData.AuthenticodeIssuerMatch -f ($CurrentModuleAuthenticodePublisher, $CurrentModuleInfo.Name, $CurrentModuleInfo.Version, $InstalledModuleAuthenticodePublisher, $InstalledModuleInfo.Name, $InstalledModuleVersion)
+                    Write-Verbose -Message $message
+                }                      
             }
             elseif($IsInstalledModuleSignedByMicrosoft)
             {
@@ -129,10 +135,10 @@ function Validate-ModuleAuthenticodeSignature
                     Write-Warning $Message
                     return $true
                 }
-            }
+            } 
             else
             {
-                $Message = $LocalizedData.AuthenticodeIssuerMismatch -f ($CurrentModuleAuthenticodePublisher, $CurrentModuleInfo.Name, $CurrentModuleInfo.Version, $InstalledModuleAuthenticodePublisher, $InstalledModuleInfo.Name, $InstalledModuleVersion)
+                $Message = $LocalizedData.AuthenticodeIssuerMismatch -f ($CurrentModuleAuthenticodePublisher, $CurrentModuleInfo.Name, $CurrentModuleInfo.Version, $CurrentModuleRootCA, $InstalledModuleAuthenticodePublisher, $InstalledModuleInfo.Name, $InstalledModuleVersion, $InstalledModuleRootCA)
                 ThrowError -ExceptionName 'System.InvalidOperationException' `
                             -ExceptionMessage $message `
                             -ErrorId 'AuthenticodeIssuerMismatch' `
@@ -142,6 +148,6 @@ function Validate-ModuleAuthenticodeSignature
             }
         }
     }
-
+    
     return $true
 }

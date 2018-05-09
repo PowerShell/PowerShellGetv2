@@ -23,10 +23,17 @@ function Get-AuthenticodePublisher
             foreach($certStoreLocation in $certStoreLocations)
             {
                 $rootCertificateAuthority = Microsoft.PowerShell.Management\Get-ChildItem -Path $certStoreLocation |
-                                                Microsoft.PowerShell.Core\Where-Object { $_.Subject -eq $element.Subject }
-                if($rootCertificateAuthority)
-                {
-                    return $rootCertificateAuthority.Subject
+                                                Microsoft.PowerShell.Core\Where-Object { $_.Subject -eq $element.Subject } | 
+                                                Select-Object -First 1 -ErrorAction ignore
+                if($rootCertificateAuthority -and $rootCertificateAuthority.Subject)
+                {   
+                    $publisherInfo = @{
+                        publisher = $AuthenticodeSignature.SignerCertificate.Subject
+                        publisherRootCA = $rootCertificateAuthority.Subject
+                    } 
+
+                    write-output $publisherInfo
+                    return
                 }
             }
         }

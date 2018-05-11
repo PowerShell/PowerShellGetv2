@@ -431,7 +431,7 @@ Describe 'Test PowerShellGet\Update-Module cmdlet with catalog signed modules' -
     }
 }
 
-Describe 'Test Install-Module and Update-Module for catalog signed test modules' -tags 'P2','InnerLoop' {
+Describe 'Test Install-Module and Update-Module for catalog signed test modules' -tags 'BVT','InnerLoop' {
     if(Test-SkipCondition) { return }
 
     BeforeAll {        

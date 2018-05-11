@@ -71,18 +71,16 @@ function Get-InstalledModuleAuthenticodeSignature
 
     if($AuthenticodeSignature)
     {
-        $AuthenticodePublisherDetails = Get-AuthenticodePublisher -AuthenticodeSignature $AuthenticodeSignature
-        
         $ModuleDetails = @{}
         $ModuleDetails['AuthenticodeSignature'] = $AuthenticodeSignature
         $ModuleDetails['Version'] = $SourceModule.Version
         $ModuleDetails['ModuleBase']=$SourceModule.ModuleBase
         $ModuleDetails['IsMicrosoftCertificate'] = Test-MicrosoftCertificate -AuthenticodeSignature $AuthenticodeSignature
-        $ModuleDetails['Publisher'] = if ($AuthenticodePublisherDetails) {$AuthenticodePublisherDetails.publisher} else {$null}
-        $ModuleDetails['RootCertificateAuthority'] =  if ($AuthenticodePublisherDetails) {$AuthenticodePublisherDetails.publisherRootCA} else {$null}
+        $PublisherDetails = Get-AuthenticodePublisher -AuthenticodeSignature $AuthenticodeSignature
+        $ModuleDetails['Publisher'] = if($PublisherDetails) {$PublisherDetails.Publisher}
+        $ModuleDetails['RootCertificateAuthority'] = if($PublisherDetails) {$PublisherDetails.PublisherRootCA}
         
-
-        $message = $LocalizedData.SourceModuleDetailsForPublisherValidation -f ($ModuleName, $SourceModule.Version, $SourceModule.ModuleBase, $ModuleDetails.Publisher, $ModuleDetails.IsMicrosoftCertificate)
+        $message = $LocalizedData.SourceModuleDetailsForPublisherValidation -f ($ModuleName, $SourceModule.Version, $SourceModule.ModuleBase, $ModuleDetails.Publisher, $ModuleDetails.RootCertificateAuthority, $ModuleDetails.IsMicrosoftCertificate)
         Write-Debug $message
     }
 

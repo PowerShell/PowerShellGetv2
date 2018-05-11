@@ -23,16 +23,21 @@ function Get-AuthenticodePublisher
             foreach($certStoreLocation in $certStoreLocations)
             {
                 $rootCertificateAuthority = Microsoft.PowerShell.Management\Get-ChildItem -Path $certStoreLocation |
-                                                Microsoft.PowerShell.Core\Where-Object { $_.Subject -eq $element.Subject } | 
-                                                Select-Object -First 1 -ErrorAction ignore
-                if($rootCertificateAuthority -and $rootCertificateAuthority.Subject)
-                {   
+                                                Microsoft.PowerShell.Core\Where-Object { ($_.Subject -eq $element.Subject) -and ($_.thumbprint -eq $element.thumbprint) }
+                if($rootCertificateAuthority)
+                {
+                    # Select-Object writes an error 'System Error' into the error stream.
+                    # Using below workaround for getting the first element when there are multiple certificates with the same subject name.
+                    if($rootCertificateAuthority.PSTypeNames -contains 'System.Array') {
+                        $rootCertificateAuthority = $rootCertificateAuthority[0]
+                    }
+                    
                     $publisherInfo = @{
                         publisher = $AuthenticodeSignature.SignerCertificate.Subject
                         publisherRootCA = $rootCertificateAuthority.Subject
                     } 
 
-                    write-output $publisherInfo
+                    Write-Output -InputObject $publisherInfo
                     return
                 }
             }

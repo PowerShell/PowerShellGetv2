@@ -63,12 +63,13 @@ function Validate-ModuleAuthenticodeSignature
             $message = $LocalizedData.NewModuleVersionDetailsForPublisherValidation -f ($CurrentModuleInfo.Name,
                                                                                         $CurrentModuleInfo.Version,
                                                                                         $CurrentModuleDetails.Publisher,
+                                                                                        $CurrentModuleDetails.RootCertificateAuthority,
                                                                                         $CurrentModuleDetails.IsMicrosoftCertificate)
             Write-Verbose $message
         }
 
         $InstalledModuleAuthenticodePublisher = $null
-        $InstalledModuleRootCA = $null 
+        $InstalledModuleRootCA = $null
         $IsInstalledModuleSignedByMicrosoft = $false
         $InstalledModuleVersion = [Version]'0.0'
 
@@ -83,6 +84,7 @@ function Validate-ModuleAuthenticodeSignature
                                                                                     $InstalledModuleDetails.Version,
                                                                                     $InstalledModuleDetails.ModuleBase,
                                                                                     $InstalledModuleDetails.Publisher,
+                                                                                    $InstalledModuleDetails.RootCertificateAuthority,
                                                                                     $InstalledModuleDetails.IsMicrosoftCertificate)
             Write-Verbose $message
         }
@@ -92,7 +94,7 @@ function Validate-ModuleAuthenticodeSignature
         Write-Debug -Message "Is previously-installed module signed by Microsoft: $IsInstalledModuleSignedByMicrosoft"
         Write-Debug -Message "Is current module signed by Microsoft: $IsCurrentModuleSignedByMicrosoft"
 
-       if($InstalledModuleAuthenticodePublisher)
+        if($InstalledModuleAuthenticodePublisher)
         {
             if(-not $CurrentModuleAuthenticodePublisher)
             {
@@ -104,12 +106,12 @@ function Validate-ModuleAuthenticodeSignature
                             -ErrorCategory InvalidOperation
                 return $false
             }
-            elseif($InstalledModuleAuthenticodePublisher -eq $CurrentModuleAuthenticodePublisher)
+            elseif(($InstalledModuleAuthenticodePublisher -eq $CurrentModuleAuthenticodePublisher) -and
+                    $InstalledModuleRootCA -and $CurrentModuleRootCA -and 
+                    ($InstalledModuleRootCA -eq $CurrentModuleRootCA))
             {
-                if ($InstalledModuleRootCA -and $CurrentModuleRootCA -and ($InstalledModuleRootCA -eq $CurrentModuleRootCA)) {
-                    $Message = $LocalizedData.AuthenticodeIssuerMatch -f ($CurrentModuleAuthenticodePublisher, $CurrentModuleInfo.Name, $CurrentModuleInfo.Version, $InstalledModuleAuthenticodePublisher, $InstalledModuleInfo.Name, $InstalledModuleVersion)
-                    Write-Verbose -Message $message
-                }                      
+                $Message = $LocalizedData.AuthenticodeIssuerMatch -f ($CurrentModuleAuthenticodePublisher, $CurrentModuleInfo.Name, $CurrentModuleInfo.Version, $InstalledModuleAuthenticodePublisher, $InstalledModuleInfo.Name, $InstalledModuleVersion)
+                Write-Verbose -Message $message
             }
             elseif($IsInstalledModuleSignedByMicrosoft)
             {
@@ -135,7 +137,7 @@ function Validate-ModuleAuthenticodeSignature
                     Write-Warning $Message
                     return $true
                 }
-            } 
+            }
             else
             {
                 $Message = $LocalizedData.AuthenticodeIssuerMismatch -f ($CurrentModuleAuthenticodePublisher, $CurrentModuleInfo.Name, $CurrentModuleInfo.Version, $CurrentModuleRootCA, $InstalledModuleAuthenticodePublisher, $InstalledModuleInfo.Name, $InstalledModuleVersion, $InstalledModuleRootCA)
@@ -148,6 +150,6 @@ function Validate-ModuleAuthenticodeSignature
             }
         }
     }
-    
+
     return $true
 }

@@ -1,0 +1,89 @@
+# This is a Pester test suite to validate the PowerShellGet module help
+#
+# Copyright (c) Microsoft Corporation
+
+$script:IsWindowsOS = (-not (Get-Variable -Name IsWindows -ErrorAction Ignore)) -or $IsWindows
+
+$script:HelpContentExtension = ".zip"
+if ($script:IsWindowsOS) {
+    $script:HelpContentExtension = ".cab"
+}
+
+$script:ExpectedHelpFile = 'PSModule-help.xml'
+$script:ExpectedHelpInfoFile = 'PowerShellGet_1d73a601-4a6c-43c5-ba3f-619b18bbb404_HelpInfo.xml'
+$script:ExpectedCompressedFile = "PowershellGet_1d73a601-4a6c-43c5-ba3f-619b18bbb404_en-US_helpcontent$script:HelpContentExtension"
+$script:PowerShellGetModuleInfo = Get-Module -Name PowerShellGet -ListAvailable | Select-Object -First 1 -ErrorAction Ignore
+$script:FullyQualifiedModuleName = [Microsoft.PowerShell.Commands.ModuleSpecification]@{
+    ModuleName    = $script:PowerShellGetModuleInfo.Name
+    Guid          = $script:PowerShellGetModuleInfo.Guid
+    ModuleVersion = $script:PowerShellGetModuleInfo.Version
+}
+
+$script:HelpInstallationPath = Join-Path -Path $script:PowerShellGetModuleInfo.ModuleBase -ChildPath 'en-US'
+$script:SaveHelpPath = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "PSGetHelp_$(Get-Random)"
+
+function GetFiles {
+    param (
+        [Parameter()]
+        [string]
+        $FileType = "*help.xml",
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Path
+    )
+
+    Get-ChildItem -Path $Path -Include $FileType -Recurse -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName
+}
+
+Describe 'Validate PowerShellGet module help' -tags 'BVT', 'InnerLoop' {
+    BeforeAll {
+        $null = New-Item -Path $script:SaveHelpPath -ItemType Directory -Force        
+    }
+
+    AfterAll {
+        Remove-Item -Path $script:SaveHelpPath -Force -Recurse
+    }
+
+    It 'Validate Update-Help for the PowerShellGet module' {
+        $UpdateHelp_Params = @{
+            Force = $true
+            UICulture = 'en-US'
+        }
+        if($PSVersionTable.PSVersion -gt '4.0.0') {
+            $UpdateHelp_Params['FullyQualifiedModule'] = $script:FullyQualifiedModuleName
+
+            if($PSVersionTable.PSVersion -ge '6.1.0') {
+                $UpdateHelp_Params['Scope'] = 'AllUsers'
+            }
+        }
+        else {
+            $UpdateHelp_Params['Name'] = 'PowerShellGet'
+        }
+        Update-Help @UpdateHelp_Params
+
+        $helpFilesInstalled = @(GetFiles -Path $script:HelpInstallationPath | ForEach-Object {Split-Path -Path $_ -Leaf})
+        $helpFilesInstalled | Should Be $script:ExpectedHelpFile
+
+        $helpInfoFileInstalled = @(GetFiles -FileType "*HelpInfo.xml" -Path $script:PowerShellGetModuleInfo.ModuleBase | ForEach-Object {Split-Path -Path $_ -Leaf})
+        $helpInfoFileInstalled | Should Be $script:ExpectedHelpInfoFile
+        
+        $FindModuleCommandHelp = Get-Help -Name PowerShellGet\Find-Module -Detailed
+        $FindModuleCommandHelp.Examples | Should Not BeNullOrEmpty
+    }
+
+    It 'Validate Save-Help for the PowerShellGet module' {        
+        if($PSVersionTable.PSVersion -gt '4.0.0') {        
+            Save-Help -FullyQualifiedModule $script:FullyQualifiedModuleName -Force -UICulture en-US -DestinationPath $script:SaveHelpPath
+        }
+        else {
+            Save-Help -Module PowerShellGet -Force -UICulture en-US -DestinationPath $script:SaveHelpPath
+        }
+
+        $compressedFile = GetFiles -FileType "*$script:HelpContentExtension" -Path $script:SaveHelpPath | ForEach-Object {Split-Path -Path $_ -Leaf}
+        $compressedFile | Should Be $script:ExpectedCompressedFile
+    
+        $helpFilesSaved = GetFiles -FileType "*HelpInfo.xml" -Path $script:SaveHelpPath | ForEach-Object {Split-Path -Path $_ -Leaf}
+        $helpFilesSaved | Should Be $script:ExpectedHelpInfoFile
+    }
+}

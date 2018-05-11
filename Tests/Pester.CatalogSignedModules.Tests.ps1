@@ -217,24 +217,6 @@ function SuiteCleanup {
     Cleanup-CodeSigningCert -subject "AliceTest"
     Cleanup-CodeSigningCert -subject "BobTest"
 
-     # If TestModule v1 exists, uninstall
-     if (Get-Module TestModule -ListAvailable | Where-Object { $_.Version -eq '99.99.99.96' }) {
-        $moduleBase = (Get-Module TestModule -ListAvailable | Where-Object { $_.Version -eq '99.99.99.96' }).ModuleBase
-        $null = Remove-Item -Path $moduleBase -Force -Recurse
-        if (Get-Module TestModule -ListAvailable | Where-Object { $_.Version -eq '99.99.99.96' }) {
-            Write-Error "Failed to uninstall TestModule v1"
-        }
-    }
-
-    # If TestModule v4 exists, uninstall
-    if (Get-Module TestModule -ListAvailable | Where-Object { $_.Version -eq '99.99.99.99' }) {
-        $moduleBase = (Get-Module TestModule -ListAvailable | Where-Object { $_.Version -eq '99.99.99.99' }).ModuleBase
-        $null = Remove-Item -Path $moduleBase -Force -Recurse
-        if (Get-Module TestModule -ListAvailable | Where-Object { $_.Version -eq '99.99.99.99' }) {
-            Write-Error "Failed to uninstall v4"
-        }
-    }       
-
     RemoveItem (Join-Path -Path $ProgramFilesModulesPath -ChildPath "TestModule")
     RemoveItem $script:TempModulesPath
 }

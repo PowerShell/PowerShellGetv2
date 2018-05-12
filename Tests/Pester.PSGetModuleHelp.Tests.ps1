@@ -53,7 +53,7 @@ Describe 'Validate PowerShellGet module help' -tags 'BVT', 'InnerLoop' {
         if($PSVersionTable.PSVersion -gt '4.0.0') {
             $UpdateHelp_Params['FullyQualifiedModule'] = $script:FullyQualifiedModuleName
 
-            if($PSVersionTable.PSVersion -ge '6.1.0') {
+            if($PSVersionTable.PSVersion -gt '6.0.99') {
                 $UpdateHelp_Params['Scope'] = 'AllUsers'
             }
         }

@@ -36,7 +36,7 @@ function GetFiles {
     Get-ChildItem -Path $Path -Include $FileType -Recurse -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName
 }
 
-Describe 'Validate PowerShellGet module help' -tags 'BVT', 'InnerLoop' {
+Describe 'Validate PowerShellGet module help' -tags 'P1', 'OuterLoop' {
     BeforeAll {
         $null = New-Item -Path $script:SaveHelpPath -ItemType Directory -Force        
     }

@@ -87,7 +87,7 @@ function SignAndPublish-TestModule
     }
 }
 
-function SuiteSetup {
+function RegisterLocalRepo {
     Install-NuGetBinaries
 
     if(-not (Test-Path -Path $SourceLocation -PathType Container))
@@ -106,6 +106,12 @@ function SuiteSetup {
         Register-PSRepository -Name $Script:RepositoryName -SourceLocation $SourceLocation -InstallationPolicy Trusted
         $Script:RegisteredLocalRepo = $true
     }
+}
+
+
+function SuiteSetup {
+
+    RegisterLocalRepo
 
     $INTRepo = Get-PSRepository -ErrorAction SilentlyContinue | 
                    Where-Object {$_.SourceLocation.StartsWith($Script:INTRepoLocation, [System.StringComparison]::OrdinalIgnoreCase)}
@@ -158,53 +164,50 @@ function SuiteSetup {
 }
 
 function SuiteSetup2 {
+    
+    RegisterLocalRepo
+
     $script:TempPath = Get-TempPath
 
     # Create temp module to be published
     $script:TempModulesPath = Join-Path -Path $script:TempPath -ChildPath "PSGet_$(Get-Random)"
     $null = New-Item -Path $script:TempModulesPath -ItemType Directory -Force
-    
-    # Set up local "gallery"
-    $script:localGalleryName = [System.Guid]::NewGuid().ToString()
-    $script:PSGalleryRepoPath = Join-Path -Path $script:TempPath -ChildPath 'PSGalleryRepo'
-    RemoveItem $script:PSGalleryRepoPath
-    $null = New-Item -Path $script:PSGalleryRepoPath -ItemType Directory -Force
 
-    Set-PSGallerySourceLocation -Name $script:localGalleryName -Location $script:PSGalleryRepoPath -PublishLocation $script:PSGalleryRepoPath -UseExistingModuleSourcesFile
 
     # Set up signed modules if signing is available
     if ((Get-Module PKI -ListAvailable)) {
+       
         $TestModuleDestination = Join-Path -Path $script:TempModulesPath -ChildPath "TestModule"
-        $TestModulev1Destination = Join-Path -Path $TestModuleDestination -ChildPath "99.99.99.96"
-        $TestModulev2Destination = Join-Path -Path $TestModuleDestination -ChildPath "99.99.99.97"
-        $TestModulev3Destination = Join-Path -Path $TestModuleDestination -ChildPath "99.99.99.98"
-        $TestModulev4Destination = Join-Path -Path $TestModuleDestination -ChildPath "99.99.99.99"
+       
         if (Test-Path -Path $TestModuleDestination) {
             $null = Remove-Item -Path $TestModuleDestination -Force
         }
-
         $null = New-Item -Path $TestModuleDestination -Force -ItemType Directory
-        $null = New-Item -Path $TestModulev1Destination -Force -ItemType Directory
-        $null = New-Item -Path $TestModulev2Destination -Force -ItemType Directory
-        $null = New-Item -Path $TestModulev3Destination -Force -ItemType Directory
-        $null = New-Item -Path $TestModulev4Destination -Force -ItemType Directory
+        $TestModuleRoot = Join-Path -Path $script:TempModulesPath -ChildPath "TestModule"
 
-        $null = New-ModuleManifest -Path (Join-Path -Path $TestModulev1Destination -ChildPath "TestModule.psd1") -Description "Test signed TestModule module v1" -ModuleVersion 99.99.99.96
-        $null = New-ModuleManifest -Path (Join-Path -Path $TestModulev2Destination -ChildPath "TestModule.psd1") -Description "Test signed TestModule module v2" -ModuleVersion 99.99.99.97
-        $null = New-ModuleManifest -Path (Join-Path -Path $TestModulev3Destination -ChildPath "TestModule.psd1") -Description "Test signed TestModule module v3" -ModuleVersion 99.99.99.98
-        $null = New-ModuleManifest -Path (Join-Path -Path $TestModulev4Destination -ChildPath "TestModule.psd1") -Description "Test signed TestModule module v4" -ModuleVersion 99.99.99.99
-
+        # create certificates
         Create-CodeSigningCert -storeName "Cert:\LocalMachine\My" -subject "AliceTest" 
         $alice1Cert = (Get-ChildItem cert: -CodeSigningCert -Recurse | Where-Object Subject -match "AliceTest" | Select-Object -First 1) 
         Create-CodeSigningCert -subject "AliceTest" -CertRA "Other Root Authority" 
         $alice2Cert = (Get-ChildItem cert: -CodeSigningCert -Recurse | Where-Object Issuer -match "Other" | Select-Object -First 1) 
         Create-CodeSigningCert -subject "BobTest"
         $bobCert = (Get-ChildItem cert: -CodeSigningCert -Recurse | Where-Object Subject -match "BobTest" | Select-Object -First 1)
-        
-        $null = Set-AuthenticodeSignature -FilePath (Join-Path -Path $TestModulev1Destination -ChildPath "TestModule.psd1") -Certificate $alice1Cert
-        $null = Set-AuthenticodeSignature -FilePath (Join-Path -Path $TestModulev2Destination -ChildPath "TestModule.psd1") -Certificate $alice2Cert
-        $null = Set-AuthenticodeSignature -FilePath (Join-Path -Path $TestModulev3Destination -ChildPath "TestModule.psd1") -Certificate $bobCert
-        $null = Set-AuthenticodeSignature -FilePath (Join-Path -Path $TestModulev4Destination -ChildPath "TestModule.psd1") -Certificate $alice1Cert
+
+        $certs =  @{'99.99.99.96' = $alice1Cert; '99.99.99.97' = $alice2Cert; '99.99.99.98' = $bobCert; '99.99.99.99' = $alice1Cert}
+        @('99.99.99.96','99.99.99.97','99.99.99.98','99.99.99.99') | 
+        ForEach-Object { 
+            $TestModuleVersionDestination = Join-Path -Path $TestModuleDestination -ChildPath "$_" 
+            
+            $null = New-Item -Path $TestModuleVersionDestination -Force -ItemType Directory
+            $null = New-ModuleManifest -Path (Join-Path -Path $TestModuleVersionDestination -ChildPath "TestModule.psd1") -Description "Test signed TestModule module v. $_" -ModuleVersion $_
+            
+            $null = Set-AuthenticodeSignature -FilePath (Join-Path -Path $TestModuleVersionDestination -ChildPath "TestModule.psd1") -Certificate ($certs.$_)
+            $TestModuleVersionPath = Join-Path -Path $TestModuleRoot -ChildPath $_ 
+            
+            if(-not (Test-Path -Path "$SourceLocation\TestModule.$_.nupkg" -PathType Leaf)) {
+                Publish-Module -Path $TestModuleVersionPath -Repository $Script:RepositoryName -Force
+            }
+        }
     }
 }
 
@@ -217,7 +220,7 @@ function SuiteCleanup {
     Cleanup-CodeSigningCert -subject "AliceTest"
     Cleanup-CodeSigningCert -subject "BobTest"
 
-    RemoveItem (Join-Path -Path $ProgramFilesModulesPath -ChildPath "TestModule")
+    RemoveItem (Join-Path -Path $ProgramFilesModulesPath -ChildPath "TestModule") -recurse
     RemoveItem $script:TempModulesPath
 }
 
@@ -413,68 +416,73 @@ Describe 'Test PowerShellGet\Update-Module cmdlet with catalog signed modules' -
     }
 }
 
-Describe 'Test Install-Module and Update-Module for catalog signed test modules' -tags 'BVT','InnerLoop' {
+Describe 'Test Install-Module and Update-Module for catalog signed test modules' -tags 'P2','InnerLoop' {
     if(Test-SkipCondition) { return }
+
 
     BeforeAll {        
         if(Test-SkipCondition){ return }
 
-        SuiteSetup2
+        SuiteSetup2  ### move contents in
+
+        Install-Module TestModule -RequiredVersion 99.99.99.96 -Repository $Script:RepositoryName
+    } 
+
+    BeforeEach {
+        Get-InstalledModule TestModule -RequiredVersion 99.99.99.99 -ErrorAction SilentlyContinue | PowerShellGet\Uninstall-Module
     }
 
     AfterAll {
         SuiteCleanup
+        # I think we're doing this in suiteCleanup so we don't need to add this
+        #Uninstall-Module TestModule 
     }
-      
-    It 'Install new non-MS signed module over current non-MS signed module' {
-        $TestModuleRoot = Join-Path -Path $script:TempModulesPath -ChildPath "TestModule"
-        $TestModulev1Path = Join-Path -Path $TestModuleRoot -ChildPath "99.99.99.96"  
-        $TestModulev2Path = Join-Path -Path $TestModuleRoot -ChildPath "99.99.99.97"  
-        $TestModulev3Path = Join-Path -Path $TestModuleRoot -ChildPath "99.99.99.98"  
-        $TestModulev4Path = Join-Path -Path $TestModuleRoot -ChildPath "99.99.99.99"
-      
-        # Publish and install v1 signed modules
-        Publish-Module -Path $TestModulev1Path -Repository $script:localGalleryName -Force
-        Install-Module TestModule -RequiredVersion 99.99.99.96 -Repository $script:localGalleryName -ErrorVariable iev -WarningVariable iwv
-        # Expect: no error, no warning, and success
-        $iev | should be $null
-        $iwv | should be $null
-   
-        # Publish and install v2 signed modules
-        Publish-Module -Path $TestModulev2Path -Repository $script:localGalleryName -Force
-        Install-Module TestModule -ErrorVariable iev -ErrorAction SilentlyContinue -WarningVariable iwv -WarningAction SilentlyContinue -Force 
+
+    AfterEach {
+    }
+
+    It 'Install new non-MS signed module over current non-MS signed module - installing v2' {
+        # Install v2 signed mdules
+        Install-Module TestModule -RequiredVersion 99.99.99.97 -ErrorVariable iev -ErrorAction SilentlyContinue -WarningVariable iwv -WarningAction SilentlyContinue -Force 
         # Expect: error, no warning, and failure
         $iev[0].FullyQualifiedErrorId | Should be 'AuthenticodeIssuerMismatch,Validate-ModuleAuthenticodeSignature,Microsoft.PowerShell.PackageManagement.Cmdlets.InstallPackage'
         $iwv | should be $null
+    }
+
+    It 'Install new non-MS signed module over current non-MS signed module - updating v2' {
         # Update v2 signed module
-        Update-Module TestModule -ErrorVariable iev -ErrorAction SilentlyContinue -WarningVariable iwv -Force
+        Update-Module TestModule -RequiredVersion 99.99.99.97 -ErrorVariable iev -ErrorAction SilentlyContinue -WarningVariable iwv -Force
         # Expect: error, no warning, and failure
         #$iev | should not be $null
         $iev[0].FullyQualifiedErrorId | Should be 'AuthenticodeIssuerMismatch,Validate-ModuleAuthenticodeSignature,Microsoft.PowerShell.PackageManagement.Cmdlets.InstallPackage'
         $iwv | should be $null
-   
-        # Publish and install v3 signed modules
-        Publish-Module -Path $TestModulev3Path -Repository $script:localGalleryName -Force
-        Install-Module TestModule -ErrorVariable iev -ErrorAction SilentlyContinue -WarningVariable iwv -Force   
+    }
+
+    It 'Install new non-MS signed module over current non-MS signed module - installing v3' {
+        Install-Module TestModule -RequiredVersion 99.99.99.98 -ErrorVariable iev -ErrorAction SilentlyContinue -WarningVariable iwv -Force   
         # Expect: error, no warning, and failure
         $iev[0].FullyQualifiedErrorId | Should be 'AuthenticodeIssuerMismatch,Validate-ModuleAuthenticodeSignature,Microsoft.PowerShell.PackageManagement.Cmdlets.InstallPackage'
         $iwv | should be $null
+    }
+
+    It 'Install new non-MS signed module over current non-MS signed module - updating v3' {
         # Update v3 signed module
-        Update-Module TestModule -ErrorVariable iev -ErrorAction SilentlyContinue -WarningVariable iwv -Force
+        Update-Module TestModule -RequiredVersion 99.99.99.98 -ErrorVariable iev -ErrorAction SilentlyContinue -WarningVariable iwv -Force
         # Expect: error, no warning, and failure
         $iev[0].FullyQualifiedErrorId | Should be 'AuthenticodeIssuerMismatch,Validate-ModuleAuthenticodeSignature,Microsoft.PowerShell.PackageManagement.Cmdlets.InstallPackage'
         $iwv | should be $null
-   
-        # Publish and install v4 signed modules
-        Publish-Module -Path $TestModulev4Path -Repository $script:localGalleryName -Force
-        Install-Module TestModule -ErrorVariable iev -WarningVariable iwv -Force   
+    }
+
+    It 'Install new non-MS signed module over current non-MS signed module - installing v4' {
+        # Install v4 signed modules   
+        Install-Module TestModule -RequiredVersion 99.99.99.99 -ErrorVariable iev -WarningVariable iwv -Force   
         # Expect: no error, no warning, and success
         $iev | should be $null
         $iwv | should be $null
-   
-        Uninstall-Module TestModule -ErrorVariable iev -ErrorAction SilentlyContinue -WarningVariable iwv
-        Install-Module TestModule -RequiredVersion 99.99.99.96 -Force 
-        Update-Module TestModule -ErrorVariable iev -WarningVariable iwv -Force
+    }
+
+    It 'Install new non-MS signed module over current non-MS signed module - updating v4' {
+        Update-Module TestModule -RequiredVersion 99.99.99.99 -ErrorVariable iev -WarningVariable iwv -Force
         # Expect: no error, no warning and success
         $iev | should be $null
         $iwv | should be $null

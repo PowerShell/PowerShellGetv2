@@ -170,7 +170,7 @@ function SuiteCleanup {
     Cleanup-CodeSigningCert -subject "AliceTest"
     Cleanup-CodeSigningCert -subject "BobTest"
 
-    RemoveItem (Join-Path -Path $ProgramFilesModulesPath -ChildPath "TestModule") -recurse
+    RemoveItem (Join-Path -Path $ProgramFilesModulesPath -ChildPath "TestModule")
     RemoveItem $script:TempModulesPath
 }
 
@@ -400,7 +400,8 @@ Describe 'Test Install-Module and Update-Module for catalog signed test modules'
             $bobCert = (Get-ChildItem cert: -CodeSigningCert -Recurse | Where-Object Subject -match "BobTest" | Select-Object -First 1)
     
             $certs =  @{'99.99.99.96' = $alice1Cert; '99.99.99.97' = $alice2Cert; '99.99.99.98' = $bobCert; '99.99.99.99' = $alice1Cert}
-            @('99.99.99.96','99.99.99.97','99.99.99.98','99.99.99.99') | 
+
+            $certs.Keys | 
             ForEach-Object { 
                 $TestModuleVersionDestination = Join-Path -Path $TestModuleDestination -ChildPath "$_" 
                 

@@ -82,7 +82,7 @@ Module Dependencies
 Get PowerShellGet Module
 ========================
 
-Please refer to our [documentation](https://msdn.microsoft.com/en-us/powershell/gallery/psget/get_psget_module) for the up-to-date version on how to get the PowerShellGet Module.
+Please refer to our [documentation](https://aka.ms/installing-psget) for the up-to-date version on how to get the PowerShellGet Module.
 
 
 Get PowerShellGet Source

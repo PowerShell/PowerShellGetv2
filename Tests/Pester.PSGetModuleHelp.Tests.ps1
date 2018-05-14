@@ -26,14 +26,14 @@ function GetFiles {
     param (
         [Parameter()]
         [string]
-        $FileType = "*help.xml",
+        $Include = "*help.xml",
 
         [Parameter(Mandatory = $true)]
         [string]
         $Path
     )
 
-    Get-ChildItem -Path $Path -Include $FileType -Recurse -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName
+    Get-ChildItem -Path $Path -Include $Include -Recurse -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName
 }
 
 Describe 'Validate PowerShellGet module help' -tags 'P1', 'OuterLoop' {
@@ -65,7 +65,7 @@ Describe 'Validate PowerShellGet module help' -tags 'P1', 'OuterLoop' {
         $helpFilesInstalled = @(GetFiles -Path $script:HelpInstallationPath | ForEach-Object {Split-Path -Path $_ -Leaf})
         $helpFilesInstalled | Should Be $script:ExpectedHelpFile
 
-        $helpInfoFileInstalled = @(GetFiles -FileType "*HelpInfo.xml" -Path $script:PowerShellGetModuleInfo.ModuleBase | ForEach-Object {Split-Path -Path $_ -Leaf})
+        $helpInfoFileInstalled = @(GetFiles -Include "*HelpInfo.xml" -Path $script:PowerShellGetModuleInfo.ModuleBase | ForEach-Object {Split-Path -Path $_ -Leaf})
         $helpInfoFileInstalled | Should Be $script:ExpectedHelpInfoFile
         
         $FindModuleCommandHelp = Get-Help -Name PowerShellGet\Find-Module -Detailed
@@ -80,10 +80,10 @@ Describe 'Validate PowerShellGet module help' -tags 'P1', 'OuterLoop' {
             Save-Help -Module PowerShellGet -Force -UICulture en-US -DestinationPath $script:SaveHelpPath
         }
 
-        $compressedFile = GetFiles -FileType "*$script:HelpContentExtension" -Path $script:SaveHelpPath | ForEach-Object {Split-Path -Path $_ -Leaf}
+        $compressedFile = GetFiles -Include "*$script:HelpContentExtension" -Path $script:SaveHelpPath | ForEach-Object {Split-Path -Path $_ -Leaf}
         $compressedFile | Should Be $script:ExpectedCompressedFile
     
-        $helpFilesSaved = GetFiles -FileType "*HelpInfo.xml" -Path $script:SaveHelpPath | ForEach-Object {Split-Path -Path $_ -Leaf}
+        $helpFilesSaved = GetFiles -Include "*HelpInfo.xml" -Path $script:SaveHelpPath | ForEach-Object {Split-Path -Path $_ -Leaf}
         $helpFilesSaved | Should Be $script:ExpectedHelpInfoFile
     }
 }

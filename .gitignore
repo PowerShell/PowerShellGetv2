@@ -69,6 +69,7 @@ gen
 
 # TestsResults
 TestsResults*.xml
+/Tests/TestResultsCurrent.xml
 
 # Build results
 [Dd]ebug/

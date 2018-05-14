@@ -76,9 +76,11 @@ function Get-InstalledModuleAuthenticodeSignature
         $ModuleDetails['Version'] = $SourceModule.Version
         $ModuleDetails['ModuleBase']=$SourceModule.ModuleBase
         $ModuleDetails['IsMicrosoftCertificate'] = Test-MicrosoftCertificate -AuthenticodeSignature $AuthenticodeSignature
-        $ModuleDetails['Publisher'] = Get-AuthenticodePublisher -AuthenticodeSignature $AuthenticodeSignature
-
-        $message = $LocalizedData.SourceModuleDetailsForPublisherValidation -f ($ModuleName, $SourceModule.Version, $SourceModule.ModuleBase, $ModuleDetails.Publisher, $ModuleDetails.IsMicrosoftCertificate)
+        $PublisherDetails = Get-AuthenticodePublisher -AuthenticodeSignature $AuthenticodeSignature
+        $ModuleDetails['Publisher'] = if($PublisherDetails) {$PublisherDetails.Publisher}
+        $ModuleDetails['RootCertificateAuthority'] = if($PublisherDetails) {$PublisherDetails.PublisherRootCA}
+        
+        $message = $LocalizedData.SourceModuleDetailsForPublisherValidation -f ($ModuleName, $SourceModule.Version, $SourceModule.ModuleBase, $ModuleDetails.Publisher, $ModuleDetails.RootCertificateAuthority, $ModuleDetails.IsMicrosoftCertificate)
         Write-Debug $message
     }
 

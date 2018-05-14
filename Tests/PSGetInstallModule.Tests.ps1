@@ -22,6 +22,7 @@ function SuiteSetup {
     $script:MyDocumentsModulesPath = Get-CurrentUserModulesPath
     $script:PSGetLocalAppDataPath = Get-PSGetLocalAppDataPath
     $script:TempPath = Get-TempPath
+
     $null = New-Item -Path $script:MyDocumentsModulesPath -ItemType Directory -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
     #Bootstrap NuGet binaries
     Install-NuGetBinaries
@@ -84,7 +85,7 @@ function SuiteSetup {
 
         $null = New-ModuleManifest -Path (Join-Path -Path $pesterv1Destination -ChildPath "Pester.psd1") -Description "Test signed module v1" -ModuleVersion 99.99.99.98
         $null = New-ModuleManifest -Path (Join-Path -Path $pesterv2Destination -ChildPath "Pester.psd1") -Description "Test signed module v2" -ModuleVersion 99.99.99.99
-
+ 
         # Move Pester 3.4.0 to $script:TestPSModulePath
         # If it doesn't exist, attempt to download it.
         # If this is run offline, just fail the test for now.
@@ -142,7 +143,7 @@ function SuiteCleanup {
             RemoveItem $userProfile.LocalPath
         }
     }
-
+      
     RemoveItem $script:TempModulesPath
     RemoveItem $script:TestPSModulePath
 }
@@ -163,7 +164,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         PSGetTestUtils\Uninstall-Module ContosoClient
         PSGetTestUtils\Uninstall-Module DscTestModule
     }
-    
+
     # Purpose: InstallNotAvailableModuleWithWildCard
     #
     # Action: Install-Module "Co[nN]t?soS[a-z]r?eW"
@@ -889,7 +890,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         AssertEquals $res.Name $moduleName2 "Install-Module failed to install with Find-Command output"
     }
 
-    # Purpose: Install a non-Microsoft signed Pester or PSReadline version without -SkipPublisherCheck
+    # Purpose: Install a whitelisted non-Microsoft signed Pester or PSReadline version without -SkipPublisherCheck
     #
     # Action: Install-Module -Name Pester -RequiredVersion <Anything non-Microsoft signed>
     #
@@ -910,6 +911,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
             # Expect: Warning and Success
             $iev | should be $null
             $iwv | should not be $null
+            $iwv | should not belike "*root*authority*"
 
             # Fix PSModulePath
             # This is done before installing v2 because
@@ -1086,7 +1088,7 @@ Describe PowerShell.PSGet.InstallModuleTests.P1 -Tags 'P1','OuterLoop' {
         }
     } -Skip:$(($PSCulture -ne 'en-US') -or ($PSVersionTable.PSVersion -lt '4.0.0') -or ($PSEdition -eq 'Core'))
 
-    # Purpose: Install a modul from an untrusted repository and press YES to the prompt
+    # Purpose: Install a module from an untrusted repository and press YES to the prompt
     #
     # Action: Install-Module ContosoServer -Repostory UntrustedTestRepo
     #

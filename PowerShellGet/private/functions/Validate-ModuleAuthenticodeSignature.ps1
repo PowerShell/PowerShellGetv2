@@ -51,27 +51,32 @@ function Validate-ModuleAuthenticodeSignature
     if($InstalledModuleInfo)
     {
         $CurrentModuleAuthenticodePublisher = $null
+        $CurrentModuleRootCA = $null
         $IsCurrentModuleSignedByMicrosoft = $false
 
         if($CurrentModuleDetails)
         {
             $CurrentModuleAuthenticodePublisher = $CurrentModuleDetails.Publisher
+            $CurrentModuleRootCA = $CurrentModuleDetails.RootCertificateAuthority
             $IsCurrentModuleSignedByMicrosoft = $CurrentModuleDetails.IsMicrosoftCertificate
 
             $message = $LocalizedData.NewModuleVersionDetailsForPublisherValidation -f ($CurrentModuleInfo.Name,
                                                                                         $CurrentModuleInfo.Version,
                                                                                         $CurrentModuleDetails.Publisher,
+                                                                                        $CurrentModuleDetails.RootCertificateAuthority,
                                                                                         $CurrentModuleDetails.IsMicrosoftCertificate)
             Write-Verbose $message
         }
 
         $InstalledModuleAuthenticodePublisher = $null
+        $InstalledModuleRootCA = $null
         $IsInstalledModuleSignedByMicrosoft = $false
         $InstalledModuleVersion = [Version]'0.0'
 
         if($InstalledModuleDetails)
         {
             $InstalledModuleAuthenticodePublisher = $InstalledModuleDetails.Publisher
+            $InstalledModuleRootCA = $InstalledModuleDetails.RootCertificateAuthority
             $IsInstalledModuleSignedByMicrosoft = $InstalledModuleDetails.IsMicrosoftCertificate
             $InstalledModuleVersion = $InstalledModuleDetails.Version
 
@@ -79,6 +84,7 @@ function Validate-ModuleAuthenticodeSignature
                                                                                     $InstalledModuleDetails.Version,
                                                                                     $InstalledModuleDetails.ModuleBase,
                                                                                     $InstalledModuleDetails.Publisher,
+                                                                                    $InstalledModuleDetails.RootCertificateAuthority,
                                                                                     $InstalledModuleDetails.IsMicrosoftCertificate)
             Write-Verbose $message
         }
@@ -100,7 +106,9 @@ function Validate-ModuleAuthenticodeSignature
                             -ErrorCategory InvalidOperation
                 return $false
             }
-            elseif($InstalledModuleAuthenticodePublisher -eq $CurrentModuleAuthenticodePublisher)
+            elseif(($InstalledModuleAuthenticodePublisher -eq $CurrentModuleAuthenticodePublisher) -and
+                    $InstalledModuleRootCA -and $CurrentModuleRootCA -and 
+                    ($InstalledModuleRootCA -eq $CurrentModuleRootCA))
             {
                 $Message = $LocalizedData.AuthenticodeIssuerMatch -f ($CurrentModuleAuthenticodePublisher, $CurrentModuleInfo.Name, $CurrentModuleInfo.Version, $InstalledModuleAuthenticodePublisher, $InstalledModuleInfo.Name, $InstalledModuleVersion)
                 Write-Verbose -Message $message
@@ -132,7 +140,7 @@ function Validate-ModuleAuthenticodeSignature
             }
             else
             {
-                $Message = $LocalizedData.AuthenticodeIssuerMismatch -f ($CurrentModuleAuthenticodePublisher, $CurrentModuleInfo.Name, $CurrentModuleInfo.Version, $InstalledModuleAuthenticodePublisher, $InstalledModuleInfo.Name, $InstalledModuleVersion)
+                $Message = $LocalizedData.AuthenticodeIssuerMismatch -f ($CurrentModuleAuthenticodePublisher, $CurrentModuleInfo.Name, $CurrentModuleInfo.Version, $CurrentModuleRootCA, $InstalledModuleAuthenticodePublisher, $InstalledModuleInfo.Name, $InstalledModuleVersion, $InstalledModuleRootCA)
                 ThrowError -ExceptionName 'System.InvalidOperationException' `
                             -ExceptionMessage $message `
                             -ErrorId 'AuthenticodeIssuerMismatch' `

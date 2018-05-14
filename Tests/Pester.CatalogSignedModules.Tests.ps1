@@ -108,7 +108,6 @@ function RegisterLocalRepo {
     }
 }
 
-
 function SuiteSetup {
 
     RegisterLocalRepo
@@ -162,55 +161,6 @@ function SuiteSetup {
         }
     }
 }
-
-function SuiteSetup2 {
-    
-    RegisterLocalRepo
-
-    $script:TempPath = Get-TempPath
-
-    # Create temp module to be published
-    $script:TempModulesPath = Join-Path -Path $script:TempPath -ChildPath "PSGet_$(Get-Random)"
-    $null = New-Item -Path $script:TempModulesPath -ItemType Directory -Force
-
-
-    # Set up signed modules if signing is available
-    if ((Get-Module PKI -ListAvailable)) {
-       
-        $TestModuleDestination = Join-Path -Path $script:TempModulesPath -ChildPath "TestModule"
-       
-        if (Test-Path -Path $TestModuleDestination) {
-            $null = Remove-Item -Path $TestModuleDestination -Force
-        }
-        $null = New-Item -Path $TestModuleDestination -Force -ItemType Directory
-        $TestModuleRoot = Join-Path -Path $script:TempModulesPath -ChildPath "TestModule"
-
-        # create certificates
-        Create-CodeSigningCert -storeName "Cert:\LocalMachine\My" -subject "AliceTest" 
-        $alice1Cert = (Get-ChildItem cert: -CodeSigningCert -Recurse | Where-Object Subject -match "AliceTest" | Select-Object -First 1) 
-        Create-CodeSigningCert -subject "AliceTest" -CertRA "Other Root Authority" 
-        $alice2Cert = (Get-ChildItem cert: -CodeSigningCert -Recurse | Where-Object Issuer -match "Other" | Select-Object -First 1) 
-        Create-CodeSigningCert -subject "BobTest"
-        $bobCert = (Get-ChildItem cert: -CodeSigningCert -Recurse | Where-Object Subject -match "BobTest" | Select-Object -First 1)
-
-        $certs =  @{'99.99.99.96' = $alice1Cert; '99.99.99.97' = $alice2Cert; '99.99.99.98' = $bobCert; '99.99.99.99' = $alice1Cert}
-        @('99.99.99.96','99.99.99.97','99.99.99.98','99.99.99.99') | 
-        ForEach-Object { 
-            $TestModuleVersionDestination = Join-Path -Path $TestModuleDestination -ChildPath "$_" 
-            
-            $null = New-Item -Path $TestModuleVersionDestination -Force -ItemType Directory
-            $null = New-ModuleManifest -Path (Join-Path -Path $TestModuleVersionDestination -ChildPath "TestModule.psd1") -Description "Test signed TestModule module v. $_" -ModuleVersion $_
-            
-            $null = Set-AuthenticodeSignature -FilePath (Join-Path -Path $TestModuleVersionDestination -ChildPath "TestModule.psd1") -Certificate ($certs.$_)
-            $TestModuleVersionPath = Join-Path -Path $TestModuleRoot -ChildPath $_ 
-            
-            if(-not (Test-Path -Path "$SourceLocation\TestModule.$_.nupkg" -PathType Leaf)) {
-                Publish-Module -Path $TestModuleVersionPath -Repository $Script:RepositoryName -Force
-            }
-        }
-    }
-}
-
 
 function SuiteCleanup {
 
@@ -419,11 +369,52 @@ Describe 'Test PowerShellGet\Update-Module cmdlet with catalog signed modules' -
 Describe 'Test Install-Module and Update-Module for catalog signed test modules' -tags 'P2','InnerLoop' {
     if(Test-SkipCondition) { return }
 
-
     BeforeAll {        
         if(Test-SkipCondition){ return }
 
-        SuiteSetup2  ### move contents in
+        RegisterLocalRepo
+
+        $script:TempPath = Get-TempPath
+    
+        # Create temp module to be published
+        $script:TempModulesPath = Join-Path -Path $script:TempPath -ChildPath "PSGet_$(Get-Random)"
+        $null = New-Item -Path $script:TempModulesPath -ItemType Directory -Force
+    
+        # Set up signed modules if signing is available
+        if ((Get-Module PKI -ListAvailable)) {
+           
+            $TestModuleDestination = Join-Path -Path $script:TempModulesPath -ChildPath "TestModule"
+           
+            if (Test-Path -Path $TestModuleDestination) {
+                $null = Remove-Item -Path $TestModuleDestination -Force
+            }
+            $null = New-Item -Path $TestModuleDestination -Force -ItemType Directory
+            $TestModuleRoot = Join-Path -Path $script:TempModulesPath -ChildPath "TestModule"
+    
+            # Create certificates, sign then publish the versions of TestModule
+            Create-CodeSigningCert -storeName "Cert:\LocalMachine\My" -subject "AliceTest" 
+            $alice1Cert = (Get-ChildItem cert: -CodeSigningCert -Recurse | Where-Object Subject -match "AliceTest" | Select-Object -First 1) 
+            Create-CodeSigningCert -subject "AliceTest" -CertRA "Other Root Authority" 
+            $alice2Cert = (Get-ChildItem cert: -CodeSigningCert -Recurse | Where-Object Issuer -match "Other" | Select-Object -First 1) 
+            Create-CodeSigningCert -subject "BobTest"
+            $bobCert = (Get-ChildItem cert: -CodeSigningCert -Recurse | Where-Object Subject -match "BobTest" | Select-Object -First 1)
+    
+            $certs =  @{'99.99.99.96' = $alice1Cert; '99.99.99.97' = $alice2Cert; '99.99.99.98' = $bobCert; '99.99.99.99' = $alice1Cert}
+            @('99.99.99.96','99.99.99.97','99.99.99.98','99.99.99.99') | 
+            ForEach-Object { 
+                $TestModuleVersionDestination = Join-Path -Path $TestModuleDestination -ChildPath "$_" 
+                
+                $null = New-Item -Path $TestModuleVersionDestination -Force -ItemType Directory
+                $null = New-ModuleManifest -Path (Join-Path -Path $TestModuleVersionDestination -ChildPath "TestModule.psd1") -Description "Test signed TestModule module v. $_" -ModuleVersion $_
+                
+                $null = Set-AuthenticodeSignature -FilePath (Join-Path -Path $TestModuleVersionDestination -ChildPath "TestModule.psd1") -Certificate ($certs.$_)
+                $TestModuleVersionPath = Join-Path -Path $TestModuleRoot -ChildPath $_ 
+                
+                if(-not (Test-Path -Path "$SourceLocation\TestModule.$_.nupkg" -PathType Leaf)) {
+                    Publish-Module -Path $TestModuleVersionPath -Repository $Script:RepositoryName -Force
+                }
+            }
+        }
 
         Install-Module TestModule -RequiredVersion 99.99.99.96 -Repository $Script:RepositoryName
     } 
@@ -434,56 +425,43 @@ Describe 'Test Install-Module and Update-Module for catalog signed test modules'
 
     AfterAll {
         SuiteCleanup
-        # I think we're doing this in suiteCleanup so we don't need to add this
-        #Uninstall-Module TestModule 
     }
 
     AfterEach {
     }
 
-    It 'Install new non-MS signed module over current non-MS signed module - installing v2' {
-        # Install v2 signed mdules
+    It 'Install module signed with same signature but different root certificate authority than current module: Should fail' {
         Install-Module TestModule -RequiredVersion 99.99.99.97 -ErrorVariable iev -ErrorAction SilentlyContinue -WarningVariable iwv -WarningAction SilentlyContinue -Force 
-        # Expect: error, no warning, and failure
         $iev[0].FullyQualifiedErrorId | Should be 'AuthenticodeIssuerMismatch,Validate-ModuleAuthenticodeSignature,Microsoft.PowerShell.PackageManagement.Cmdlets.InstallPackage'
         $iwv | should be $null
     }
 
-    It 'Install new non-MS signed module over current non-MS signed module - updating v2' {
-        # Update v2 signed module
+    It 'Update module signed with different signature but different root certificate authority than than current module: Should fail' {
         Update-Module TestModule -RequiredVersion 99.99.99.97 -ErrorVariable iev -ErrorAction SilentlyContinue -WarningVariable iwv -Force
-        # Expect: error, no warning, and failure
-        #$iev | should not be $null
         $iev[0].FullyQualifiedErrorId | Should be 'AuthenticodeIssuerMismatch,Validate-ModuleAuthenticodeSignature,Microsoft.PowerShell.PackageManagement.Cmdlets.InstallPackage'
         $iwv | should be $null
     }
 
-    It 'Install new non-MS signed module over current non-MS signed module - installing v3' {
+    It 'Install module signed with different signature than current module: Should fail' {
         Install-Module TestModule -RequiredVersion 99.99.99.98 -ErrorVariable iev -ErrorAction SilentlyContinue -WarningVariable iwv -Force   
-        # Expect: error, no warning, and failure
         $iev[0].FullyQualifiedErrorId | Should be 'AuthenticodeIssuerMismatch,Validate-ModuleAuthenticodeSignature,Microsoft.PowerShell.PackageManagement.Cmdlets.InstallPackage'
         $iwv | should be $null
     }
 
-    It 'Install new non-MS signed module over current non-MS signed module - updating v3' {
-        # Update v3 signed module
+    It 'Update module signed with different signature than current module: Should fail' {
         Update-Module TestModule -RequiredVersion 99.99.99.98 -ErrorVariable iev -ErrorAction SilentlyContinue -WarningVariable iwv -Force
-        # Expect: error, no warning, and failure
         $iev[0].FullyQualifiedErrorId | Should be 'AuthenticodeIssuerMismatch,Validate-ModuleAuthenticodeSignature,Microsoft.PowerShell.PackageManagement.Cmdlets.InstallPackage'
         $iwv | should be $null
     }
 
-    It 'Install new non-MS signed module over current non-MS signed module - installing v4' {
-        # Install v4 signed modules   
+    It 'Install module signed with same signature and same root certificate authority as current module: Should work' {
         Install-Module TestModule -RequiredVersion 99.99.99.99 -ErrorVariable iev -WarningVariable iwv -Force   
-        # Expect: no error, no warning, and success
         $iev | should be $null
         $iwv | should be $null
     }
 
-    It 'Install new non-MS signed module over current non-MS signed module - updating v4' {
+    It 'Update module signed with same signature and same root certificate authority as current module: Should work' {
         Update-Module TestModule -RequiredVersion 99.99.99.99 -ErrorVariable iev -WarningVariable iwv -Force
-        # Expect: no error, no warning and success
         $iev | should be $null
         $iwv | should be $null
     }

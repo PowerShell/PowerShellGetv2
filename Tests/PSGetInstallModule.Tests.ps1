@@ -22,6 +22,7 @@ function SuiteSetup {
     $script:MyDocumentsModulesPath = Get-CurrentUserModulesPath
     $script:PSGetLocalAppDataPath = Get-PSGetLocalAppDataPath
     $script:TempPath = Get-TempPath
+
     $null = New-Item -Path $script:MyDocumentsModulesPath -ItemType Directory -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
     #Bootstrap NuGet binaries
     Install-NuGetBinaries
@@ -54,6 +55,68 @@ function SuiteSetup {
     $script:assertTimeOutms = 20000
     $script:UntrustedRepoSourceLocation = 'https://powershell.myget.org/F/powershellget-test-items/api/v2/'
     $script:UntrustedRepoPublishLocation = 'https://powershell.myget.org/F/powershellget-test-items/api/v2/package'
+
+    # Create temp module to be published
+    $script:TempModulesPath = Join-Path -Path $script:TempPath -ChildPath "PSGet_$(Get-Random)"
+    $script:TestPSModulePath = Join-Path -Path $script:TempPath -ChildPath "PSGet_$(Get-Random)"
+    $null = New-Item -Path $script:TempModulesPath -ItemType Directory -Force
+    $null = New-Item -Path $script:TestPSModulePath -ItemType Directory -Force
+    
+    # Set up local "gallery"
+    $script:localGalleryName = [System.Guid]::NewGuid().ToString()
+    $script:PSGalleryRepoPath = Join-Path -Path $script:TempPath -ChildPath 'PSGalleryRepo'
+    RemoveItem $script:PSGalleryRepoPath
+    $null = New-Item -Path $script:PSGalleryRepoPath -ItemType Directory -Force
+
+    Set-PSGallerySourceLocation -Name $script:localGalleryName -Location $script:PSGalleryRepoPath -PublishLocation $script:PSGalleryRepoPath -UseExistingModuleSourcesFile
+
+    # Set up signed modules if signing is available
+    if ((Get-Module PKI -ListAvailable)) {
+        $pesterDestination = Join-Path -Path $script:TempModulesPath -ChildPath "Pester"
+        $pesterv1Destination = Join-Path -Path $pesterDestination -ChildPath "99.99.99.98"
+        $pesterv2Destination = Join-Path -Path $pesterDestination -ChildPath "99.99.99.99"
+        if (Test-Path -Path $pesterDestination) {
+            $null = Remove-Item -Path $pesterDestination -Force
+        }
+
+        $null = New-Item -Path $pesterDestination -Force -ItemType Directory
+        $null = New-Item -Path $pesterv1Destination -Force -ItemType Directory
+        $null = New-Item -Path $pesterv2Destination -Force -ItemType Directory
+
+        $null = New-ModuleManifest -Path (Join-Path -Path $pesterv1Destination -ChildPath "Pester.psd1") -Description "Test signed module v1" -ModuleVersion 99.99.99.98
+        $null = New-ModuleManifest -Path (Join-Path -Path $pesterv2Destination -ChildPath "Pester.psd1") -Description "Test signed module v2" -ModuleVersion 99.99.99.99
+ 
+        # Move Pester 3.4.0 to $script:TestPSModulePath
+        # If it doesn't exist, attempt to download it.
+        # If this is run offline, just fail the test for now.
+        # This module is expected to be Microsoft-signed.
+        # This is essentially a test hook to get around the hardcoded whitelist.
+        $signedPester = (Get-Module Pester -ListAvailable | Where-Object { $_.Version -eq '3.4.0' }).ModuleBase
+        if (-not $signedPester) {
+            $psName = [System.Guid]::NewGuid().ToString()
+            Register-PackageSource -Name $psName -Location "https://www.powershellgallery.com/api/v2" -ProviderName PowerShellGet -Trusted
+            try {
+                Save-Module Pester -RequiredVersion 3.4.0 -Repository $psName -Path $script:TestPSModulePath
+            } finally {
+                Unregister-PackageSource -Name $psName
+            }
+        } else {
+            $signedPesterDestination = Join-Path -Path $script:TestPSModulePath -ChildPath "Pester"
+            if (-not (Test-Path -Path $signedPesterDestination)) {
+                $null = New-Item -Path $signedPesterDestination -ItemType Directory
+            }
+            Copy-Item -Path $signedPester -Destination $signedPesterDestination -Recurse -Force
+        }
+
+        $csCert = Get-CodeSigningCert -IncludeLocalMachineCerts
+        if (-not $csCert) {
+            Create-CodeSigningCert
+            $csCert = Get-CodeSigningCert -IncludeLocalMachineCerts
+        }
+
+        $null = Set-AuthenticodeSignature -FilePath (Join-Path -Path $pesterv1Destination -ChildPath "Pester.psd1") -Certificate $csCert
+        $null = Set-AuthenticodeSignature -FilePath (Join-Path -Path $pesterv2Destination -ChildPath "Pester.psd1") -Certificate $csCert
+    }
 }
 
 function SuiteCleanup {
@@ -80,6 +143,9 @@ function SuiteCleanup {
             RemoveItem $userProfile.LocalPath
         }
     }
+      
+    RemoveItem $script:TempModulesPath
+    RemoveItem $script:TestPSModulePath
 }
 
 Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
@@ -823,6 +889,65 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         $res = Get-Module $moduleName2 -ListAvailable
         AssertEquals $res.Name $moduleName2 "Install-Module failed to install with Find-Command output"
     }
+
+    # Purpose: Install a whitelisted non-Microsoft signed Pester or PSReadline version without -SkipPublisherCheck
+    #
+    # Action: Install-Module -Name Pester -RequiredVersion <Anything non-Microsoft signed>
+    #
+    # Expected Result: Warning and installed
+    #
+    It 'InstallNonMsSignedModuleOverMsSignedModule' {
+        $pesterRoot = Join-Path -Path $script:TempModulesPath -ChildPath "Pester"
+        $v1Path = Join-Path -Path $pesterRoot -ChildPath "99.99.99.98"
+        $v2Path = Join-Path -Path $pesterRoot -ChildPath "99.99.99.99"
+        # Publish signed modules
+        Publish-Module -Path $v1Path -Repository $script:localGalleryName
+        Publish-Module -Path $v2Path -Repository $script:localGalleryName
+        $oldPSModulePath = $env:PSModulePath
+        $env:PSModulePath = $script:TestPSModulePath
+        try {
+            # Install v1 of signed module
+            Install-Module Pester -RequiredVersion 99.99.99.98 -Repository $script:localGalleryName -ErrorVariable iev -WarningVariable iwv -Force
+            # Expect: Warning and Success
+            $iev | should be $null
+            $iwv | should not be $null
+            $iwv | should not belike "*root*authority*"
+
+            # Fix PSModulePath
+            # This is done before installing v2 because
+            # PSGet will install to hardcoded paths regardless of PSModulePath
+            # Meaning the hacked $env:PSModulePath won't have the new 99.99.99.98 module
+            $env:PSModulePath = $oldPSModulePath
+
+            # Install v2 of signed module
+            Install-Module Pester -RequiredVersion 99.99.99.99 -Repository $script:localGalleryName -ErrorVariable iev -WarningVariable iwv -Force
+            # Expect: No warning and Success
+            $iev | should be $null
+            $iwv | should be $null
+        } finally {
+            # Fix PSModulePath again in case the fix in the try-block didn't work
+            $env:PSModulePath = $oldPSModulePath
+
+            # If v1 exists, uninstall
+            if (Get-Module Pester -ListAvailable | Where-Object { $_.Version -eq '99.99.99.98' }) {
+                $moduleBase = (Get-Module Pester -ListAvailable | Where-Object { $_.Version -eq '99.99.99.98' }).ModuleBase
+                $null = Remove-Item -Path $moduleBase -Force -Recurse
+                if (Get-Module Pester -ListAvailable | Where-Object { $_.Version -eq '99.99.99.98' }) {
+                    Write-Error "Failed to uninstall v1"
+                }
+            }
+
+            # If v2 exists, uninstall
+            if (Get-Module Pester -ListAvailable | Where-Object { $_.Version -eq '99.99.99.99' }) {
+                $moduleBase = (Get-Module Pester -ListAvailable | Where-Object { $_.Version -eq '99.99.99.99' }).ModuleBase
+                $null = Remove-Item -Path $moduleBase -Force -Recurse
+                if (Get-Module Pester -ListAvailable | Where-Object { $_.Version -eq '99.99.99.99' }) {
+                    Write-Error "Failed to uninstall v2"
+                }
+            }
+        }
+    } `
+    -Skip:$((-not (Get-Module PKI -ListAvailable)) -or ([Environment]::OSVersion.Version -lt '10.0'))
 }
 
 Describe PowerShell.PSGet.InstallModuleTests.P1 -Tags 'P1','OuterLoop' {
@@ -963,7 +1088,7 @@ Describe PowerShell.PSGet.InstallModuleTests.P1 -Tags 'P1','OuterLoop' {
         }
     } -Skip:$(($PSCulture -ne 'en-US') -or ($PSVersionTable.PSVersion -lt '4.0.0') -or ($PSEdition -eq 'Core'))
 
-    # Purpose: Install a modul from an untrusted repository and press YES to the prompt
+    # Purpose: Install a module from an untrusted repository and press YES to the prompt
     #
     # Action: Install-Module ContosoServer -Repostory UntrustedTestRepo
     #
@@ -1352,7 +1477,7 @@ Describe PowerShell.PSGet.InstallModuleTests.P2 -Tags 'P2','OuterLoop' {
             AssertEquals $res1.Name $ModuleName "Find-Module didn't find the exact module which has dependencies, $res1"
             $DepencyModuleNames = $res1.Dependencies.Name
 
-            Save-Module -Name $ModuleName -MaximumVersion "1.0" -MinimumVersion "0.1" -Path $script:MyDocumentsModulesPath
+            Save-Module -Name $ModuleName -MaximumVersion "1.0" -MinimumVersion "0.1" $script:MyDocumentsModulesPath
             $ActualModuleDetails = Get-InstalledModule -Name $ModuleName -RequiredVersion $res1.Version
             AssertNotNull $ActualModuleDetails "$ModuleName module with dependencies is not saved properly"
 

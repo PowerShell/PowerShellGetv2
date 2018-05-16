@@ -1632,7 +1632,7 @@ Describe PowerShell.PSGet.InstallScriptTests.P1 -Tags 'P1','OuterLoop' {
 
             $res1 = Find-Script -Name $ScriptName -RequiredVersion '1.0' -IncludeDependencies
                           
-            Save-Script -Name $ScriptName -MaximumVersion '1.0' -MinimumVersion '0.1' -Path $script:TempSavePath
+            Save-Script -Name $ScriptName -MaximumVersion '1.0' -MinimumVersion '0.1' $script:TempSavePath
 
             $res1.Name | ForEach-Object {                                           
                                             $artifactPath = Join-Path -Path $script:TempSavePath -ChildPath $_
@@ -1754,4 +1754,16 @@ Describe PowerShell.PSGet.InstallScriptTests.P1 -Tags 'P1','OuterLoop' {
         }
     } `
     -Skip:$($PSCulture -ne 'en-US')
+
+    It "Get-InstalledScript cmdlet with leading zeros in RequiredVersion value" {
+        $scriptName = 'Fabrikam-ServerScript'
+        $version = '1.2'
+        Install-Script $scriptName -RequiredVersion $version
+        $res = Get-InstalledScript $scriptName -RequiredVersion '1.02'
+        $res.Name | Should Be $scriptName
+        $res.Version | Should Be $version
+
+        $res = Get-InstalledScript $scriptName -RequiredVersion $version
+        $res.Version | Should Be $version
+    }
 }

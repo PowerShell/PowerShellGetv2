@@ -48,7 +48,7 @@ PrivateData = @{
         Tags = @('Packagemanagement',
                  'Provider',
                  'PSEdition_Desktop',                 
-		 'PSEdition_Core',
+		         'PSEdition_Core',
                  'Linux',
                  'Mac')
         ProjectUri = 'https://go.microsoft.com/fwlink/?LinkId=828955'

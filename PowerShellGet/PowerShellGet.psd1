@@ -1,6 +1,6 @@
 @{
 RootModule = 'PSModule.psm1'
-ModuleVersion = '1.6.4'
+ModuleVersion = '1.6.5'
 GUID = '1d73a601-4a6c-43c5-ba3f-619b18bbb404'
 Author = 'Microsoft Corporation'
 CompanyName = 'Microsoft Corporation'
@@ -47,13 +47,40 @@ PrivateData = @{
     PSData = @{
         Tags = @('Packagemanagement',
                  'Provider',
-                 'PSEdition_Desktop',
-                 'PSEdition_Core',
+                 'PSEdition_Desktop',                 
+		         'PSEdition_Core',
                  'Linux',
                  'Mac')
         ProjectUri = 'https://go.microsoft.com/fwlink/?LinkId=828955'
         LicenseUri = 'https://go.microsoft.com/fwlink/?LinkId=829061'
         ReleaseNotes = @'
+## 1.6.5
+
+New features
+* Allow Pester/PSReadline installation when signed by non-Microsoft certificate (#258)
+  - Whitelist installation of non-Microsoft signed Pester and PSReadline over Microsoft signed Pester and PSReadline.
+
+Build and Code Cleanup Improvements
+* Splitting of functions (#229) (Thanks @Benny1007)
+  - Moves private functions into respective private folder.
+  - Moves public functions as defined in PSModule.psd1 into respective public folder.
+  - Removes all functions from PSModule.psm1 file.
+  - Dot sources the functions from PSModule.psm1 file.
+  - Uses Export-ModuleMember to export the public functions from PSModule.psm1 file.
+
+* Add build step to construct a single .psm1 file (#242) (Thanks @Benny1007)
+  - Merged public and private functions into one .psm1 file to increase load time performance.
+
+Bug fixes
+- Fix null parameter error caused by MinimumVersion in Publish-PackageUtility (#201)
+- Change .ExternalHelp link from PSGet.psm1-help.xml to PSModule-help.xml in PSModule.psm1 file (#215)
+- Change Publish-* to allow version comparison instead of string comparison (#219)
+- Ensure Get-InstalledScript -RequiredVersion works when versions have a leading 0 (#260)
+- Add positional path to Save-Module and Save-Script (#264, #266)
+- Ensure that Get-AuthenticodePublisher verifies publisher and that installing or updating a module checks for approprite catalog signature (#272)
+- Update HelpInfoURI to 'http://go.microsoft.com/fwlink/?linkid=855963' (#274)
+
+
 ## 1.6.0
 
 New features

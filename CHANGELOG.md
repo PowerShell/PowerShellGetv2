@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.7.0
+## 1.6.5
 
 New features
 * Allow Pester/PSReadline installation when signed by non-Microsoft certificate (#258)

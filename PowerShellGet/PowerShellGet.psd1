@@ -1,6 +1,6 @@
 @{
 RootModule = 'PSModule.psm1'
-ModuleVersion = '1.7.0'
+ModuleVersion = '1.6.5'
 GUID = '1d73a601-4a6c-43c5-ba3f-619b18bbb404'
 Author = 'Microsoft Corporation'
 CompanyName = 'Microsoft Corporation'
@@ -54,7 +54,7 @@ PrivateData = @{
         ProjectUri = 'https://go.microsoft.com/fwlink/?LinkId=828955'
         LicenseUri = 'https://go.microsoft.com/fwlink/?LinkId=829061'
         ReleaseNotes = @'
-## 1.7.0
+## 1.6.5
 
 New features
 * Allow Pester/PSReadline installation when signed by non-Microsoft certificate (#258)
@@ -79,7 +79,6 @@ Bug fixes
 - Add positional path to Save-Module and Save-Script (#264, #266)
 - Ensure that Get-AuthenticodePublisher verifies publisher and that installing or updating a module checks for approprite catalog signature (#272)
 - Update HelpInfoURI to 'http://go.microsoft.com/fwlink/?linkid=855963' (#274)
-
 
 
 ## 1.6.0

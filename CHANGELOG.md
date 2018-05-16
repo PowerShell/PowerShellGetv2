@@ -3,6 +3,10 @@
 ## 1.7.0
 
 New features
+* Allow Pester/PSReadline installation when signed by non-Microsoft certificate (#258)
+  - Whitelist installation of non-Microsoft signed Pester and PSReadline over Microsoft signed Pester and PSReadline.
+
+Build and Code Cleanup Improvements
 * Splitting of functions (#229) (Thanks @Benny1007)
   - Moves private functions into respective private folder.
   - Moves public functions as defined in PSModule.psd1 into respective public folder.
@@ -12,9 +16,6 @@ New features
 
 * Add build step to construct a single .psm1 file (#242) (Thanks @Benny1007)
   - Merged public and private functions into one .psm1 file to increase load time performance.
-  
-* Allow Pester/PSReadline installation when signed by non-Microsoft certificate (#258)
-  - Whitelist installation of non-Microsoft signed Pester and PSReadline over Microsoft signed Pester and PSReadline.
 
 Bug fixes
 - Fix null parameter error caused by MinimumVersion in Publish-PackageUtility (#201)

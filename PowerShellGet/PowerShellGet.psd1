@@ -47,7 +47,8 @@ PrivateData = @{
     PSData = @{
         Tags = @('Packagemanagement',
                  'Provider',
-                 'PSEdition_Desktop',                 'PSEdition_Core',
+                 'PSEdition_Desktop',                 
+		 'PSEdition_Core',
                  'Linux',
                  'Mac')
         ProjectUri = 'https://go.microsoft.com/fwlink/?LinkId=828955'
@@ -78,7 +79,6 @@ Bug fixes
 - Add positional path to Save-Module and Save-Script (#264, #266)
 - Ensure that Get-AuthenticodePublisher verifies publisher and that installing or updating a module checks for approprite catalog signature (#272)
 - Update HelpInfoURI to 'http://go.microsoft.com/fwlink/?linkid=855963' (#274)
-
 
 
 ## 1.6.0

@@ -200,8 +200,7 @@ function Publish-Module
             {
                 $ValidationResult = Validate-VersionParameters -CallerPSCmdlet $PSCmdlet `
                                                                -Name $Name `
-                                                               -RequiredVersion $RequiredVersion `
-                                                               -AllowPrerelease:$AllowPrerelease
+                                                               -RequiredVersion $RequiredVersion
                 if(-not $ValidationResult)
                 {
                     # Validate-VersionParameters throws the error.

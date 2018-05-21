@@ -116,7 +116,7 @@ function Find-Module
 
         $PSBoundParameters["Provider"] = $script:PSModuleProviderName
         $PSBoundParameters[$script:PSArtifactType] = $script:PSArtifactTypeModule
-        $PSBoundParameters[$script:AllowPrereleaseVersions] = $AllowPrerelease
+        $PSBoundParameters[$script:AllowPrerelease] = $AllowPrerelease
         $null = $PSBoundParameters.Remove("AllowPrerelease")
 
         if($PSBoundParameters.ContainsKey("Repository"))

@@ -147,9 +147,9 @@ function Find-Package
         $providerOptions[$script:AllVersions] = $options[$script:AllVersions]
     }
 
-    if ($options.Contains($script:AllowPrereleaseVersions))
+    if ($options.Contains($script:AllowPrerelease))
     {
-        $providerOptions[$script:AllowPrereleaseVersions] = $options[$script:AllowPrereleaseVersions]
+        $providerOptions[$script:AllowPrerelease] = $options[$script:AllowPrerelease]
     }
 
     if($options.ContainsKey($script:Filter))

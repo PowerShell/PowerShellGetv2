@@ -1477,7 +1477,7 @@ Describe PowerShell.PSGet.InstallModuleTests.P2 -Tags 'P2','OuterLoop' {
             AssertEquals $res1.Name $ModuleName "Find-Module didn't find the exact module which has dependencies, $res1"
             $DepencyModuleNames = $res1.Dependencies.Name
 
-            Save-Module -Name $ModuleName -MaximumVersion "1.0" -MinimumVersion "0.1" -Path $script:MyDocumentsModulesPath
+            Save-Module -Name $ModuleName -MaximumVersion "1.0" -MinimumVersion "0.1" $script:MyDocumentsModulesPath
             $ActualModuleDetails = Get-InstalledModule -Name $ModuleName -RequiredVersion $res1.Version
             AssertNotNull $ActualModuleDetails "$ModuleName module with dependencies is not saved properly"
 

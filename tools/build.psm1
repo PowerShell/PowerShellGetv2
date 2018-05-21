@@ -100,8 +100,15 @@ function Install-PackageManagement {
         if (-not $NuGetProvider) {
             Install-PackageProvider -Name NuGet -Force
         }
-
-        $LatestOneGetInPSGallery = Find-Module -Name $OneGetModuleName
+        
+        $FindModule_params = @{
+            Name = $OneGetModuleName
+        }
+        if ($PSVersionTable.PSVersion -eq '5.1.14394.1000') {
+            # Adding -MaximumVersion 1.1.7.0 as AppVeyor VM with WMF 5 is not installed with latest root CA certificates
+            $FindModule_params['MaximumVersion'] = '1.1.7.0'
+        }
+        $LatestOneGetInPSGallery = Find-Module @FindModule_params
         if ($LatestOneGetInPSGallery.Version -gt $OneGetModuleInfo.Version) {
             Install-Module -InputObject $LatestOneGetInPSGallery -Force
         }

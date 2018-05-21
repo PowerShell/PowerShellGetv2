@@ -56,7 +56,7 @@ function Get-InstalledModule
         $PSBoundParameters["Provider"] = $script:PSModuleProviderName
         $PSBoundParameters["MessageResolver"] = $script:PackageManagementMessageResolverScriptBlock
         $PSBoundParameters[$script:PSArtifactType] = $script:PSArtifactTypeModule
-        $PSBoundParameters[$script:AllowPrereleaseVersions] = $AllowPrerelease
+        $PSBoundParameters[$script:AllowPrerelease] = $AllowPrerelease
         $null = $PSBoundParameters.Remove("AllowPrerelease")
 
         PackageManagement\Get-Package @PSBoundParameters | Microsoft.PowerShell.Core\ForEach-Object {New-PSGetItemInfo -SoftwareIdentity $_ -Type $script:PSArtifactTypeModule}

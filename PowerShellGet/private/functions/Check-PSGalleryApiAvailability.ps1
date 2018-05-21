@@ -46,7 +46,7 @@ function Check-PSGalleryApiAvailability
         } 
         catch 
         {
-            # there is no -ErrorAction switch on method call, we must use empty catch block to suppress error
+            # there is no -ErrorAction on method call, we must use empty catch block to suppress error
         } 
     }
 

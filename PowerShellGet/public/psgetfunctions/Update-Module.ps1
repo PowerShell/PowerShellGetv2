@@ -78,7 +78,9 @@ function Update-Module
         $GetPackageParameters["MessageResolver"] = $script:PackageManagementMessageResolverScriptBlock
         $GetPackageParameters['ErrorAction'] = 'SilentlyContinue'
         $GetPackageParameters['WarningAction'] = 'SilentlyContinue'
-        $PSBoundParameters[$script:AllowPrereleaseVersions] = $AllowPrerelease
+        if($AllowPrerelease) {
+            $PSBoundParameters[$script:AllowPrereleaseVersions] = $true
+        }
         $null = $PSBoundParameters.Remove("AllowPrerelease")
 
         $PSGetItemInfos = @()

@@ -200,7 +200,9 @@ function Update-Script
             $PSBoundParameters["PackageManagementProvider"] = $providerName
             $PSBoundParameters["Name"] = $psgetItemInfo.Name
             $PSBoundParameters['Source'] = $psgetItemInfo.Repository
-            $PSBoundParameters[$script:AllowPrereleaseVersions] = $AllowPrerelease
+            if($AllowPrerelease) {
+                $PSBoundParameters[$script:AllowPrereleaseVersions] = $true
+            }
             $null = $PSBoundParameters.Remove("AllowPrerelease")
 
             Get-PSGalleryApiAvailability -Repository (Get-SourceName -Location $psgetItemInfo.RepositorySourceLocation)

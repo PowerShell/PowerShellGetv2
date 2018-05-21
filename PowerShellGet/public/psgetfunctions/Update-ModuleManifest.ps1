@@ -308,6 +308,12 @@ function Update-ModuleManifest
     elseif($moduleInfo.CompanyName)
     {
         $params.Add("CompanyName",$moduleInfo.CompanyName)
+    } 
+    elseif ($CompanyName -eq '' -and $moduleInfo.CompanyName -eq $null)
+    {
+        #Creating a unique disposable company name to later be replaced by ''
+        #Work-around to deal with New-ModuleManifest changing '' to 'Unknown'
+        $params.Add("CompanyName", '__UPDATEDCOMPANYNAMETOBEREPLACEDINFUNCTION__')
     }
 
     if($Copyright)
@@ -495,12 +501,19 @@ function Update-ModuleManifest
     {
         $params.Add("FunctionsToExport",$FunctionsToExport)
     }
-
     elseif($moduleInfo.ExportedFunctions)
     {
-        #Since $moduleInfo.ExportedFunctions is a hashtable, we need to take the name of the
-        #functions and make them into a list
-        $params.Add("FunctionsToExport",($moduleInfo.ExportedFunctions.Keys -split ' '))
+        #Get the original module info from ManifestHashTable
+        if($ModuleManifestHashTable -and $ModuleManifestHashTable.ContainsKey("FunctionsToExport") -and $ModuleManifestHashTable['FunctionsToExport'] -eq '*' `
+            -and $moduleInfo.ExportedFunctions.Keys.Count -eq 0)
+        {
+            $params.Add("FunctionsToExport", $ModuleManifestHashTable['FunctionsToExport'])
+        }
+        else {
+            #Since $moduleInfo.ExportedFunctions is a hashtable, we need to take the name of the
+            #functions and make them into a list
+            $params.Add("FunctionsToExport",($moduleInfo.ExportedFunctions.Keys -split ' '))
+        }
     }
 
     if($AliasesToExport)
@@ -509,7 +522,17 @@ function Update-ModuleManifest
     }
     elseif($moduleInfo.ExportedAliases)
     {
-        $params.Add("AliasesToExport",($moduleInfo.ExportedAliases.Keys -split ' '))
+        #Get the original module info from ManifestHashTable
+        if($ModuleManifestHashTable -and $ModuleManifestHashTable.ContainsKey("AliasesToExport") -and $ModuleManifestHashTable['AliasesToExport'] -eq '*' `
+            -and $moduleInfo.ExportedAliases.Keys.Count -eq 0)
+        {
+            $params.Add("AliasesToExport", $ModuleManifestHashTable['AliasesToExport'])
+        }
+        else {
+            #Since $moduleInfo.ExportedAliases is a hashtable, we need to take the name of the
+            #aliases and make them into a list
+            $params.Add("AliasesToExport",($moduleInfo.ExportedAliases.Keys -split ' '))
+        }
     }
 
     if($VariablesToExport)
@@ -527,7 +550,17 @@ function Update-ModuleManifest
     }
     elseif($moduleInfo.ExportedCmdlets)
     {
-        $params.Add("CmdletsToExport",($moduleInfo.ExportedCmdlets.Keys -split ' '))
+        #Get the original module info from ManifestHashTable
+        if($ModuleManifestHashTable -and $ModuleManifestHashTable.ContainsKey("CmdletsToExport") -and $ModuleManifestHashTable['CmdletsToExport'] -eq '*' `
+          -and $moduleInfo.ExportedCmdlets.Count -eq 0)
+        {
+            $params.Add("CmdletsToExport", $ModuleManifestHashTable['CmdletsToExport'])
+        }
+        else {
+            #Since $moduleInfo.ExportedCmdlets is a hashtable, we need to take the name of the
+            #cmdlets and make them into a list
+            $params.Add("CmdletsToExport",($moduleInfo.ExportedCmdlets.Keys -split ' '))
+        }
     }
 
     if($DscResourcesToExport)
@@ -609,6 +642,8 @@ function Update-ModuleManifest
         #Terminates if there is error creating new module manifest
         try{
             Microsoft.PowerShell.Core\New-ModuleManifest @params -Confirm:$false -WhatIf:$false
+            #If company name is the disposable name created for the new module manifest, it will be changed back to ''
+            (Get-Content -Path $tempPath) | ForEach-Object {$_ -Replace '__UPDATEDCOMPANYNAMETOBEREPLACEDINFUNCTION__', ''} | Set-Content -Path $tempPath
         }
         catch
         {

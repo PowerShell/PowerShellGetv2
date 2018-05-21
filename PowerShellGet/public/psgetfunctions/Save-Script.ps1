@@ -263,6 +263,14 @@ function Save-Script
 
                 $PSBoundParameters["Name"] = $psRepositoryItemInfo.Name
                 $PSBoundParameters["RequiredVersion"] = $psRepositoryItemInfo.Version
+                if (($psRepositoryItemInfo.AdditionalMetadata) -and
+                    (Get-Member -InputObject $psRepositoryItemInfo.AdditionalMetadata -Name "IsPrerelease") -and
+                    ($psRepositoryItemInfo.AdditionalMetadata.IsPrerelease -eq "true")) {
+                    $PSBoundParameters[$script:AllowPrereleaseVersions] = $true
+                }
+                elseif ($PSBoundParameters.ContainsKey($script:AllowPrereleaseVersions)) {
+                    $null = $PSBoundParameters.Remove($script:AllowPrereleaseVersions)
+                }
                 $PSBoundParameters['Source'] = $psRepositoryItemInfo.Repository
                 $PSBoundParameters["PackageManagementProvider"] = (Get-ProviderName -PSCustomObject $psRepositoryItemInfo)
 

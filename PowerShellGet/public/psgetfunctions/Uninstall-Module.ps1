@@ -81,6 +81,14 @@ function Uninstall-Module
 
                 $PSBoundParameters["Name"] = $inputValue.Name
                 $PSBoundParameters["RequiredVersion"] = $inputValue.Version
+                if (($inputValue.AdditionalMetadata) -and
+                    (Get-Member -InputObject $inputValue.AdditionalMetadata -Name "IsPrerelease") -and
+                    ($inputValue.AdditionalMetadata.IsPrerelease -eq "true")) {
+                    $PSBoundParameters[$script:AllowPrereleaseVersions] = $true
+                }
+                elseif ($PSBoundParameters.ContainsKey($script:AllowPrereleaseVersions)) {
+                    $null = $PSBoundParameters.Remove($script:AllowPrereleaseVersions)
+                }
 
                 $null = PackageManagement\Uninstall-Package @PSBoundParameters
             }

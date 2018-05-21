@@ -123,7 +123,9 @@ function Install-Module
         $PSBoundParameters["MessageResolver"] = $script:PackageManagementInstallModuleMessageResolverScriptBlock
         $PSBoundParameters[$script:PSArtifactType] = $script:PSArtifactTypeModule
         $PSBoundParameters['Scope'] = $Scope
-        $PSBoundParameters[$script:AllowPrereleaseVersions] = $AllowPrerelease
+        if($AllowPrerelease) {
+            $PSBoundParameters[$script:AllowPrereleaseVersions] = $true
+        }
         $null = $PSBoundParameters.Remove("AllowPrerelease")
 
         if($PSCmdlet.ParameterSetName -eq "NameParameterSet")
@@ -210,7 +212,14 @@ function Install-Module
 
                 $PSBoundParameters["Name"] = $psgetModuleInfo.Name
                 $PSBoundParameters["RequiredVersion"] = $psgetModuleInfo.Version
-                $PSBoundParameters[$script:AllowPrereleaseVersions] = $psgetModuleInfo.AdditionalMetadata.IsPrerelease -eq "true"
+                if (($psgetModuleInfo.AdditionalMetadata) -and
+                    (Get-Member -InputObject $psgetModuleInfo.AdditionalMetadata -Name "IsPrerelease") -and
+                    ($psgetModuleInfo.AdditionalMetadata.IsPrerelease -eq "true")) {
+                    $PSBoundParameters[$script:AllowPrereleaseVersions] = $true
+                }
+                elseif ($PSBoundParameters.ContainsKey($script:AllowPrereleaseVersions)) {
+                    $null = $PSBoundParameters.Remove($script:AllowPrereleaseVersions)
+                }
                 $PSBoundParameters['Source'] = $psgetModuleInfo.Repository
                 $PSBoundParameters["PackageManagementProvider"] = (Get-ProviderName -PSCustomObject $psgetModuleInfo)
 

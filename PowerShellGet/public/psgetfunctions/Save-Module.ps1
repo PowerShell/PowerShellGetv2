@@ -118,7 +118,9 @@ function Save-Module
         $PSBoundParameters["Provider"] = $script:PSModuleProviderName
         $PSBoundParameters["MessageResolver"] = $script:PackageManagementSaveModuleMessageResolverScriptBlock
         $PSBoundParameters[$script:PSArtifactType] = $script:PSArtifactTypeModule
-        $PSBoundParameters[$script:AllowPrereleaseVersions] = $AllowPrerelease
+        if($AllowPrerelease) {
+            $PSBoundParameters[$script:AllowPrereleaseVersions] = $true
+        }
         $null = $PSBoundParameters.Remove("AllowPrerelease")
 
         # When -Force is specified, Path will be created if not available.
@@ -245,6 +247,14 @@ function Save-Module
 
                 $PSBoundParameters["Name"] = $psgetModuleInfo.Name
                 $PSBoundParameters["RequiredVersion"] = $psgetModuleInfo.Version
+                if (($psgetModuleInfo.AdditionalMetadata) -and
+                    (Get-Member -InputObject $psgetModuleInfo.AdditionalMetadata -Name "IsPrerelease") -and
+                    ($psgetModuleInfo.AdditionalMetadata.IsPrerelease -eq "true")) {
+                    $PSBoundParameters[$script:AllowPrereleaseVersions] = $true
+                }
+                elseif ($PSBoundParameters.ContainsKey($script:AllowPrereleaseVersions)) {
+                    $null = $PSBoundParameters.Remove($script:AllowPrereleaseVersions)
+                }
                 $PSBoundParameters['Source'] = $psgetModuleInfo.Repository
                 $PSBoundParameters["PackageManagementProvider"] = (Get-ProviderName -PSCustomObject $psgetModuleInfo)
 

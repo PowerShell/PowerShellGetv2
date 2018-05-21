@@ -57,7 +57,9 @@ function Uninstall-Script
         $PSBoundParameters["Provider"] = $script:PSModuleProviderName
         $PSBoundParameters["MessageResolver"] = $script:PackageManagementUnInstallScriptMessageResolverScriptBlock
         $PSBoundParameters[$script:PSArtifactType] = $script:PSArtifactTypeScript
-        $PSBoundParameters[$script:AllowPrereleaseVersions] = $AllowPrerelease
+        if($AllowPrerelease) {
+            $PSBoundParameters[$script:AllowPrereleaseVersions] = $true
+        }
         $null = $PSBoundParameters.Remove("AllowPrerelease")
 
         if($PSCmdlet.ParameterSetName -eq "InputObject")
@@ -79,6 +81,14 @@ function Uninstall-Script
 
                 $PSBoundParameters["Name"] = $inputValue.Name
                 $PSBoundParameters["RequiredVersion"] = $inputValue.Version
+                if (($inputValue.AdditionalMetadata) -and
+                    (Get-Member -InputObject $inputValue.AdditionalMetadata -Name "IsPrerelease") -and
+                    ($inputValue.AdditionalMetadata.IsPrerelease -eq "true")) {
+                    $PSBoundParameters[$script:AllowPrereleaseVersions] = $true
+                }
+                elseif ($PSBoundParameters.ContainsKey($script:AllowPrereleaseVersions)) {
+                    $null = $PSBoundParameters.Remove($script:AllowPrereleaseVersions)
+                }
 
                 $null = PackageManagement\Uninstall-Package @PSBoundParameters
             }

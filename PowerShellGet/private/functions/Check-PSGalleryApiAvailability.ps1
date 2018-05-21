@@ -18,21 +18,36 @@ function Check-PSGalleryApiAvailability
     $microsoftDomain = 'www.microsoft.com'
     if((-not $script:IsCoreCLR) -and (Get-Command Microsoft.PowerShell.Management\Test-Connection -ErrorAction Ignore))
     {
-        try {
+        try
+        {
             $connected = Microsoft.PowerShell.Management\Test-Connection -ComputerName $microsoftDomain -Count 1 -Quiet
-        } catch {} # Test-Connection throws an exception even with -EA SilentlyIgnore
+        } 
+        catch 
+        {
+            # Test-Connection throws an exception even with -EA SilentlyIgnore, we must use try catch to suppress it
+        } 
     }
     if(( -not $connected) -and (Get-Command NetTCPIP\Test-Connection -ErrorAction Ignore))
     {
-        try {
+        try 
+        {
             $connected = NetTCPIP\Test-NetConnection -ComputerName $microsoftDomain -InformationLevel Quiet
-        } catch {} # $connected is already set to $false on all three empty catch blocks
+        } 
+        catch 
+        {
+            # $connected is already set to $false, this applies on all three empty catch blocks   
+        } 
     }
     if ( -not $connected) 
     {
-        try {
+        try 
+        {
             $connected = [System.Net.NetworkInformation.NetworkInterface]::GetIsNetworkAvailable()
-        } catch {} # no -EA on method call
+        } 
+        catch 
+        {
+            # there is no -ErrorAction switch on method call, we must use empty catch block to suppress error
+        } 
     }
 
     if ( -not $connected)

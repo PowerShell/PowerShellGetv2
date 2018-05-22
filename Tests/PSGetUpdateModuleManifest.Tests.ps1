@@ -121,22 +121,30 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
     # Expected Result: The updated manifest should have the same proerty values.
     #
     It UpdateModuleManifestWithNoAdditionalParameters2 {    
-        New-ModuleManifest -Path $script:testManifestPath -ModuleVersion '1.0' -FunctionsToExport '*' -CmdletsToExport '*' -AliasesToExport '*' -VariablesToExport '*' -DscResourcesToExport '*'
+
+        if($PSVersionTable.PSVersion -ge '3.0.0' -and $PSVersionTable.Version -lt '5.0.0')
+        {
+            New-ModuleManifest -Path $script:testManifestPath -ModuleVersion '1.0' -FunctionsToExport '*' -CmdletsToExport '*' -AliasesToExport '*' -VariablesToExport '*'
+            $expectedLength = 4
+        }
+        else
+        {
+            New-ModuleManifest -Path $script:testManifestPath -ModuleVersion '1.0' -FunctionsToExport '*' -CmdletsToExport '*' -AliasesToExport '*' -VariablesToExport '*' -DscResourcesToExport '*'
+            $expectedLength = 5
+        }
 
         #Edit company name from 'Unknown' to ''
         (get-content $script:testManifestPath) | foreach-object {$_ -replace 'Unknown', ''} | set-content $script:testManifestPath
         $editedModuleInfo = Test-ModuleManifest -Path $script:testManifestPath
 
         Update-ModuleManifest -path $script:testManifestPath -ModuleVersion '2.0'
-        #$updatedModuleInfo = Test-ModuleManifest -Path $script:testManifestPath
-
-        $expectedLength = 5
+        $updatedModuleInfo = Test-ModuleManifest -Path $script:testManifestPath
+        
         $text = @(Get-Content -Path $script:testManifestPath | Select-String "\*")
 
         AssertEquals $updatedModuleInfo.CompanyName $editedModuleInfo.CompanyName "Company name should be $expectedCompanyName"
         AssertEquals $($text.length) $expectedLength "Number of wildcards should be $expectedLength"
-    } `
-    -Skip:$($IsWindows -eq $False)
+    } 
 
     # Purpose: Validate Update-ModuleManifest will keep the original property values DefaultCommandPrefix
     #

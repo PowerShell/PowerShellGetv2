@@ -155,7 +155,8 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
     #
     It UpdateModuleManifestWithDefaultCommandPrefix {
         $DefaultCommandPrefix = "prefix"
-        New-ModuleManifest  -Path $script:testManifestPath -Confirm:$false -DefaultCommandPrefix $DefaultCommandPrefix
+        $CmdletsToExport = 'Test-One Test-Two'
+        New-ModuleManifest  -Path $script:testManifestPath -Confirm:$false -DefaultCommandPrefix $DefaultCommandPrefix -CmdletsToExport $CmdletsToExport
         Update-ModuleManifest -Path $script:testManifestPath
         
         Import-LocalizedData -BindingVariable ModuleManifestHashTable `
@@ -165,6 +166,7 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
                              -WarningAction SilentlyContinue
 
         AssertEquals $ModuleManifestHashTable.DefaultCommandPrefix $DefaultCommandPrefix "DefaultCommandPrefix should be $($DefaultCommandPrefix)"
+        AssertEquals $ModuleManifestHashTable.CmdletsToExport $CmdletsToExport "CmdletsToExport should be $($CmdletsToExport)"
     }
 
 

@@ -569,7 +569,9 @@ function Update-ModuleManifest
         else {
             #Since $moduleInfo.ExportedCmdlets is a hashtable, we need to take the name of the
             #cmdlets and make them into a list
-            $params.Add("CmdletsToExport",($moduleInfo.ExportedCmdlets.Keys -split ' '))
+            #We also need to replace instances where a prefix was added to a cmdlet with the original cmdlet
+            $originalCmdlets = ($moduleInfo.ExportedCmdlets.Keys | foreach-object {$_ -replace $moduleInfo.Prefix, ''})
+            $params.Add("CmdletsToExport", $originalCmdlets)
         }
     }
 

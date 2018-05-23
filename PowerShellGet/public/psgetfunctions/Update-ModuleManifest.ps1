@@ -566,12 +566,26 @@ function Update-ModuleManifest
         {
             $params.Add("CmdletsToExport", $ModuleManifestHashTable['CmdletsToExport'])
         }
-        else {
-            #Since $moduleInfo.ExportedCmdlets is a hashtable, we need to take the name of the
-            #cmdlets and make them into a list
-            #We also need to replace instances where a prefix was added to a cmdlet with the original cmdlet
-            $originalCmdlets = ($moduleInfo.ExportedCmdlets.Keys | foreach-object {$_ -replace $moduleInfo.Prefix, ''})
-            $params.Add("CmdletsToExport", $originalCmdlets)
+        else 
+        {
+            #Extracting the module name from the path
+            $FirstIndex = $Path.LastIndexOf('\') + 1
+            $LastIndex = $Path.LastIndexOf('.')
+            $Length = $LastIndex - $FirstIndex
+            $moduleName = $Path.Substring($FirstIndex, $Length)
+
+            #If the module has already been imported, we can leave the prefix 
+            #otherwise, remove the prefix from the cmdlets 
+            if (Get-Module -Name $moduleName) 
+            {
+                $params.Add("CmdletsToExport",($moduleInfo.ExportedCmdlets.Keys -split ' '))
+            } 
+            else 
+            {  
+                $originalCmdlets = ($moduleInfo.ExportedCmdlets.Keys | foreach-object {$_ -replace $moduleInfo.Prefix, ''})
+                Write-Warning ("Module does not exist: " + $originalCmdlets)
+                $params.Add("CmdletsToExport", $originalCmdlets)
+            }
         }
     }
 

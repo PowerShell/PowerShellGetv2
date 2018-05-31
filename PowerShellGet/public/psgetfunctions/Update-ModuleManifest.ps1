@@ -510,9 +510,11 @@ function Update-ModuleManifest
             $params.Add("FunctionsToExport", $ModuleManifestHashTable['FunctionsToExport'])
         }
         else {
-            #Earlier call to Test-ModuleManifest adds prefix to cmdlets, now those prefixes need to be removed
-            $originalFunctions = ($moduleInfo.ExportedFunctions.Keys | foreach-object { $_ -replace ('(.*?)'+ $moduleInfo.Prefix + '(.*)'), '$1$2'}) 
-            $params.Add("FunctionsToExport", $originalFunctions)
+            #Earlier call to Test-ModuleManifest adds prefix to functions, now those prefixes need to be remove
+            #Prefixes are affixed to the beginning of function, or after '-'
+            $orginalFunctions = ($moduleInfo.ExportedFunctions.Keys | foreach-object { $_ -replace ('^' + $moduleInfo.Prefix), ''} `
+                                | foreach-object { $_ -replace ("-" + $moduleInfo.Prefix), '-'})
+            $params.Add("FunctionsToExport", $orginalFunctions)
         }
     }
 
@@ -529,9 +531,11 @@ function Update-ModuleManifest
             $params.Add("AliasesToExport", $ModuleManifestHashTable['AliasesToExport'])
         }
         else {
-            #Earlier call to Test-ModuleManifest adds prefix to cmdlets, now those prefixes need to be removed
-            $originalAliases = ($moduleInfo.ExportedAliases.Keys | foreach-object { $_ -replace ('(.*?)'+ $moduleInfo.Prefix + '(.*)'), '$1$2'}) 
-            $params.Add("AliasesToExport", $originalAliases)
+            #Earlier call to Test-ModuleManifest adds prefix to aliases, now those prefixes need to be removed
+            #Prefixes are affixed to the beginning of function, or after '-'
+            $originalAliases = ($moduleInfo.ExportedAliases.Keys | foreach-object { $_ -replace ('^' + $moduleInfo.Prefix), ''} `
+                                | foreach-object { $_ -replace ("-" + $moduleInfo.Prefix), '-'}) 
+            $params.Add("AliasesToExport", $originalAliases)    
         }
     }
 
@@ -569,7 +573,9 @@ function Update-ModuleManifest
         else 
         {
             #Earlier call to Test-ModuleManifest adds prefix to cmdlets, now those prefixes need to be removed
-            $originalCmdlets = ($moduleInfo.ExportedCmdlets.Keys | foreach-object { $_ -replace ('(.*?)'+ $moduleInfo.Prefix + '(.*)'), '$1$2'}) 
+            #Prefixes are affixed to the beginning of function, or after '-'
+            $originalCmdlets = ($moduleInfo.ExportedCmdlets.Keys | foreach-object { $_ -replace ('^' + $moduleInfo.Prefix), ''} `
+                                | foreach-object { $_ -replace ("-" + $moduleInfo.Prefix), '-'}) 
             $params.Add("CmdletsToExport", $originalCmdlets)
         }
     }

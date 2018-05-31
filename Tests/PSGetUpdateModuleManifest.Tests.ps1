@@ -158,12 +158,11 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
     It UpdateModuleManifestWithDefaultCommandPrefix {
 
         $DefaultCommandPrefix = "Prefix"
-        $CmdletsToExport = "gettest1","gettest2"
-        $FunctionsToExport = "function1","function2"
-        $AliasesToExport = "alias1","alias2"
-        $DscResourcesToExport = "ExportedDscResource1","ExportedDscResources2"
-        New-ModuleManifest  -Path $script:testManifestPath -Confirm:$false -DefaultCommandPrefix $DefaultCommandPrefix -CmdletsToExport $CmdletsToExport -FunctionsToExport $FunctionsToExport `
-                            -AliasesToExport $AliasesToExport -DscResourcesToExport $DscResourcesToExport 
+        $CmdletsToExport = "cmdletPrefix-one", "cmdletPrefix-Prefixtwo", "cmdlet", "cmdletPrefix"
+        $FunctionsToExport = "functionPrefix-one", "functionPrefix-Prefixtwo", "function", "functionPrefix"
+        $AliasesToExport = "aliasPrefix-one", "aliasPrefix-Prefixtwo", "alias", "aliasPrefix"
+        New-ModuleManifest  -Path $script:testManifestPath -Confirm:$false -DefaultCommandPrefix $DefaultCommandPrefix -CmdletsToExport $CmdletsToExport `
+                            -FunctionsToExport $FunctionsToExport -AliasesToExport $AliasesToExport 
         Update-ModuleManifest -Path $script:testManifestPath
         
         Import-LocalizedData -BindingVariable ModuleManifestHashTable `
@@ -175,12 +174,16 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         AssertEquals $ModuleManifestHashTable.DefaultCommandPrefix $DefaultCommandPrefix "DefaultCommandPrefix should be $($DefaultCommandPrefix)"
         Assert ($ModuleManifestHashTable.CmdletsToExport -contains ($CmdletsToExport[0])) "CmdletsToExport should contain $($CmdletsToExport[0])"
         Assert ($ModuleManifestHashTable.CmdletsToExport -contains ($CmdletsToExport[1])) "CmdletsToExport should contain $($CmdletsToExport[1])"
+        Assert ($ModuleManifestHashTable.CmdletsToExport -contains ($CmdletsToExport[2])) "CmdletsToExport should contain $($CmdletsToExport[2])"
+        Assert ($ModuleManifestHashTable.CmdletsToExport -contains ($CmdletsToExport[3])) "CmdletsToExport should contain $($CmdletsToExport[3])"
         Assert ($ModuleManifestHashTable.FunctionsToExport -contains $FunctionsToExport[0]) "ExportedFunctions should include $($FunctionsToExport[0])"
         Assert ($ModuleManifestHashTable.FunctionsToExport -contains $FunctionsToExport[1]) "ExportedFunctions should include $($FunctionsToExport[1])"
+        Assert ($ModuleManifestHashTable.FunctionsToExport -contains $FunctionsToExport[2]) "ExportedFunctions should include $($FunctionsToExport[2])"
+        Assert ($ModuleManifestHashTable.FunctionsToExport -contains $FunctionsToExport[3]) "ExportedFunctions should include $($FunctionsToExport[3])"
         Assert ($ModuleManifestHashTable.AliasesToExport -contains $AliasesToExport[0]) "ExportedFunctions should include $($AliasesToExport[0])"
         Assert ($ModuleManifestHashTable.AliasesToExport -contains $AliasesToExport[1]) "ExportedFunctions should include $($AliasesToExport[1])"
-        Assert ($ModuleManifestHashTable.DscResourcesToExport -contains $DscResourcesToExport[0]) "ExportedFunctions should include $($DscResourcesToExport[0])"
-        Assert ($ModuleManifestHashTable.DscResourcesToExport -contains $DscResourcesToExport[1]) "ExportedFunctions should include $($DscResourcesToExport[1])"
+        Assert ($ModuleManifestHashTable.AliasesToExport -contains $AliasesToExport[0]) "ExportedFunctions should include $($AliasesToExport[0])"
+        Assert ($ModuleManifestHashTable.AliasesToExport -contains $AliasesToExport[1]) "ExportedFunctions should include $($AliasesToExport[1])"
     }
 
 

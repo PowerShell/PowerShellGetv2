@@ -510,11 +510,18 @@ function Update-ModuleManifest
             $params.Add("FunctionsToExport", $ModuleManifestHashTable['FunctionsToExport'])
         }
         else {
-            #Earlier call to Test-ModuleManifest adds prefix to functions, now those prefixes need to be remove
-            #Prefixes are affixed to the beginning of function, or after '-'
-            $orginalFunctions = ($moduleInfo.ExportedFunctions.Keys | foreach-object { $_ -replace ('^' + $moduleInfo.Prefix), ''} `
-                                | foreach-object { $_ -replace ("-" + $moduleInfo.Prefix), '-'})
-            $params.Add("FunctionsToExport", $orginalFunctions)
+            if($moduleInfo.Prefix)
+            {
+                #Earlier call to Test-ModuleManifest adds prefix to functions, now those prefixes need to be remove
+                #Prefixes are affixed to the beginning of function, or after '-'
+                $orginalFunctions = ($moduleInfo.ExportedFunctions.Keys | foreach-object { $_ -replace ('^' + $moduleInfo.Prefix), ''} `
+                                    | foreach-object { $_ -replace ("-" + $moduleInfo.Prefix), '-'})
+                $params.Add("FunctionsToExport", $orginalFunctions)
+            }
+            else 
+            {
+                $params.Add("FunctionsToExport",($moduleInfo.ExportedFunctions.Keys -split ' '))
+            }
         }
     }
 
@@ -531,11 +538,18 @@ function Update-ModuleManifest
             $params.Add("AliasesToExport", $ModuleManifestHashTable['AliasesToExport'])
         }
         else {
-            #Earlier call to Test-ModuleManifest adds prefix to aliases, now those prefixes need to be removed
-            #Prefixes are affixed to the beginning of function, or after '-'
-            $originalAliases = ($moduleInfo.ExportedAliases.Keys | foreach-object { $_ -replace ('^' + $moduleInfo.Prefix), ''} `
-                                | foreach-object { $_ -replace ("-" + $moduleInfo.Prefix), '-'}) 
-            $params.Add("AliasesToExport", $originalAliases)    
+            if($moduleInfo.Prefix)
+            {
+                #Earlier call to Test-ModuleManifest adds prefix to aliases, now those prefixes need to be removed
+                #Prefixes are affixed to the beginning of function, or after '-'
+                $originalAliases = ($moduleInfo.ExportedAliases.Keys | foreach-object { $_ -replace ('^' + $moduleInfo.Prefix), ''} `
+                                    | foreach-object { $_ -replace ("-" + $moduleInfo.Prefix), '-'}) 
+                $params.Add("AliasesToExport", $originalAliases)   
+            }
+            else 
+            {
+                $params.Add("AliasesToExport",($moduleInfo.ExportedAliases.Keys -split ' '))
+            }
         }
     }
 
@@ -572,11 +586,18 @@ function Update-ModuleManifest
         }
         else 
         {
-            #Earlier call to Test-ModuleManifest adds prefix to cmdlets, now those prefixes need to be removed
-            #Prefixes are affixed to the beginning of function, or after '-'
-            $originalCmdlets = ($moduleInfo.ExportedCmdlets.Keys | foreach-object { $_ -replace ('^' + $moduleInfo.Prefix), ''} `
-                                | foreach-object { $_ -replace ("-" + $moduleInfo.Prefix), '-'}) 
-            $params.Add("CmdletsToExport", $originalCmdlets)
+            if($moduleInfo.Prefix)
+            {
+                #Earlier call to Test-ModuleManifest adds prefix to cmdlets, now those prefixes need to be removed
+                #Prefixes are affixed to the beginning of function, or after '-'
+                $originalCmdlets = ($moduleInfo.ExportedCmdlets.Keys | foreach-object { $_ -replace ('^' + $moduleInfo.Prefix), ''} `
+                                    | foreach-object { $_ -replace ("-" + $moduleInfo.Prefix), '-'}) 
+                $params.Add("CmdletsToExport", $originalCmdlets)
+            }
+            else 
+            {
+                $params.Add("CmdletsToExport",($moduleInfo.ExportedCmdlets.Keys -split ' '))
+            }
         }
     }
     elseif ($ModuleManifestHashTable -and $ModuleManifestHashTable.ContainsKey("CmdletsToExport"))

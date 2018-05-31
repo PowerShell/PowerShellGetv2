@@ -146,17 +146,24 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         AssertEquals $($text.length) $expectedLength "Number of wildcards should be $expectedLength"
     } 
 
-    # Purpose: Validate Update-ModuleManifest will keep the original property values DefaultCommandPrefix
+    # Purpose: Validate Update-ModuleManifest will keep the original property values for DefaultCommandPrefix,
+    # CmdletsToExport, FunctionsToExport, AliasesToExport, and DSCResourcesToExport
     #
     # Action:
     #      Update-ModuleManifest -Path [Path] 
     #
-    # Expected Result: The updated manifest should have the same DefaultCommandPreifx as before
-    #
+    # Expected Result: The updated manifest should have the same DefaultCommandPreifx as before, 
+    # CmdletsToExport, FunctionsToExport, AliasesToExport, DSCResourcesToExport should not have prefixes affixed
+    #                   
     It UpdateModuleManifestWithDefaultCommandPrefix {
-        $DefaultCommandPrefix = "prefix"
-        $CmdletsToExport = 'Test-One Test-Two'
-        New-ModuleManifest  -Path $script:testManifestPath -Confirm:$false -DefaultCommandPrefix $DefaultCommandPrefix -CmdletsToExport $CmdletsToExport
+
+        $DefaultCommandPrefix = "Prefix"
+        $CmdletsToExport = "gettest1","gettest2"
+        $FunctionsToExport = "function1","function2"
+        $AliasesToExport = "alias1","alias2"
+        $DscResourcesToExport = "ExportedDscResource1","ExportedDscResources2"
+        New-ModuleManifest  -Path $script:testManifestPath -Confirm:$false -DefaultCommandPrefix $DefaultCommandPrefix -CmdletsToExport $CmdletsToExport -FunctionsToExport $FunctionsToExport `
+                            -AliasesToExport $AliasesToExport -DscResourcesToExport $DscResourcesToExport 
         Update-ModuleManifest -Path $script:testManifestPath
         
         Import-LocalizedData -BindingVariable ModuleManifestHashTable `
@@ -166,7 +173,14 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
                              -WarningAction SilentlyContinue
 
         AssertEquals $ModuleManifestHashTable.DefaultCommandPrefix $DefaultCommandPrefix "DefaultCommandPrefix should be $($DefaultCommandPrefix)"
-        AssertEquals $ModuleManifestHashTable.CmdletsToExport $CmdletsToExport "CmdletsToExport should be $($CmdletsToExport)"
+        Assert ($ModuleManifestHashTable.CmdletsToExport -contains ($CmdletsToExport[0])) "CmdletsToExport should contain $($CmdletsToExport[0])"
+        Assert ($ModuleManifestHashTable.CmdletsToExport -contains ($CmdletsToExport[1])) "CmdletsToExport should contain $($CmdletsToExport[1])"
+        Assert ($ModuleManifestHashTable.FunctionsToExport -contains $FunctionsToExport[0]) "ExportedFunctions should include $($FunctionsToExport[0])"
+        Assert ($ModuleManifestHashTable.FunctionsToExport -contains $FunctionsToExport[1]) "ExportedFunctions should include $($FunctionsToExport[1])"
+        Assert ($ModuleManifestHashTable.AliasesToExport -contains $AliasesToExport[0]) "ExportedFunctions should include $($AliasesToExport[0])"
+        Assert ($ModuleManifestHashTable.AliasesToExport -contains $AliasesToExport[1]) "ExportedFunctions should include $($AliasesToExport[1])"
+        Assert ($ModuleManifestHashTable.DscResourcesToExport -contains $DscResourcesToExport[0]) "ExportedFunctions should include $($DscResourcesToExport[0])"
+        Assert ($ModuleManifestHashTable.DscResourcesToExport -contains $DscResourcesToExport[1]) "ExportedFunctions should include $($DscResourcesToExport[1])"
     }
 
 

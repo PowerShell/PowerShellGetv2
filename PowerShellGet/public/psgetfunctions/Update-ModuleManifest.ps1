@@ -249,7 +249,7 @@ function Update-ModuleManifest
         $moduleInfo = Microsoft.PowerShell.Core\Test-ModuleManifest -Path $Path -ErrorAction Stop
     }
     catch
-    {
+    {        
         # Throw an error only if Test-ModuleManifest did not return the PSModuleInfo object.
         # This enables the users to use Update-ModuleManifest cmdlet to update the metadata.
         if(-not $moduleInfo)
@@ -510,9 +510,9 @@ function Update-ModuleManifest
             $params.Add("FunctionsToExport", $ModuleManifestHashTable['FunctionsToExport'])
         }
         else {
-            #Since $moduleInfo.ExportedFunctions is a hashtable, we need to take the name of the
-            #functions and make them into a list
-            $params.Add("FunctionsToExport",($moduleInfo.ExportedFunctions.Keys -split ' '))
+            #Earlier call to Test-ModuleManifest adds prefix to cmdlets, now those prefixes need to be removed
+            $originalFunctions = ($moduleInfo.ExportedFunctions.Keys | foreach-object { $_ -replace ('(.*?)'+ $moduleInfo.Prefix + '(.*)'), '$1$2'}) 
+            $params.Add("FunctionsToExport", $originalFunctions)
         }
     }
 
@@ -529,9 +529,9 @@ function Update-ModuleManifest
             $params.Add("AliasesToExport", $ModuleManifestHashTable['AliasesToExport'])
         }
         else {
-            #Since $moduleInfo.ExportedAliases is a hashtable, we need to take the name of the
-            #aliases and make them into a list
-            $params.Add("AliasesToExport",($moduleInfo.ExportedAliases.Keys -split ' '))
+            #Earlier call to Test-ModuleManifest adds prefix to cmdlets, now those prefixes need to be removed
+            $originalAliases = ($moduleInfo.ExportedAliases.Keys | foreach-object { $_ -replace ('(.*?)'+ $moduleInfo.Prefix + '(.*)'), '$1$2'}) 
+            $params.Add("AliasesToExport", $originalAliases)
         }
     }
 
@@ -568,25 +568,14 @@ function Update-ModuleManifest
         }
         else 
         {
-            #Extracting the module name from the path
-            $FirstIndex = $Path.LastIndexOf('\') + 1
-            $LastIndex = $Path.LastIndexOf('.')
-            $Length = $LastIndex - $FirstIndex
-            $moduleName = $Path.Substring($FirstIndex, $Length)
-
-            #If the module has already been imported, we can leave the prefix 
-            #otherwise, remove the prefix from the cmdlets 
-            if (Get-Module -Name $moduleName) 
-            {
-                $params.Add("CmdletsToExport",($moduleInfo.ExportedCmdlets.Keys -split ' '))
-            } 
-            else 
-            {  
-                $originalCmdlets = ($moduleInfo.ExportedCmdlets.Keys | foreach-object {$_ -replace $moduleInfo.Prefix, ''})
-                Write-Warning ("Module does not exist: " + $originalCmdlets)
-                $params.Add("CmdletsToExport", $originalCmdlets)
-            }
+            #Earlier call to Test-ModuleManifest adds prefix to cmdlets, now those prefixes need to be removed
+            $originalCmdlets = ($moduleInfo.ExportedCmdlets.Keys | foreach-object { $_ -replace ('(.*?)'+ $moduleInfo.Prefix + '(.*)'), '$1$2'}) 
+            $params.Add("CmdletsToExport", $originalCmdlets)
         }
+    }
+    elseif ($ModuleManifestHashTable -and $ModuleManifestHashTable.ContainsKey("CmdletsToExport"))
+    {
+        $params.Add("CmdletsToExport", $ModuleManifestHashTable['CmdletsToExport'])
     }
 
     if($DscResourcesToExport)
@@ -617,7 +606,7 @@ function Update-ModuleManifest
         }
         else 
         {
-            $params.Add("DscResourcesToExport",$moduleInfo.ExportedDscResources)
+            $params.Add("DscResourcesToExport", $moduleInfo.ExportedDscResources)
         }
     }
 

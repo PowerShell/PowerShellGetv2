@@ -182,8 +182,8 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         Assert ($ModuleManifestHashTable.FunctionsToExport -contains $FunctionsToExport[3]) "ExportedFunctions should include $($FunctionsToExport[3])"
         Assert ($ModuleManifestHashTable.AliasesToExport -contains $AliasesToExport[0]) "ExportedFunctions should include $($AliasesToExport[0])"
         Assert ($ModuleManifestHashTable.AliasesToExport -contains $AliasesToExport[1]) "ExportedFunctions should include $($AliasesToExport[1])"
-        Assert ($ModuleManifestHashTable.AliasesToExport -contains $AliasesToExport[0]) "ExportedFunctions should include $($AliasesToExport[0])"
-        Assert ($ModuleManifestHashTable.AliasesToExport -contains $AliasesToExport[1]) "ExportedFunctions should include $($AliasesToExport[1])"
+        Assert ($ModuleManifestHashTable.AliasesToExport -contains $AliasesToExport[2]) "ExportedFunctions should include $($AliasesToExport[2])"
+        Assert ($ModuleManifestHashTable.AliasesToExport -contains $AliasesToExport[3]) "ExportedFunctions should include $($AliasesToExport[3])"
     }
 
 

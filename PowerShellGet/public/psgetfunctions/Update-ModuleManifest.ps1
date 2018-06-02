@@ -249,7 +249,7 @@ function Update-ModuleManifest
         $moduleInfo = Microsoft.PowerShell.Core\Test-ModuleManifest -Path $Path -ErrorAction Stop
     }
     catch
-    {        
+    {
         # Throw an error only if Test-ModuleManifest did not return the PSModuleInfo object.
         # This enables the users to use Update-ModuleManifest cmdlet to update the metadata.
         if(-not $moduleInfo)
@@ -513,8 +513,8 @@ function Update-ModuleManifest
         {
             #Earlier call to Test-ModuleManifest adds prefix to functions, now those prefixes need to be remove
             #Prefixes are affixed to the beginning of function, or after '-'
-            $originalFunctions = $moduleInfo.ExportedFunctions.Keys | foreach-object { $parts = $_ -split '-',2; $parts[-1] = $parts[-1] `
-                                 -replace "^$($moduleInfo.Prefix)"; $parts -join '-' }
+            $originalFunctions = $moduleInfo.ExportedFunctions.Keys | 
+                foreach-object { $parts = $_ -split '-', 2; $parts[-1] = $parts[-1] -replace "^$($moduleInfo.Prefix)"; $parts -join '-' }
             $params.Add("FunctionsToExport", $originalFunctions)
         }
         else 
@@ -539,8 +539,8 @@ function Update-ModuleManifest
         {
             #Earlier call to Test-ModuleManifest adds prefix to aliases, now those prefixes need to be removed
             #Prefixes are affixed to the beginning of function, or after '-'
-            $originalAliases = $moduleInfo.ExportedAliases.Keys | ForEach-Object { $parts = $_ -split '-',2; $parts[-1] = $parts[-1] `
-                               -replace "^$($moduleInfo.Prefix)"; $parts -join '-' }
+            $originalAliases = $moduleInfo.ExportedAliases.Keys | 
+                ForEach-Object { $parts = $_ -split '-', 2; $parts[-1] = $parts[-1] -replace "^$($moduleInfo.Prefix)"; $parts -join '-' }
             $params.Add("AliasesToExport", $originalAliases)   
         }
         else 
@@ -584,8 +584,8 @@ function Update-ModuleManifest
         {
             #Earlier call to Test-ModuleManifest adds prefix to cmdlets, now those prefixes need to be removed
             #Prefixes are affixed to the beginning of function, or after '-'
-            $originalCmdlets = $moduleInfo.ExportedCmdlets.Keys | ForEach-Object { $parts = $_ -split '-',2; $parts[-1] = $parts[-1] `
-                               -replace "^$($moduleInfo.Prefix)"; $parts -join '-' }
+            $originalCmdlets = $moduleInfo.ExportedCmdlets.Keys | 
+                ForEach-Object { $parts = $_ -split '-', 2; $parts[-1] = $parts[-1] -replace "^$($moduleInfo.Prefix)"; $parts -join '-' }
             $params.Add("CmdletsToExport", $originalCmdlets)
         }
         else 

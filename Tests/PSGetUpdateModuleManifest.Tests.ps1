@@ -146,16 +146,34 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         AssertEquals $($text.length) $expectedLength "Number of wildcards should be $expectedLength"
     } 
 
-    # Purpose: Validate Update-ModuleManifest will keep the original property values DefaultCommandPrefix
+    # Purpose: Validate Update-ModuleManifest will keep the original property values for DefaultCommandPrefix,
+    # CmdletsToExport, FunctionsToExport, AliasesToExport, and DSCResourcesToExport
     #
     # Action:
     #      Update-ModuleManifest -Path [Path] 
     #
-    # Expected Result: The updated manifest should have the same DefaultCommandPreifx as before
-    #
+    # Expected Result: The updated manifest should have the same DefaultCommandPreifx as before, 
+    # CmdletsToExport, FunctionsToExport, AliasesToExport, DSCResourcesToExport should not have prefixes affixed
+    #                   
     It UpdateModuleManifestWithDefaultCommandPrefix {
-        $DefaultCommandPrefix = "prefix"
-        New-ModuleManifest  -Path $script:testManifestPath -Confirm:$false -DefaultCommandPrefix $DefaultCommandPrefix
+
+        $DefaultCommandPrefix = "Prefix"
+        $CmdletsToExport = "ExportCmdlet", "PrefixExportCmdlet", "ExportPrefixCmdlet", "ExportCmdletPrefix", "Export-Cmdlet", "Export-PrefixCmdlet", 
+                           "Export-CmdletPrefix", "Export-CmdletPrefixCmdlet", "ExportPrefix-Cmdlet", "ExportPrefix-PrefixCmdlet", "ExportPrefix-CmdletPrefix", 
+                           "ExportPrefix-CmdletPrefixCmdlet", "ExportPrefix-PrefixCmdlet-PrefixCmdlet", "PrefixExport-Cmdlet", "PrefixExport-PrefixCmdlet", 
+                           "PrefixExport-CmdletPrefix", "PrefixExport-CmdletPrefixCmdlet"
+
+        $FunctionsToExport = "ExportFunction", "PrefixExportFunction", "ExportPrefixFunction", "ExportFunctionPrefix", "Export-Function", "Export-PrefixFunction", 
+                             "Export-FunctionPrefix", "Export-FunctionPrefixFunction", "ExportPrefix-Function", "ExportPrefix-PrefixFunction", "ExportPrefix-FunctionPrefix", 
+                             "ExportPrefix-FunctionPrefixFunction", "ExportPrefix-PrefixFunction-PrefixFunction", "PrefixExport-Function", "PrefixExport-PrefixFunction", 
+                             "PrefixExport-FunctionPrefix", "PrefixExport-FunctionPrefixFunction"
+
+        $AliasesToExport =  "ExportAlias", "PrefixExportAlias", "ExportPrefixAlias", "ExportAliasPrefix", "Export-Alias", "Export-PrefixAlias","Export-AliasPrefix", 
+                            "Export-AliasPrefixAlis", "ExportPrefix-Alias", "ExportPrefix-PrefixAlias", "ExportPrefix-AliasPrefix", "ExportPrefix-AliasPrefixAlias", 
+                            "ExportPrefix-PrefixAlias-PrefixAlias", "PrefixExport-Alias", "PrefixExport-PrefixAlias", "PrefixExport-AliasPrefix", "PrefixExport-AliasPrefixAlias"
+
+        New-ModuleManifest  -Path $script:testManifestPath -Confirm:$false -DefaultCommandPrefix $DefaultCommandPrefix -CmdletsToExport $CmdletsToExport `
+                            -FunctionsToExport $FunctionsToExport -AliasesToExport $AliasesToExport 
         Update-ModuleManifest -Path $script:testManifestPath
         
         Import-LocalizedData -BindingVariable ModuleManifestHashTable `
@@ -165,6 +183,18 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
                              -WarningAction SilentlyContinue
 
         AssertEquals $ModuleManifestHashTable.DefaultCommandPrefix $DefaultCommandPrefix "DefaultCommandPrefix should be $($DefaultCommandPrefix)"
+        AssertEquals $ModuleManifestHashTable.CmdletsToExport.Count $CmdletsToExport.Count "CmdletsToExport count should be $($CmdletsToExport.Count)"
+        for ($i = 0; $i -lt $CmdletsToExport.Length; $i++) {
+            Assert ($ModuleManifestHashTable.CmdletsToExport -contains ($CmdletsToExport[$i])) "CmdletsToExport should contain $($CmdletsToExport[$i])"
+        }
+        AssertEquals $ModuleManifestHashTable.FunctionsToExport.Count $FunctionsToExport.Count "FunctionsToExport count should be $($FunctionsToExport.Count)"
+        for ($i = 0; $i -lt $FunctionsToExport.Length; $i++) {
+            Assert ($ModuleManifestHashTable.FunctionsToExport -contains ($FunctionsToExport[$i])) "FunctionsToExport should contain $($FunctionsToExport[$i])"
+        }
+        AssertEquals $ModuleManifestHashTable.AliasesToExport.Count $AliasesToExport.Count "AliasesToExport count should be $($AliasesToExport.Count)"
+        for ($i = 0; $i -lt $AliasesToExport.Length; $i++) {
+            Assert ($ModuleManifestHashTable.AliasesToExport -contains ($AliasesToExport[$i])) "AliasesToExport should contain $($AliasesToExport[$i])"
+        }
     }
 
 

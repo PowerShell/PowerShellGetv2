@@ -509,9 +509,16 @@ function Update-ModuleManifest
         {
             $params.Add("FunctionsToExport", $ModuleManifestHashTable['FunctionsToExport'])
         }
-        else {
-            #Since $moduleInfo.ExportedFunctions is a hashtable, we need to take the name of the
-            #functions and make them into a list
+        elseif($moduleInfo.Prefix)
+        {
+            #Earlier call to Test-ModuleManifest adds prefix to functions, now those prefixes need to be remove
+            #Prefixes are affixed to the beginning of function, or after '-'
+            $originalFunctions = $moduleInfo.ExportedFunctions.Keys | 
+                foreach-object { $parts = $_ -split '-', 2; $parts[-1] = $parts[-1] -replace "^$($moduleInfo.Prefix)"; $parts -join '-' }
+            $params.Add("FunctionsToExport", $originalFunctions)
+        }
+        else 
+        {
             $params.Add("FunctionsToExport",($moduleInfo.ExportedFunctions.Keys -split ' '))
         }
     }
@@ -528,9 +535,16 @@ function Update-ModuleManifest
         {
             $params.Add("AliasesToExport", $ModuleManifestHashTable['AliasesToExport'])
         }
-        else {
-            #Since $moduleInfo.ExportedAliases is a hashtable, we need to take the name of the
-            #aliases and make them into a list
+        elseif($moduleInfo.Prefix)
+        {
+            #Earlier call to Test-ModuleManifest adds prefix to aliases, now those prefixes need to be removed
+            #Prefixes are affixed to the beginning of function, or after '-'
+            $originalAliases = $moduleInfo.ExportedAliases.Keys | 
+                ForEach-Object { $parts = $_ -split '-', 2; $parts[-1] = $parts[-1] -replace "^$($moduleInfo.Prefix)"; $parts -join '-' }
+            $params.Add("AliasesToExport", $originalAliases)   
+        }
+        else 
+        {
             $params.Add("AliasesToExport",($moduleInfo.ExportedAliases.Keys -split ' '))
         }
     }
@@ -566,11 +580,22 @@ function Update-ModuleManifest
         {
             $params.Add("CmdletsToExport", $ModuleManifestHashTable['CmdletsToExport'])
         }
-        else {
-            #Since $moduleInfo.ExportedCmdlets is a hashtable, we need to take the name of the
-            #cmdlets and make them into a list
+        elseif($moduleInfo.Prefix)
+        {
+            #Earlier call to Test-ModuleManifest adds prefix to cmdlets, now those prefixes need to be removed
+            #Prefixes are affixed to the beginning of function, or after '-'
+            $originalCmdlets = $moduleInfo.ExportedCmdlets.Keys | 
+                ForEach-Object { $parts = $_ -split '-', 2; $parts[-1] = $parts[-1] -replace "^$($moduleInfo.Prefix)"; $parts -join '-' }
+            $params.Add("CmdletsToExport", $originalCmdlets)
+        }
+        else 
+        {
             $params.Add("CmdletsToExport",($moduleInfo.ExportedCmdlets.Keys -split ' '))
         }
+    }
+    elseif ($ModuleManifestHashTable -and $ModuleManifestHashTable.ContainsKey("CmdletsToExport"))
+    {
+        $params.Add("CmdletsToExport", $ModuleManifestHashTable['CmdletsToExport'])
     }
 
     if($DscResourcesToExport)
@@ -601,7 +626,7 @@ function Update-ModuleManifest
         }
         else 
         {
-            $params.Add("DscResourcesToExport",$moduleInfo.ExportedDscResources)
+            $params.Add("DscResourcesToExport", $moduleInfo.ExportedDscResources)
         }
     }
 

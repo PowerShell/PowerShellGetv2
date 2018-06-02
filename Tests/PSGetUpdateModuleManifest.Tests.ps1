@@ -158,9 +158,20 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
     It UpdateModuleManifestWithDefaultCommandPrefix {
 
         $DefaultCommandPrefix = "Prefix"
-        $CmdletsToExport = "cmdletPrefix-one", "cmdletPrefix-Prefixtwo", "cmdlet", "cmdletPrefix"
-        $FunctionsToExport = "functionPrefix-one", "functionPrefix-Prefixtwo", "function", "functionPrefix"
-        $AliasesToExport = "aliasPrefix-one", "aliasPrefix-Prefixtwo", "alias", "aliasPrefix"
+        $CmdletsToExport = "ExportCmdlet", "PrefixExportCmdlet", "ExportPrefixCmdlet", "ExportCmdletPrefix", "Export-Cmdlet", "Export-PrefixCmdlet", `
+                           "Export-CmdletPrefix", "Export-CmdletPrefixCmdlet", "ExportPrefix-Cmdlet", "ExportPrefix-PrefixCmdlet", "ExportPrefix-CmdletPrefix", `
+                           "ExportPrefix-CmdletPrefixCmdlet", "ExportPrefix-PrefixCmdlet-PrefixCmdlet", "PrefixExport-Cmdlet", "PrefixExport-PrefixCmdlet", `
+                           "PrefixExport-CmdletPrefix", "PrefixExport-CmdletPrefixCmdlet"
+
+        $FunctionsToExport = "ExportFunction", "PrefixExportFunction", "ExportPrefixFunction", "ExportFunctionPrefix", "Export-Function", "Export-PrefixFunction", `
+                             "Export-FunctionPrefix", "Export-FunctionPrefixFunction", "ExportPrefix-Function", "ExportPrefix-PrefixFunction", "ExportPrefix-FunctionPrefix", `
+                             "ExportPrefix-FunctionPrefixFunction", "ExportPrefix-PrefixFunction-PrefixFunction", "PrefixExport-Function", "PrefixExport-PrefixFunction", `
+                             "PrefixExport-FunctionPrefix", "PrefixExport-FunctionPrefixFunction"
+
+        $AliasesToExport =  "ExportAlias", "PrefixExportAlias", "ExportPrefixAlias", "ExportAliasPrefix", "Export-Alias", "Export-PrefixAlias","Export-AliasPrefix", `
+                            "Export-AliasPrefixAlis", "ExportPrefix-Alias", "ExportPrefix-PrefixAlias", "ExportPrefix-AliasPrefix", "ExportPrefix-AliasPrefixAlias", `
+                            "ExportPrefix-PrefixAlias-PrefixAlias", "PrefixExport-Alias", "PrefixExport-PrefixAlias", "PrefixExport-AliasPrefix", "PrefixExport-AliasPrefixAlias"
+
         New-ModuleManifest  -Path $script:testManifestPath -Confirm:$false -DefaultCommandPrefix $DefaultCommandPrefix -CmdletsToExport $CmdletsToExport `
                             -FunctionsToExport $FunctionsToExport -AliasesToExport $AliasesToExport 
         Update-ModuleManifest -Path $script:testManifestPath
@@ -172,18 +183,21 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
                              -WarningAction SilentlyContinue
 
         AssertEquals $ModuleManifestHashTable.DefaultCommandPrefix $DefaultCommandPrefix "DefaultCommandPrefix should be $($DefaultCommandPrefix)"
-        Assert ($ModuleManifestHashTable.CmdletsToExport -contains ($CmdletsToExport[0])) "CmdletsToExport should contain $($CmdletsToExport[0])"
-        Assert ($ModuleManifestHashTable.CmdletsToExport -contains ($CmdletsToExport[1])) "CmdletsToExport should contain $($CmdletsToExport[1])"
-        Assert ($ModuleManifestHashTable.CmdletsToExport -contains ($CmdletsToExport[2])) "CmdletsToExport should contain $($CmdletsToExport[2])"
-        Assert ($ModuleManifestHashTable.CmdletsToExport -contains ($CmdletsToExport[3])) "CmdletsToExport should contain $($CmdletsToExport[3])"
-        Assert ($ModuleManifestHashTable.FunctionsToExport -contains $FunctionsToExport[0]) "ExportedFunctions should include $($FunctionsToExport[0])"
-        Assert ($ModuleManifestHashTable.FunctionsToExport -contains $FunctionsToExport[1]) "ExportedFunctions should include $($FunctionsToExport[1])"
-        Assert ($ModuleManifestHashTable.FunctionsToExport -contains $FunctionsToExport[2]) "ExportedFunctions should include $($FunctionsToExport[2])"
-        Assert ($ModuleManifestHashTable.FunctionsToExport -contains $FunctionsToExport[3]) "ExportedFunctions should include $($FunctionsToExport[3])"
-        Assert ($ModuleManifestHashTable.AliasesToExport -contains $AliasesToExport[0]) "ExportedFunctions should include $($AliasesToExport[0])"
-        Assert ($ModuleManifestHashTable.AliasesToExport -contains $AliasesToExport[1]) "ExportedFunctions should include $($AliasesToExport[1])"
-        Assert ($ModuleManifestHashTable.AliasesToExport -contains $AliasesToExport[2]) "ExportedFunctions should include $($AliasesToExport[2])"
-        Assert ($ModuleManifestHashTable.AliasesToExport -contains $AliasesToExport[3]) "ExportedFunctions should include $($AliasesToExport[3])"
+        AssertEquals $ModuleManifestHashTable.CmdletsToExport.Count $CmdletsToExport.Count "CmdletsToExport count should be $($CmdletsToExport.Count)"
+        for ($i=0; $i -lt $CmdletsToExport.Length; $i++) 
+        {
+            Assert ($ModuleManifestHashTable.CmdletsToExport -contains ($CmdletsToExport[$i])) "CmdletsToExport should contain $($CmdletsToExport[$i])"
+        }
+        AssertEquals $ModuleManifestHashTable.FunctionsToExport.Count $FunctionsToExport.Count "FunctionsToExport count should be $($FunctionsToExport.Count)"
+        for ($i=0; $i -lt $FunctionsToExport.Length; $i++) 
+        {
+            Assert ($ModuleManifestHashTable.FunctionsToExport -contains ($FunctionsToExport[$i])) "FunctionsToExport should contain $($FunctionsToExport[$i])"
+        }
+        AssertEquals $ModuleManifestHashTable.AliasesToExport.Count $AliasesToExport.Count "AliasesToExport count should be $($AliasesToExport.Count)"
+        for ($i=0; $i -lt $AliasesToExport.Length; $i++) 
+        {
+            Assert ($ModuleManifestHashTable.AliasesToExport -contains ($AliasesToExport[$i])) "AliasesToExport should contain $($AliasesToExport[$i])"
+        }
     }
 
 

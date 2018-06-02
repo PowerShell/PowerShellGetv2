@@ -509,19 +509,17 @@ function Update-ModuleManifest
         {
             $params.Add("FunctionsToExport", $ModuleManifestHashTable['FunctionsToExport'])
         }
-        else {
-            if($moduleInfo.Prefix)
-            {
-                #Earlier call to Test-ModuleManifest adds prefix to functions, now those prefixes need to be remove
-                #Prefixes are affixed to the beginning of function, or after '-'
-                $orginalFunctions = ($moduleInfo.ExportedFunctions.Keys | foreach-object { $_ -replace ('^' + $moduleInfo.Prefix), ''} `
-                                    | foreach-object { $_ -replace ("-" + $moduleInfo.Prefix), '-'})
-                $params.Add("FunctionsToExport", $orginalFunctions)
-            }
-            else 
-            {
-                $params.Add("FunctionsToExport",($moduleInfo.ExportedFunctions.Keys -split ' '))
-            }
+        elseif($moduleInfo.Prefix)
+        {
+            #Earlier call to Test-ModuleManifest adds prefix to functions, now those prefixes need to be remove
+            #Prefixes are affixed to the beginning of function, or after '-'
+            $originalFunctions = $moduleInfo.ExportedFunctions.Keys | foreach-object { $parts = $_ -split '-',2; $parts[-1] = $parts[-1] `
+                                 -replace "^$($moduleInfo.Prefix)"; $parts -join '-' }
+            $params.Add("FunctionsToExport", $originalFunctions)
+        }
+        else 
+        {
+            $params.Add("FunctionsToExport",($moduleInfo.ExportedFunctions.Keys -split ' '))
         }
     }
 
@@ -537,19 +535,17 @@ function Update-ModuleManifest
         {
             $params.Add("AliasesToExport", $ModuleManifestHashTable['AliasesToExport'])
         }
-        else {
-            if($moduleInfo.Prefix)
-            {
-                #Earlier call to Test-ModuleManifest adds prefix to aliases, now those prefixes need to be removed
-                #Prefixes are affixed to the beginning of function, or after '-'
-                $originalAliases = ($moduleInfo.ExportedAliases.Keys | foreach-object { $_ -replace ('^' + $moduleInfo.Prefix), ''} `
-                                    | foreach-object { $_ -replace ("-" + $moduleInfo.Prefix), '-'}) 
-                $params.Add("AliasesToExport", $originalAliases)   
-            }
-            else 
-            {
-                $params.Add("AliasesToExport",($moduleInfo.ExportedAliases.Keys -split ' '))
-            }
+        elseif($moduleInfo.Prefix)
+        {
+            #Earlier call to Test-ModuleManifest adds prefix to aliases, now those prefixes need to be removed
+            #Prefixes are affixed to the beginning of function, or after '-'
+            $originalAliases = $moduleInfo.ExportedAliases.Keys | ForEach-Object { $parts = $_ -split '-',2; $parts[-1] = $parts[-1] `
+                               -replace "^$($moduleInfo.Prefix)"; $parts -join '-' }
+            $params.Add("AliasesToExport", $originalAliases)   
+        }
+        else 
+        {
+            $params.Add("AliasesToExport",($moduleInfo.ExportedAliases.Keys -split ' '))
         }
     }
 
@@ -584,20 +580,17 @@ function Update-ModuleManifest
         {
             $params.Add("CmdletsToExport", $ModuleManifestHashTable['CmdletsToExport'])
         }
+        elseif($moduleInfo.Prefix)
+        {
+            #Earlier call to Test-ModuleManifest adds prefix to cmdlets, now those prefixes need to be removed
+            #Prefixes are affixed to the beginning of function, or after '-'
+            $originalCmdlets = $moduleInfo.ExportedCmdlets.Keys | ForEach-Object { $parts = $_ -split '-',2; $parts[-1] = $parts[-1] `
+                               -replace "^$($moduleInfo.Prefix)"; $parts -join '-' }
+            $params.Add("CmdletsToExport", $originalCmdlets)
+        }
         else 
         {
-            if($moduleInfo.Prefix)
-            {
-                #Earlier call to Test-ModuleManifest adds prefix to cmdlets, now those prefixes need to be removed
-                #Prefixes are affixed to the beginning of function, or after '-'
-                $originalCmdlets = ($moduleInfo.ExportedCmdlets.Keys | foreach-object { $_ -replace ('^' + $moduleInfo.Prefix), ''} `
-                                    | foreach-object { $_ -replace ("-" + $moduleInfo.Prefix), '-'}) 
-                $params.Add("CmdletsToExport", $originalCmdlets)
-            }
-            else 
-            {
-                $params.Add("CmdletsToExport",($moduleInfo.ExportedCmdlets.Keys -split ' '))
-            }
+            $params.Add("CmdletsToExport",($moduleInfo.ExportedCmdlets.Keys -split ' '))
         }
     }
     elseif ($ModuleManifestHashTable -and $ModuleManifestHashTable.ContainsKey("CmdletsToExport"))

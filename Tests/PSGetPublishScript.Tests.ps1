@@ -971,6 +971,173 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
             Install-NuGetBinaries
         }
     } -Skip:$(-not ($IsLinux -or $IsMacOS))
+
+    # Purpose: Validate Publish-Script is bootstrapping NuGet.exe when run with -Force  
+    #
+    # Action: Publish-Script -Force
+    #
+    # Expected Result: Publish operation should succeed, NuGet.exe should upgrade or install
+    #
+    It PublishScriptWithBootstrappedNugetExe {
+        try {
+            $script:NuGetExeName = 'NuGet.exe'
+            $script:PSGetProgramDataPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramData -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
+            $script:PSGetAppLocalPath = Microsoft.PowerShell.Management\Join-Path -Path $env:LOCALAPPDATA -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
+            $script:ProgramDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $script:NuGetExeName
+            $script:ApplocalDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetAppLocalPath -ChildPath $script:NuGetExeName
+
+            # Save NuGet.exe path
+            $savedNuGetPath = $null
+            if (Test-Path $script:ProgramDataExePath) {
+                $savedNuGetPath = $script:ProgramDataExePath
+            }
+            elseif (Test-Path $script:ApplocalDataExePath) {
+                $savedNuGetPath = $script:ApplocalDataExePath
+            }
+            else {
+                # Using Get-Command cmdlet, get the location of NuGet.exe if it is available under $env:PATH.
+                # NuGet.exe does not work if it is under $env:WINDIR, so skip it from the Get-Command results.
+                $nugetCmd = Microsoft.PowerShell.Core\Get-Command -Name $script:NuGetExeName `
+                    -ErrorAction Ignore `
+                    -WarningAction SilentlyContinue |
+                    Microsoft.PowerShell.Core\Where-Object {
+                    $_.Path -and
+                    ((Microsoft.PowerShell.Management\Split-Path -Path $_.Path -Leaf) -eq $script:NuGetExeName) -and
+                    (-not $_.Path.StartsWith($env:windir, [System.StringComparison]::OrdinalIgnoreCase))
+                } | Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
+
+                if ($nugetCmd -and $nugetCmd.Path -and $nugetCmd.FileVersionInfo.FileVersion) {
+                    $savedNuGetPath = $nugetCmd.Path
+                }
+            }
+
+            # Delete nuget.exe to test the prompt for installing nuget binaries.
+            Remove-NuGetExe
+
+            # Download outdated version 2.8.60717.93 of NuGet.exe from https://dist.nuget.org/win-x86-commandline/latest/nuget.exe
+            $null = Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri 'https://go.microsoft.com/fwlink/?LinkID=690216&clcid=0x409' `
+                -OutFile $savedNuGetPath 
+                                                      
+            # Re-import PowerShellGet module                                                   
+            $script:psgetModuleInfo = Import-Module PowerShellGet -Global -Force -Passthru
+            Import-LocalizedData  script:LocalizedData -filename PSGet.Resource.psd1 -BaseDirectory $script:psgetModuleInfo.ModuleBase
+
+            $oldNuGetExeVersion = (Get-Command $savedNuGetPath).FileVersionInfo.FileVersion
+            $err = $null
+
+            try {
+                $result = Publish-Script -Path $script:PublishScriptFilePath -NuGetApiKey $script:ApiKey -Force
+            }
+            catch {
+                $err = $_
+            }
+
+            Assert ($err -eq $null) "$err"
+            Assert ($result -eq $null) "$result"
+            AssertNotEquals (Get-Command $savedNuGetPath).FileVersionInfo.FileVersion $oldNuGetExeVersion "Latest version of NuGet.exe was unable to install"
+
+            $psgetItemInfo = Find-Script $script:PublishScriptName -RequiredVersion $script:PublishScriptVersion
+            AssertEquals $psgetItemInfo.Name $script:PublishScriptName "Publish-Script was unable to publish script, $($script:PublishScriptName)"
+        }
+        finally {
+            Install-NuGetBinaries
+                                                  
+            $script:psgetModuleInfo = Import-Module PowerShellGet -Global -Force -Passthru
+            Import-LocalizedData  script:LocalizedData -filename PSGet.Resource.psd1 -BaseDirectory $script:psgetModuleInfo.ModuleBase
+        }
+    } -Skip:$(($PSEdition -eq 'Core'))
+
+    # Purpose: Validate that Publish-Script prompts to upgrade NuGet.exe if local NuGet.exe file is less than minimum required version
+    #
+    # Action: Publish-Script 
+    #
+    # Expected Result: Publish operation should succeed, NuGet.exe should upgrade to latest version
+    #
+    It PublishModuleWithPromptToUpgradeToNewVersionOfNugetExe {
+        try {
+            $script:NuGetExeName = 'NuGet.exe'
+            $script:PSGetProgramDataPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramData -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
+            $script:PSGetAppLocalPath = Microsoft.PowerShell.Management\Join-Path -Path $env:LOCALAPPDATA -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
+            $script:ProgramDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $script:NuGetExeName
+            $script:ApplocalDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetAppLocalPath -ChildPath $script:NuGetExeName
+
+            # Save NuGet.exe path
+            $savedNuGetPath = $null
+            if (Test-Path $script:ProgramDataExePath) {
+                $savedNuGetPath = $script:ProgramDataExePath
+            }
+            elseif (Test-Path $script:ApplocalDataExePath) {
+                $savedNuGetPath = $script:ApplocalDataExePath
+            }
+            else {
+                # Using Get-Command cmdlet, get the location of NuGet.exe if it is available under $env:PATH.
+                # NuGet.exe does not work if it is under $env:WINDIR, so skip it from the Get-Command results.
+                $nugetCmd = Microsoft.PowerShell.Core\Get-Command -Name $script:NuGetExeName `
+                    -ErrorAction Ignore `
+                    -WarningAction SilentlyContinue |
+                    Microsoft.PowerShell.Core\Where-Object {
+                    $_.Path -and
+                    ((Microsoft.PowerShell.Management\Split-Path -Path $_.Path -Leaf) -eq $script:NuGetExeName) -and
+                    (-not $_.Path.StartsWith($env:windir, [System.StringComparison]::OrdinalIgnoreCase))
+                } | Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
+
+                if ($nugetCmd -and $nugetCmd.Path -and $nugetCmd.FileVersionInfo.FileVersion) {
+                    $savedNuGetPath = $nugetCmd.Path
+                }
+            }
+
+            # Delete nuget.exe to test the prompt for installing nuget binaries.
+            Remove-NuGetExe
+
+            # Download outdated version 2.8.60717.93 of NuGet.exe from https://dist.nuget.org/win-x86-commandline/latest/nuget.exe
+            $null = Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri 'https://go.microsoft.com/fwlink/?LinkID=690216&clcid=0x409' `
+                -OutFile $savedNuGetPath 
+
+            # Re-import PowerShellGet module                                                   
+            $script:psgetModuleInfo = Import-Module PowerShellGet -Global -Force -Passthru
+            Import-LocalizedData  script:LocalizedData -filename PSGet.Resource.psd1 -BaseDirectory $script:psgetModuleInfo.ModuleBase
+
+            $oldNuGetExeVersion = (Get-Command $savedNuGetPath).FileVersionInfo.FileVersion
+
+            $outputPath = $script:TempPath
+            $guid = [system.guid]::newguid().tostring()
+            $outputFilePath = Join-Path $outputPath "$guid"
+            $runspace = CreateRunSpace $outputFilePath 1
+	
+            # 0 is mapped to YES in prompt
+            $Global:proxy.UI.ChoiceToMake = 0
+            $content = $null
+            $err = $null
+	
+            try {
+                $result = ExecuteCommand $runspace "Publish-Script -Path $script:PublishScriptFilePath -NuGetApiKey $script:ApiKey"
+            }
+            catch {
+                $err = $_
+            }
+            finally {      
+                $fileName = "PromptForChoice-0.txt"
+                $path = join-path $outputFilePath $fileName
+                if (Test-Path $path) {
+                    $content = get-content $path
+                }
+        
+                CloseRunSpace $runspace
+                RemoveItem $outputFilePath
+            }
+
+            Assert ($err -eq $null) "$err"
+            Assert ($result -eq $null) "$result"
+            AssertNotEquals (Get-Command $savedNuGetPath).FileVersionInfo.FileVersion $oldNuGetExeVersion "Latest version of NuGet.exe was unable to install"
+            Assert ($content -match 'NuGet.exe') "Prompt for installing NuGet.exe is not working, $content"
+        }
+        finally {
+            Install-NuGetBinaries
+
+            $script:psgetModuleInfo = Import-Module PowerShellGet -Global -Force -Passthru
+            Import-LocalizedData  script:LocalizedData -filename PSGet.Resource.psd1 -BaseDirectory $script:psgetModuleInfo.ModuleBase
+        }
+    } -Skip:$(($PSEdition -eq 'Core'))    
 }
 
 Describe PowerShell.PSGet.PublishScriptTests.P1 -Tags 'P1','OuterLoop' {

@@ -155,13 +155,15 @@ $script:SupportsPSModulesFeatureName="supports-powershell-modules"
 $script:FastPackRefHashtable = @{}
 $script:NuGetBinaryProgramDataPath=if($script:IsWindows) {"$env:ProgramFiles\PackageManagement\ProviderAssemblies"}
 $script:NuGetBinaryLocalAppDataPath=if($script:IsWindows) {"$env:LOCALAPPDATA\PackageManagement\ProviderAssemblies"}
-# go fwlink for 'https://nuget.org/nuget.exe'
-$script:NuGetClientSourceURL = 'https://go.microsoft.com/fwlink/?LinkID=690216&clcid=0x409'
+# go fwlink for 'https://dist.nuget.org/win-x86-commandline/latest/nuget.exe'
+$script:NuGetClientSourceURL = 'https://go.microsoft.com/fwlink/?linkid=875173'
+$script:NuGetExeMinRequiredVersion = [Version]'4.1.0'
 $script:NuGetExeName = 'NuGet.exe'
 $script:NuGetExePath = $null
+$script:NuGetExeVersion = $null
 $script:NuGetProvider = $null
 $script:DotnetCommandName = 'dotnet'
-$script:MinimumDotnetCommandVersion = [Version]'2.0.0'
+$script:MinimumDotnetCommandVersion = [Version]'2.1.0'
 $script:DotnetInstallUrl = 'https://aka.ms/dotnet-install-script'
 $script:DotnetCommandPath = $null
 # PowerShellGetFormatVersion will be incremented when we change the .nupkg format structure.

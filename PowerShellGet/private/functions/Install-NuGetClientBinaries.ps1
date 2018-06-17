@@ -22,7 +22,7 @@ function Install-NuGetClientBinaries
         [switch]
         $Force
     )
-
+    
     if ($script:NuGetProvider -and
          (-not $BootstrapNuGetExe -or
          (($script:NuGetExePath -and (Microsoft.PowerShell.Management\Test-Path -Path $script:NuGetExePath)) -or
@@ -93,11 +93,13 @@ function Install-NuGetClientBinaries
             if(Microsoft.PowerShell.Management\Test-Path -Path $programDataExePath)
             {
                 $script:NuGetExePath = $programDataExePath
+                $script:NuGetExeVersion = (Get-Command $programDataExePath).FileVersionInfo.FileVersion
                 $BootstrapNuGetExe = $false
             }
             elseif(Microsoft.PowerShell.Management\Test-Path -Path $applocalDataExePath)
             {
                 $script:NuGetExePath = $applocalDataExePath
+                $script:NuGetExeVersion = (Get-Command $applocalDataExePath).FileVersionInfo.FileVersion
                 $BootstrapNuGetExe = $false
             }
             else
@@ -113,10 +115,93 @@ function Install-NuGetClientBinaries
                                     (-not $_.Path.StartsWith($env:windir, [System.StringComparison]::OrdinalIgnoreCase))
                                 } | Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
 
-                if($nugetCmd -and $nugetCmd.Path)
+                if($nugetCmd -and $nugetCmd.Path -and $nugetCmd.FileVersionInfo.FileVersion)
                 {
                     $script:NuGetExePath = $nugetCmd.Path
+                    $script:NuGetExeVersion = $nugetCmd.FileVersionInfo.FileVersion
                     $BootstrapNuGetExe = $false
+                }
+            }
+
+            # When -Force is specified, bootstrap the latest version if the local version is less than the minimum version
+            if ($script:NuGetExeVersion -and ($script:NuGetExeVersion -lt $script:NuGetExeMinRequiredVersion)) 
+            {
+                if ($Force)
+                {
+                    $BootstrapNuGetExe = $true
+                }
+                else 
+                {
+                    # prompt for an upgrade
+                    $upgradeShouldContinueQueryMessage = $LocalizedData.InstallNugetExeUpgradeShouldContinueQuery -f @($script:NuGetExeMinRequiredVersion, $script:PSGetProgramDataPath, $script:PSGetAppLocalPath)
+                    $upgradeShouldContinueCaption = $LocalizedData.InstallNuGetExeShouldContinueCaption
+
+                    $AdditionalParams = Get-ParametersHashtable -Proxy $Proxy -ProxyCredential $ProxyCredential
+
+                    if($Force -or $psCmdlet.ShouldContinue($upgradeShouldContinueQueryMessage, $upgradeShouldContinueCaption))
+                    {
+                        if($bootstrapNuGetProvider)
+                        {
+                            Write-Verbose -Message $LocalizedData.DownloadingNugetProvider
+                
+                            $scope = 'CurrentUser'
+                            if(Test-RunningAsElevated)
+                            {
+                                $scope = 'AllUsers'
+                            }
+                
+                            # Bootstrap the NuGet provider
+                            $null = PackageManagement\Install-PackageProvider -Name $script:NuGetProviderName `
+                                                                              -MinimumVersion $script:NuGetProviderVersion `
+                                                                              -Scope $scope `
+                                                                              -Force @AdditionalParams
+                
+                            # Force import ensures that nuget provider with minimum version got loaded.
+                            $null = PackageManagement\Import-PackageProvider -Name $script:NuGetProviderName `
+                                                                             -MinimumVersion $script:NuGetProviderVersion `
+                                                                             -Force
+                
+                            $nugetProvider = PackageManagement\Get-PackageProvider -Name $script:NuGetProviderName
+                
+                            if ($nugetProvider)
+                            {
+                                $script:NuGetProvider = $nugetProvider
+                            }
+                        }
+
+                        Write-Verbose -Message $LocalizedData.DownloadingNugetExe
+                
+                        $nugetExeBasePath = $script:PSGetAppLocalPath
+                
+                        # if the current process is running with elevated privileges,
+                        # install NuGet.exe to $script:PSGetProgramDataPath
+                        if(Test-RunningAsElevated)
+                        {
+                            $nugetExeBasePath = $script:PSGetProgramDataPath
+                        }
+
+                        if(-not (Microsoft.PowerShell.Management\Test-Path -Path $nugetExeBasePath))
+                        {
+                            $null = Microsoft.PowerShell.Management\New-Item -Path $nugetExeBasePath `
+                                                                             -ItemType Directory -Force `
+                                                                             -ErrorAction SilentlyContinue `
+                                                                             -WarningAction SilentlyContinue `
+                                                                             -Confirm:$false -WhatIf:$false
+                        }
+                
+                        $nugetExeFilePath = Microsoft.PowerShell.Management\Join-Path -Path $nugetExeBasePath -ChildPath $script:NuGetExeName
+                
+                        # Download the NuGet.exe from https://dist.nuget.org/win-x86-commandline/latest/nuget.exe
+                        $null = Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri $script:NuGetClientSourceURL `
+                                                                               -OutFile $nugetExeFilePath `
+                                                                                @AdditionalParams
+                
+                        if (Microsoft.PowerShell.Management\Test-Path -Path $nugetExeFilePath)
+                        {
+                                $script:NuGetExePath = $nugetExeFilePath
+                            $script:NuGetExeVersion = (Get-Command $programDataExePath).FileVersionInfo.FileVersion
+                        }
+                    }
                 }
             }
         }
@@ -179,7 +264,7 @@ function Install-NuGetClientBinaries
     {
         return
     }
-
+    
     # We should prompt only once for bootstrapping the NuGet provider and/or NuGet.exe
 
     # Should continue message for bootstrapping only NuGet provider
@@ -256,7 +341,7 @@ function Install-NuGetClientBinaries
 
             $nugetExeFilePath = Microsoft.PowerShell.Management\Join-Path -Path $nugetExeBasePath -ChildPath $script:NuGetExeName
 
-            # Download the NuGet.exe from https://nuget.org/NuGet.exe
+            # Download the NuGet.exe from https://dist.nuget.org/win-x86-commandline/latest/nuget.exe
             $null = Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri $script:NuGetClientSourceURL `
                                                                    -OutFile $nugetExeFilePath `
                                                                    @AdditionalParams

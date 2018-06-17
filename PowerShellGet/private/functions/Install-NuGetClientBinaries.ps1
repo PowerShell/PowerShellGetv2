@@ -22,7 +22,7 @@ function Install-NuGetClientBinaries
         [switch]
         $Force
     )
-    
+
     if ($script:NuGetProvider -and
          (-not $BootstrapNuGetExe -or
          (($script:NuGetExePath -and (Microsoft.PowerShell.Management\Test-Path -Path $script:NuGetExePath)) -or
@@ -264,7 +264,7 @@ function Install-NuGetClientBinaries
     {
         return
     }
-    
+
     # We should prompt only once for bootstrapping the NuGet provider and/or NuGet.exe
 
     # Should continue message for bootstrapping only NuGet provider

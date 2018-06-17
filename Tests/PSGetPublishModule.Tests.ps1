@@ -97,7 +97,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         RemoveItem "$script:ProgramFilesModulesPath\$script:PublishModuleName"
         RemoveItem "$script:PublishModuleBase\*"
     }
- 
+
     # Purpose: Publish a module with -Name
     #
     # Action: Publish-Module -Name ContosoPublishModule -NuGetApiKey <ApiKey>
@@ -1072,7 +1072,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
             Remove-NuGetExe
 
             # Download the NuGet.exe from https://dist.nuget.org/win-x86-commandline/latest/nuget.exe
-            $null = Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri 'https://go.microsoft.com/fwlink/?LinkID=690216&clcid=0x409' `
+            $null = Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri 'https://go.microsoft.com/fwlink/?linkid=875173' `
                 -OutFile $savedNuGetPath 
 
             # Re-import PowerShellGet module                                                   
@@ -1155,7 +1155,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
             Remove-NuGetExe
 
             # Download outdated version 2.8.60717.93 of NuGet.exe from https://dist.nuget.org/win-x86-commandline/latest/nuget.exe
-            $null = Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri 'https://go.microsoft.com/fwlink/?LinkID=690216&clcid=0x409' `
+            $null = Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri 'https://go.microsoft.com/fwlink/?linkid=875173' `
                 -OutFile $savedNuGetPath 
                                                                 
             $oldNuGetExeVersion = (Get-Command $savedNuGetPath).FileVersionInfo.FileVersion

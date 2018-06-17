@@ -87,7 +87,7 @@ function Install-PackageManagement {
         }
 
         # Download the NuGet.exe from https://dist.nuget.org/win-x86-commandline/latest/nuget.exe
-        Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri https://dist.nuget.org/win-x86-commandline/latest/nuget.exe -OutFile $NugetExeFilePath
+        Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri https://go.microsoft.com/fwlink/?linkid=875173 -OutFile $NugetExeFilePath
     }
 
     Get-ChildItem -Path $NugetExeFilePath -File

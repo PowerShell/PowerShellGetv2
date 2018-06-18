@@ -1027,7 +1027,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         Assert ($itemInfo.Includes.RoleCapability -contains 'Lev2Maintenance') "Publish-Module was not able to populate the RoleCapability Names: $($itemInfo.Includes.RoleCapability)"
     } `
     -Skip:$($PSCulture -ne 'en-US')
-    
+
     # Purpose: Validate Publish-Module is bootstrapping NuGet.exe when run with -Force  
     #
     # Action: Publish-Module -Force
@@ -1044,26 +1044,26 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
 
             # Save NuGet.exe path
             $savedNuGetPath = $null
-
-            if (Test-Path $script:ProgramDataExePath) {
+            if (Test-Path $script:ProgramDataExePath){
                 $savedNuGetPath = $script:ProgramDataExePath
             }
-            elseif (Test-Path $script:ApplocalDataExePath) {
+            elseif (Test-Path $script:ApplocalDataExePath){
                 $savedNuGetPath = $script:ApplocalDataExePath
             }
             else {
                 # Using Get-Command cmdlet, get the location of NuGet.exe if it is available under $env:PATH.
                 # NuGet.exe does not work if it is under $env:WINDIR, so skip it from the Get-Command results.
                 $nugetCmd = Microsoft.PowerShell.Core\Get-Command -Name $script:NuGetExeName `
-                    -ErrorAction Ignore `
-                    -WarningAction SilentlyContinue |
-                    Microsoft.PowerShell.Core\Where-Object {
-                    $_.Path -and
-                    ((Microsoft.PowerShell.Management\Split-Path -Path $_.Path -Leaf) -eq $script:NuGetExeName) -and
-                    (-not $_.Path.StartsWith($env:windir, [System.StringComparison]::OrdinalIgnoreCase))
-                } | Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
+                                                                -ErrorAction Ignore `
+                                                                -WarningAction SilentlyContinue |
+                                Microsoft.PowerShell.Core\Where-Object {
+                                    $_.Path -and
+                                    ((Microsoft.PowerShell.Management\Split-Path -Path $_.Path -Leaf) -eq $script:NuGetExeName) -and
+                                    (-not $_.Path.StartsWith($env:windir, [System.StringComparison]::OrdinalIgnoreCase))
+                                } | Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
 
-                if ($nugetCmd -and $nugetCmd.Path -and $nugetCmd.FileVersionInfo.FileVersion) {
+                if($nugetCmd -and $nugetCmd.Path -and $nugetCmd.FileVersionInfo.FileVersion)
+                {
                     $savedNuGetPath = $nugetCmd.Path
                 }
             }
@@ -1073,7 +1073,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
 
             # Download outdated version 2.8.60717.93 of NuGet.exe from https://nuget.org/nuget.exe
             $null = Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri 'https://go.microsoft.com/fwlink/?LinkID=690216&clcid=0x409' `
-                -OutFile $savedNuGetPath
+                                                                    -OutFile $savedNuGetPath
 
             # Re-import PowerShellGet module                                                   
             $script:psgetModuleInfo = Import-Module PowerShellGet -Global -Force -Passthru
@@ -1085,14 +1085,14 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
             $version = "1.0"
             $script:PublishModuleBase = Join-Path $script:TempModulesPath $script:PublishModuleName
             New-ModuleManifest -Path (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
-            
+	
             # Copy module to $script:ProgramFilesModulesPath
             Copy-Item $script:PublishModuleBase $script:ProgramFilesModulesPath -Recurse -Force
             $err = $null
     
             try {
                 $script:NuGetProvider = $null
-                $result = Publish-Module -Name $script:PublishModuleName -Force -WarningAction silentlyContinue
+                $result = Publish-Module -Name $script:PublishModuleName -Force -WarningAction SilentlyContinue
             }
             catch {
                 $err = $_
@@ -1108,7 +1108,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
 
             $script:psgetModuleInfo = Import-Module PowerShellGet -Global -Force -Passthru
             Import-LocalizedData  script:LocalizedData -filename PSGet.Resource.psd1 -BaseDirectory $script:psgetModuleInfo.ModuleBase
-        }   
+        }
     } -Skip:$($PSEdition -eq 'Core')
 
     # Purpose: Validate that Publish-Module prompts to upgrade NuGet.exe if local NuGet.exe file is less than minimum required version
@@ -1119,7 +1119,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     #
     It PublishModuleWithPromptToUpgradeToNewVersionOfNugetExe {
         try {
-            $script:NuGetExeName = 'NuGet.exe'
+            $script:NuGetExeName = 'NuGet.exe'            
             $script:PSGetProgramDataPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramData -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
             $script:PSGetAppLocalPath = Microsoft.PowerShell.Management\Join-Path -Path $env:LOCALAPPDATA -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
             $script:ProgramDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $script:NuGetExeName
@@ -1127,26 +1127,26 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
 
             # Save NuGet.exe path
             $savedNuGetPath = $null
-
-            if (Test-Path $script:ProgramDataExePath) {
+            if (Test-Path $script:ProgramDataExePath){
                 $savedNuGetPath = $script:ProgramDataExePath
             }
-            elseif (Test-Path $script:ApplocalDataExePath) {
+            elseif (Test-Path $script:ApplocalDataExePath){
                 $savedNuGetPath = $script:ApplocalDataExePath
             }
             else {
                 # Using Get-Command cmdlet, get the location of NuGet.exe if it is available under $env:PATH.
                 # NuGet.exe does not work if it is under $env:WINDIR, so skip it from the Get-Command results.
                 $nugetCmd = Microsoft.PowerShell.Core\Get-Command -Name $script:NuGetExeName `
-                    -ErrorAction Ignore `
-                    -WarningAction SilentlyContinue |
-                    Microsoft.PowerShell.Core\Where-Object {
-                    $_.Path -and
-                    ((Microsoft.PowerShell.Management\Split-Path -Path $_.Path -Leaf) -eq $script:NuGetExeName) -and
-                    (-not $_.Path.StartsWith($env:windir, [System.StringComparison]::OrdinalIgnoreCase))
-                } | Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
+                                                                -ErrorAction Ignore `
+                                                                -WarningAction SilentlyContinue |
+                                Microsoft.PowerShell.Core\Where-Object {
+                                    $_.Path -and
+                                    ((Microsoft.PowerShell.Management\Split-Path -Path $_.Path -Leaf) -eq $script:NuGetExeName) -and
+                                    (-not $_.Path.StartsWith($env:windir, [System.StringComparison]::OrdinalIgnoreCase))
+                                } | Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
 
-                if ($nugetCmd -and $nugetCmd.Path -and $nugetCmd.FileVersionInfo.FileVersion) {
+                if($nugetCmd -and $nugetCmd.Path -and $nugetCmd.FileVersionInfo.FileVersion)
+                {
                     $savedNuGetPath = $nugetCmd.Path
                 }
             }
@@ -1156,8 +1156,12 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
 
             # Download outdated version 2.8.60717.93 of NuGet.exe from https://nuget.org/nuget.exe
             $null = Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri 'https://go.microsoft.com/fwlink/?LinkID=690216&clcid=0x409' `
-                -OutFile $savedNuGetPath 
-                                                                
+                                                                    -OutFile $savedNuGetPath 
+            
+            # Re-import PowerShellGet module                                                   
+            $script:psgetModuleInfo = Import-Module PowerShellGet -Global -Force -Passthru
+            Import-LocalizedData  script:LocalizedData -filename PSGet.Resource.psd1 -BaseDirectory $script:psgetModuleInfo.ModuleBase
+
             $oldNuGetExeVersion = (Get-Command $savedNuGetPath).FileVersionInfo.FileVersion
 
             $outputPath = $script:TempPath
@@ -1197,12 +1201,12 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
             Assert ($err -eq $null) "$err"
             Assert ($result -eq $null) "$result"
             AssertNotEquals (Get-Command $savedNuGetPath).FileVersionInfo.FileVersion $oldNuGetExeVersion "Incorrect version of NuGet.exe"
-            Assert (Test-Path $script:ProgramFilesModulesPath\$script:PublishModuleName) "Module failed to publish"
+            Assert (Test-Path $script:ProgramFilesModulesPath\$script:PublishModuleName) "Module failed to publish."
             AssertNull ($content) "Prompt for installing NuGet.exe is not working, $content"
         }
         finally {
             Install-NuGetBinaries
-
+            
             $script:psgetModuleInfo = Import-Module PowerShellGet -Global -Force -Passthru
             Import-LocalizedData  script:LocalizedData -filename PSGet.Resource.psd1 -BaseDirectory $script:psgetModuleInfo.ModuleBase
         }

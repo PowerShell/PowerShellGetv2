@@ -199,7 +199,7 @@ function Install-NuGetClientBinaries
                         if (Microsoft.PowerShell.Management\Test-Path -Path $nugetExeFilePath)
                         {
                                 $script:NuGetExePath = $nugetExeFilePath
-                            $script:NuGetExeVersion = (Get-Command $programDataExePath).FileVersionInfo.FileVersion
+                                $script:NuGetExeVersion = (Get-Command $programDataExePath).FileVersionInfo.FileVersion
                         }
                     }
                 }

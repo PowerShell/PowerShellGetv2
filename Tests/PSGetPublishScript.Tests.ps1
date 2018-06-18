@@ -1016,7 +1016,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
 
             # Download outdated version 2.8.60717.93 of NuGet.exe from https://nuget.org/nuget.exe
             $null = Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri 'https://go.microsoft.com/fwlink/?LinkID=690216&clcid=0x409' `
-                -OutFile $savedNuGetPath
+                -OutFile $savedNuGetPath 
                                                       
             # Re-import PowerShellGet module                                                   
             $script:psgetModuleInfo = Import-Module PowerShellGet -Global -Force -Passthru
@@ -1034,18 +1034,19 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
 
             Assert ($err -eq $null) "$err"
             Assert ($result -eq $null) "$result"
-            AssertNotEquals (Get-Command $savedNuGetPath).FileVersionInfo.FileVersion $oldNuGetExeVersion "Latest version of NuGet.exe was unable to install"
+            AssertNotEquals (Get-Command $savedNuGetPath).FileVersionInfo.FileVersion $oldNuGetExeVersion "Incorrect version of NuGet.exe"
 
             $psgetItemInfo = Find-Script $script:PublishScriptName -RequiredVersion $script:PublishScriptVersion
-            AssertEquals $psgetItemInfo.Name $script:PublishScriptName "Publish-Script was unable to publish script, $($script:PublishScriptName)"
+            AssertEquals $psgetItemInfo.Name $script:PublishScriptName "Publish-Script should publish a script with valid script path, $($psgetItemInfo.Name)"
         }
         finally {
             Install-NuGetBinaries
-                                                  
+
             $script:psgetModuleInfo = Import-Module PowerShellGet -Global -Force -Passthru
             Import-LocalizedData  script:LocalizedData -filename PSGet.Resource.psd1 -BaseDirectory $script:psgetModuleInfo.ModuleBase
         }
-    } -Skip:$(($PSEdition -eq 'Core'))
+        
+    } -Skip:$($PSEdition -eq 'Core')
 
     # Purpose: Validate that Publish-Script prompts to upgrade NuGet.exe if local NuGet.exe file is less than minimum required version
     #
@@ -1091,8 +1092,8 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
 
             # Download outdated version 2.8.60717.93 of NuGet.exe from https://nuget.org/nuget.exe
             $null = Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri 'https://go.microsoft.com/fwlink/?LinkID=690216&clcid=0x409' `
-                -OutFile $savedNuGetPath
-
+                -OutFile $savedNuGetPath 
+                
             # Re-import PowerShellGet module                                                   
             $script:psgetModuleInfo = Import-Module PowerShellGet -Global -Force -Passthru
             Import-LocalizedData  script:LocalizedData -filename PSGet.Resource.psd1 -BaseDirectory $script:psgetModuleInfo.ModuleBase
@@ -1128,7 +1129,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
 
             Assert ($err -eq $null) "$err"
             Assert ($result -eq $null) "$result"
-            AssertNotEquals (Get-Command $savedNuGetPath).FileVersionInfo.FileVersion $oldNuGetExeVersion "Latest version of NuGet.exe was unable to install"
+            AssertNotEquals (Get-Command $savedNuGetPath).FileVersionInfo.FileVersion $oldNuGetExeVersion "Incorrect version of NuGet.exe"
             Assert ($content -match 'NuGet.exe') "Prompt for installing NuGet.exe is not working, $content"
         }
         finally {
@@ -1137,7 +1138,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
             $script:psgetModuleInfo = Import-Module PowerShellGet -Global -Force -Passthru
             Import-LocalizedData  script:LocalizedData -filename PSGet.Resource.psd1 -BaseDirectory $script:psgetModuleInfo.ModuleBase
         }
-    } -Skip:$(($PSEdition -eq 'Core'))    
+    } -Skip:$($PSEdition -eq 'Core')
 }
 
 Describe PowerShell.PSGet.PublishScriptTests.P1 -Tags 'P1','OuterLoop' {

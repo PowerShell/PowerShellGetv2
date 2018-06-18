@@ -216,11 +216,9 @@ function Install-NuGetClientBinaries
         }
     }
 
-    Write-Warning("BootstrapNuGetEXE: " + $BootstrapNuGetExe)
     if($BootstrapNuGetExe) {
         $DotnetCmd = Microsoft.PowerShell.Core\Get-Command -Name $script:DotnetCommandName -ErrorAction Ignore -WarningAction SilentlyContinue |
             Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
-        Write-Warning ('dotnetcmd is: ' + $DotnetCmd)
 
         if ($DotnetCmd -and $DotnetCmd.Path) {  
             $script:DotnetCommandPath = $DotnetCmd.Path

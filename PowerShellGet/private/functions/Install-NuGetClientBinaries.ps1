@@ -23,7 +23,9 @@ function Install-NuGetClientBinaries
         $Force
     )
 
+    #write-warning('here 1')
     if ($script:NuGetProvider -and
+        ($script:NuGetExeVersion -and ($script:NuGetExeVersion -ge $script:NuGetExeMinRequiredVersion))   -and
          (-not $BootstrapNuGetExe -or
          (($script:NuGetExePath -and (Microsoft.PowerShell.Management\Test-Path -Path $script:NuGetExePath)) -or
           ($script:DotnetCommandPath -and (Microsoft.PowerShell.Management\Test-Path -Path $script:DotnetCommandPath)))))
@@ -31,10 +33,12 @@ function Install-NuGetClientBinaries
         return
     }
 
+    #write-warning('here 2')
     $bootstrapNuGetProvider = (-not $script:NuGetProvider)
 
     if($bootstrapNuGetProvider)
     {
+       # write-warning('here 3')
         # Bootstrap the NuGet provider only if it is not available.
         # By default PackageManagement loads the latest version of the NuGet provider.
         $nugetProvider = PackageManagement\Get-PackageProvider -ErrorAction SilentlyContinue -WarningAction SilentlyContinue |
@@ -50,6 +54,7 @@ function Install-NuGetClientBinaries
         }
         else
         {
+           # write-warning('here 4')
             # User might have installed it in an another console or in the same process, check available NuGet providers and import the required provider.
             $availableNugetProviders = PackageManagement\Get-PackageProvider -Name $script:NuGetProviderName `
                                                                              -ListAvailable `
@@ -82,6 +87,7 @@ function Install-NuGetClientBinaries
     }
 
     if($script:IsWindows -and -not $script:IsNanoServer) {
+       # write-warning('here 5')
         if($BootstrapNuGetExe -and
         (-not $script:NuGetExePath -or
             -not (Microsoft.PowerShell.Management\Test-Path -Path $script:NuGetExePath)))
@@ -92,18 +98,21 @@ function Install-NuGetClientBinaries
             # Check if NuGet.exe is available under one of the predefined PowerShellGet locations under ProgramData or LocalAppData
             if(Microsoft.PowerShell.Management\Test-Path -Path $programDataExePath)
             {
+                #write-warning('here 6')
                 $script:NuGetExePath = $programDataExePath
                 $script:NuGetExeVersion = (Get-Command $programDataExePath).FileVersionInfo.FileVersion
                 $BootstrapNuGetExe = $false
             }
             elseif(Microsoft.PowerShell.Management\Test-Path -Path $applocalDataExePath)
             {
+               # write-warning('here 7')
                 $script:NuGetExePath = $applocalDataExePath
                 $script:NuGetExeVersion = (Get-Command $applocalDataExePath).FileVersionInfo.FileVersion
                 $BootstrapNuGetExe = $false
             }
             else
             {
+               # write-warning('here 8')
                 # Using Get-Command cmdlet, get the location of NuGet.exe if it is available under $env:PATH.
                 # NuGet.exe does not work if it is under $env:WINDIR, so skip it from the Get-Command results.
                 $nugetCmd = Microsoft.PowerShell.Core\Get-Command -Name $script:NuGetExeName `
@@ -121,11 +130,20 @@ function Install-NuGetClientBinaries
                     $script:NuGetExeVersion = $nugetCmd.FileVersionInfo.FileVersion
                     $BootstrapNuGetExe = $false
                 }
+                else 
+                {
+                    ### else check if dotnet cli is installed, if dotnet cli is installed,
+                    ### check make sure min required version is fine, right now bootstrapNuGetExe is still true.  $bootstrapNuGetExe = false
+                   # write-warning ('we got here! 1  --- bootstrapNuuGetExe is: ' + $bootstrapNuGetExe)
+                   #$bootstrapNuGetExe = $false
+
+                }
             }
 
             # When -Force is specified, bootstrap the latest version if the local version is less than the minimum version
             if ($script:NuGetExeVersion -and ($script:NuGetExeVersion -lt $script:NuGetExeMinRequiredVersion)) 
             {
+                #write-warning('did we get here??')
                 if ($Force)
                 {
                     $BootstrapNuGetExe = $true
@@ -203,6 +221,7 @@ function Install-NuGetClientBinaries
                         }
                         else 
                         {
+                            #write-warning ('we got here! 2')
                             return
                         }
                     }
@@ -217,6 +236,7 @@ function Install-NuGetClientBinaries
     }
 
     if($BootstrapNuGetExe) {
+        #write-warning('we should not be here')
         $DotnetCmd = Microsoft.PowerShell.Core\Get-Command -Name $script:DotnetCommandName -ErrorAction Ignore -WarningAction SilentlyContinue |
             Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
 

@@ -219,11 +219,11 @@ function Install-NuGetClientBinaries
                             $script:NuGetExePath = $nugetExeFilePath
                             $script:NuGetExeVersion = (Get-Command $programDataExePath).FileVersionInfo.FileVersion
                         }
-                        else 
-                        {
-                            #write-warning ('we got here! 2')
-                            return
-                        }
+                        #else 
+                        #{
+                        #    #write-warning ('we got here! 2')
+                        #    return
+                        #}
                     }
                 }
             }

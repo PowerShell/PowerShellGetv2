@@ -119,6 +119,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         Assert (($psgetItemInfo.Name -eq $script:PublishModuleName) -and (($psgetItemInfo.Version.ToString() -eq $version) -or ($psgetItemInfo.Version.ToString() -eq $semanticVersion))) "Publish-Module should publish a module with valid module name, $($psgetItemInfo.Name)"
     }
 
+    
     # Purpose: Validate Publish-Module is bootstrapping NuGet.exe when run with -Force  
     #
     # Action: Publish-Module -Force
@@ -128,6 +129,9 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     It PublishModuleWithBootstrappedNugetExe {
         try {
             $script:NuGetExeName = 'NuGet.exe'
+#            Write-Warning('$script:DotnetCommandName before renaming: ' + $script:DotnetCommandName)
+            $script:DotnetCommandName = 'tempRenamedDotNetCmd'
+#            Write-Warning('$script:DotnetCommandName after renaming: ' + $script:DotnetCommandName)
             $script:IsWindows = (-not (Get-Variable -Name IsWindows -ErrorAction Ignore)) -or $IsWindows
 
             if($script:IsWindows) {
@@ -171,8 +175,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
             # Delete nuget.exe to test the prompt for installing nuget binaries.
             Remove-NuGetExe
 
-######################
-            Write-warning('previous $script:NuGetExeVersion: ' + $script:NuGetExeVersion)
+#            Write-warning('previous $script:NuGetExeVersion: ' + $script:NuGetExeVersion)
             # Download outdated version 2.8.60717.93 of NuGet.exe from https://nuget.org/nuget.exe
             $null = Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri 'https://go.microsoft.com/fwlink/?LinkID=690216&clcid=0x409' `
                                                                     -OutFile $savedNuGetPath 
@@ -182,9 +185,9 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
 
             $oldNuGetExeVersion = (Get-Command $savedNuGetPath).FileVersionInfo.FileVersion
             $script:NuGetExeVersion = $oldNuGetExeVersion
-            Write-warning('old version 1: ' + $oldNuGetExeVersion)
-            Write-warning('after saving $script:NuGetExeVersion 1: ' + $script:NuGetExeVersion)
-#####################
+#            Write-warning('old version 1: ' + $oldNuGetExeVersion)
+#            Write-warning('after saving $script:NuGetExeVersion 1: ' + $script:NuGetExeVersion)
+
             $version = "1.0"
             $script:PublishModuleBase = Join-Path $script:TempModulesPath $script:PublishModuleName
             New-ModuleManifest -Path (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
@@ -195,25 +198,51 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
 
 
             # Rename the existing dotnet to ensure that NuGet bootstrapping tests work fine.
-             if($script:DotnetCommandPath -and (Test-Path -LiteralPath $script:DotnetCommandPath -PathType Leaf)) {
-            $script:DotnetCommandPath_Renamed = "$script:DotnetCommandPath.Renamed"
-            $script:DotnetCommandPath_Backup = $script:DotnetCommandPath
-            Rename-Item -Path $script:DotnetCommandPath -NewName $script:DotnetCommandPath_Renamed
-            $script:DotnetCommandPath = $null
+            if($script:DotnetCommandPath -and (Test-Path -LiteralPath $script:DotnetCommandPath -PathType Leaf)) {
+                $script:DotnetCommandPath_Renamed = "$script:DotnetCommandPath.Renamed"
+                $script:DotnetCommandPath_Backup = $script:DotnetCommandPath
+                Rename-Item -Path $script:DotnetCommandPath -NewName $script:DotnetCommandPath_Renamed
+                $script:DotnetCommandPath = $null
             }
     
+            
             try {
-                Write-Warning('entering publish module')
+#                Write-Warning('entering publish module')
                 $script:NuGetProvider = $null
-                $result = Publish-Module -Name $script:PublishModuleName -Force
-                Write-Warning('exiting publish module')
+                $result = Publish-Module -Name $script:PublishModuleName -Force -WarningAction SilentlyContinue
+#                Write-Warning('exiting publish module')
             }
             catch {
                 $err = $_
             }
 
-            Write-Warning('old version 2: ' + $oldNuGetExeVersion)
-            Write-Warning('file path version 2: ' + (Get-Command $savedNuGetPath).FileVersionInfo.FileVersion)
+#            Write-Warning('old version 2: ' + $oldNuGetExeVersion)
+#            Write-Warning('file path version 2: ' + (Get-Command $savedNuGetPath).FileVersionInfo.FileVersion)
+
+            if (Test-Path $script:ProgramDataExePath) {
+#                Write-Warning('FINAL version is: ' + (Get-Command  $script:ProgramDataExePath).FileVersionInfo.FileVersion)
+            }
+            elseif (Test-Path $script:ApplocalDataExePath) {
+#                Write-Warning('FINAL version is: ' + (Get-Command  $script:ApplocalDataExePath).FileVersionInfo.FileVersion)
+            }
+            else {
+                # Using Get-Command cmdlet, get the location of NuGet.exe if it is available under $env:PATH.
+                # NuGet.exe does not work if it is under $env:WINDIR, so skip it from the Get-Command results.
+                $nugetCmd = Microsoft.PowerShell.Core\Get-Command -Name $script:NuGetExeName `
+                                                                -ErrorAction Ignore `
+                                                                -WarningAction SilentlyContinue |
+                                Microsoft.PowerShell.Core\Where-Object {
+                                    $_.Path -and
+                                    ((Microsoft.PowerShell.Management\Split-Path -Path $_.Path -Leaf) -eq $script:NuGetExeName) -and
+                                    (-not $_.Path.StartsWith($env:windir, [System.StringComparison]::OrdinalIgnoreCase))
+                                } | Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
+
+                if($nugetCmd -and $nugetCmd.Path -and $nugetCmd.FileVersionInfo.FileVersion)
+                {
+#                    Write-Warning('FINAL version is: ' + $nugetCmd.FileVersionInfo.FileVersion)
+                }
+            }
+
 
             Assert ($err -eq $null) "$err"
             Assert ($result -eq $null) "$result"
@@ -221,8 +250,8 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
             Assert (Test-Path $script:ProgramFilesModulesPath\$script:PublishModuleName) "Module failed to publish"
         }
         finally {
-            Write-Warning('CLEAN UP ***********************right before install-nugetBinaries, VERSION IS: ' + $global:NuGetExeVersion)
-            Install-NuGetBinaries
+#            Write-Warning('CLEAN UP ***********************right before install-nugetBinaries, VERSION IS: ' + $global:NuGetExeVersion)
+            Install-NuGetBinaries  # this should rename the changed dotnet file
             # Re-import PowerShellGet module                                                   
             $script:psgetModuleInfo = Import-Module PowerShellGet -Global -Force -Passthru
             Import-LocalizedData  script:LocalizedData -filename PSGet.Resource.psd1 -BaseDirectory $script:psgetModuleInfo.ModuleBase
@@ -289,13 +318,13 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
 
             $oldNuGetExeVersion = (Get-Command $savedNuGetPath).FileVersionInfo.FileVersion
 
-            $outputPath = $script:TempPath
-            $guid = [system.guid]::newguid().tostring()
-            $outputFilePath = Join-Path $outputPath "$guid"
-            $runspace = CreateRunSpace $outputFilePath 1
+            #$outputPath = $script:TempPath
+            #$guid = [system.guid]::newguid().tostring()
+            #$outputFilePath = Join-Path $outputPath "$guid"
+            #$runspace = CreateRunSpace $outputFilePath 1
 	
             # 0 is mapped to YES in prompt
-            $Global:proxy.UI.ChoiceToMake = 0
+            #$Global:proxy.UI.ChoiceToMake = 0
             $content = $null
 
             $version = "1.0"
@@ -307,20 +336,49 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
             $err = $null
 	
             try {
-                $result = ExecuteCommand $runspace "Publish-Module -Name $script:PublishModuleName -Force"
+              #  $result = ExecuteCommand $runspace "Publish-Module -Name $script:PublishModuleName -Force"
+#              Write-Warning('right before publishmodule')
+                $result = Publish-Module -Name $script:PublishModuleName -Force -WarningAction SilentlyContinue
+#                Write-Warning($(Find-Module -Name $script:PublishModuleName))
             }
             catch {
                 $err = $_
             }
-            finally {      
-                $fileName = "PromptForChoice-0.txt"
-                $path = join-path $outputFilePath $fileName
-                if (Test-Path $path) {
-                    $content = get-content $path
-                }
+            
+           # finally {      
+             #   $fileName = "PromptForChoice-0.txt"
+             #   $path = join-path $outputFilePath $fileName
+             #   if (Test-Path $path) {
+             #       $content = get-content $path
+             #   }
         
-                CloseRunSpace $runspace
-                RemoveItem $outputFilePath
+              #  CloseRunSpace $runspace
+              #  RemoveItem $outputFilePath
+            #}
+
+#            Write-Warning('old version is: ' + $oldNuGetExeVersion)
+            if (Test-Path $script:ProgramDataExePath) {
+#                Write-Warning('FINAL version is: ' + (Get-Command  $script:ProgramDataExePath).FileVersionInfo.FileVersion)
+            }
+            elseif (Test-Path $script:ApplocalDataExePath) {
+#                Write-Warning('FINAL version is: ' + (Get-Command  $script:ApplocalDataExePath).FileVersionInfo.FileVersion)
+            }
+            else {
+                # Using Get-Command cmdlet, get the location of NuGet.exe if it is available under $env:PATH.
+                # NuGet.exe does not work if it is under $env:WINDIR, so skip it from the Get-Command results.
+                $nugetCmd = Microsoft.PowerShell.Core\Get-Command -Name $script:NuGetExeName `
+                                                                -ErrorAction Ignore `
+                                                                -WarningAction SilentlyContinue |
+                                Microsoft.PowerShell.Core\Where-Object {
+                                    $_.Path -and
+                                    ((Microsoft.PowerShell.Management\Split-Path -Path $_.Path -Leaf) -eq $script:NuGetExeName) -and
+                                    (-not $_.Path.StartsWith($env:windir, [System.StringComparison]::OrdinalIgnoreCase))
+                                } | Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
+
+                if($nugetCmd -and $nugetCmd.Path -and $nugetCmd.FileVersionInfo.FileVersion)
+                {
+#                    Write-Warning('FINAL version is: ' + $nugetCmd.FileVersionInfo.FileVersion)
+                }
             }
 
             Assert ($err -eq $null) "$err"

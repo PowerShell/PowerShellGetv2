@@ -82,6 +82,8 @@ function Publish-Module
 
     Begin
     {
+        #$PSCmdlet.GetVariableValue('DotnetCommandName')
+        #Write-Host('INSIDE PUBLISH-MODULE')
         Get-PSGalleryApiAvailability -Repository $Repository
 
         if($LicenseUri -and -not (Test-WebUri -uri $LicenseUri))
@@ -117,6 +119,7 @@ function Publish-Module
                         -ExceptionObject $ProjectUri
         }
 
+       # Write-Warning('right before install client binaries in publish module')
         Install-NuGetClientBinaries -CallerPSCmdlet $PSCmdlet -BootstrapNuGetExe -Force:$Force
     }
 

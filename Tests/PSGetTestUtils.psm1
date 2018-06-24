@@ -229,10 +229,17 @@ function Install-NuGetBinaries
         $script:DotnetCommandPath_Renamed = $null
         $script:DotnetCommandPath_Backup = $null
     }
+    elseif($DotnetCmd) {
+        $script:DotnetCommandPath = $script:DotnetCommandPath_Backup
+        Rename-Item -Path $script:DotnetCommandPath_Renamed -NewName $DotnetCmd.path
+        $script:DotnetCommandPath_Renamed = $null
+        $script:DotnetCommandPath_Backup = $null
+    }
 
     if($script:NuGetProvider -and 
        (($script:NuGetExePath -and (Microsoft.PowerShell.Management\Test-Path -Path $script:NuGetExePath)) -or
-       ($script:DotnetCommandPath -and (Microsoft.PowerShell.Management\Test-Path -Path $script:DotnetCommandPath))))
+       ($script:DotnetCommandPath -and (Microsoft.PowerShell.Management\Test-Path -Path $script:DotnetCommandPath)) -or
+       ($DotnetCmd.path -and (Microsoft.PowerShell.Management\Test-Path -Path $DotnetCmd.path))))
     {
         return
     }
@@ -337,8 +344,7 @@ function Remove-NuGetExe
         Rename-Item -Path $script:DotnetCommandPath -NewName $script:DotnetCommandPath_Renamed
         $script:DotnetCommandPath = $null
     }
-
-    if($DotnetCmd) {
+    elseif($DotnetCmd) {
       #  Write-host('getting here too 2')
         $script:DotnetCommandPath_Renamed = "$($DotnetCmd.path).Renamed"
         $script:DotnetCommandPath_Backup = $DotnetCmd.path

@@ -225,21 +225,14 @@ function Install-NuGetBinaries
     # Rename again if the original dotnet command got renamed during the earlier bootstrap tests.
     if($script:DotnetCommandPath_Renamed -and (Test-Path -LiteralPath $script:DotnetCommandPath_Renamed -PathType Leaf)) {
         $script:DotnetCommandPath = $script:DotnetCommandPath_Backup
-        Rename-Item -Path $script:DotnetCommandPath_Renamed -NewName $script:DotnetCommandPath
-        $script:DotnetCommandPath_Renamed = $null
-        $script:DotnetCommandPath_Backup = $null
-    }
-    elseif($DotnetCmd) {
-        $script:DotnetCommandPath = $script:DotnetCommandPath_Backup
-        Rename-Item -Path $script:DotnetCommandPath_Renamed -NewName $DotnetCmd.path
+        Rename-Item -Path $script:DotnetCommandPath_Renamed -NewName dotnet
         $script:DotnetCommandPath_Renamed = $null
         $script:DotnetCommandPath_Backup = $null
     }
 
     if($script:NuGetProvider -and 
        (($script:NuGetExePath -and (Microsoft.PowerShell.Management\Test-Path -Path $script:NuGetExePath)) -or
-       ($script:DotnetCommandPath -and (Microsoft.PowerShell.Management\Test-Path -Path $script:DotnetCommandPath)) -or
-       ($DotnetCmd.path -and (Microsoft.PowerShell.Management\Test-Path -Path $DotnetCmd.path))))
+       ($script:DotnetCommandPath -and (Microsoft.PowerShell.Management\Test-Path -Path $script:DotnetCommandPath))))
     {
         return
     }
@@ -327,32 +320,23 @@ function Remove-NuGetExe
         Remove-Item -Path $script:ApplocalDataExePath -Force -Confirm:$false -WhatIf:$false
     }    
 
-    #write-host ('are we getting here? dotnetcmd path is: ' + $script:DotnetCommandPath)
 
     $DotnetCmd = Microsoft.PowerShell.Core\Get-Command -Name 'dotnet' -ErrorAction Ignore -WarningAction SilentlyContinue |
             Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
     
-    #Write-Host('dotnetcmd: ' + $DotnetCmd)
-    
     # Rename the existing dotnet to ensure that NuGet bootstrapping tests work fine.
     if($script:DotnetCommandPath -and (Test-Path -LiteralPath $script:DotnetCommandPath -PathType Leaf)) {
-      #  Write-host('getting here too')
         $script:DotnetCommandPath_Renamed = "$script:DotnetCommandPath.Renamed"
-      #  Write-host('???? 1')
         $script:DotnetCommandPath_Backup = $script:DotnetCommandPath
-      #  Write-host('???? 2')
         Rename-Item -Path $script:DotnetCommandPath -NewName $script:DotnetCommandPath_Renamed
         $script:DotnetCommandPath = $null
     }
-    elseif($DotnetCmd) {
-      #  Write-host('getting here too 2')
+    elseif($DotnetCmd -and $DotnetCmd.path) {
         $script:DotnetCommandPath_Renamed = "$($DotnetCmd.path).Renamed"
         $script:DotnetCommandPath_Backup = $DotnetCmd.path
-      #  Write-host("script:DotnetCommandPath: " + $DotnetCmd.path)
         Rename-Item -Path $DotnetCmd.path -NewName $script:DotnetCommandPath_Renamed
         $script:DotnetCommandPath = $null
     }
-
 
     $script:NuGetExePath = $null
 }

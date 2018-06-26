@@ -319,7 +319,7 @@ function Remove-NuGetExe
     {
         Remove-Item -Path $script:ApplocalDataExePath -Force -Confirm:$false -WhatIf:$false
     }    
-
+  
     # Rename the existing dotnet to ensure that NuGet bootstrapping tests work fine.
     if($script:DotnetCommandPath -and (Test-Path -LiteralPath $script:DotnetCommandPath -PathType Leaf)) {
         $script:DotnetCommandPath_Renamed = "$script:DotnetCommandPath.Renamed"
@@ -329,6 +329,14 @@ function Remove-NuGetExe
     }
 
     $script:NuGetExePath = $null
+}
+function Install-Nuget28
+{
+    Remove-NuGetExe
+
+    # Download outdated version 2.8.60717.93 of NuGet.exe from https://nuget.org/nuget.exe
+    $null = Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri 'https://go.microsoft.com/fwlink/?LinkID=690216&clcid=0x409' `
+     -OutFile $programDataExePath
 }
 
 function Get-NuGetExeFilePath

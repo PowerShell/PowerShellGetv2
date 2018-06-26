@@ -320,45 +320,17 @@ function Remove-NuGetExe
         Remove-Item -Path $script:ApplocalDataExePath -Force -Confirm:$false -WhatIf:$false
     }    
 
-    #write-host ('are we getting here? dotnetcmd path is: ' + $script:DotnetCommandPath)
-
-    $DotnetCmd = Microsoft.PowerShell.Core\Get-Command -Name 'dotnet' -ErrorAction Ignore -WarningAction SilentlyContinue |
-            Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
-    
-    #Write-Host('dotnetcmd: ' + $DotnetCmd)
-    
     # Rename the existing dotnet to ensure that NuGet bootstrapping tests work fine.
     if($script:DotnetCommandPath -and (Test-Path -LiteralPath $script:DotnetCommandPath -PathType Leaf)) {
-      #  Write-host('getting here too')
         $script:DotnetCommandPath_Renamed = "$script:DotnetCommandPath.Renamed"
-      #  Write-host('???? 1')
         $script:DotnetCommandPath_Backup = $script:DotnetCommandPath
-      #  Write-host('???? 2')
         Rename-Item -Path $script:DotnetCommandPath -NewName $script:DotnetCommandPath_Renamed
         $script:DotnetCommandPath = $null
     }
 
-    if($DotnetCmd) {
-      #  Write-host('getting here too 2')
-        $script:DotnetCommandPath_Renamed = "$($DotnetCmd.path).Renamed"
-        $script:DotnetCommandPath_Backup = $DotnetCmd.path
-      #  Write-host("script:DotnetCommandPath: " + $DotnetCmd.path)
-        Rename-Item -Path $DotnetCmd.path -NewName $script:DotnetCommandPath_Renamed
-        $script:DotnetCommandPath = $null
-    }
-
-
     $script:NuGetExePath = $null
 }
 
-function Install-Nuget28
-{
-    Remove-NuGetExe
-
-    # Download outdated version 2.8.60717.93 of NuGet.exe from https://nuget.org/nuget.exe
-    $null = Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri 'https://go.microsoft.com/fwlink/?LinkID=690216&clcid=0x409' `
-     -OutFile $programDataExePath
-}
 function Get-NuGetExeFilePath
 {
     Install-NuGetBinaries

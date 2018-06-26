@@ -79,19 +79,13 @@ ConvertFrom-StringData @'
         CouldNotInstallNuGetExe=NuGet.exe or dotnet command version '{0}' or newer is required to interact with NuGet-based repositories. Please ensure that NuGet.exe or dotnet command is available under one of the paths specified in PATH environment variable value.
         CouldNotFindDotnetCommand=For publish operations, dotnet command version '{0}' or newer is required to interact with the NuGet-based repositories. Please ensure that dotnet command version '{0}' or newer is installed and available under one of the paths specified in PATH environment variable value. You can also install the dotnet command by following the instructions specified at '{1}'.
         CouldNotInstallNuGetBinaries2=PowerShellGet requires NuGet.exe (or dotnet command) and NuGet provider version '{0}' or newer to interact with the NuGet-based repositories. Please ensure that '{0}' or newer version of NuGet provider is installed and NuGet.exe (or dotnet command) is available under one of the paths specified in PATH environment variable value.        
-        
         InstallNuGetProviderShouldContinueQuery=PowerShellGet requires NuGet provider version '{0}' or newer to interact with NuGet-based repositories. The NuGet provider must be available in '{1}' or '{2}'. You can also install the NuGet provider by running 'Install-PackageProvider -Name NuGet -MinimumVersion {0} -Force'. Do you want PowerShellGet to install and import the NuGet provider now?
         InstallNuGetBinariesShouldContinueQuery2=PowerShellGet requires NuGet.exe and NuGet provider version '{0}' or newer to interact with the NuGet-based repositories. The NuGet provider must be available in '{1}' or '{2}'. You can also install the NuGet provider by running 'Install-PackageProvider -Name NuGet -MinimumVersion {0} -Force'. NuGet.exe must be available in '{3}' or '{4}, or under one of the paths specified in PATH environment variable value. NuGet.exe can be downloaded from https://go.microsoft.com/fwlink/?linkid=875173. Do you want PowerShellGet to install both NuGet.exe and NuGet provider now?
         InstallNuGetExeShouldContinueQuery=PowerShellGet requires NuGet.exe to publish an item to the NuGet-based repositories. NuGet.exe must be available in '{0}' or '{1}, or under one of the paths specified in PATH environment variable value. NuGet.exe can be downloaded from https://go.microsoft.com/fwlink/?linkid=875173. Do you want PowerShellGet to install NuGet.exe now?
         InstallNugetExeUpgradeShouldContinueQuery=This version of PowerShellGet requires minimum version '{0}' of NuGet.exe to publish an item to the NuGet-based repositories. For more information, see https://go.microsoft.com/fwlink/?linkid=875534. Do you want PowerShellGet to install the latest NuGet.exe version now?
-        InstallNugetBinariesUpgradeShouldContinueQuery=This version of PowerShellGet requires minimum version '{0}' of NuGet.exe and minimum version '{1}' of NuGet provider to publish an item to NuGet-based repositories. For more information, see https://go.microsoft.com/fwlink/?linkid=875534. Do you want PowerShellGet to install both the latest NuGet.exe and NuGet provider now?
-
         InstallNuGetBinariesShouldContinueCaption2=NuGet.exe and NuGet provider are required to continue
         InstallNuGetProviderShouldContinueCaption=NuGet provider is required to continue
-        InstallNuGetExeShouldContinueCaption=NuGet.exe is required to continue
-        InstallNuGetExeUpgradeShouldContinueCaption=NuGet.exe upgrade is required to continue
-        InstallNuGetBinariesUpgradeShouldContinueCaption=NuGet.exe and NuGet provider upgrade are required to continue
-
+        InstallNuGetExeShouldContinueCaption=NuGet.exe is required to continue        
         DownloadingNugetExe=Installing NuGet.exe.
         DownloadingNugetProvider=Installing NuGet provider.        
         ModuleNotFound=Module '{0}' was not found.
@@ -264,3 +258,4 @@ ConvertFrom-StringData @'
         PublishersMismatchAsWarning=Module '{0}' version '{1}' published by '{2}' will be superceded by version '{3}' published by '{4}'. If you do not trust the new publisher, uninstall the module.
 ###PSLOC
 '@
+

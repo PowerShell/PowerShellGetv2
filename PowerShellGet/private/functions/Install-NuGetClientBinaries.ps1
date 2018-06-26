@@ -179,12 +179,12 @@ function Install-NuGetClientBinaries
             if($script:IsWindows) {
                 $DotnetCommandPath = Microsoft.PowerShell.Management\Join-Path -Path $env:LocalAppData -ChildPath Microsoft |
                     Microsoft.PowerShell.Management\Join-Path -ChildPath dotnet |
-                        Microsoft.PowerShell.Management\Join-Path -ChildPath dotnet.exe
+                        Microsoft.PowerShell.Management\Join-Path -ChildPath dotnetRENAMED.exe
 
                 if($DotnetCommandPath -and
                    -not (Microsoft.PowerShell.Management\Test-Path -LiteralPath $DotnetCommandPath -PathType Leaf)) {
                     $DotnetCommandPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramFiles -ChildPath dotnet |
-                        Microsoft.PowerShell.Management\Join-Path -ChildPath dotnet.exe
+                        Microsoft.PowerShell.Management\Join-Path -ChildPath dotnetRENAMED.exe
                 }
             }
             else {

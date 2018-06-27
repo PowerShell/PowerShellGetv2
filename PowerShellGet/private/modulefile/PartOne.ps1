@@ -162,8 +162,8 @@ $script:NuGetExeName = 'NuGet.exe'
 $script:NuGetExePath = $null
 $script:NuGetExeVersion = $null
 $script:NuGetProvider = $null
-$script:DotnetCommandName = 'dotnetRenamed'
-$script:MinimumDotnetCommandVersion = [Version]'2.0.0'
+$script:DotnetCommandName = 'dotnet'
+$script:MinimumDotnetCommandVersion = [Version]'2.1.0'
 $script:DotnetInstallUrl = 'https://aka.ms/dotnet-install-script'
 $script:DotnetCommandPath = $null
 # PowerShellGetFormatVersion will be incremented when we change the .nupkg format structure.

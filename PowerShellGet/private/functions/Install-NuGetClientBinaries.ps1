@@ -121,8 +121,10 @@ function Install-NuGetClientBinaries
             }
 
             $script:NuGetExePath = $NugetExePath
-            $script:NuGetExeVersion = (Get-Command $script:NuGetExePath).FileVersionInfo.FileVersion
-
+            if ($script:NuGetExePath) {
+                $script:NuGetExeVersion = (Get-Command $script:NuGetExePath).FileVersionInfo.FileVersion
+            }
+            
             # No need to bootstrap the NuGet.exe if there is a NuGet.exe file that is at least the minimum required version found
             if ($script:NuGetExeVersion -and ($script:NuGetExeVersion -ge $script:NuGetExeMinRequiredVersion)) 
             {

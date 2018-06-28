@@ -120,15 +120,15 @@ function Install-NuGetClientBinaries
                 }
             }
 
-            $script:NuGetExePath = $NugetExePath
-            if ($script:NuGetExePath) {
+            if ($NugetExePath -and (Microsoft.PowerShell.Management\Test-Path -Path $NugetExePath)) {
+                $script:NuGetExePath = $NugetExePath
                 $script:NuGetExeVersion = (Get-Command $script:NuGetExePath).FileVersionInfo.FileVersion
-            }
-            
-            # No need to bootstrap the NuGet.exe if there is a NuGet.exe file that is at least the minimum required version found
-            if ($script:NuGetExeVersion -and ($script:NuGetExeVersion -ge $script:NuGetExeMinRequiredVersion)) 
-            {
-                $BootstrapNuGetExe = $false
+                        
+                # No need to bootstrap the NuGet.exe if there is a NuGet.exe file that is at least the minimum required version found
+                if ($script:NuGetExeVersion -and ($script:NuGetExeVersion -ge $script:NuGetExeMinRequiredVersion)) 
+                {
+                    $BootstrapNuGetExe = $false
+                }
             }
         }
         else

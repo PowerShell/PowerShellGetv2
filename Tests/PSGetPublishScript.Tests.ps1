@@ -198,7 +198,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
         AssertNullOrEmpty $res4.Dependencies.MaximumVersion "Maximum version should not exist, $($res4.Dependencies | Out-String)"
         AssertNullOrEmpty $res4.Dependencies.RequiredVersion "Required version should not exist, $($res4.Dependencies | Out-String)"
     }
-    
+
     # Purpose: Publish a script with -Path
     #
     # Action: Publish-Script -Path <ScriptPath> -NuGetApiKey <ApiKey>

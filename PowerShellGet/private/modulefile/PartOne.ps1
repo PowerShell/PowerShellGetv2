@@ -156,7 +156,7 @@ $script:FastPackRefHashtable = @{}
 $script:NuGetBinaryProgramDataPath=if($script:IsWindows) {"$env:ProgramFiles\PackageManagement\ProviderAssemblies"}
 $script:NuGetBinaryLocalAppDataPath=if($script:IsWindows) {"$env:LOCALAPPDATA\PackageManagement\ProviderAssemblies"}
 # go fwlink for 'https://dist.nuget.org/win-x86-commandline/latest/nuget.exe'
-$script:NuGetClientSourceURL = 'https://go.microsoft.com/fwlink/?linkid=875173'
+$script:NuGetClientSourceURL = 'https://aka.ms/psget-nugetexe'
 $script:NuGetExeMinRequiredVersion = [Version]'4.1.0'
 $script:NuGetExeName = 'NuGet.exe'
 $script:NuGetExePath = $null

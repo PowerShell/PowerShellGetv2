@@ -95,13 +95,11 @@ function Install-NuGetClientBinaries
             # Check if NuGet.exe is available under one of the predefined PowerShellGet locations under ProgramData or LocalAppData
             if(Microsoft.PowerShell.Management\Test-Path -Path $programDataExePath)
             {
-                $script:NuGetExePath = $programDataExePath
-                $script:NuGetExeVersion = (Get-Command $programDataExePath).FileVersionInfo.FileVersion
+                $NugetExePath = $programDataExePath
             }
             elseif(Microsoft.PowerShell.Management\Test-Path -Path $applocalDataExePath)
             {
-                $script:NuGetExePath = $applocalDataExePath
-                $script:NuGetExeVersion = (Get-Command $applocalDataExePath).FileVersionInfo.FileVersion
+                $NugetExePath = $applocalDataExePath
             }
             else
             {
@@ -118,10 +116,12 @@ function Install-NuGetClientBinaries
 
                 if($nugetCmd -and $nugetCmd.Path -and $nugetCmd.FileVersionInfo.FileVersion)
                 {
-                    $script:NuGetExePath = $nugetCmd.Path
-                    $script:NuGetExeVersion = $nugetCmd.FileVersionInfo.FileVersion
+                    $NugetExePath = $nugetCmd.Path
                 }
             }
+
+            $script:NuGetExePath = $NugetExePath
+            $script:NuGetExeVersion = (Get-Command $script:NuGetExePath).FileVersionInfo.FileVersion
 
             # No need to bootstrap the NuGet.exe if there is a NuGet.exe file that is at least the minimum required version found
             if ($script:NuGetExeVersion -and ($script:NuGetExeVersion -ge $script:NuGetExeMinRequiredVersion)) 

@@ -3,7 +3,7 @@
 ## 1.6.6
 
 Dependency Updates
-* Add dependency on version 4.1.0 or newer of NuGet.exe
+* Add dependency on version 4.1.0 or newer of NuGet.exe and version 2.1.0 or newer of dotnet core
 * Update NuGet.exe bootstrap URL to https://aka.ms/psget-nugetexe
 
 Build and Code Cleanup Improvements

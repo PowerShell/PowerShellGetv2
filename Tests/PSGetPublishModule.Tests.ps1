@@ -1187,7 +1187,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
             $Global:proxy.UI.ChoiceToMake = 0
             $content = $null
 	
-            $version = "1.0"
+            $version = "1.0.0"
             New-ModuleManifest -Path (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
 	
             # Copy module to $script:ProgramFilesModulesPath

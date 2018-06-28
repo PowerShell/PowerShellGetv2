@@ -1,6 +1,6 @@
 @{
 RootModule = 'PSModule.psm1'
-ModuleVersion = '1.6.5'
+ModuleVersion = '1.6.6'
 GUID = '1d73a601-4a6c-43c5-ba3f-619b18bbb404'
 Author = 'Microsoft Corporation'
 CompanyName = 'Microsoft Corporation'
@@ -54,6 +54,20 @@ PrivateData = @{
         ProjectUri = 'https://go.microsoft.com/fwlink/?LinkId=828955'
         LicenseUri = 'https://go.microsoft.com/fwlink/?LinkId=829061'
         ReleaseNotes = @'
+## 1.6.6
+
+Dependency Updates
+* Add dependency on version 4.1.0 or newer of NuGet.exe
+* Update NuGet.exe bootstrap URL to https://aka.ms/psget-nugetexe
+
+Build and Code Cleanup Improvements
+* Improved error handling in network connectivity tests.
+
+Bug fixes
+- Change Update-ModuleManifest so that prefix is not added to CmdletsToExport.
+- Change Update-ModuleManifest so that parameters will not reset to default values.
+- Specify AllowPrereleseVersions provider option only when AllowPrerelease is specified on the PowerShellGet cmdlets.
+
 ## 1.6.5
 
 New features

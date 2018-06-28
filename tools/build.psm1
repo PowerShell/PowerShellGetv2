@@ -86,8 +86,8 @@ function Install-PackageManagement {
             $null = Microsoft.PowerShell.Management\New-Item -Path $script:PSGetProgramDataPath -ItemType Directory -Force
         }
 
-        # Download the NuGet.exe from https://nuget.org/NuGet.exe
-        Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri https://nuget.org/NuGet.exe -OutFile $NugetExeFilePath
+        # Download the NuGet.exe from https://dist.nuget.org/win-x86-commandline/latest/nuget.exe
+        Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri https://aka.ms/psget-nugetexe -OutFile $NugetExeFilePath
     }
 
     Get-ChildItem -Path $NugetExeFilePath -File
@@ -373,8 +373,8 @@ function Remove-ModuleManifestFunctions ($Path) {
     $rawFile = Get-Content -Path $Path -Raw
     $arrFile = Get-Content -Path $Path
 
-    $functionsStartPos = ($arrFile | Select-String -Pattern 'FunctionsToExport').LineNumber - 1
-    $functionsEndPos = ($arrFile | Select-String -Pattern 'VariablesToExport').LineNumber - 2
+    $functionsStartPos = ($arrFile | Select-String -Pattern 'FunctionsToExport =').LineNumber - 1
+    $functionsEndPos = ($arrFile | Select-String -Pattern 'VariablesToExport =').LineNumber - 2
 
     $functionsExportString = $arrFile[$functionsStartPos..$functionsEndPos] | Out-String
 

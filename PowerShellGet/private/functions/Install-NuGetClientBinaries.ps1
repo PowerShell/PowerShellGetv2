@@ -300,6 +300,16 @@ function Install-NuGetClientBinaries
     $failedToBootstrapNuGetProvider = $false
     $failedToBootstrapNuGetExe = $false
 
+    if($BootstrapNuGetExe -and
+        $script:NuGetExeVersion -and 
+        ($script:NuGetExeVersion -lt $script:NuGetExeMinRequiredVersion))
+    {
+        $failedToBootstrapNuGetExe = $true
+
+        $message = $LocalizedData.CouldNotUpgradeNuGetExe -f @($script:MinimumDotnetCommandVersion)
+        $errorId = 'CouldNotUpgradeNuGetExe'
+    }
+
     if($bootstrapNuGetProvider -and -not $script:NuGetProvider)
     {
         $failedToBootstrapNuGetProvider = $true

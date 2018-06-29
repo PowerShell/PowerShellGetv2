@@ -300,6 +300,7 @@ function Install-NuGetClientBinaries
     $failedToBootstrapNuGetProvider = $false
     $failedToBootstrapNuGetExe = $false
 
+
     if($bootstrapNuGetProvider -and -not $script:NuGetProvider)
     {
         $failedToBootstrapNuGetProvider = $true
@@ -308,14 +309,23 @@ function Install-NuGetClientBinaries
         $errorId = 'CouldNotInstallNuGetProvider'
     }
 
-    if($BootstrapNuGetExe -and
-       (-not $script:NuGetExePath -or
-        -not (Microsoft.PowerShell.Management\Test-Path -Path $script:NuGetExePath)))
+    if($BootstrapNuGetExe)
     {
-        $failedToBootstrapNuGetExe = $true
+        if(-not $script:NuGetExePath -or
+           -not (Microsoft.PowerShell.Management\Test-Path -Path $script:NuGetExePath))
+        {
+            $failedToBootstrapNuGetExe = $true
 
-        $message = $LocalizedData.CouldNotInstallNuGetExe -f @($script:MinimumDotnetCommandVersion)
-        $errorId = 'CouldNotInstallNuGetExe'
+            $message = $LocalizedData.CouldNotInstallNuGetExe -f @($script:NuGetExeMinRequiredVersion, $script:MinimumDotnetCommandVersion)
+            $errorId = 'CouldNotInstallNuGetExe'
+        }
+        elseif($script:NuGetExeVersion -and ($script:NuGetExeVersion -lt $script:NuGetExeMinRequiredVersion))
+        {
+            $failedToBootstrapNuGetExe = $true
+
+            $message = $LocalizedData.CouldNotUpgradeNuGetExe -f @($script:NuGetExeMinRequiredVersion, $script:MinimumDotnetCommandVersion)
+            $errorId = 'CouldNotUpgradeNuGetExe'
+        }
     }
 
     # Change the error id and message if both NuGet provider and NuGet.exe are not installed.

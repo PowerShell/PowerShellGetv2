@@ -331,6 +331,15 @@ function Remove-NuGetExe
     $script:NuGetExePath = $null
 }
 
+function Install-Nuget28
+{
+    Remove-NuGetExe
+
+    # Download outdated version 2.8.60717.93 of NuGet.exe from https://nuget.org/nuget.exe
+    $null = Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri 'https://go.microsoft.com/fwlink/?LinkID=690216&clcid=0x409' `
+     -OutFile $programDataExePath
+}
+
 function Get-NuGetExeFilePath
 {
     Install-NuGetBinaries

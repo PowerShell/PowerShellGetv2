@@ -60,6 +60,10 @@ function SuiteSetup {
     $script:PublishModuleName = "ContosoPublishModule"
     $script:PublishModuleBase = Join-Path $script:TempModulesPath $script:PublishModuleName
     $null = New-Item -Path $script:PublishModuleBase -ItemType Directory -Force
+
+    $script:NuGetExeName = 'NuGet.exe'
+    $script:PSGetProgramDataPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramData -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
+    $script:ProgramDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $script:NuGetExeName
 }
 
 function SuiteCleanup {
@@ -90,10 +94,18 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
 
     BeforeEach {
         Set-Content (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psm1") -Value "function Get-$script:PublishModuleName { Get-Date }"
+
+        $version = "1.0"
+        $script:PublishModuleBase = Join-Path $script:TempModulesPath $script:PublishModuleName
+        New-ModuleManifest -Path (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
+	
+        # Copy module to $script:ProgramFilesModulesPath
+        Copy-Item $script:PublishModuleBase $script:ProgramFilesModulesPath -Recurse -Force
     }
 
     AfterEach {
         RemoveItem "$script:PSGalleryRepoPath\*"
+        RemoveItem "$script:ProgramFilesModulesPath\$script:PublishModuleName\*"
         RemoveItem "$script:ProgramFilesModulesPath\$script:PublishModuleName"
         RemoveItem "$script:PublishModuleBase\*"
     }
@@ -129,6 +141,8 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         $version = "2.0.0.0"
         $semanticVersion = '2.0.0'
         RemoveItem "$script:PublishModuleBase\*"
+        RemoveItem "$script:ProgramFilesModulesPath\$script:PublishModuleName\*"
+
 
         $moduleBaseWithVersion = (Join-Path -Path $script:PublishModuleBase -ChildPath "$version")
         $null = New-Item -Path $moduleBaseWithVersion -ItemType Directory -Force
@@ -1027,6 +1041,266 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         Assert ($itemInfo.Includes.RoleCapability -contains 'Lev2Maintenance') "Publish-Module was not able to populate the RoleCapability Names: $($itemInfo.Includes.RoleCapability)"
     } `
     -Skip:$($PSCulture -ne 'en-US')
+
+    # Purpose: Validate Publish-Module is bootstrapping NuGet.exe when run with -Force  
+    #
+    # Action: Publish-Module -Force
+    #
+    # Expected Result: Publish operation should succeed, NuGet.exe should upgrade
+    #
+    It PublishModuleWithBootstrappedNugetExe {
+        try {       
+            Install-NuGet28
+
+            # Re-import PowerShellGet module                                                   
+            $script:psgetModuleInfo = Import-Module PowerShellGet -Global -Force -Passthru
+            Import-LocalizedData  script:LocalizedData -filename PSGet.Resource.psd1 -BaseDirectory $script:psgetModuleInfo.ModuleBase
+
+            # Install-OutdatedNugetExe saves NuGet.exe in $script:ProgramDataExePath
+            $oldNuGetExeVersion = (Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion
+            $err = $null
+    
+            try {
+                $result = Publish-Module -Name $script:PublishModuleName -Force -WarningAction SilentlyContinue
+            }
+            catch {
+                $err = $_
+            }
+
+            AssertNull $err "$err"
+            AssertNull $result "$result"
+            AssertNotEquals (Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion $oldNuGetExeVersion "Incorrect version of NuGet.exe"
+            
+            $module = find-module $script:PublishModuleName -RequiredVersion $version
+            AssertEquals $module.Name $script:PublishModuleName "Module published when it should not have"
+        }
+        finally {
+            Install-NuGetBinaries
+        }
+    } -Skip:$($PSEdition -eq 'Core')
+
+    # Purpose: Validate that Publish-Module to prompts to upgrade NuGet.exe if local NuGet.exe file is less than minimum required version
+    #
+    # Action: Publish-Module 
+    #
+    # Expected Result: Publish operation should succeed, NuGet.exe should upgrade to latest version
+    #
+    It PublishModuleUpgradeNugetExeAndYesToPrompt {
+        try {     
+            Install-NuGet28
+
+            # Re-import PowerShellGet module                                                   
+            $script:psgetModuleInfo = Import-Module PowerShellGet -Global -Force -Passthru
+            Import-LocalizedData  script:LocalizedData -filename PSGet.Resource.psd1 -BaseDirectory $script:psgetModuleInfo.ModuleBase
+
+            # Install-OutdatedNugetExe saves NuGet.exe in $script:ProgramDataExePath
+            $oldNuGetExeVersion = (Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion
+  
+            $outputPath = $script:TempPath
+            $guid = [system.guid]::newguid().tostring()
+            $outputFilePath = Join-Path $outputPath "$guid"
+            $runspace = CreateRunSpace $outputFilePath 1
+	
+            # 0 is mapped to YES in prompt
+            $Global:proxy.UI.ChoiceToMake = 0
+            $content = $null
+            $err = $null
+	
+            try {
+                $result = ExecuteCommand $runspace "Publish-Module -Name $script:PublishModuleName"
+            }
+            catch {
+                $err = $_
+            }
+            finally {      
+                $fileName = "PromptForChoice-0.txt"
+                $path = join-path $outputFilePath $fileName
+                if (Test-Path $path) {
+                    $content = get-content $path
+                }
+        
+                CloseRunSpace $runspace
+                RemoveItem $outputFilePath
+            }
+
+            AssertNull $err "$err"
+            AssertNull $result "$result"
+            AssertNotEquals (Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion $oldNuGetExeVersion "Incorrect version of NuGet.exe"
+            Assert ($content -and ($content -match 'upgrade')) "Publish module confirm prompt is not working, $content"
+
+            $module = find-module $script:PublishModuleName -RequiredVersion $version
+            Assert ($module.Name -eq $script:PublishModuleName) "Module published when it should not have"
+        }
+        finally {
+            Install-NuGetBinaries
+        }
+    } -Skip:$($PSEdition -eq 'Core')
+
+    # Purpose: Validate that Publish-Module prompts to install NuGet.exe if NuGet.exe file is not found
+    #
+    # Action: Publish-Module 
+    #
+    # Expected Result: Publish operation should succeed, NuGet.exe should install latest version
+    #
+    It PublishModuleInstallNugetExeAndYesToPrompt {
+        try {
+            Remove-NuGetExe
+
+            # Re-import PowerShellGet module                                                   
+            $script:psgetModuleInfo = Import-Module PowerShellGet -Global -Force -Passthru
+            Import-LocalizedData  script:LocalizedData -filename PSGet.Resource.psd1 -BaseDirectory $script:psgetModuleInfo.ModuleBase
+  
+            $outputPath = $script:TempPath
+            $guid = [system.guid]::newguid().tostring()
+            $outputFilePath = Join-Path $outputPath "$guid"
+            $runspace = CreateRunSpace $outputFilePath 1
+	
+            # 0 is mapped to YES in prompt
+            $Global:proxy.UI.ChoiceToMake = 0
+            $content = $null
+            $err = $null
+	
+            try {
+                $result = ExecuteCommand $runspace "Publish-Module -Name $script:PublishModuleName"
+            }
+            catch {
+                $err = $_
+            }
+            finally {      
+                $fileName = "PromptForChoice-0.txt"
+                $path = join-path $outputFilePath $fileName
+                if (Test-Path $path) {
+                    $content = get-content $path
+                }
+        
+                CloseRunSpace $runspace
+                RemoveItem $outputFilePath
+            }
+
+            AssertNull $err "$err"
+            AssertNull $result "$result"
+            AssertNotNull (Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion "NuGet.exe did not install correctly"
+            Assert ($content -and ($content -match 'install')) "Publish module confirm prompt is not working, $content"
+
+            $module = find-module $script:PublishModuleName -RequiredVersion $version
+            Assert ($module.Name -eq $script:PublishModuleName) "Module published when it should not have"
+        }
+        finally {
+            Install-NuGetBinaries
+        }
+    } -Skip:$($PSEdition -eq 'Core')
+
+    # Purpose: Validate that Publish-Module prompts to upgrade NuGet.exe if local NuGet.exe file is less than minimum required version
+    #
+    # Action: Publish-Module 
+    #
+    # Expected Result: Publish operation should fail, NuGet.exe should not upgrade to latest version
+    #
+    It PublishModuleUpgradeNugetExeAndNoToPrompt {
+        try {     
+            RemoveItem "$script:ProgramFilesModulesPath\$script:PublishModuleName\*"
+            RemoveItem "$script:ProgramFilesModulesPath\$script:PublishModuleName"
+            
+            Install-NuGet28
+
+            # Re-import PowerShellGet module                                                   
+            $script:psgetModuleInfo = Import-Module PowerShellGet -Global -Force -Passthru
+            Import-LocalizedData  script:LocalizedData -filename PSGet.Resource.psd1 -BaseDirectory $script:psgetModuleInfo.ModuleBase
+
+            # Install-OutdatedNugetExe saves NuGet.exe in $script:ProgramDataExePath
+            $oldNuGetExeVersion = (Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion
+  
+            $outputPath = $script:TempPath
+            $guid = [system.guid]::newguid().tostring()
+            $outputFilePath = Join-Path $outputPath "$guid"
+            $runspace = CreateRunSpace $outputFilePath 1
+	
+            # 1 is mapped to NO in prompt
+            $Global:proxy.UI.ChoiceToMake = 1
+            $content = $null
+            $err = $null
+	
+            try {
+                $result = ExecuteCommand $runspace "Publish-Module -Name $script:PublishModuleName"
+            }
+            catch {
+                $err = $_
+            }
+            finally {      
+                $fileName = "PromptForChoice-0.txt"
+                $path = join-path $outputFilePath $fileName
+                if (Test-Path $path) {
+                    $content = get-content $path
+                }
+                CloseRunSpace $runspace
+                RemoveItem $outputFilePath
+            }
+
+            AssertNotNull $err "$err"
+            AssertNull $result "$result"
+            AssertEquals (Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion $oldNuGetExeVersion "Incorrect version of NuGet.exe"
+            Assert ($content -and ($content -match 'upgrade')) "Publish module confirm prompt is not working, $content"
+
+            $module = find-module $script:PublishModuleName -RequiredVersion $version -ErrorAction SilentlyContinue
+            AssertNull ($module) "Module published when it should not have"
+        }
+        finally {
+            Install-NuGetBinaries
+        }
+    } -Skip:$($PSEdition -eq 'Core')
+
+    # Purpose: Validate that Publish-Module prompts to install NuGet.exe if file not found
+    #
+    # Action: Publish-Module 
+    #
+    # Expected Result: Publish operation should fail, NuGet.exe should not install
+    #
+    It PublishModuleInstallNugetExeAndNoToPrompt {
+        try {     
+            Remove-NuGetExe
+
+            # Re-import PowerShellGet module                                                   
+            $script:psgetModuleInfo = Import-Module PowerShellGet -Global -Force -Passthru
+            Import-LocalizedData  script:LocalizedData -filename PSGet.Resource.psd1 -BaseDirectory $script:psgetModuleInfo.ModuleBase
+  
+            $outputPath = $script:TempPath
+            $guid = [system.guid]::newguid().tostring()
+            $outputFilePath = Join-Path $outputPath "$guid"
+            $runspace = CreateRunSpace $outputFilePath 1
+	
+            # 1 is mapped to NO in prompt
+            $Global:proxy.UI.ChoiceToMake = 1
+            $content = $null
+            $err = $null
+	
+            try {
+                $result = ExecuteCommand $runspace "Publish-Module -Name $script:PublishModuleName"
+            }
+            catch {
+                $err = $_
+            }
+            finally {      
+                $fileName = "PromptForChoice-0.txt"
+                $path = join-path $outputFilePath $fileName
+                if (Test-Path $path) {
+                    $content = get-content $path
+                }
+                CloseRunSpace $runspace
+                RemoveItem $outputFilePath
+            }
+
+            AssertNotNull $err "$err"
+            AssertNull $result "$result"           
+            Assert ((Test-Path $script:ProgramDataExePath) -eq $false) "NuGet.exe installed when it should not have"
+            Assert ($content -and ($content -match 'install')) "Publish module confirm prompt is not working, $content"
+
+            $module = find-module $script:PublishModuleName -RequiredVersion $version -ErrorAction SilentlyContinue
+            AssertNull ($module) "Module published when it should not have"
+        }
+        finally {
+            Install-NuGetBinaries
+        }
+    } -Skip:$($PSEdition -eq 'Core')
 }
 
 Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {

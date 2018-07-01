@@ -356,9 +356,9 @@ function Remove-NuGetExe
         write-host (' $DotnetCmd.path: ' +  $DotnetCmd.path)
         write-host ('test path  $DotnetCmd.path: ' + (Test-Path -LiteralPath $DotnetCmd.path -PathType Leaf))
         
-        $script:DotnetCommandPath_Renamed = "$script:DotnetCommandPath.Renamed"
+        $script:DotnetCommandPath_Renamed = "$($DotnetCmd.path).Renamed"
         $script:DotnetCommandPath_Backup = $DotnetCmd.path 
-        Rename-Item -Path $script:DotnetCommandPath -NewName $script:DotnetCommandPath_Renamed
+        Rename-Item -Path $DotnetCmd.path -NewName $script:DotnetCommandPath_Renamed
         $script:DotnetCommandPath = $null
     }
 

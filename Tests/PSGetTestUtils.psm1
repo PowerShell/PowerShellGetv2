@@ -222,13 +222,33 @@ function Install-NuGetBinaries
     [cmdletbinding()]
     param()
 
+   write-host('$script:DotnetCommandPath_Renamed: ' + $script:DotnetCommandPath_Renamed)
+   write-host('$script:DotnetCommandPath: ' + $script:DotnetCommandPath)
+
+#write-host(':DotnetCommandPath_Renamed ): ' + (Test-Path -LiteralPath $script:DotnetCommandPath_Renamed -PathType Leaf))
+
+    #look for renamed donet file
+    $dotnetrenamed = 'dotnet.exe.Renamed'
+    $DotnetCmdRenamed = Microsoft.PowerShell.Core\Get-Command -Name $dotnetrenamed -ErrorAction Ignore -WarningAction SilentlyContinue |
+        Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
+
+    Write-Host('$script:DotnetCommandPath_Backup: ' + $script:DotnetCommandPath_Backup)
     # Rename again if the original dotnet command got renamed during the earlier bootstrap tests.
     if($script:DotnetCommandPath_Renamed -and (Test-Path -LiteralPath $script:DotnetCommandPath_Renamed -PathType Leaf)) {
+        Write-Host('here 1')
         $script:DotnetCommandPath = $script:DotnetCommandPath_Backup
+        Write-Host('$script:DotnetCommandPath_Renamed: ' + $script:DotnetCommandPath_Renamed)
         Rename-Item -Path $script:DotnetCommandPath_Renamed -NewName $script:DotnetCommandPath
         $script:DotnetCommandPath_Renamed = $null
         $script:DotnetCommandPath_Backup = $null
-    }
+    }     
+    elseif ($DotnetCmd.path -and (Test-Path -LiteralPath $DotnetCmd.path -PathType Leaf)) {
+        Write-Host('here 2')
+        $script:DotnetCommandPath = $script:DotnetCommandPath_Backup
+        Rename-Item -Path $script:DotnetCmdRenamed -NewName $script:DotnetCommandPath
+        $script:DotnetCommandPath_Renamed = $null
+        $script:DotnetCommandPath_Backup = $null
+    }     
 
     if($script:NuGetProvider -and 
        (($script:NuGetExePath -and (Microsoft.PowerShell.Management\Test-Path -Path $script:NuGetExePath)) -or
@@ -320,6 +340,9 @@ function Remove-NuGetExe
         Remove-Item -Path $script:ApplocalDataExePath -Force -Confirm:$false -WhatIf:$false
     }    
 
+    $DotnetCmd = Microsoft.PowerShell.Core\Get-Command -Name 'dotnet' -ErrorAction Ignore -WarningAction SilentlyContinue |
+        Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
+
     # Rename the existing dotnet to ensure that NuGet bootstrapping tests work fine.
     if($script:DotnetCommandPath -and (Test-Path -LiteralPath $script:DotnetCommandPath -PathType Leaf)) {
         $script:DotnetCommandPath_Renamed = "$script:DotnetCommandPath.Renamed"
@@ -327,6 +350,14 @@ function Remove-NuGetExe
         Rename-Item -Path $script:DotnetCommandPath -NewName $script:DotnetCommandPath_Renamed
         $script:DotnetCommandPath = $null
     }
+    elseif($DotnetCmd -and $DotnetCmd.path -and (Test-Path -LiteralPath $DotnetCmd.path -PathType Leaf)) {
+        $script:DotnetCommandPath_Renamed = "$script:DotnetCommandPath.Renamed"
+        $script:DotnetCommandPath_Backup = $DotnetCmd.path 
+        Rename-Item -Path $script:DotnetCommandPath -NewName $script:DotnetCommandPath_Renamed
+        $script:DotnetCommandPath = $null
+    }
+
+   
 
     $script:NuGetExePath = $null
 }

@@ -1049,7 +1049,11 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: Publish operation should succeed, NuGet.exe should upgrade
     #
     It PublishModuleWithBootstrappedNugetExe {
-        try {       
+        try { 
+            $script:NuGetExeName = 'NuGet.exe'
+            $script:PSGetProgramDataPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramData -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
+            $script:ProgramDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $script:NuGetExeName     
+            
             Install-NuGet28
 
             # Re-import PowerShellGet module                                                   
@@ -1087,6 +1091,10 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     #
     It PublishModuleUpgradeNugetExeAndYesToPrompt {
         try {     
+            $script:NuGetExeName = 'NuGet.exe'
+            $script:PSGetProgramDataPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramData -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
+            $script:ProgramDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $script:NuGetExeName
+            
             Install-NuGet28
 
             # Re-import PowerShellGet module                                                   
@@ -1144,6 +1152,10 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     #
     It PublishModuleInstallNugetExeAndYesToPrompt {
         try {
+            $script:NuGetExeName = 'NuGet.exe'
+            $script:PSGetProgramDataPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramData -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
+            $script:ProgramDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $script:NuGetExeName
+
             Remove-NuGetExe
 
             # Re-import PowerShellGet module                                                   
@@ -1201,6 +1213,10 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
             RemoveItem "$script:ProgramFilesModulesPath\$script:PublishModuleName\*"
             RemoveItem "$script:ProgramFilesModulesPath\$script:PublishModuleName"
             
+            $script:NuGetExeName = 'NuGet.exe'
+            $script:PSGetProgramDataPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramData -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
+            $script:ProgramDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $script:NuGetExeName
+
             Install-NuGet28
 
             # Re-import PowerShellGet module                                                   
@@ -1257,6 +1273,10 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     #
     It PublishModuleInstallNugetExeAndNoToPrompt {
         try {     
+            $script:NuGetExeName = 'NuGet.exe'
+            $script:PSGetProgramDataPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramData -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
+            $script:ProgramDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $script:NuGetExeName
+            
             Remove-NuGetExe
 
             # Re-import PowerShellGet module                                                   

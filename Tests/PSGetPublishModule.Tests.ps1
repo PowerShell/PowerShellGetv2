@@ -1052,8 +1052,10 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         try { 
             $script:NuGetExeName = 'NuGet.exe'
             $script:PSGetProgramDataPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramData -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
-            $script:ProgramDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $script:NuGetExeName     
-            
+            $script:PSGetAppLocalPath = Microsoft.PowerShell.Management\Join-Path -Path $env:LOCALAPPDATA -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
+            $script:ProgramDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $script:NuGetExeName
+            $script:ApplocalDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetAppLocalPath -ChildPath $script:NuGetExeName
+
             Install-NuGet28
 
             # Re-import PowerShellGet module                                                   
@@ -1071,9 +1073,41 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
                 $err = $_
             }
 
+
+            if(Microsoft.PowerShell.Management\Test-Path -Path $programDataExePath)
+            {
+                $NugetExePath = $programDataExePath
+            }
+            elseif(Microsoft.PowerShell.Management\Test-Path -Path $applocalDataExePath)
+            {
+                $NugetExePath = $applocalDataExePath
+            }
+            else
+            {
+                # Using Get-Command cmdlet, get the location of NuGet.exe if it is available under $env:PATH.
+                # NuGet.exe does not work if it is under $env:WINDIR, so skip it from the Get-Command results.
+                $nugetCmd = Microsoft.PowerShell.Core\Get-Command -Name $script:NuGetExeName `
+                                                                -ErrorAction Ignore `
+                                                                -WarningAction SilentlyContinue |
+                                Microsoft.PowerShell.Core\Where-Object {
+                                    $_.Path -and
+                                    ((Microsoft.PowerShell.Management\Split-Path -Path $_.Path -Leaf) -eq $script:NuGetExeName) -and
+                                    (-not $_.Path.StartsWith($env:windir, [System.StringComparison]::OrdinalIgnoreCase))
+                                } | Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
+
+                if($nugetCmd -and $nugetCmd.Path -and $nugetCmd.FileVersionInfo.FileVersion)
+                {
+                    $NugetExePath = $nugetCmd.Path
+                }
+            }
             AssertNull $err "$err"
             AssertNull $result "$result"
-            AssertNotEquals (Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion $oldNuGetExeVersion "Incorrect version of NuGet.exe"
+
+           # if ($NugetExePath -and (Microsoft.PowerShell.Management\Test-Path -Path $NugetExePath)) {
+           #     $script:NuGetExePath = $NugetExePath
+           #     $script:NuGetExeVersion = (Get-Command $script:NuGetExePath).FileVersionInfo.FileVersion
+                    
+            AssertNotEquals (Get-Command $NugetExePath).FileVersionInfo.FileVersion $oldNuGetExeVersion "Incorrect version of NuGet.exe"
             
             $module = find-module $script:PublishModuleName -RequiredVersion $version
             AssertEquals $module.Name $script:PublishModuleName "Module published when it should not have"
@@ -1276,7 +1310,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
             $script:NuGetExeName = 'NuGet.exe'
             $script:PSGetProgramDataPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramData -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
             $script:ProgramDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $script:NuGetExeName
-            
+
             Remove-NuGetExe
 
             # Re-import PowerShellGet module                                                   

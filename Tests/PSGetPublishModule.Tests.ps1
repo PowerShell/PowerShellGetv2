@@ -1106,7 +1106,9 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
            # if ($NugetExePath -and (Microsoft.PowerShell.Management\Test-Path -Path $NugetExePath)) {
            #     $script:NuGetExePath = $NugetExePath
            #     $script:NuGetExeVersion = (Get-Command $script:NuGetExePath).FileVersionInfo.FileVersion
-                    
+            
+            Write-host ('$NugetExePath: ' + $NugetExePath)
+            Write-host ('(Get-Command $NugetExePath).FileVersionInfo.FileVersion: ' + (Get-Command $NugetExePath).FileVersionInfo.FileVersion)
             AssertNotEquals (Get-Command $NugetExePath).FileVersionInfo.FileVersion $oldNuGetExeVersion "Incorrect version of NuGet.exe"
             
             $module = find-module $script:PublishModuleName -RequiredVersion $version

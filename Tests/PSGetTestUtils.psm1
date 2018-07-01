@@ -345,12 +345,17 @@ function Remove-NuGetExe
 
     # Rename the existing dotnet to ensure that NuGet bootstrapping tests work fine.
     if($script:DotnetCommandPath -and (Test-Path -LiteralPath $script:DotnetCommandPath -PathType Leaf)) {
+        write-host ('$script:DotnetCommandPath: ' + $script:DotnetCommandPath)
+        write-host ('test path $script:DotnetCommandPath: ' + (Test-Path -LiteralPath $script:DotnetCommandPath -PathType Leaf))
         $script:DotnetCommandPath_Renamed = "$script:DotnetCommandPath.Renamed"
         $script:DotnetCommandPath_Backup = $script:DotnetCommandPath
         Rename-Item -Path $script:DotnetCommandPath -NewName $script:DotnetCommandPath_Renamed
         $script:DotnetCommandPath = $null
     }
     elseif($DotnetCmd -and $DotnetCmd.path -and (Test-Path -LiteralPath $DotnetCmd.path -PathType Leaf)) {
+        write-host (' $DotnetCmd.path: ' +  $DotnetCmd.path)
+        write-host ('test path  $DotnetCmd.path: ' + (Test-Path -LiteralPath $DotnetCmd.path -PathType Leaf))
+        
         $script:DotnetCommandPath_Renamed = "$script:DotnetCommandPath.Renamed"
         $script:DotnetCommandPath_Backup = $DotnetCmd.path 
         Rename-Item -Path $script:DotnetCommandPath -NewName $script:DotnetCommandPath_Renamed

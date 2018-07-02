@@ -11,9 +11,9 @@ $script:NuGetExeName = 'NuGet.exe'
 $script:NuGetProvider = $null
 $script:NuGetProviderName = 'NuGet'
 $script:NuGetProviderVersion  = [Version]'2.8.5.201'
-$script:DotnetCommandPath = $null
-$script:DotnetCommandPath_Backup = $null
-$script:DotnetCommandPath_Renamed = $null
+$script:DotnetCommandPath = @()
+$script:DotnetCommandPath_Backup = @()
+$script:DotnetCommandPath_Renamed = @()
 $script:EnvironmentVariableTarget = @{ Process = 0; User = 1; Machine = 2 }
 
 $script:PowerShellGet = 'PowerShellGet'
@@ -225,25 +225,44 @@ function Install-NuGetBinaries
    write-host('$script:DotnetCommandPath_Renamed: ' + $script:DotnetCommandPath_Renamed)
    write-host('$script:DotnetCommandPath: ' + $script:DotnetCommandPath)
 
-#write-host(':DotnetCommandPath_Renamed ): ' + (Test-Path -LiteralPath $script:DotnetCommandPath_Renamed -PathType Leaf))
-
-    #look for renamed donet file
+    #look for renamed dotnet file
     $dotnetrenamed = 'dotnet.exe.Renamed'
-    $DotnetCmdRenamed = Microsoft.PowerShell.Core\Get-Command -Name $dotnetrenamed -ErrorAction Ignore -WarningAction SilentlyContinue |
-        Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
+    $DotnetCmdRenamed = Microsoft.PowerShell.Core\Get-Command -Name $dotnetrenamed -All -ErrorAction Ignore -WarningAction SilentlyContinue  #|
+       # Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
 
     Write-Host('$script:DotnetCommandPath_Backup: ' + $script:DotnetCommandPath_Backup)
     # Rename again if the original dotnet command got renamed during the earlier bootstrap tests.
-    if($script:DotnetCommandPath_Renamed -and (Test-Path -LiteralPath $script:DotnetCommandPath_Renamed -PathType Leaf)) {
-        Write-Host('here 1')
-        $script:DotnetCommandPath = $script:DotnetCommandPath_Backup
-        Write-Host('$script:DotnetCommandPath_Renamed: ' + $script:DotnetCommandPath_Renamed)
-        Rename-Item -Path $script:DotnetCommandPath_Renamed -NewName $script:DotnetCommandPath
+    if($script:DotnetCommandPath_Renamed) {
+       
+        For ($count=0; $count -lt $script:DotnetCommandPath_Renamed.Length; $count++) {
+            # Check every path in $script:DotnetCommandPath_Renamed is valid
+            # if test-path is true, rename the particular path back to the original name
+            if (Test-Path -LiteralPath $script:DotnetCommandPath_Renamed[$count] -PathType Leaf) {
+                Write-Host ('here RENAMED!')
+                write-host ($(Test-Path -LiteralPath $script:DotnetCommandPath_Renamed[$count] -PathType Leaf))
+                write-host ($count)
+                write-host ('$script:DotnetCommandPath_Renamed[$count]: ' + $script:DotnetCommandPath_Renamed[$count])
+                write-host ('$script:DotnetCommandPath_Backup[$count]: ' + $script:DotnetCommandPath_Backup[$count])
+
+                # if test-path is true, rename the particular path back to the original name
+                $backup_DotnetCommandPath = $script:DotnetCommandPath_Backup[$count]
+                #DotnetCommandPath is null.... so we can't index in.
+                $script:DotnetCommandPath += $backup_DotnetCommandPath
+                Rename-Item -Path $script:DotnetCommandPath_Renamed[$count] -NewName $backup_DotnetCommandPath
+    
+                write-host ('$script:DotnetCommandPath_Renamed[$count]: ' + $script:DotnetCommandPath_Renamed[$count])
+                write-host ('$backup_DotnetCommandPath: ' + $backup_DotnetCommandPath)
+                write-host ('$script:DotnetCommandPath: ' + $script:DotnetCommandPath)
+            }
+        }
+        
+       # $script:DotnetCommandPath = $script:DotnetCommandPath_Backup
+       # Rename-Item -Path $script:DotnetCommandPath_Renamed -NewName $script:DotnetCommandPath
         $script:DotnetCommandPath_Renamed = $null
         $script:DotnetCommandPath_Backup = $null
     }     
     elseif ($DotnetCmd.path -and (Test-Path -LiteralPath $DotnetCmd.path -PathType Leaf)) {
-        Write-Host('here 2')
+        Write-Host('DOES THIS REACH THE SECOND OPTION')
         $script:DotnetCommandPath = $script:DotnetCommandPath_Backup
         Rename-Item -Path $script:DotnetCmdRenamed -NewName $script:DotnetCommandPath
         $script:DotnetCommandPath_Renamed = $null
@@ -348,30 +367,42 @@ function Remove-NuGetExe
     if($script:DotnetCommandPath -and (Test-Path -LiteralPath $script:DotnetCommandPath -PathType Leaf)) {
         write-host ('$script:DotnetCommandPath: ' + $script:DotnetCommandPath)
         write-host ('test path $script:DotnetCommandPath: ' + (Test-Path -LiteralPath $script:DotnetCommandPath -PathType Leaf))
-        $script:DotnetCommandPath_Renamed = "$script:DotnetCommandPath.Renamed"
-        $script:DotnetCommandPath_Backup = $script:DotnetCommandPath
-        Rename-Item -Path $script:DotnetCommandPath -NewName $script:DotnetCommandPath_Renamed
+
+        $script:DotnetCommandPath | ForEach-Object {
+            if (Test-Path -LiteralPath $_ -PathType Leaf) {
+                $renamed_dotnetCmdPath = "$_.Renamed"
+                $script:DotnetCommandPath_Renamed += $renamed_dotnetCmdPath
+                $script:DotnetCommandPath_Backup += $_
+                Rename-Item -Path $_ -NewName $renamed_dotnetCmdPath
+            }
+        }
+
+        #$renamed_dotnetCmdPath = "$($script:DotnetCommandPath).Renamed"
+        #$script:DotnetCommandPath_Renamed += $renamed_dotnetCmdPath
+        #$script:DotnetCommandPath_Backup += $script:DotnetCommandPath
+        #Rename-Item -Path $script:DotnetCommandPath -NewName $renamed_dotnetCmdPath
         $script:DotnetCommandPath = $null
     }
     elseif($DotnetCmd -and $DotnetCmd.path) {
         # Dotnet can be stored in multiple locations, so test each path
         $DotnetCmd.path | ForEach-Object {
             if (Test-Path -LiteralPath $_ -PathType Leaf) {
+                Write-Host ('here!')
                 write-host ($(Test-Path -LiteralPath $_ -PathType Leaf))
-    
+                
                 # if test-path is true, rename the particular path
                 $renamed_dotnetCmdPath = "$_.Renamed"
-                $script:DotnetCommandPath_Renamed = $renamed_dotnetCmdPath
-                $script:DotnetCommandPath_Backup = $_
-                Rename-Item -Path $_ -NewName $script:DotnetCommandPath_Renamed
+                $script:DotnetCommandPath_Renamed += $renamed_dotnetCmdPath
+                $script:DotnetCommandPath_Backup += $_
+                Rename-Item -Path $_ -NewName $renamed_dotnetCmdPath
     
                 write-host ('path: ' + $_)
                 write-host ('$script:DotnetCommandPath_Renamed: ' + $script:DotnetCommandPath_Renamed)
             }
         }
 
-        write-host (' $DotnetCmd.path: ' +  $DotnetCmd.path)
-        write-host ('test path  $DotnetCmd.path: ' + (Test-Path -LiteralPath $DotnetCmd.path -PathType Leaf))
+        write-host ('$script:DotnetCommandPath_Renamed: ' + $script:DotnetCommandPath_Renamed)
+        write-host ('$script:DotnetCommandPath_Backup: ' + $script:DotnetCommandPath_Backup)
         
         #$script:DotnetCommandPath_Renamed = "$($DotnetCmd.path).Renamed"
         #$script:DotnetCommandPath_Backup = $DotnetCmd.path 

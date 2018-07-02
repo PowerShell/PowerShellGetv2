@@ -1209,7 +1209,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
     #
     # Expected Result: Publish operation should fail, NuGet.exe should not install
     #
-    It PublishModuleInstallNugetExeAndNoToPrompt {
+    It PublishScriptInstallNugetExeAndNoToPrompt {
         try {     
             $script:NuGetExeName = 'NuGet.exe'
             $script:PSGetProgramDataPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramData -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'

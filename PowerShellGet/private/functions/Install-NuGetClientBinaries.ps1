@@ -27,13 +27,11 @@ function Install-NuGetClientBinaries
         ($script:NuGetExeVersion -and ($script:NuGetExeVersion -ge $script:NuGetExeMinRequiredVersion))   -and
          (-not $BootstrapNuGetExe -or
          (($script:NuGetExePath -and (Microsoft.PowerShell.Management\Test-Path -Path $script:NuGetExePath)) -or
-          ($script:DotnetCommandPath -and (Microsoft.PowerShell.Management\Test-Path -Path $script:DotnetCommandPath)))))
+          ($script:DotnetCommandPath -and (Get-Command $script:DotnetCommandName -ErrorAction Ignore -WarningAction SilentlyContinue)))))
     {
-        write-host('dotnetcommandpath 1: ' + $script:DotnetCommandPath)
         return
     }
 
-    write-host('dotnetcommandpath 2: ' + $script:DotnetCommandPath)
     $bootstrapNuGetProvider = (-not $script:NuGetProvider)
 
     if($bootstrapNuGetProvider)
@@ -156,7 +154,7 @@ function Install-NuGetClientBinaries
                         Microsoft.PowerShell.Management\Join-Path -ChildPath dotnet.exe
 
                 if($DotnetCommandPath -and
-                   -not (Microsoft.PowerShell.Management\Test-Path -LiteralPath $DotnetCommandPath -PathType Leaf)) {
+                    -not (Get-Command $script:DotnetCommandName -ErrorAction Ignore -WarningAction SilentlyContinue)) {
                     $DotnetCommandPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramFiles -ChildPath dotnet |
                         Microsoft.PowerShell.Management\Join-Path -ChildPath dotnet.exe
                 }
@@ -165,7 +163,7 @@ function Install-NuGetClientBinaries
                 $DotnetCommandPath = '/usr/local/bin/dotnet'
             }
 
-            if($DotnetCommandPath -and (Microsoft.PowerShell.Management\Test-Path -LiteralPath $DotnetCommandPath -PathType Leaf)) {
+            if($DotnetCommandPath -and (Get-Command $script:DotnetCommandName -ErrorAction Ignore -WarningAction SilentlyContinue)) {
                 $DotnetCommandVersion,$null = (& $DotnetCommandPath '--version') -split '-',2
                 if($DotnetCommandVersion -and ($script:MinimumDotnetCommandVersion -le $DotnetCommandVersion)) {
                     $script:DotnetCommandPath = $DotnetCommandPath

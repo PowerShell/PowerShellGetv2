@@ -154,7 +154,7 @@ function Install-NuGetClientBinaries
                         Microsoft.PowerShell.Management\Join-Path -ChildPath dotnet.exe
 
                 if($DotnetCommandPath -and
-                   -not (Microsoft.PowerShell.Management\Test-Path -LiteralPath $DotnetCommandPath -PathType Leaf)) {
+                    -not (Microsoft.PowerShell.Management\Test-Path -LiteralPath $DotnetCommandPath -PathType Leaf)) {
                     $DotnetCommandPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramFiles -ChildPath dotnet |
                         Microsoft.PowerShell.Management\Join-Path -ChildPath dotnet.exe
                 }
@@ -162,7 +162,7 @@ function Install-NuGetClientBinaries
             else {
                 $DotnetCommandPath = '/usr/local/bin/dotnet'
             }
-
+            # Test-Path -LiteralPath $DotnetCommandPath -PathType Leaf is returning true when it shouldn't be
             if($DotnetCommandPath -and (Microsoft.PowerShell.Management\Test-Path -LiteralPath $DotnetCommandPath -PathType Leaf)) {
                 $DotnetCommandVersion,$null = (& $DotnetCommandPath '--version') -split '-',2
                 if($DotnetCommandVersion -and ($script:MinimumDotnetCommandVersion -le $DotnetCommandVersion)) {

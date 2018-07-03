@@ -15,6 +15,7 @@ $script:DotnetCommandPath = $null
 $script:DotnetCommandPath_Backup = $null
 $script:DotnetCommandPath_Renamed = $null
 $script:EnvironmentVariableTarget = @{ Process = 0; User = 1; Machine = 2 }
+$script:EnvPATHValueBackup = $null
 
 $script:PowerShellGet = 'PowerShellGet'
 $script:IsInbox = $PSHOME.EndsWith('\WindowsPowerShell\v1.0', [System.StringComparison]::OrdinalIgnoreCase)
@@ -221,13 +222,13 @@ function Install-NuGetBinaries
 {
     [cmdletbinding()]
     param()
-
-    # Rename again if the original dotnet command got renamed during the earlier bootstrap tests.
-    if($script:DotnetCommandPath_Renamed -and (Test-Path -LiteralPath $script:DotnetCommandPath_Renamed -PathType Leaf)) {
-        $script:DotnetCommandPath = $script:DotnetCommandPath_Backup
-        Rename-Item -Path $script:DotnetCommandPath_Renamed -NewName $script:DotnetCommandPath
-        $script:DotnetCommandPath_Renamed = $null
-        $script:DotnetCommandPath_Backup = $null
+   
+    # Rename again if the original dotnet command got renamed during the earlier bootstrap tests. 
+    if($script:DotnetCommandPath_Renamed -and (Test-Path -LiteralPath $script:DotnetCommandPath_Renamed -PathType Leaf)) { 
+        $script:DotnetCommandPath = $script:DotnetCommandPath_Backup 
+        Rename-Item -Path $script:DotnetCommandPath_Renamed -NewName $script:DotnetCommandPath 
+        $script:DotnetCommandPath_Renamed = $null 
+        $script:DotnetCommandPath_Backup = $null 
     }
 
     if($script:NuGetProvider -and 
@@ -239,6 +240,12 @@ function Install-NuGetBinaries
 
     # Invoke Install-NuGetClientBinaries internal function in PowerShellGet module to bootstrap both NuGet provider and NuGet.exe 
     $psgetModule = Import-Module -Name PowerShellGet -PassThru -Scope Local
+    
+    if ($script:EnvPATHValueBackup -and $script:IsWindows) {
+        & $psgetModule Set-EnvironmentVariable -Name 'PATH' -Value $script:EnvPATHValueBackup -Target $script:EnvironmentVariableTarget.Process
+        $script:EnvPATHValueBackup = $null
+    }
+
     & $psgetModule Install-NuGetClientBinaries -Force -BootstrapNuGetExe -CallerPSCmdlet $PSCmdlet
 
     $script:NuGetProvider = PackageManagement\Get-PackageProvider -ErrorAction SilentlyContinue -WarningAction SilentlyContinue |
@@ -318,17 +325,48 @@ function Remove-NuGetExe
     if(Microsoft.PowerShell.Management\Test-Path -Path $script:ApplocalDataExePath)
     {
         Remove-Item -Path $script:ApplocalDataExePath -Force -Confirm:$false -WhatIf:$false
-    }    
+    } 
+    
+    $DotnetCommandPathProgramFiles = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramFiles -ChildPath dotnet |
+        Microsoft.PowerShell.Management\Join-Path -ChildPath dotnet.exe
 
-    # Rename the existing dotnet to ensure that NuGet bootstrapping tests work fine.
-    if($script:DotnetCommandPath -and (Test-Path -LiteralPath $script:DotnetCommandPath -PathType Leaf)) {
-        $script:DotnetCommandPath_Renamed = "$script:DotnetCommandPath.Renamed"
-        $script:DotnetCommandPath_Backup = $script:DotnetCommandPath
-        Rename-Item -Path $script:DotnetCommandPath -NewName $script:DotnetCommandPath_Renamed
-        $script:DotnetCommandPath = $null
+    $DotnetCommandPathLocalApp = Microsoft.PowerShell.Management\Join-Path -Path $env:LocalAppData -ChildPath Microsoft |
+        Microsoft.PowerShell.Management\Join-Path -ChildPath dotnet |
+        Microsoft.PowerShell.Management\Join-Path -ChildPath dotnet.exe
+
+    # Rename the existing dotnet to ensure that NuGet bootstrapping tests work fine. 
+    if($DotnetCommandPathProgramFiles -and (Test-Path -LiteralPath $DotnetCommandPathProgramFiles -PathType Leaf)) { 
+        $script:DotnetCommandPath_Renamed = "$DotnetCommandPathProgramFiles.Renamed"  
+        $script:DotnetCommandPath_Backup = $DotnetCommandPathProgramFiles  
+        Rename-Item -Path $DotnetCommandPathProgramFiles -NewName $script:DotnetCommandPath_Renamed     
+        $script:DotnetCommandPath = $null 
+    }
+    elseif($DotnetCommandPathLocalApp -and (Test-Path -LiteralPath $DotnetCommandPathLocalApp -PathType Leaf)) { 
+        $script:DotnetCommandPath_Renamed = "$DotnetCommandPathLocalApp.Renamed"  
+        $script:DotnetCommandPath_Backup = $DotnetCommandPathLocalApp 
+        Rename-Item -Path $DotnetCommandPathLocalApp -NewName $script:DotnetCommandPath_Renamed     
+        $script:DotnetCommandPath = $null 
     }
 
-    $script:NuGetExePath = $null
+    # Changes the environment so that dotnet and nuget files are temporarily removed    
+    $SourceLocations = Get-Command dotnet*, nuget* | ForEach-Object {Split-Path -Path $_.Source -Parent}
+    if ($sourceLocations) {
+        $psgetModule = Import-Module -Name PowerShellGet -PassThru -Scope Local
+        $currentValue = & $psgetModule Get-EnvironmentVariable -Name 'PATH' -Target $script:EnvironmentVariableTarget.Process
+        $script:EnvPATHValueBackup = $currentValue
+        $PathElements = $currentValue -split ';' | Where-Object {$_ -and ($sourceLocations -notcontains $_.TrimEnd('\'))}
+         
+        & $psgetModule Set-EnvironmentVariable -Name 'PATH' -Value ($PathElements -join ';') -Target $script:EnvironmentVariableTarget.Process
+    }
+}
+
+function Install-Nuget28
+{
+    Remove-NuGetExe
+
+    # Download outdated version 2.8.60717.93 of NuGet.exe from https://nuget.org/nuget.exe
+    $null = Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri 'https://go.microsoft.com/fwlink/?LinkID=690216&clcid=0x409' `
+     -OutFile $programDataExePath
 }
 
 function Get-NuGetExeFilePath

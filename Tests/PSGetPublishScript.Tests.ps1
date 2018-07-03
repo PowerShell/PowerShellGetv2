@@ -1196,7 +1196,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
             Assert ($content -and ($content -match 'upgrade')) "Publish script confirm prompt is not working, $content"
 
             $psgetItemInfo = Find-Script -Name $script:PublishScriptName -RequiredVersion $script:PublishScriptVersion -ErrorAction SilentlyContinue
-            Assert (($psgetItemInfo.Name -eq $script:PublishScriptName) -and (($psgetItemInfo.Version.ToString() -eq $script:PublishScriptVersion))) "Publish-Script should publish a Script with valid Script name, $($psgetItemInfo.Name)"
+            AssertNull ($psgetItemInfo) "Script published when it should not have"
         }
         finally {
             Install-NuGetBinaries
@@ -1255,8 +1255,8 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
             Assert ((Test-Path $script:ProgramDataExePath) -eq $false) "NuGet.exe installed when it should not have"
             Assert ($content -and ($content -match 'install')) "Publish module confirm prompt is not working, $content"
 
-            $script = Find-Script -Name $script:PublishScriptName -RequiredVersion $script:PublishScriptVersion -ErrorAction SilentlyContinue
-            AssertNull ($script) "Script published when it should not have"
+            $psgetItemInfo = Find-Script -Name $script:PublishScriptName -RequiredVersion $script:PublishScriptVersion -ErrorAction SilentlyContinue
+            AssertNull ($psgetItemInfo) "Script published when it should not have"
         }
         finally {
             Install-NuGetBinaries

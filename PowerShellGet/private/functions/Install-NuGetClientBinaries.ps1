@@ -27,7 +27,7 @@ function Install-NuGetClientBinaries
         ($script:NuGetExeVersion -and ($script:NuGetExeVersion -ge $script:NuGetExeMinRequiredVersion))   -and
          (-not $BootstrapNuGetExe -or
          (($script:NuGetExePath -and (Microsoft.PowerShell.Management\Test-Path -Path $script:NuGetExePath)) -or
-          ($script:DotnetCommandPath -and (Get-Command $script:DotnetCommandName -ErrorAction Ignore -WarningAction SilentlyContinue)))))
+          ($script:DotnetCommandPath -and (Microsoft.PowerShell.Management\Test-Path -Path $script:DotnetCommandPath)))))
     {
         return
     }
@@ -154,7 +154,7 @@ function Install-NuGetClientBinaries
                         Microsoft.PowerShell.Management\Join-Path -ChildPath dotnet.exe
 
                 if($DotnetCommandPath -and
-                    -not (Get-Command $script:DotnetCommandName -ErrorAction Ignore -WarningAction SilentlyContinue)) {
+                    -not (Microsoft.PowerShell.Management\Test-Path -LiteralPath $DotnetCommandPath -PathType Leaf)) {
                     $DotnetCommandPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramFiles -ChildPath dotnet |
                         Microsoft.PowerShell.Management\Join-Path -ChildPath dotnet.exe
                 }
@@ -162,8 +162,8 @@ function Install-NuGetClientBinaries
             else {
                 $DotnetCommandPath = '/usr/local/bin/dotnet'
             }
-
-            if($DotnetCommandPath -and (Get-Command $script:DotnetCommandName -ErrorAction Ignore -WarningAction SilentlyContinue)) {
+            # Test-Path -LiteralPath $DotnetCommandPath -PathType Leaf is returning true when it shouldn't be
+            if($DotnetCommandPath -and (Microsoft.PowerShell.Management\Test-Path -LiteralPath $DotnetCommandPath -PathType Leaf)) {
                 $DotnetCommandVersion,$null = (& $DotnetCommandPath '--version') -split '-',2
                 if($DotnetCommandVersion -and ($script:MinimumDotnetCommandVersion -le $DotnetCommandVersion)) {
                     $script:DotnetCommandPath = $DotnetCommandPath
@@ -270,7 +270,7 @@ function Install-NuGetClientBinaries
             {
                 $nugetExeBasePath = $script:PSGetProgramDataPath
             }
-#
+
             if(-not (Microsoft.PowerShell.Management\Test-Path -Path $nugetExeBasePath))
             {
                 $null = Microsoft.PowerShell.Management\New-Item -Path $nugetExeBasePath `

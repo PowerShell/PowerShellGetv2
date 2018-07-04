@@ -29,9 +29,11 @@ function Install-NuGetClientBinaries
          (($script:NuGetExePath -and (Microsoft.PowerShell.Management\Test-Path -Path $script:NuGetExePath)) -or
           ($script:DotnetCommandPath -and (Microsoft.PowerShell.Management\Test-Path -Path $script:DotnetCommandPath)))))
     {
+        write-host('dotnetcommandpath 1: ' + $script:DotnetCommandPath)
         return
     }
 
+    write-host('dotnetcommandpath 2: ' + $script:DotnetCommandPath)
     $bootstrapNuGetProvider = (-not $script:NuGetProvider)
 
     if($bootstrapNuGetProvider)
@@ -270,7 +272,7 @@ function Install-NuGetClientBinaries
             {
                 $nugetExeBasePath = $script:PSGetProgramDataPath
             }
-
+#
             if(-not (Microsoft.PowerShell.Management\Test-Path -Path $nugetExeBasePath))
             {
                 $null = Microsoft.PowerShell.Management\New-Item -Path $nugetExeBasePath `

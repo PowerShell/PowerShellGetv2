@@ -15,6 +15,7 @@ $script:DotnetCommandPath = @()
 $script:DotnetCommandPath_Backup = @()
 $script:DotnetCommandPath_Renamed = @()
 $script:EnvironmentVariableTarget = @{ Process = 0; User = 1; Machine = 2 }
+$script:EnvPATHValueBackup = $null
 
 $script:PowerShellGet = 'PowerShellGet'
 $script:IsInbox = $PSHOME.EndsWith('\WindowsPowerShell\v1.0', [System.StringComparison]::OrdinalIgnoreCase)
@@ -279,6 +280,12 @@ function Install-NuGetBinaries
 
     # Invoke Install-NuGetClientBinaries internal function in PowerShellGet module to bootstrap both NuGet provider and NuGet.exe 
     $psgetModule = Import-Module -Name PowerShellGet -PassThru -Scope Local
+    
+    if ($script:EnvPATHValueBackup -and $script:IsWindows) {
+        & $psgetModule Set-EnvironmentVariable -Name 'PATH' -Value $script:EnvPATHValueBackup -Target $script:EnvironmentVariableTarget.Process
+        $script:EnvPATHValueBackup = $null
+    }
+    
     & $psgetModule Install-NuGetClientBinaries -Force -BootstrapNuGetExe -CallerPSCmdlet $PSCmdlet
 
     $script:NuGetProvider = PackageManagement\Get-PackageProvider -ErrorAction SilentlyContinue -WarningAction SilentlyContinue |
@@ -411,6 +418,17 @@ function Remove-NuGetExe
     }
 
     $script:NuGetExePath = $null
+
+    # Changes the environment so that dotnet and nuget files are temporarily removed    
+    $SourceLocations = Get-Command dotnet*, nuget* | ForEach-Object {Split-Path -Path $_.Source -Parent}
+    if ($sourceLocations) {
+        $psgetModule = Import-Module -Name PowerShellGet -PassThru -Scope Local
+        $currentValue = & $psgetModule Get-EnvironmentVariable -Name 'PATH' -Target $script:EnvironmentVariableTarget.Process
+        $script:EnvPATHValueBackup = $currentValue
+        $PathElements = $currentValue -split ';' | Where-Object {$_ -and ($sourceLocations -notcontains $_.TrimEnd('\'))}
+         
+        & $psgetModule Set-EnvironmentVariable -Name 'PATH' -Value ($PathElements -join ';') -Target $script:EnvironmentVariableTarget.Process
+    }    
 }
 
 function Install-Nuget28

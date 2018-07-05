@@ -513,6 +513,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
                 RemoveItem $outputFilePath
             }
 
+            $NugetExePath = $null
             if(Microsoft.PowerShell.Management\Test-Path -Path $programDataExePath)
             {
                 $NugetExePath = $programDataExePath
@@ -542,7 +543,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
 
             AssertNotNull $err "$err"
             AssertNull $result "$result"           
-            Assert ((Test-Path $NugetExePath) -eq $false) "NuGet.exe installed when it should not have"
+            AssertNull $NugetExePath "NuGet.exe installed when it should not have"
             Assert ($content -and ($content -match 'install')) "Publish module confirm prompt is not working, $content"
 
             $module = find-module $script:PublishModuleName -RequiredVersion $version -ErrorAction SilentlyContinue

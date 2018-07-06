@@ -229,10 +229,7 @@ function Install-NuGetBinaries
     $DotnetCmdRenamed = Microsoft.PowerShell.Core\Get-Command -Name $dotnetrenamed -All -ErrorAction Ignore -WarningAction SilentlyContinue
      
     # Rename again if the original dotnet command got renamed during the earlier bootstrap tests.
-  
     if ($DotnetCmdRenamed.path -and (Test-Path -LiteralPath $DotnetCmdRenamed.path -PathType Leaf)) {
-        Write-Host('REVERTING BACK TO ORIGINAL DOTNET FILE NAME')
-
         For ($count=0; $count -lt $DotnetCmdRenamed.Length; $count++) {
             # Check every path in $script:DotnetCommandPath_Renamed is valid
             # if test-path is true, rename the particular path back to the original name
@@ -357,27 +354,28 @@ function Remove-NuGetExe
 
     $script:NuGetExePath = $null
 
-    # Changes the environment so that dotnet and nuget files are temporarily removed    
-    $SourceLocations = Get-Command dotnet*, nuget* | ForEach-Object {
-        if ($_.Source) {
-            Split-Path -Path $_.Source -Parent
+    if ($script:IsWindows) {
+        # Changes the environment so that dotnet and nuget files are temporarily removed    
+        $SourceLocations = Get-Command dotnet*, nuget* | ForEach-Object {
+            if ($_.Source) {
+                Split-Path -Path $_.Source -Parent
+            }
+            elseif ($_.Path) {
+                Split-Path -Path $_.Path -Parent
+            }
+            elseif ($_.FileVersionInfo.file) {
+                Split-Path -Path $_.FileVersionInfo.file -Parent
+            }
         }
-        elseif ($_.Path) {
-            Split-Path -Path $_.Path -Parent
-        }
-        elseif ($_.FileVersionInfo.file) {
-            Split-Path -Path $_.FileVersionInfo.file -Parent
-        }
-    
-    }
-    if ($sourceLocations) {
-        $psgetModule = Import-Module -Name PowerShellGet -PassThru -Scope Local
-        $currentValue = & $psgetModule Get-EnvironmentVariable -Name 'PATH' -Target $script:EnvironmentVariableTarget.Process
-        $script:EnvPATHValueBackup = $currentValue
-        $PathElements = $currentValue -split ';' | Where-Object {$_ -and ($sourceLocations -notcontains $_.TrimEnd('\'))}
+        if ($sourceLocations) {
+            $psgetModule = Import-Module -Name PowerShellGet -PassThru -Scope Local
+            $currentValue = & $psgetModule Get-EnvironmentVariable -Name 'PATH' -Target $script:EnvironmentVariableTarget.Process
+            $script:EnvPATHValueBackup = $currentValue
+            $PathElements = $currentValue -split ';' | Where-Object {$_ -and ($sourceLocations -notcontains $_.TrimEnd('\'))}
          
-        & $psgetModule Set-EnvironmentVariable -Name 'PATH' -Value ($PathElements -join ';') -Target $script:EnvironmentVariableTarget.Process
-    }    
+            & $psgetModule Set-EnvironmentVariable -Name 'PATH' -Value ($PathElements -join ';') -Target $script:EnvironmentVariableTarget.Process
+        }    
+    }
 }
 
 function Install-Nuget28

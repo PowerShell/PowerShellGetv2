@@ -222,9 +222,7 @@ function Install-NuGetBinaries
     [cmdletbinding()]
     param()
 
-   write-host('$script:DotnetCommandPath: ' + $script:DotnetCommandPath)
-
-    #look for renamed donet file
+    # Look for renamed dotnet file
     $dotnetrenamed = 'dotnet.exe.Renamed'
     $DotnetCmdRenamed = Microsoft.PowerShell.Core\Get-Command -Name $dotnetrenamed -All -ErrorAction Ignore -WarningAction SilentlyContinue
      
@@ -234,7 +232,6 @@ function Install-NuGetBinaries
             # Check every path in $script:DotnetCommandPath_Renamed is valid
             # if test-path is true, rename the particular path back to the original name
             if (Test-Path -LiteralPath $DotnetCmdRenamed.path[$count] -PathType Leaf) {
-                write-host ($count)
                 $originalDotnetCmd = $DotnetCmdRenamed.path[$count] -replace ".Renamed", ''
                 Rename-Item -Path $DotnetCmdRenamed.path[$count] -NewName $originalDotnetCmd
             }
@@ -333,21 +330,14 @@ function Remove-NuGetExe
     }    
 
     $DotnetCmd = Microsoft.PowerShell.Core\Get-Command -Name 'dotnet.exe' -All -ErrorAction Ignore -WarningAction SilentlyContinue 
-
-    Write-Host('**$dotnetcmd path array: ' + $DotnetCmd.path)
     
     if ($DotnetCmd -and $DotnetCmd.path) {
         # Dotnet can be stored in multiple locations, so test each path
         $DotnetCmd.path | ForEach-Object {
             if (Test-Path -LiteralPath $_ -PathType Leaf) {
-                write-host ($(Test-Path -LiteralPath $_ -PathType Leaf))
-
                 # if test-path is true, rename the particular path
                 $renamed_dotnetCmdPath = "$_.Renamed"
                 Rename-Item -Path $_ -NewName $renamed_dotnetCmdPath
-
-                write-host ('path: ' + $_)
-                write-host ('$renamed_dotnetCmdPath: ' + $renamed_dotnetCmdPath)
             }
         }
     }

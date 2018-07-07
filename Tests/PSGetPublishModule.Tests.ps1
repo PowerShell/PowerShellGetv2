@@ -143,7 +143,6 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         RemoveItem "$script:PublishModuleBase\*"
         RemoveItem "$script:ProgramFilesModulesPath\$script:PublishModuleName\*"
 
-
         $moduleBaseWithVersion = (Join-Path -Path $script:PublishModuleBase -ChildPath "$version")
         $null = New-Item -Path $moduleBaseWithVersion -ItemType Directory -Force
         Set-Content (Join-Path $moduleBaseWithVersion "$script:PublishModuleName.psm1") -Value "function Get-$script:PublishModuleName { Get-Date }"
@@ -1041,8 +1040,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         Assert ($itemInfo.Includes.RoleCapability -contains 'Lev2Maintenance') "Publish-Module was not able to populate the RoleCapability Names: $($itemInfo.Includes.RoleCapability)"
     } `
     -Skip:$($PSCulture -ne 'en-US')
-
-        
+  
     # Purpose: Validate Publish-Module is bootstrapping NuGet.exe when run with -Force  
     #
     # Action: Publish-Module -Force

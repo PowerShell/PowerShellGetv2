@@ -11,7 +11,7 @@ $script:NuGetExeName = 'NuGet.exe'
 $script:NuGetProvider = $null
 $script:NuGetProviderName = 'NuGet'
 $script:NuGetProviderVersion  = [Version]'2.8.5.201'
-$script:DotnetCommandPath = @()
+$script:DotnetCommandPath = $null
 $script:EnvironmentVariableTarget = @{ Process = 0; User = 1; Machine = 2 }
 $script:EnvPATHValueBackup = $null
 
@@ -216,7 +216,6 @@ function GetAndSet-PSGetTestGalleryDetails
     }
 }
 
-
 function Install-NuGetBinaries
 {
     [cmdletbinding()]
@@ -312,7 +311,6 @@ function Install-NuGetBinaries
         }
     }
 }
-
 
 function Remove-NuGetExe
 {

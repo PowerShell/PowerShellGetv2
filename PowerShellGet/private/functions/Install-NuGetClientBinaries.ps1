@@ -270,7 +270,7 @@ function Install-NuGetClientBinaries
             {
                 $nugetExeBasePath = $script:PSGetProgramDataPath
             }
-#
+
             if(-not (Microsoft.PowerShell.Management\Test-Path -Path $nugetExeBasePath))
             {
                 $null = Microsoft.PowerShell.Management\New-Item -Path $nugetExeBasePath `

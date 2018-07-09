@@ -363,6 +363,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
 
             AssertNull $err "$err"
             AssertNull $result "$result"
+            Write-host ('***********test path: ' + (test-path $NugetExePath))
             AssertNotNull (Get-Command $NugetExePath).FileVersionInfo.FileVersion "NuGet.exe did not install correctly"
             Assert ($content -and ($content -match 'install')) "Publish module confirm prompt is not working, $content"
 

@@ -61,11 +61,11 @@ function SuiteSetup {
     $script:PublishModuleBase = Join-Path $script:TempModulesPath $script:PublishModuleName
     $null = New-Item -Path $script:PublishModuleBase -ItemType Directory -Force
 
-    $script:NuGetExeName = 'NuGet.exe'
-    $script:PSGetProgramDataPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramData -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
-    $script:PSGetAppLocalPath = Microsoft.PowerShell.Management\Join-Path -Path $env:LOCALAPPDATA -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
-    $script:ProgramDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $script:NuGetExeName
-    $script:ApplocalDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetAppLocalPath -ChildPath $script:NuGetExeName
+    if ($script:IsWindows) {
+        $script:NuGetExeName = 'NuGet.exe'
+        $script:PSGetProgramDataPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramData -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
+        $script:ProgramDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $script:NuGetExeName
+    }
 }
 
 function SuiteCleanup {
@@ -157,36 +157,10 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
                 $err = $_
             }
 
-            if(Microsoft.PowerShell.Management\Test-Path -Path $programDataExePath)
-            {
-                $NugetExePath = $programDataExePath
-            }
-            elseif(Microsoft.PowerShell.Management\Test-Path -Path $applocalDataExePath)
-            {
-                $NugetExePath = $applocalDataExePath
-            }
-            else
-            {
-                # Using Get-Command cmdlet, get the location of NuGet.exe if it is available under $env:PATH.
-                # NuGet.exe does not work if it is under $env:WINDIR, so skip it from the Get-Command results.
-                $nugetCmd = Microsoft.PowerShell.Core\Get-Command -Name $script:NuGetExeName `
-                                                                -ErrorAction Ignore `
-                                                                -WarningAction SilentlyContinue |
-                                Microsoft.PowerShell.Core\Where-Object {
-                                    $_.Path -and
-                                    ((Microsoft.PowerShell.Management\Split-Path -Path $_.Path -Leaf) -eq $script:NuGetExeName) -and
-                                    (-not $_.Path.StartsWith($env:windir, [System.StringComparison]::OrdinalIgnoreCase))
-                                } | Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
-
-                if($nugetCmd -and $nugetCmd.Path -and $nugetCmd.FileVersionInfo.FileVersion)
-                {
-                    $NugetExePath = $nugetCmd.Path
-                }
-            }
             AssertNull $err "$err"
             AssertNull $result "$result"
-
-            AssertNotEquals (Get-Command $NugetExePath).FileVersionInfo.FileVersion $oldNuGetExeVersion "Incorrect version of NuGet.exe"
+            Assert (test-path $script:ProgramDataExePath) "NuGet.exe did not install properly"
+            AssertNotEquals (Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion $oldNuGetExeVersion "Incorrect version of NuGet.exe"
             
             $module = find-module $script:PublishModuleName -RequiredVersion $version
             AssertEquals $module.Name $script:PublishModuleName "Module published when it should not have"
@@ -239,36 +213,10 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
                 RemoveItem $outputFilePath
             }
 
-            if(Microsoft.PowerShell.Management\Test-Path -Path $programDataExePath)
-            {
-                $NugetExePath = $programDataExePath
-            }
-            elseif(Microsoft.PowerShell.Management\Test-Path -Path $applocalDataExePath)
-            {
-                $NugetExePath = $applocalDataExePath
-            }
-            else
-            {
-                # Using Get-Command cmdlet, get the location of NuGet.exe if it is available under $env:PATH.
-                # NuGet.exe does not work if it is under $env:WINDIR, so skip it from the Get-Command results.
-                $nugetCmd = Microsoft.PowerShell.Core\Get-Command -Name $script:NuGetExeName `
-                                                                -ErrorAction Ignore `
-                                                                -WarningAction SilentlyContinue |
-                                Microsoft.PowerShell.Core\Where-Object {
-                                    $_.Path -and
-                                    ((Microsoft.PowerShell.Management\Split-Path -Path $_.Path -Leaf) -eq $script:NuGetExeName) -and
-                                    (-not $_.Path.StartsWith($env:windir, [System.StringComparison]::OrdinalIgnoreCase))
-                                } | Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
-
-                if($nugetCmd -and $nugetCmd.Path -and $nugetCmd.FileVersionInfo.FileVersion)
-                {
-                    $NugetExePath = $nugetCmd.Path
-                }
-            }
-
             AssertNull $err "$err"
             AssertNull $result "$result"
-            AssertNotEquals (Get-Command $NugetExePath).FileVersionInfo.FileVersion $oldNuGetExeVersion "Incorrect version of NuGet.exe"
+            Assert (test-path $script:ProgramDataExePath) "NuGet.exe did not install properly"
+            AssertNotEquals (Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion $oldNuGetExeVersion "Incorrect version of NuGet.exe"
             Assert ($content -and ($content -match 'upgrade')) "Publish module confirm prompt is not working, $content"
 
             $module = find-module $script:PublishModuleName -RequiredVersion $version
@@ -319,36 +267,9 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
                 RemoveItem $outputFilePath
             }
 
-            if(Microsoft.PowerShell.Management\Test-Path -Path $programDataExePath)
-            {
-                $NugetExePath = $programDataExePath
-            }
-            elseif(Microsoft.PowerShell.Management\Test-Path -Path $applocalDataExePath)
-            {
-                $NugetExePath = $applocalDataExePath
-            }
-            else
-            {
-                # Using Get-Command cmdlet, get the location of NuGet.exe if it is available under $env:PATH.
-                # NuGet.exe does not work if it is under $env:WINDIR, so skip it from the Get-Command results.
-                $nugetCmd = Microsoft.PowerShell.Core\Get-Command -Name $script:NuGetExeName `
-                                                                -ErrorAction Ignore `
-                                                                -WarningAction SilentlyContinue |
-                                Microsoft.PowerShell.Core\Where-Object {
-                                    $_.Path -and
-                                    ((Microsoft.PowerShell.Management\Split-Path -Path $_.Path -Leaf) -eq $script:NuGetExeName) -and
-                                    (-not $_.Path.StartsWith($env:windir, [System.StringComparison]::OrdinalIgnoreCase))
-                                } | Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
-
-                if($nugetCmd -and $nugetCmd.Path -and $nugetCmd.FileVersionInfo.FileVersion)
-                {
-                    $NugetExePath = $nugetCmd.Path
-                }
-            }
-
             AssertNull $err "$err"
             AssertNull $result "$result"
-            AssertNotNull (Get-Command $NugetExePath).FileVersionInfo.FileVersion "NuGet.exe did not install correctly"
+            Assert (test-path $script:ProgramDataExePath -and (Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion) "NuGet.exe did not install properly"
             Assert ($content -and ($content -match 'install')) "Publish module confirm prompt is not working, $content"
 
             $module = find-module $script:PublishModuleName -RequiredVersion $version
@@ -404,36 +325,10 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
                 RemoveItem $outputFilePath
             }
 
-            if(Microsoft.PowerShell.Management\Test-Path -Path $programDataExePath)
-            {
-                $NugetExePath = $programDataExePath
-            }
-            elseif(Microsoft.PowerShell.Management\Test-Path -Path $applocalDataExePath)
-            {
-                $NugetExePath = $applocalDataExePath
-            }
-            else
-            {
-                # Using Get-Command cmdlet, get the location of NuGet.exe if it is available under $env:PATH.
-                # NuGet.exe does not work if it is under $env:WINDIR, so skip it from the Get-Command results.
-                $nugetCmd = Microsoft.PowerShell.Core\Get-Command -Name $script:NuGetExeName `
-                                                                -ErrorAction Ignore `
-                                                                -WarningAction SilentlyContinue |
-                                Microsoft.PowerShell.Core\Where-Object {
-                                    $_.Path -and
-                                    ((Microsoft.PowerShell.Management\Split-Path -Path $_.Path -Leaf) -eq $script:NuGetExeName) -and
-                                    (-not $_.Path.StartsWith($env:windir, [System.StringComparison]::OrdinalIgnoreCase))
-                                } | Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
-
-                if($nugetCmd -and $nugetCmd.Path -and $nugetCmd.FileVersionInfo.FileVersion)
-                {
-                    $NugetExePath = $nugetCmd.Path
-                }
-            }
-
             AssertNotNull $err "$err"
             AssertNull $result "$result"
-            AssertEquals (Get-Command $NugetExePath).FileVersionInfo.FileVersion $oldNuGetExeVersion "Incorrect version of NuGet.exe"
+            Assert (test-path $script:ProgramDataExePath) "NuGet.exe did not install properly"
+            AssertEquals (Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion $oldNuGetExeVersion "Incorrect version of NuGet.exe"
             Assert ($content -and ($content -match 'upgrade')) "Publish module confirm prompt is not working, $content"
 
             $module = find-module $script:PublishModuleName -RequiredVersion $version -ErrorAction SilentlyContinue
@@ -483,37 +378,9 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
                 RemoveItem $outputFilePath
             }
 
-            $NugetExePath = $null
-            if(Microsoft.PowerShell.Management\Test-Path -Path $programDataExePath)
-            {
-                $NugetExePath = $programDataExePath
-            }
-            elseif(Microsoft.PowerShell.Management\Test-Path -Path $applocalDataExePath)
-            {
-                $NugetExePath = $applocalDataExePath
-            }
-            else
-            {
-                # Using Get-Command cmdlet, get the location of NuGet.exe if it is available under $env:PATH.
-                # NuGet.exe does not work if it is under $env:WINDIR, so skip it from the Get-Command results.
-                $nugetCmd = Microsoft.PowerShell.Core\Get-Command -Name $script:NuGetExeName `
-                                                                -ErrorAction Ignore `
-                                                                -WarningAction SilentlyContinue |
-                                Microsoft.PowerShell.Core\Where-Object {
-                                    $_.Path -and
-                                    ((Microsoft.PowerShell.Management\Split-Path -Path $_.Path -Leaf) -eq $script:NuGetExeName) -and
-                                    (-not $_.Path.StartsWith($env:windir, [System.StringComparison]::OrdinalIgnoreCase))
-                                } | Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
-
-                if($nugetCmd -and $nugetCmd.Path -and $nugetCmd.FileVersionInfo.FileVersion)
-                {
-                    $NugetExePath = $nugetCmd.Path
-                }
-            }
-
             AssertNotNull $err "$err"
-            AssertNull $result "$result"           
-            AssertNull $NugetExePath "NuGet.exe installed when it should not have"
+            AssertNull $result "$result"       
+            Assert ((Test-Path $script:ProgramDataExePath) -eq $false) "NuGet.exe installed when it should not have"
             Assert ($content -and ($content -match 'install')) "Publish module confirm prompt is not working, $content"
 
             $module = find-module $script:PublishModuleName -RequiredVersion $version -ErrorAction SilentlyContinue

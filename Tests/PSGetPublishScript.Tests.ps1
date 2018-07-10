@@ -67,11 +67,11 @@ function SuiteSetup {
     $script:PublishScriptVersion = '1.0.0'
     $script:PublishScriptFilePath = Join-Path -Path $script:TempScriptsPath -ChildPath "$script:PublishScriptName.ps1"
 
-    $script:NuGetExeName = 'NuGet.exe'
-    $script:PSGetProgramDataPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramData -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
-    $script:PSGetAppLocalPath = Microsoft.PowerShell.Management\Join-Path -Path $env:LOCALAPPDATA -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
-    $script:ProgramDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $script:NuGetExeName
-    $script:ApplocalDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetAppLocalPath -ChildPath $script:NuGetExeName
+    if ($script:IsWindows) {
+        $script:NuGetExeName = 'NuGet.exe'
+        $script:PSGetProgramDataPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramData -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
+        $script:ProgramDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $script:NuGetExeName
+    }
 }
 
 function SuiteCleanup {
@@ -1004,6 +1004,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
 
             AssertNull $err "$err"
             AssertNull $result "$result"
+            Assert (test-path $script:ProgramDataExePath) "NuGet.exe did not install properly"
             AssertNotEquals (Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion $oldNuGetExeVersion "Incorrect version of NuGet.exe"
 
             $psgetItemInfo = Find-Script $script:PublishScriptName -RequiredVersion $script:PublishScriptVersion
@@ -1059,6 +1060,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
 
             AssertNull $err "$err"
             AssertNull $result "$result"
+            Assert (test-path $script:ProgramDataExePath) "NuGet.exe did not install properly"
             AssertNotEquals (Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion $oldNuGetExeVersion "Incorrect version of NuGet.exe"
             Assert ($content -and ($content -match 'upgrade')) "Publish script confirm prompt is not working, $content"
 
@@ -1112,6 +1114,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
 
             AssertNull $err "$err"
             AssertNull $result "$result"
+            Assert (test-path $script:ProgramDataExePath) "NuGet.exe did not install properly"
             AssertNotNull (Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion "NuGet.exe did not install correctly"
             Assert ($content -and ($content -match 'install')) "Publish script confirm prompt is not working, $content"
 
@@ -1170,6 +1173,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
 
             AssertNotNull $err "$err"
             AssertNull $result "$result"
+            Assert (test-path $script:ProgramDataExePath) "NuGet.exe did not install properly"
             AssertEquals (Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion $oldNuGetExeVersion "NuGet.exe upgraded when it should not have"
             Assert ($content -and ($content -match 'upgrade')) "Publish script confirm prompt is not working, $content"
 

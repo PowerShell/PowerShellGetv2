@@ -4,386 +4,378 @@
  # Copyright (c) Microsoft Corporation, 2014
  #####################################################################################>
 
-. "$PSScriptRoot\uiproxy.ps1"
+ . "$PSScriptRoot\uiproxy.ps1"
 
-$script:NuGetExePath = $null
-$script:NuGetExeName = 'NuGet.exe'
-$script:NuGetProvider = $null
-$script:NuGetProviderName = 'NuGet'
-$script:NuGetProviderVersion  = [Version]'2.8.5.201'
-$script:DotnetCommandPath = $null
-$script:EnvironmentVariableTarget = @{ Process = 0; User = 1; Machine = 2 }
-$script:EnvPATHValueBackup = $null
-
-$script:PowerShellGet = 'PowerShellGet'
-$script:IsInbox = $PSHOME.EndsWith('\WindowsPowerShell\v1.0', [System.StringComparison]::OrdinalIgnoreCase)
-$script:IsWindows = (-not (Get-Variable -Name IsWindows -ErrorAction Ignore)) -or $IsWindows
-$script:IsLinux = (Get-Variable -Name IsLinux -ErrorAction Ignore) -and $IsLinux
-$script:IsMacOS = (Get-Variable -Name IsMacOS -ErrorAction Ignore) -and $IsMacOS
-$script:IsCoreCLR = $PSVersionTable.ContainsKey('PSEdition') -and $PSVersionTable.PSEdition -eq 'Core'
-
-if($script:IsInbox)
-{
-    $script:ProgramFilesPSPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramFiles -ChildPath "WindowsPowerShell"
-}
-elseif($script:IsCoreCLR){
-    if($script:IsWindows) {
-        $script:ProgramFilesPSPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramFiles -ChildPath 'PowerShell'
-    }
-    else {
-        $script:ProgramFilesPSPath = Split-Path -Path ([System.Management.Automation.Platform]::SelectProductNameForDirectory('SHARED_MODULES')) -Parent
-    }
-}
-
-try
-{
-    $script:MyDocumentsFolderPath = [Environment]::GetFolderPath("MyDocuments")
-}
-catch
-{
-    $script:MyDocumentsFolderPath = $null
-}
-
-if($script:IsInbox)
-{
-    $script:MyDocumentsPSPath = if($script:MyDocumentsFolderPath)
-                                {
-                                    Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsFolderPath -ChildPath "WindowsPowerShell"
-                                } 
-                                else
-                                {
-                                    Microsoft.PowerShell.Management\Join-Path -Path $env:USERPROFILE -ChildPath "Documents\WindowsPowerShell"
-                                }
-}
-elseif($script:IsCoreCLR) {
-    if($script:IsWindows)
-    {
-        $script:MyDocumentsPSPath = if($script:MyDocumentsFolderPath)
-        {
-            Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsFolderPath -ChildPath 'PowerShell'
-        } 
-        else
-        {
-            Microsoft.PowerShell.Management\Join-Path -Path $HOME -ChildPath "Documents\PowerShell"
-        }
-    }
-    else
-    {
-        $script:MyDocumentsPSPath = Split-Path -Path ([System.Management.Automation.Platform]::SelectProductNameForDirectory('USER_MODULES')) -Parent
-    }
-}
-
-$script:ProgramFilesModulesPath = Microsoft.PowerShell.Management\Join-Path -Path $script:ProgramFilesPSPath -ChildPath 'Modules'
-$script:MyDocumentsModulesPath = Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsPSPath -ChildPath 'Modules'
-$script:ProgramFilesScriptsPath = Microsoft.PowerShell.Management\Join-Path -Path $script:ProgramFilesPSPath -ChildPath 'Scripts'
-$script:MyDocumentsScriptsPath = Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsPSPath -ChildPath 'Scripts'
-$script:TempPath = [System.IO.Path]::GetTempPath()
-
-if($script:IsWindows) {
-    $script:PSGetProgramDataPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramData -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
-    $script:PSGetAppLocalPath = Microsoft.PowerShell.Management\Join-Path -Path $env:LOCALAPPDATA -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
-} else {
-    $script:PSGetProgramDataPath = Join-Path -Path ([System.Management.Automation.Platform]::SelectProductNameForDirectory('CONFIG')) -ChildPath 'PowerShellGet'
-    $script:PSGetAppLocalPath = Join-Path -Path ([System.Management.Automation.Platform]::SelectProductNameForDirectory('CACHE')) -ChildPath 'PowerShellGet'
-}
-
-$script:ProgramDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $script:NuGetExeName
-$script:ApplocalDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetAppLocalPath -ChildPath $script:NuGetExeName
-$script:moduleSourcesFilePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetAppLocalPath -ChildPath 'PSRepositories.xml'
-
-# PowerShellGetFormatVersion will be incremented when we change the .nupkg format structure. 
-# PowerShellGetFormatVersion is in the form of Major.Minor.  
-# Minor is incremented for the backward compatible format change.
-# Major is incremented for the breaking change.
-$script:CurrentPSGetFormatVersion = "1.0"
-$script:PSGetFormatVersionPrefix = "PowerShellGetFormatVersion_"
-
-function Get-AllUsersModulesPath {
-    return $script:ProgramFilesModulesPath
-}
-
-function Get-CurrentUserModulesPath {
-    return $script:MyDocumentsModulesPath
-}
-
-function Get-AllUsersScriptsPath {
-    return $script:ProgramFilesScriptsPath
-}
-
-function Get-CurrentUserScriptsPath {
-    return $script:MyDocumentsScriptsPath
-}
-
-function Get-TempPath {
-    return $script:TempPath
-}
-
-function Get-PSGetLocalAppDataPath {
-    return $script:PSGetAppLocalPath
-}
-
-function GetAndSet-PSGetTestGalleryDetails
-{
-    param(
-        [REF]$PSGallerySourceUri,
-
-        [REF]$PSGalleryPublishUri,
-
-        [REF]$PSGalleryScriptSourceUri,
-
-        [REF]$PSGalleryScriptPublishUri,
-
-        [Switch] $IsScriptSuite,
-
-        [Switch] $SetPSGallery
-    )
-
-    if($env:PsgetTestGallery_ModuleUri -and $env:PsgetTestGallery_ScriptUri -and $env:PsgetTestGallery_PublishUri)
-    {
-        $SourceUri        = $env:PsgetTestGallery_ModuleUri
-        $PublishUri       = $env:PsgetTestGallery_PublishUri
-        $ScriptSourceUri  = $env:PsgetTestGallery_ScriptUri
-        $ScriptPublishUri = $env:PsgetTestGallery_PublishUri
-    }
-    else
-    {
-        $SourceUri        = 'http://localhost:8765/api/v2/'
-        $psgetModule = Import-Module -Name PowerShellGet -PassThru -Scope Local
-        $ResolvedLocalSource = & $psgetModule Resolve-Location -Location $SourceUri -LocationParameterName 'SourceLocation'
-
-        if($ResolvedLocalSource -and 
-           $PSVersionTable.PSVersion -ge '5.0.0' -and 
-           [System.Environment]::OSVersion.Version -ge "6.2.9200.0" -and 
-           $PSCulture -eq 'en-US')
-        {
-            $SourceUri        = $SourceUri
-            $PublishUri       = "$SourceUri/package"
-            $ScriptSourceUri  = $SourceUri
-            $ScriptPublishUri = $PublishUri
-        }
-        else
-        {
-            $SourceUri        = 'https://dtlgalleryint.cloudapp.net/api/v2/'
-            $PublishUri       = 'https://dtlgalleryint.cloudapp.net/api/v2/package'
-            $ScriptSourceUri  = 'https://dtlgalleryint.cloudapp.net/api/v2/items/psscript/'
-            $ScriptPublishUri = $PublishUri
-        }
-    }
-
-    $params = @{
-                Location = $SourceUri
-                PublishLocation = $PublishUri
-              }
-
-    if($IsScriptSuite)
-    {
-        $params['ScriptSourceLocation'] = $ScriptSourceUri
-        $params['ScriptPublishLocation'] = $ScriptPublishUri
-    }
-
-    #$params.Keys | ForEach-Object {Write-Warning -Message "GetAndSet-PSGetTestGalleryDetails, $_ : $($params[$_])"}
-
-    if($SetPSGallery)
-    {
-        Unregister-PSRepository -Name 'PSGallery'
-        Set-PSGallerySourceLocation @params
-
-        $repo = Get-PSRepository -Name 'PSGallery'
-        if($repo.SourceLocation -ne $SourceUri)
-        {
-            Throw 'Test repository is not set properly'
-        }
-    }
-
-    if($PSGallerySourceUri -ne $null)
-    {
-        $PSGallerySourceUri.Value = $SourceUri
-    }
-
-    if($PSGalleryPublishUri -ne $null)
-    {
-        $PSGalleryPublishUri.Value = $PublishUri
-    }
-
-    if($PSGalleryScriptSourceUri -ne $null)
-    {
-        $PSGalleryScriptSourceUri.Value = $ScriptSourceUri
-    }
-
-    if($PSGalleryScriptPublishUri -ne $null)
-    {
-        $PSGalleryScriptPublishUri.Value = $ScriptPublishUri
-    }
-}
-
-function Install-NuGetBinaries
-{
-    [cmdletbinding()]
-    param()
-
-   write-host('$script:DotnetCommandPath: ' + $script:DotnetCommandPath)
-
-    #look for renamed donet file
-    $dotnetrenamed = 'dotnet.exe.Renamed'
-    $DotnetCmdRenamed = Microsoft.PowerShell.Core\Get-Command -Name $dotnetrenamed -All -ErrorAction Ignore -WarningAction SilentlyContinue
+ $script:NuGetExePath = $null
+ $script:NuGetExeName = 'NuGet.exe'
+ $script:NuGetProvider = $null
+ $script:NuGetProviderName = 'NuGet'
+ $script:NuGetProviderVersion  = [Version]'2.8.5.201'
+ $script:DotnetCommandPath = @()
+ $script:EnvironmentVariableTarget = @{ Process = 0; User = 1; Machine = 2 }
+ $script:EnvPATHValueBackup = $null
+ 
+ $script:PowerShellGet = 'PowerShellGet'
+ $script:IsInbox = $PSHOME.EndsWith('\WindowsPowerShell\v1.0', [System.StringComparison]::OrdinalIgnoreCase)
+ $script:IsWindows = (-not (Get-Variable -Name IsWindows -ErrorAction Ignore)) -or $IsWindows
+ $script:IsLinux = (Get-Variable -Name IsLinux -ErrorAction Ignore) -and $IsLinux
+ $script:IsMacOS = (Get-Variable -Name IsMacOS -ErrorAction Ignore) -and $IsMacOS
+ $script:IsCoreCLR = $PSVersionTable.ContainsKey('PSEdition') -and $PSVersionTable.PSEdition -eq 'Core'
+ 
+ if($script:IsInbox)
+ {
+     $script:ProgramFilesPSPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramFiles -ChildPath "WindowsPowerShell"
+ }
+ elseif($script:IsCoreCLR){
+     if($script:IsWindows) {
+         $script:ProgramFilesPSPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramFiles -ChildPath 'PowerShell'
+     }
+     else {
+         $script:ProgramFilesPSPath = Split-Path -Path ([System.Management.Automation.Platform]::SelectProductNameForDirectory('SHARED_MODULES')) -Parent
+     }
+ }
+ 
+ try
+ {
+     $script:MyDocumentsFolderPath = [Environment]::GetFolderPath("MyDocuments")
+ }
+ catch
+ {
+     $script:MyDocumentsFolderPath = $null
+ }
+ 
+ if($script:IsInbox)
+ {
+     $script:MyDocumentsPSPath = if($script:MyDocumentsFolderPath)
+                                 {
+                                     Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsFolderPath -ChildPath "WindowsPowerShell"
+                                 } 
+                                 else
+                                 {
+                                     Microsoft.PowerShell.Management\Join-Path -Path $env:USERPROFILE -ChildPath "Documents\WindowsPowerShell"
+                                 }
+ }
+ elseif($script:IsCoreCLR) {
+     if($script:IsWindows)
+     {
+         $script:MyDocumentsPSPath = if($script:MyDocumentsFolderPath)
+         {
+             Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsFolderPath -ChildPath 'PowerShell'
+         } 
+         else
+         {
+             Microsoft.PowerShell.Management\Join-Path -Path $HOME -ChildPath "Documents\PowerShell"
+         }
+     }
+     else
+     {
+         $script:MyDocumentsPSPath = Split-Path -Path ([System.Management.Automation.Platform]::SelectProductNameForDirectory('USER_MODULES')) -Parent
+     }
+ }
+ 
+ $script:ProgramFilesModulesPath = Microsoft.PowerShell.Management\Join-Path -Path $script:ProgramFilesPSPath -ChildPath 'Modules'
+ $script:MyDocumentsModulesPath = Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsPSPath -ChildPath 'Modules'
+ $script:ProgramFilesScriptsPath = Microsoft.PowerShell.Management\Join-Path -Path $script:ProgramFilesPSPath -ChildPath 'Scripts'
+ $script:MyDocumentsScriptsPath = Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsPSPath -ChildPath 'Scripts'
+ $script:TempPath = [System.IO.Path]::GetTempPath()
+ 
+ if($script:IsWindows) {
+     $script:PSGetProgramDataPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramData -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
+     $script:PSGetAppLocalPath = Microsoft.PowerShell.Management\Join-Path -Path $env:LOCALAPPDATA -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
+ } else {
+     $script:PSGetProgramDataPath = Join-Path -Path ([System.Management.Automation.Platform]::SelectProductNameForDirectory('CONFIG')) -ChildPath 'PowerShellGet'
+     $script:PSGetAppLocalPath = Join-Path -Path ([System.Management.Automation.Platform]::SelectProductNameForDirectory('CACHE')) -ChildPath 'PowerShellGet'
+ }
+ 
+ $script:ProgramDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $script:NuGetExeName
+ $script:ApplocalDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetAppLocalPath -ChildPath $script:NuGetExeName
+ $script:moduleSourcesFilePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetAppLocalPath -ChildPath 'PSRepositories.xml'
+ 
+ # PowerShellGetFormatVersion will be incremented when we change the .nupkg format structure. 
+ # PowerShellGetFormatVersion is in the form of Major.Minor.  
+ # Minor is incremented for the backward compatible format change.
+ # Major is incremented for the breaking change.
+ $script:CurrentPSGetFormatVersion = "1.0"
+ $script:PSGetFormatVersionPrefix = "PowerShellGetFormatVersion_"
+ 
+ function Get-AllUsersModulesPath {
+     return $script:ProgramFilesModulesPath
+ }
+ 
+ function Get-CurrentUserModulesPath {
+     return $script:MyDocumentsModulesPath
+ }
+ 
+ function Get-AllUsersScriptsPath {
+     return $script:ProgramFilesScriptsPath
+ }
+ 
+ function Get-CurrentUserScriptsPath {
+     return $script:MyDocumentsScriptsPath
+ }
+ 
+ function Get-TempPath {
+     return $script:TempPath
+ }
+ 
+ function Get-PSGetLocalAppDataPath {
+     return $script:PSGetAppLocalPath
+ }
+ 
+ function GetAndSet-PSGetTestGalleryDetails
+ {
+     param(
+         [REF]$PSGallerySourceUri,
+ 
+         [REF]$PSGalleryPublishUri,
+ 
+         [REF]$PSGalleryScriptSourceUri,
+ 
+         [REF]$PSGalleryScriptPublishUri,
+ 
+         [Switch] $IsScriptSuite,
+ 
+         [Switch] $SetPSGallery
+     )
+ 
+     if($env:PsgetTestGallery_ModuleUri -and $env:PsgetTestGallery_ScriptUri -and $env:PsgetTestGallery_PublishUri)
+     {
+         $SourceUri        = $env:PsgetTestGallery_ModuleUri
+         $PublishUri       = $env:PsgetTestGallery_PublishUri
+         $ScriptSourceUri  = $env:PsgetTestGallery_ScriptUri
+         $ScriptPublishUri = $env:PsgetTestGallery_PublishUri
+     }
+     else
+     {
+         $SourceUri        = 'http://localhost:8765/api/v2/'
+         $psgetModule = Import-Module -Name PowerShellGet -PassThru -Scope Local
+         $ResolvedLocalSource = & $psgetModule Resolve-Location -Location $SourceUri -LocationParameterName 'SourceLocation'
+ 
+         if($ResolvedLocalSource -and 
+            $PSVersionTable.PSVersion -ge '5.0.0' -and 
+            [System.Environment]::OSVersion.Version -ge "6.2.9200.0" -and 
+            $PSCulture -eq 'en-US')
+         {
+             $SourceUri        = $SourceUri
+             $PublishUri       = "$SourceUri/package"
+             $ScriptSourceUri  = $SourceUri
+             $ScriptPublishUri = $PublishUri
+         }
+         else
+         {
+             $SourceUri        = 'https://dtlgalleryint.cloudapp.net/api/v2/'
+             $PublishUri       = 'https://dtlgalleryint.cloudapp.net/api/v2/package'
+             $ScriptSourceUri  = 'https://dtlgalleryint.cloudapp.net/api/v2/items/psscript/'
+             $ScriptPublishUri = $PublishUri
+         }
+     }
+ 
+     $params = @{
+                 Location = $SourceUri
+                 PublishLocation = $PublishUri
+               }
+ 
+     if($IsScriptSuite)
+     {
+         $params['ScriptSourceLocation'] = $ScriptSourceUri
+         $params['ScriptPublishLocation'] = $ScriptPublishUri
+     }
+ 
+     #$params.Keys | ForEach-Object {Write-Warning -Message "GetAndSet-PSGetTestGalleryDetails, $_ : $($params[$_])"}
+ 
+     if($SetPSGallery)
+     {
+         Unregister-PSRepository -Name 'PSGallery'
+         Set-PSGallerySourceLocation @params
+ 
+         $repo = Get-PSRepository -Name 'PSGallery'
+         if($repo.SourceLocation -ne $SourceUri)
+         {
+             Throw 'Test repository is not set properly'
+         }
+     }
+ 
+     if($PSGallerySourceUri -ne $null)
+     {
+         $PSGallerySourceUri.Value = $SourceUri
+     }
+ 
+     if($PSGalleryPublishUri -ne $null)
+     {
+         $PSGalleryPublishUri.Value = $PublishUri
+     }
+ 
+     if($PSGalleryScriptSourceUri -ne $null)
+     {
+         $PSGalleryScriptSourceUri.Value = $ScriptSourceUri
+     }
+ 
+     if($PSGalleryScriptPublishUri -ne $null)
+     {
+         $PSGalleryScriptPublishUri.Value = $ScriptPublishUri
+     }
+ }
+ 
+ 
+ function Install-NuGetBinaries
+ {
+     [cmdletbinding()]
+     param()
+ 
+     # Look for renamed dotnet file
+     $dotnetrenamed = 'dotnet.exe.Renamed'
+     $DotnetCmdRenamed = Microsoft.PowerShell.Core\Get-Command -Name $dotnetrenamed -All -ErrorAction Ignore -WarningAction SilentlyContinue
+      
+     # Rename again if the original dotnet command got renamed during the earlier bootstrap tests.
+     if ($DotnetCmdRenamed.path -and (Test-Path -LiteralPath $DotnetCmdRenamed.path -PathType Leaf)) {
+         For ($count=0; $count -lt $DotnetCmdRenamed.Length; $count++) {
+             # Check every path in $script:DotnetCommandPath_Renamed is valid
+             # if test-path is true, rename the particular path back to the original name
+             if (Test-Path -LiteralPath $DotnetCmdRenamed.path[$count] -PathType Leaf) {
+                 $originalDotnetCmd = $DotnetCmdRenamed.path[$count] -replace ".Renamed", ''
+                 Rename-Item -Path $DotnetCmdRenamed.path[$count] -NewName $originalDotnetCmd
+             }
+         }
+     }  
+ 
+     if($script:NuGetProvider -and 
+        (($script:NuGetExePath -and (Microsoft.PowerShell.Management\Test-Path -Path $script:NuGetExePath)) -or
+        ($script:DotnetCommandPath -and (Microsoft.PowerShell.Management\Test-Path -Path $script:DotnetCommandPath))))
+     {
+         return
+     }
+ 
+     # Invoke Install-NuGetClientBinaries internal function in PowerShellGet module to bootstrap both NuGet provider and NuGet.exe 
+     $psgetModule = Import-Module -Name PowerShellGet -PassThru -Scope Local
+     & $psgetModule Install-NuGetClientBinaries -Force -BootstrapNuGetExe -CallerPSCmdlet $PSCmdlet
+ 
+     $script:NuGetProvider = PackageManagement\Get-PackageProvider -ErrorAction SilentlyContinue -WarningAction SilentlyContinue |
+                                 Microsoft.PowerShell.Core\Where-Object { 
+                                                                          $_.Name -eq $script:NuGetProviderName -and 
+                                                                          $_.Version -ge $script:NuGetProviderVersion
+                                                                        }
+ 
+     if ($script:IsWindows) {
+         # Check if NuGet.exe is available under one of the predefined PowerShellGet locations under ProgramData or LocalAppData
+         if(Microsoft.PowerShell.Management\Test-Path -Path $script:ProgramDataExePath)
+         {
+             $script:NuGetExePath = $script:ProgramDataExePath
+         }
+         elseif(Microsoft.PowerShell.Management\Test-Path -Path $script:ApplocalDataExePath)
+         {
+             $script:NuGetExePath = $script:ApplocalDataExePath
+         }
+         else
+         {
+             # Get the NuGet.exe location if it is available under $env:PATH
+             # NuGet.exe does not work if it is under $env:WINDIR, so skipping it from the Get-Command results
+             $nugetCmd = Microsoft.PowerShell.Core\Get-Command -Name $script:NuGetExeName `
+                                                                 -ErrorAction SilentlyContinue `
+                                                                 -WarningAction SilentlyContinue | 
+                             Microsoft.PowerShell.Core\Where-Object { 
+                                 $_.Path -and 
+                                 ((Microsoft.PowerShell.Management\Split-Path -Path $_.Path -Leaf) -eq $script:NuGetExeName) -and
+                                 (-not $_.Path.StartsWith($env:windir, [System.StringComparison]::OrdinalIgnoreCase)) 
+                             } | Microsoft.PowerShell.Utility\Select-Object -First 1
+ 
+             if($nugetCmd -and $nugetCmd.Path)
+             {
+                 $script:NuGetExePath = $nugetCmd.Path
+             }
+         }
+     }
+ 
+     if(-not $script:NuGetExePath) {
+         $DotnetCmd = Microsoft.PowerShell.Core\Get-Command -Name dotnet -ErrorAction Ignore -WarningAction SilentlyContinue |
+             Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
+ 
+         if ($DotnetCmd -and $DotnetCmd.Path) {
+             $script:DotnetCommandPath = $DotnetCmd.Path
+         }
+         else {
+             if($script:IsWindows) {
+                 $DotnetCommandPath = Join-Path -Path $env:LocalAppData -ChildPath Microsoft | 
+                     Join-Path -ChildPath dotnet | Join-Path -ChildPath dotnet.exe
+ 
+                 if($DotnetCommandPath -and 
+                     -not (Microsoft.PowerShell.Management\Test-Path -LiteralPath $DotnetCommandPath -PathType Leaf)) {
+                     $DotnetCommandPath = Join-Path -Path $env:ProgramFiles -ChildPath dotnet | Join-Path -ChildPath dotnet.exe
+                 }
+             } 
+             else {                
+                 $DotnetCommandPath = '/usr/local/bin/dotnet'
+             }
+ 
+             if($DotnetCommandPath -and (Microsoft.PowerShell.Management\Test-Path -LiteralPath $DotnetCommandPath -PathType Leaf)) {
+                 $script:DotnetCommandPath = $DotnetCommandPath
+             }
+         }
+     }
+ }
+ 
+ 
+ function Remove-NuGetExe
+ {
+     Install-NuGetBinaries
+ 
+     # Uninstall NuGet.exe if it is available under one of the predefined PowerShellGet locations under ProgramData or LocalAppData
+     if(Microsoft.PowerShell.Management\Test-Path -Path $script:ProgramDataExePath)
+     {
+         Remove-Item -Path $script:ProgramDataExePath -Force -Confirm:$false -WhatIf:$false
+     }
+ 
+     if(Microsoft.PowerShell.Management\Test-Path -Path $script:ApplocalDataExePath)
+     {
+         Remove-Item -Path $script:ApplocalDataExePath -Force -Confirm:$false -WhatIf:$false
+     }    
+ 
+     $DotnetCmd = Microsoft.PowerShell.Core\Get-Command -Name 'dotnet.exe' -All -ErrorAction Ignore -WarningAction SilentlyContinue 
      
-    # Rename again if the original dotnet command got renamed during the earlier bootstrap tests.
-    if ($DotnetCmdRenamed.path -and (Test-Path -LiteralPath $DotnetCmdRenamed.path -PathType Leaf)) {
-        For ($count=0; $count -lt $DotnetCmdRenamed.Length; $count++) {
-            # Check every path in $script:DotnetCommandPath_Renamed is valid
-            # if test-path is true, rename the particular path back to the original name
-            if (Test-Path -LiteralPath $DotnetCmdRenamed.path[$count] -PathType Leaf) {
-                write-host ($count)
-                $originalDotnetCmd = $DotnetCmdRenamed.path[$count] -replace ".Renamed", ''
-                Rename-Item -Path $DotnetCmdRenamed.path[$count] -NewName $originalDotnetCmd
-            }
-        }
-    }  
-
-    if($script:NuGetProvider -and 
-       (($script:NuGetExePath -and (Microsoft.PowerShell.Management\Test-Path -Path $script:NuGetExePath)) -or
-       ($script:DotnetCommandPath -and (Microsoft.PowerShell.Management\Test-Path -Path $script:DotnetCommandPath))))
-    {
-        return
-    }
-
-    # Invoke Install-NuGetClientBinaries internal function in PowerShellGet module to bootstrap both NuGet provider and NuGet.exe 
-    $psgetModule = Import-Module -Name PowerShellGet -PassThru -Scope Local
-    & $psgetModule Install-NuGetClientBinaries -Force -BootstrapNuGetExe -CallerPSCmdlet $PSCmdlet
-
-    $script:NuGetProvider = PackageManagement\Get-PackageProvider -ErrorAction SilentlyContinue -WarningAction SilentlyContinue |
-                                Microsoft.PowerShell.Core\Where-Object { 
-                                                                         $_.Name -eq $script:NuGetProviderName -and 
-                                                                         $_.Version -ge $script:NuGetProviderVersion
-                                                                       }
-
-    if ($script:IsWindows) {
-        # Check if NuGet.exe is available under one of the predefined PowerShellGet locations under ProgramData or LocalAppData
-        if(Microsoft.PowerShell.Management\Test-Path -Path $script:ProgramDataExePath)
-        {
-            $script:NuGetExePath = $script:ProgramDataExePath
-        }
-        elseif(Microsoft.PowerShell.Management\Test-Path -Path $script:ApplocalDataExePath)
-        {
-            $script:NuGetExePath = $script:ApplocalDataExePath
-        }
-        else
-        {
-            # Get the NuGet.exe location if it is available under $env:PATH
-            # NuGet.exe does not work if it is under $env:WINDIR, so skipping it from the Get-Command results
-            $nugetCmd = Microsoft.PowerShell.Core\Get-Command -Name $script:NuGetExeName `
-                                                                -ErrorAction SilentlyContinue `
-                                                                -WarningAction SilentlyContinue | 
-                            Microsoft.PowerShell.Core\Where-Object { 
-                                $_.Path -and 
-                                ((Microsoft.PowerShell.Management\Split-Path -Path $_.Path -Leaf) -eq $script:NuGetExeName) -and
-                                (-not $_.Path.StartsWith($env:windir, [System.StringComparison]::OrdinalIgnoreCase)) 
-                            } | Microsoft.PowerShell.Utility\Select-Object -First 1
-
-            if($nugetCmd -and $nugetCmd.Path)
-            {
-                $script:NuGetExePath = $nugetCmd.Path
-            }
-        }
-    }
-
-    if(-not $script:NuGetExePath) {
-        $DotnetCmd = Microsoft.PowerShell.Core\Get-Command -Name dotnet -ErrorAction Ignore -WarningAction SilentlyContinue |
-            Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
-
-        if ($DotnetCmd -and $DotnetCmd.Path) {
-            $script:DotnetCommandPath = $DotnetCmd.Path
-        }
-        else {
-            if($script:IsWindows) {
-                $DotnetCommandPath = Join-Path -Path $env:LocalAppData -ChildPath Microsoft | 
-                    Join-Path -ChildPath dotnet | Join-Path -ChildPath dotnet.exe
-
-                if($DotnetCommandPath -and 
-                    -not (Microsoft.PowerShell.Management\Test-Path -LiteralPath $DotnetCommandPath -PathType Leaf)) {
-                    $DotnetCommandPath = Join-Path -Path $env:ProgramFiles -ChildPath dotnet | Join-Path -ChildPath dotnet.exe
-                }
-            } 
-            else {                
-                $DotnetCommandPath = '/usr/local/bin/dotnet'
-            }
-
-            if($DotnetCommandPath -and (Microsoft.PowerShell.Management\Test-Path -LiteralPath $DotnetCommandPath -PathType Leaf)) {
-                $script:DotnetCommandPath = $DotnetCommandPath
-            }
-        }
-    }
-}
-
-function Remove-NuGetExe
-{
-    Install-NuGetBinaries
-
-    # Uninstall NuGet.exe if it is available under one of the predefined PowerShellGet locations under ProgramData or LocalAppData
-    if(Microsoft.PowerShell.Management\Test-Path -Path $script:ProgramDataExePath)
-    {
-        Remove-Item -Path $script:ProgramDataExePath -Force -Confirm:$false -WhatIf:$false
-    }
-
-    if(Microsoft.PowerShell.Management\Test-Path -Path $script:ApplocalDataExePath)
-    {
-        Remove-Item -Path $script:ApplocalDataExePath -Force -Confirm:$false -WhatIf:$false
-    }    
-
-    $DotnetCmd = Microsoft.PowerShell.Core\Get-Command -Name 'dotnet.exe' -All -ErrorAction Ignore -WarningAction SilentlyContinue 
-
-    Write-Host('**$dotnetcmd path array: ' + $DotnetCmd.path)
-    
-    if ($DotnetCmd -and $DotnetCmd.path) {
-        # Dotnet can be stored in multiple locations, so test each path
-        $DotnetCmd.path | ForEach-Object {
-            if (Test-Path -LiteralPath $_ -PathType Leaf) {
-                write-host ($(Test-Path -LiteralPath $_ -PathType Leaf))
-
-                # if test-path is true, rename the particular path
-                $renamed_dotnetCmdPath = "$_.Renamed"
-                Rename-Item -Path $_ -NewName $renamed_dotnetCmdPath
-
-                write-host ('path: ' + $_)
-                write-host ('$renamed_dotnetCmdPath: ' + $renamed_dotnetCmdPath)
-            }
-        }
-    }
-
-    $script:NuGetExePath = $null
-
-    if ($script:IsWindows) {
-        # Changes the environment so that dotnet and nuget files are temporarily removed    
-        $SourceLocations = Get-Command dotnet*, nuget* | ForEach-Object {
-            if ($_.Source) {
-                Split-Path -Path $_.Source -Parent
-            }
-            elseif ($_.Path) {
-                Split-Path -Path $_.Path -Parent
-            }
-            elseif ($_.FileVersionInfo.file) {
-                Split-Path -Path $_.FileVersionInfo.file -Parent
-            }
-        }
-        if ($sourceLocations) {
-            $psgetModule = Import-Module -Name PowerShellGet -PassThru -Scope Local
-            $currentValue = & $psgetModule Get-EnvironmentVariable -Name 'PATH' -Target $script:EnvironmentVariableTarget.Process
-            $script:EnvPATHValueBackup = $currentValue
-            $PathElements = $currentValue -split ';' | Where-Object {$_ -and ($sourceLocations -notcontains $_.TrimEnd('\'))}
-         
-            & $psgetModule Set-EnvironmentVariable -Name 'PATH' -Value ($PathElements -join ';') -Target $script:EnvironmentVariableTarget.Process
-        }    
-    }
-}
-
-function Install-Nuget28
-{
-    Remove-NuGetExe
-
-    # Download outdated version 2.8.60717.93 of NuGet.exe from https://nuget.org/nuget.exe
-    $null = Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri 'https://go.microsoft.com/fwlink/?LinkID=690216&clcid=0x409' `
-     -OutFile $programDataExePath
-}
+     if ($DotnetCmd -and $DotnetCmd.path) {
+         # Dotnet can be stored in multiple locations, so test each path
+         $DotnetCmd.path | ForEach-Object {
+             if (Test-Path -LiteralPath $_ -PathType Leaf) {
+                 # if test-path is true, rename the particular path
+                 $renamed_dotnetCmdPath = "$_.Renamed"
+                 Rename-Item -Path $_ -NewName $renamed_dotnetCmdPath
+             }
+         }
+     }
+ 
+     $script:NuGetExePath = $null
+ 
+     if ($script:IsWindows) {
+         # Changes the environment so that dotnet and nuget files are temporarily removed    
+         $SourceLocations = Get-Command dotnet*, nuget* | ForEach-Object {
+             if ($_.Source) {
+                 Split-Path -Path $_.Source -Parent
+             }
+             elseif ($_.Path) {
+                 Split-Path -Path $_.Path -Parent
+             }
+             elseif ($_.FileVersionInfo.file) {
+                 Split-Path -Path $_.FileVersionInfo.file -Parent
+             }
+         }
+         if ($sourceLocations) {
+             $psgetModule = Import-Module -Name PowerShellGet -PassThru -Scope Local
+             $currentValue = & $psgetModule Get-EnvironmentVariable -Name 'PATH' -Target $script:EnvironmentVariableTarget.Process
+             $script:EnvPATHValueBackup = $currentValue
+             $PathElements = $currentValue -split ';' | Where-Object {$_ -and ($sourceLocations -notcontains $_.TrimEnd('\'))}
+          
+             & $psgetModule Set-EnvironmentVariable -Name 'PATH' -Value ($PathElements -join ';') -Target $script:EnvironmentVariableTarget.Process
+         }    
+     }
+ }
+ 
+ function Install-Nuget28
+ {
+     Remove-NuGetExe
+ 
+     # Download outdated version 2.8.60717.93 of NuGet.exe from https://nuget.org/nuget.exe
+     $null = Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri 'https://go.microsoft.com/fwlink/?LinkID=690216&clcid=0x409' `
+      -OutFile $programDataExePath
+ }
 
 function Get-NuGetExeFilePath
 {

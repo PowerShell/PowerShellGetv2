@@ -66,12 +66,6 @@ function SuiteSetup {
     $script:PublishScriptName = 'Fabrikam-TestScript'
     $script:PublishScriptVersion = '1.0.0'
     $script:PublishScriptFilePath = Join-Path -Path $script:TempScriptsPath -ChildPath "$script:PublishScriptName.ps1"
-
-    if ($script:IsWindows) {
-        $script:NuGetExeName = 'NuGet.exe'
-        $script:PSGetProgramDataPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramData -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
-        $script:ProgramDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $script:NuGetExeName
-    }
 }
 
 function SuiteCleanup {
@@ -116,6 +110,12 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
 
                         Test-ScriptFunction
                         Test-ScriptWorkflow"
+        
+        if ($script:IsWindows) {
+            $script:NuGetExeName = 'NuGet.exe'
+            $script:PSGetProgramDataPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramData -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
+            $script:ProgramDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $script:NuGetExeName
+        }
     }
 
     AfterEach {

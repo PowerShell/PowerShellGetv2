@@ -60,12 +60,6 @@ function SuiteSetup {
     $script:PublishModuleName = "ContosoPublishModule"
     $script:PublishModuleBase = Join-Path $script:TempModulesPath $script:PublishModuleName
     $null = New-Item -Path $script:PublishModuleBase -ItemType Directory -Force
-
-    if ($script:IsWindows) {
-        $script:NuGetExeName = 'NuGet.exe'
-        $script:PSGetProgramDataPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramData -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
-        $script:ProgramDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $script:NuGetExeName
-    }
 }
 
 function SuiteCleanup {
@@ -103,6 +97,12 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
 	
         # Copy module to $script:ProgramFilesModulesPath
         Copy-Item $script:PublishModuleBase $script:ProgramFilesModulesPath -Recurse -Force
+
+        if ($script:IsWindows) {
+            $script:NuGetExeName = 'NuGet.exe'
+            $script:PSGetProgramDataPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramData -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
+            $script:ProgramDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $script:NuGetExeName
+        }
     }
 
     AfterEach {

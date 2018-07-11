@@ -109,7 +109,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
                         Workflow Test-ScriptWorkflow { 'Test-ScriptWorkflow' }
 
                         Test-ScriptFunction
-                        Test-ScriptWorkflow"    
+                        Test-ScriptWorkflow"
     }
 
     AfterEach {

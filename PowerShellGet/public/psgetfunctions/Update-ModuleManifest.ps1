@@ -699,7 +699,7 @@ function Update-ModuleManifest
 
         #Manually update the section in PrivateData since New-ModuleManifest works differently on different PS version
         $PrivateDataInput = ""
-        $ExistingData = $moduleInfo.PrivateData
+        $ExistingData = $ModuleManifestHashTable.PrivateData
         $Data = @{}
         if($ExistingData)
         {

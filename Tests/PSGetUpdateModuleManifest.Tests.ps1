@@ -519,6 +519,36 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
     } 
 
 
+    # Purpose: To ensure key values from previous calls are not reverted to their original value.
+    #
+    # Action:
+    #      Update-ModuleManifest -Path [Path] -RootModule [Path]
+    #      Update-ModuleManifest -Path [Path] -LicenseUri [Uri]
+    #      Update-ModuleManifest -Path [Path] -HelpUri [Uri]
+    #
+    # Expected Result: After all to Update-ModouleManifest, the values that were passed in for RootModule, LicenseUri and HelpInfoUri parameters should be the same values during assertation.
+    #
+    It UpdateModuleManifestWithConsecutiveCallsForNestedManifestKeys {
+
+        Set-Content "$script:UpdateModuleManifestBase\$script:UpdateModuleManifestName.psm1" -Value "function Get-$script:UpdateModuleManifestName { Get-Date }"
+
+        $LicenseUri = "https://$script:UpdateModuleManifestName.com/1.0.0/license"
+        $HelpInfoURI = "https://$script:UpdateModuleManifestName.com/HelpInfoURI"
+
+        New-ModuleManifest -path $script:testManifestPath
+
+        Update-ModuleManifest -path $script:testManifestPath -RootModule "$script:UpdateModuleManifestName.psm1"
+        Update-ModuleManifest -path $script:testManifestPath -LicenseUri $LicenseUri
+        Update-ModuleManifest -path $script:testManifestPath -HelpInfoUri $HelpInfoURI
+
+        $newModuleInfo = Test-ModuleManifest -Path $script:testManifestPath
+
+        AssertEquals $newModuleInfo.RootModule "$script:UpdateModuleManifestName.psm1" "RootModule should be $($script:UpdateModuleManifestName.psm1)"
+        AssertEqualsCaseInsensitive $newModuleInfo.LicenseUri $LicenseUri "LicenseUri should be $($LicenseUri)"
+        AssertEqualsCaseInsensitive $newModuleInfo.HelpInfoURI $HelpInfoURI "HelpInfoURI should be $($HelpInfoURI)"
+    }
+
+
 
     # Purpose: Validate Update-ModuleManifest cmdlet throw warnings when ExportedDSCResources is specified for PowerShell version lower than 5.0
     #

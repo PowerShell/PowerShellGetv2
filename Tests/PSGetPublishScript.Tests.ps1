@@ -1118,7 +1118,6 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
                 RemoveItem $outputFilePaths
             }
 
-            AssertNull $err "$err"
             AssertNull $result "$result"
             Assert ((test-path $script:ProgramDataExePath) -and (Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion) "NuGet.exe did not install properly"
             Assert ($content -and ($content -match 'install')) "Publish script confirm prompt is not working, $content"

@@ -17,7 +17,7 @@
 if($IsLinux) {
     return
 }
-#ignore comment
+
 function SuiteSetup {
     Import-Module "$PSScriptRoot\PSGetTestUtils.psm1" -WarningAction SilentlyContinue
     Import-Module "$PSScriptRoot\Asserts.psm1" -WarningAction SilentlyContinue

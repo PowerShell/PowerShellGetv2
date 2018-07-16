@@ -1126,7 +1126,6 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
                 RemoveItem $outputFilePath
             }
 
-            AssertNull $err "$err"
             AssertNull $result "$result"
             Assert (test-path $script:ProgramDataExePath) "NuGet.exe did not install properly"
             AssertNotEquals (Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion $oldNuGetExeVersion "Incorrect version of NuGet.exe"

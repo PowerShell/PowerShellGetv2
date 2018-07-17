@@ -215,8 +215,7 @@
          $PSGalleryScriptPublishUri.Value = $ScriptPublishUri
      }
  }
- 
- 
+
  function Install-NuGetBinaries
  {
      [cmdletbinding()]
@@ -230,7 +229,7 @@
      if ($DotnetCmdRenamed.path -and (Test-Path -LiteralPath $DotnetCmdRenamed.path -PathType Leaf)) {
          For ($count=0; $count -lt $DotnetCmdRenamed.Length; $count++) {
              # Check every path in $script:DotnetCommandPath_Renamed is valid
-             # if test-path is true, rename the particular path back to the original name
+             # If test-path is true, rename the particular path back to the original name
              if (Test-Path -LiteralPath $DotnetCmdRenamed.path[$count] -PathType Leaf) {
                  $originalDotnetCmd = $DotnetCmdRenamed.path[$count] -replace ".Renamed", ''
                  Rename-Item -Path $DotnetCmdRenamed.path[$count] -NewName $originalDotnetCmd
@@ -238,6 +237,10 @@
          }
      }  
  
+     if  ($script:EnvPATHValueBackup) {
+        $script:EnvPATHValueBackup = $null
+     }
+     
      if($script:NuGetProvider -and 
         (($script:NuGetExePath -and (Microsoft.PowerShell.Management\Test-Path -Path $script:NuGetExePath)) -or
         ($script:DotnetCommandPath -and (Microsoft.PowerShell.Management\Test-Path -Path $script:DotnetCommandPath))))
@@ -313,23 +316,20 @@
      }
  }
  
- 
  function Remove-NuGetExe
  {
      Install-NuGetBinaries
  
-     # Uninstall NuGet.exe if it is available under one of the predefined PowerShellGet locations under ProgramData or LocalAppData
-     if(Microsoft.PowerShell.Management\Test-Path -Path $script:ProgramDataExePath)
-     {
-         Remove-Item -Path $script:ProgramDataExePath -Force -Confirm:$false -WhatIf:$false
-     }
+    # Uninstall NuGet.exe if it is available under one of the predefined PowerShellGet locations under ProgramData or LocalAppData
+    if (Microsoft.PowerShell.Management\Test-Path -Path $script:ProgramDataExePath) {
+        Remove-Item -Path $script:ProgramDataExePath -Force -Confirm:$false -WhatIf:$false
+    }
  
-     if(Microsoft.PowerShell.Management\Test-Path -Path $script:ApplocalDataExePath)
-     {
-         Remove-Item -Path $script:ApplocalDataExePath -Force -Confirm:$false -WhatIf:$false
-     }    
+    if (Microsoft.PowerShell.Management\Test-Path -Path $script:ApplocalDataExePath) {
+        Remove-Item -Path $script:ApplocalDataExePath -Force -Confirm:$false -WhatIf:$false
+    }    
  
-     $DotnetCmd = Microsoft.PowerShell.Core\Get-Command -Name 'dotnet.exe' -All -ErrorAction Ignore -WarningAction SilentlyContinue 
+    $DotnetCmd = Microsoft.PowerShell.Core\Get-Command -Name 'dotnet.exe' -All -ErrorAction Ignore -WarningAction SilentlyContinue 
      
      if ($DotnetCmd -and $DotnetCmd.path) {
          # Dotnet can be stored in multiple locations, so test each path

@@ -573,7 +573,7 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         Assert ($newModuleInfo.ExportedDscResources -contains $DscResourcesToExport[1]) "DscResourcesToExport should include $($DscResourcesToExport[1])"
         
     } `
-    -Skip:$(($PSVersionTable.PSVersion -lt '5.0.0') -or ($PSVersionTable.PSVersion -gt '6.0.9'))
+    -Skip:$(($PSVersionTable.PSVersion -lt '5.0.0') -or ($PSVersionTable.PSVersion -ge '6.0.9'))
 
     
     # Purpose: Validate Update-ModuleManifest cmdlet throw warnings when any instance specified in 'ExternalModuleDependency'

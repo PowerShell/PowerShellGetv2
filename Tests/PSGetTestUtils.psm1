@@ -236,10 +236,6 @@
              }
          }
      }  
- 
-     if  ($script:EnvPATHValueBackup) {
-        $script:EnvPATHValueBackup = $null
-     }
      
      if($script:NuGetProvider -and 
         (($script:NuGetExePath -and (Microsoft.PowerShell.Management\Test-Path -Path $script:NuGetExePath)) -or

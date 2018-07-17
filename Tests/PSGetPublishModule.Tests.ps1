@@ -139,7 +139,6 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         RemoveItem "$script:PublishModuleBase\*"
         RemoveItem "$script:ProgramFilesModulesPath\$script:PublishModuleName\*"
 
-
         $moduleBaseWithVersion = (Join-Path -Path $script:PublishModuleBase -ChildPath "$version")
         $null = New-Item -Path $moduleBaseWithVersion -ItemType Directory -Force
         Set-Content (Join-Path $moduleBaseWithVersion "$script:PublishModuleName.psm1") -Value "function Get-$script:PublishModuleName { Get-Date }"

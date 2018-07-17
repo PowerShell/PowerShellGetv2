@@ -225,7 +225,7 @@
      $dotnetrenamed = 'dotnet.exe.Renamed'
      $DotnetCmdRenamed = Microsoft.PowerShell.Core\Get-Command -Name $dotnetrenamed -All -ErrorAction Ignore -WarningAction SilentlyContinue
       
-     # Rename again if the original dotnet command got renamed during the earlier bootstrap tests.
+     # Reset name if the original dotnet command was renamed during the previous bootstrap tests.
      if ($DotnetCmdRenamed.path -and (Test-Path -LiteralPath $DotnetCmdRenamed.path -PathType Leaf)) {
          For ($count=0; $count -lt $DotnetCmdRenamed.Length; $count++) {
              # Check every path in $script:DotnetCommandPath_Renamed is valid
@@ -237,6 +237,12 @@
          }
      }  
      
+     # Reset the environment path if the original env path was renamed during the previous bootstrap tests.
+     if ($script:IsWindows -and $script:EnvPATHValueBackup) {
+        & $psgetModule Set-EnvironmentVariable -Name 'PATH' -Value $script:EnvPATHValueBackup -Target $script:EnvironmentVariableTarget.Process
+        $script:EnvPATHValueBackup = $null
+     }
+
      if($script:NuGetProvider -and 
         (($script:NuGetExePath -and (Microsoft.PowerShell.Management\Test-Path -Path $script:NuGetExePath)) -or
         ($script:DotnetCommandPath -and (Microsoft.PowerShell.Management\Test-Path -Path $script:DotnetCommandPath))))

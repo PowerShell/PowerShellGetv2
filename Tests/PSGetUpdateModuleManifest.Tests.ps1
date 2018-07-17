@@ -563,20 +563,18 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
     # Expected Result: Update-ModuleManifest should update the field "DscResourcesToExport" in module manifest file.
     #
     It UpdateModuleManifestWithValidExportedDSCResources {
-        if($PSVersionTable.PSVersion -ge '5.0.0')
-        {
-            $DscResourcesToExport = "ExportedDscResource1","ExportedDscResources2"
+        $DscResourcesToExport = "ExportedDscResource1", "ExportedDscResources2"
+        Write-Host ('$PSVersionTable.PSVersion: ' + $PSVersionTable.PSVersion)
+        New-ModuleManifest -path $script:testManifestPath -PowerShellVersion 5.0
+        Update-ModuleManifest -Path $script:testManifestPath -DscResourcesToExport $DscResourcesToExport -Confirm:$false
 
-            New-ModuleManifest -path $script:testManifestPath -PowerShellVersion 5.0
-            Update-ModuleManifest -Path $script:testManifestPath -DscResourcesToExport $DscResourcesToExport -Confirm:$false
+        $newModuleInfo = Test-ModuleManifest -Path $script:testManifestPath
 
-            $newModuleInfo = Test-ModuleManifest -Path $script:testManifestPath
-
-            Assert ($newModuleInfo.ExportedDscResources -contains $DscResourcesToExport[0]) "DscResourcesToExport should include $($DscResourcesToExport[0])"
-            Assert ($newModuleInfo.ExportedDscResources -contains $DscResourcesToExport[1]) "DscResourcesToExport should include $($DscResourcesToExport[1])"
-        }
+        Assert ($newModuleInfo.ExportedDscResources -contains $DscResourcesToExport[0]) "DscResourcesToExport should include $($DscResourcesToExport[0])"
+        Assert ($newModuleInfo.ExportedDscResources -contains $DscResourcesToExport[1]) "DscResourcesToExport should include $($DscResourcesToExport[1])"
+        
     } `
-    -Skip:$($PSVersionTable.PSVersion -ge '6.1.0')
+    -Skip:$(($PSVersionTable.PSVersion -lt '5.0.0') -or ($PSVersionTable.PSVersion -ge '6.1.0'))
 
     
     # Purpose: Validate Update-ModuleManifest cmdlet throw warnings when any instance specified in 'ExternalModuleDependency'

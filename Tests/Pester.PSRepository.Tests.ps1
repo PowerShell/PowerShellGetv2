@@ -195,6 +195,7 @@ Describe 'Test Set-PSRepository and Set-PackageSource for PSGallery repository' 
         $source.IsTrusted | should be $false
     }
 
+    # failure here
     It 'Set-PackageSource -ProviderName PowerShellGet -Name PSGallery -Trusted : should work' {
         Set-PackageSource -ProviderName PowerShellGet -Name $RepositoryName -Trusted
         $source = Get-PackageSource -name $RepositoryName

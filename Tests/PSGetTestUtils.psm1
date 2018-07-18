@@ -236,12 +236,6 @@
              }
          }
      }  
-     
-     # Reset the environment path if the original env path was renamed during the previous bootstrap tests.
-     if ($script:IsWindows -and $script:EnvPATHValueBackup) {
-        & $psgetModule Set-EnvironmentVariable -Name 'PATH' -Value $script:EnvPATHValueBackup -Target $script:EnvironmentVariableTarget.Process
-        $script:EnvPATHValueBackup = $null
-     }
 
      if($script:NuGetProvider -and 
         (($script:NuGetExePath -and (Microsoft.PowerShell.Management\Test-Path -Path $script:NuGetExePath)) -or
@@ -254,6 +248,12 @@
      $psgetModule = Import-Module -Name PowerShellGet -PassThru -Scope Local
      & $psgetModule Install-NuGetClientBinaries -Force -BootstrapNuGetExe -CallerPSCmdlet $PSCmdlet
  
+     # Reset the environment path if the original env path was renamed during the previous bootstrap tests.
+     if ($script:IsWindows -and $script:EnvPATHValueBackup) {
+        & $psgetModule Set-EnvironmentVariable -Name 'PATH' -Value $script:EnvPATHValueBackup -Target $script:EnvironmentVariableTarget.Process
+        $script:EnvPATHValueBackup = $null
+     }
+
      $script:NuGetProvider = PackageManagement\Get-PackageProvider -ErrorAction SilentlyContinue -WarningAction SilentlyContinue |
                                  Microsoft.PowerShell.Core\Where-Object { 
                                                                           $_.Name -eq $script:NuGetProviderName -and 

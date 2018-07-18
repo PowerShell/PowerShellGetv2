@@ -972,7 +972,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
         }
     } -Skip:$(-not ($IsLinux -or $IsMacOS))
 
-    # Purpose: Validate Publish-Script is bootstrapping NuGet.exe when run with -Force  
+    # Purpose: Validate Publish-Script is bootstrapping NuGet.exe when run with -Force
     #
     # Action: Publish-Script -Force
     #
@@ -983,9 +983,9 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
             $script:NuGetExeName = 'NuGet.exe'
             $script:PSGetProgramDataPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramData -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
             $script:ProgramDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $script:NuGetExeName
-    
+
             Install-NuGet28
-            # Re-import PowerShellGet module                                                   
+            # Re-import PowerShellGet module
             $script:psgetModuleInfo = Import-Module PowerShellGet -Global -Force -Passthru
             Import-LocalizedData  script:LocalizedData -filename PSGet.Resource.psd1 -BaseDirectory $script:psgetModuleInfo.ModuleBase
 
@@ -1006,7 +1006,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
             AssertNotEquals (Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion $oldNuGetExeVersion "Incorrect version of NuGet.exe"
 
             $psgetItemInfo = Find-Script $script:PublishScriptName -RequiredVersion $script:PublishScriptVersion
-            Assert (($psgetItemInfo.Name -eq $script:PublishScriptName) -and (($psgetItemInfo.Version.ToString() -eq $script:PublishScriptVersion))) "Publish-Script should publish a Script with valid Script name, $($psgetItemInfo.Name)"
+            Assert (($psgetItemInfo.Name -eq $script:PublishScriptName) -and (($psgetItemInfo.Version.ToString() -eq $script:PublishScriptVersion))) "Script did not successfully publish"
         }
         finally {
             Install-NuGetBinaries
@@ -1015,7 +1015,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
 
     # Purpose: Validate that Publish-Script prompts to upgrade NuGet.exe if local NuGet.exe file is less than minimum required version
     #
-    # Action: Publish-Script 
+    # Action: Publish-Script
     #
     # Expected Result: Publish operation should succeed, NuGet.exe should upgrade to latest version
     #
@@ -1026,7 +1026,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
             $script:ProgramDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $script:NuGetExeName
 
             Install-NuGet28
-            # Re-import PowerShellGet module                                                   
+            # Re-import PowerShellGet module
             $script:psgetModuleInfo = Import-Module PowerShellGet -Global -Force -Passthru
             Import-LocalizedData  script:LocalizedData -filename PSGet.Resource.psd1 -BaseDirectory $script:psgetModuleInfo.ModuleBase
 
@@ -1037,25 +1037,25 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
             $guid = [system.guid]::newguid().tostring()
             $outputFilePath = Join-Path $outputPath "$guid"
             $runspace = CreateRunSpace $outputFilePath 1
-	
+
             # 0 is mapped to YES in prompt
             $Global:proxy.UI.ChoiceToMake = 0
             $content = $null
             $err = $null
-	
+
             try {
                 $result = ExecuteCommand $runspace "Publish-Script -Path $script:PublishScriptFilePath -NuGetApiKey $script:ApiKey"
             }
             catch {
                 $err = $_
             }
-            finally {      
+            finally {
                 $fileName = "PromptForChoice-0.txt"
                 $path = join-path $outputFilePath $fileName
                 if (Test-Path $path) {
                     $content = get-content $path
                 }
-        
+
                 CloseRunSpace $runspace
                 RemoveItem $outputFilePaths
             }
@@ -1066,16 +1066,16 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
             Assert ($content -and ($content -match 'upgrade')) "Publish script confirm prompt is not working, $content"
 
             $psgetItemInfo = Find-Script -Name $script:PublishScriptName -RequiredVersion $script:PublishScriptVersion
-            Assert (($psgetItemInfo.Name -eq $script:PublishScriptName) -and (($psgetItemInfo.Version.ToString() -eq $script:PublishScriptVersion))) "Publish-Script should publish a Script with valid Script name, $($psgetItemInfo.Name)"
+            Assert (($psgetItemInfo.Name -eq $script:PublishScriptName) -and (($psgetItemInfo.Version.ToString() -eq $script:PublishScriptVersion))) "Script did not successfully publish"
         }
         finally {
             Install-NuGetBinaries
         }
     } -Skip:$($PSEdition -eq 'Core')
-    
+
     # Purpose: Validate that Publish-Script prompts to install NuGet.exe if NuGet.exe file is not found
     #
-    # Action: Publish-Script 
+    # Action: Publish-Script
     #
     # Expected Result: Publish operation should succeed, NuGet.exe should install latest version
     #
@@ -1084,9 +1084,9 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
             $script:NuGetExeName = 'NuGet.exe'
             $script:PSGetProgramDataPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramData -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
             $script:ProgramDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $script:NuGetExeName
-     
+
             Remove-NuGetExe
-            # Re-import PowerShellGet module                                                   
+            # Re-import PowerShellGet module
             $script:psgetModuleInfo = Import-Module PowerShellGet -Global -Force -Passthru
             Import-LocalizedData  script:LocalizedData -filename PSGet.Resource.psd1 -BaseDirectory $script:psgetModuleInfo.ModuleBase
 
@@ -1094,25 +1094,25 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
             $guid = [system.guid]::newguid().tostring()
             $outputFilePath = Join-Path $outputPath "$guid"
             $runspace = CreateRunSpace $outputFilePath 1
-	
+
             # 0 is mapped to YES in prompt
             $Global:proxy.UI.ChoiceToMake = 0
             $content = $null
             $err = $null
-	
+
             try {
                 $result = ExecuteCommand $runspace "Publish-Script -Path $script:PublishScriptFilePath -NuGetApiKey $script:ApiKey"
             }
             catch {
                 $err = $_
             }
-            finally {      
+            finally {
                 $fileName = "PromptForChoice-0.txt"
                 $path = join-path $outputFilePath $fileName
                 if (Test-Path $path) {
                     $content = get-content $path
                 }
-        
+
                 CloseRunSpace $runspace
                 RemoveItem $outputFilePaths
             }
@@ -1122,7 +1122,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
             Assert ($content -and ($content -match 'install')) "Publish script confirm prompt is not working, $content"
 
             $psgetItemInfo = Find-Script -Name $script:PublishScriptName -RequiredVersion $script:PublishScriptVersion
-            Assert (($psgetItemInfo.Name -eq $script:PublishScriptName) -and (($psgetItemInfo.Version.ToString() -eq $script:PublishScriptVersion))) "Publish-Script should publish a Script with valid Script name, $($psgetItemInfo.Name)"
+            Assert (($psgetItemInfo.Name -eq $script:PublishScriptName) -and (($psgetItemInfo.Version.ToString() -eq $script:PublishScriptVersion))) "Script did not successfully publish"
         }
         finally {
             Install-NuGetBinaries
@@ -1142,9 +1142,9 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
             $script:NuGetExeName = 'NuGet.exe'
             $script:PSGetProgramDataPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramData -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
             $script:ProgramDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $script:NuGetExeName
-    
+
             Install-NuGet28
-            # Re-import PowerShellGet module                                                   
+            # Re-import PowerShellGet module
             $script:psgetModuleInfo = Import-Module PowerShellGet -Global -Force -Passthru
             Import-LocalizedData  script:LocalizedData -filename PSGet.Resource.psd1 -BaseDirectory $script:psgetModuleInfo.ModuleBase
 
@@ -1155,25 +1155,25 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
             $guid = [system.guid]::newguid().tostring()
             $outputFilePath = Join-Path $outputPath "$guid"
             $runspace = CreateRunSpace $outputFilePath 1
-	
-            # 0 is mapped to YES in prompt
+
+            # 1 is mapped to NO in prompt
             $Global:proxy.UI.ChoiceToMake = 1
             $content = $null
             $err = $null
-	
+
             try {
                 $result = ExecuteCommand $runspace "Publish-Script -Path $script:PublishScriptFilePath -NuGetApiKey $script:ApiKey"
             }
             catch {
                 $err = $_
             }
-            finally {      
+            finally {
                 $fileName = "PromptForChoice-0.txt"
                 $path = join-path $outputFilePath $fileName
                 if (Test-Path $path) {
                     $content = get-content $path
                 }
-        
+
                 CloseRunSpace $runspace
                 RemoveItem $outputFilePaths
             }
@@ -1194,7 +1194,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
 
     # Purpose: Validate that Publish-Script prompts to install NuGet.exe if file not found
     #
-    # Action: Publish-Script 
+    # Action: Publish-Script
     #
     # Expected Result: Publish operation should fail, NuGet.exe should not install
     #
@@ -1203,9 +1203,9 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
             $script:NuGetExeName = 'NuGet.exe'
             $script:PSGetProgramDataPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramData -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
             $script:ProgramDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $script:NuGetExeName
-      
+
             Remove-NuGetExe
-            # Re-import PowerShellGet module                                                   
+            # Re-import PowerShellGet module
             $script:psgetModuleInfo = Import-Module PowerShellGet -Global -Force -Passthru
             Import-LocalizedData  script:LocalizedData -filename PSGet.Resource.psd1 -BaseDirectory $script:psgetModuleInfo.ModuleBase
 
@@ -1213,31 +1213,31 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
             $guid = [system.guid]::newguid().tostring()
             $outputFilePath = Join-Path $outputPath "$guid"
             $runspace = CreateRunSpace $outputFilePath 1
-	
-            # 0 is mapped to YES in prompt
+
+            # 1 is mapped to NO in prompt
             $Global:proxy.UI.ChoiceToMake = 1
             $content = $null
             $err = $null
-	
+
             try {
                 $result = ExecuteCommand $runspace "Publish-Script -Path $script:PublishScriptFilePath -NuGetApiKey $script:ApiKey"
             }
             catch {
                 $err = $_
             }
-            finally {      
+            finally {
                 $fileName = "PromptForChoice-0.txt"
                 $path = join-path $outputFilePath $fileName
                 if (Test-Path $path) {
                     $content = get-content $path
                 }
-        
+
                 CloseRunSpace $runspace
                 RemoveItem $outputFilePaths
             }
 
             AssertNotNull $err "$err"
-            AssertNull $result "$result"       
+            AssertNull $result "$result"
             Assert ((Test-Path $script:ProgramDataExePath) -eq $false) "NuGet.exe installed when it should not have"
             Assert ($content -and ($content -match 'install')) "Publish module confirm prompt is not working, $content"
 

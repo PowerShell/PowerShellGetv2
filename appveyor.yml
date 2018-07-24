@@ -46,6 +46,7 @@ branches:
   only:
     - master
     - development
+    - americks/debug-testfailure
 
 # Run Pester tests and store the results
 test_script:

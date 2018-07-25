@@ -2033,7 +2033,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P2 -Tags 'P2','OuterLoop' {
         try
         {
             # No warning during Install and Update as externally managed modules are already installed.
-            $version = '1.0'
+            $version = '1.0.0'
             $wa = $null
             Install-Module -Name $ModuleName -RequiredVersion $version -Repository $repoName -WarningVariable wa -WarningAction SilentlyContinue
             AssertEquals $wa.Count 0 "No warning messages are expected when installing a module whose external dependencies are pre-installed. $wa"
@@ -2042,7 +2042,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P2 -Tags 'P2','OuterLoop' {
             Assert ($module1 -and ($module1.Name -eq $ModuleName)) "$ModuleName is not installed properly when it's external dependencies are pre-installed. $module1"
 
             $wa = $null
-            $version = '2.0'
+            $version = '2.0.0'
             Update-Module -Name $ModuleName -RequiredVersion $version -WarningVariable wa -WarningAction SilentlyContinue
             AssertEquals $wa.Count 0 "No warning messages are expected when updating a module whose external dependencies are pre-installed. $wa"
 

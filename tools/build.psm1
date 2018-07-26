@@ -208,7 +208,7 @@ function Invoke-PowerShellGetTest {
 
     $PesterTag = '' # Conveys all test priorities
     if (-not $IsFullTestPass) {
-        $PesterTag = 'BVT' # Only BVTs
+       # $PesterTag = 'BVT' # Only BVTs
     }
 
     $TestResults = @()

@@ -1960,25 +1960,25 @@ Describe PowerShell.PSGet.PublishModuleTests.P2 -Tags 'P2','OuterLoop' {
             CreateAndPublishTestModule -ModuleName $RequiredModuleDep `
                                        -NuGetApiKey $script:ApiKey `
                                        -Repository $repoName `
-                                       -Versions 1.0
+                                       -Versions 1.0.0
 
             # Publish dependencies to be specified as RequiredModules
             CreateAndPublishTestModule -ModuleName $NestedModuleDep `
                                        -NuGetApiKey $script:ApiKey `
                                        -Repository $repoName `
-                                       -Versions 1.0
+                                       -Versions 1.0.0
 
             # Create and Publish 1.0 version of a module with external dependencies in NestedModules and RequiredModules in module manifest
             $ModuleBase = Join-Path $script:TempModulesPath $ModuleName
             $null = New-Item -Path $ModuleBase -ItemType Directory -Force
-            $version = "1.0"
+            $version = "1.0.0"
 
             # Module dependencies should be available under PSModulePath other Test-ModuleManifest will fail.
             $RequiredModuleDep, $NestedModuleDep, $ExternalRequiredModuleDep, $ExternalNestedModuleDep | %{
                 $DepModuleBase = Join-Path $script:ProgramFilesModulesPath $_
                 $null = New-Item -Path $DepModuleBase -ItemType Directory -Force
                 New-ModuleManifest -Path (Join-Path $DepModuleBase "$_.psd1") `
-                                   -ModuleVersion '1.0' `
+                                   -ModuleVersion '1.0.0' `
                                    -Description "$_ module"        
             }
 
@@ -2018,7 +2018,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P2 -Tags 'P2','OuterLoop' {
             AssertEquals $res1.Name $ModuleName "Find-Module didn't find the exact module which has dependencies, $res1"
 
             # Create and Publish 2.0 version of a module with external dependencies in NestedModules and RequiredModules in module manifest
-            $version = '2.0'
+            $version = '2.0.0'
             ($psd1Text -replace '__VERSION__',$version) | Out-File -FilePath (Join-Path -Path $ModuleBase -ChildPath "$ModuleName.psd1") -Force
             Publish-Module -Path $ModuleBase -Repository $repoName -NuGetApiKey $script:ApiKey
 
@@ -2033,7 +2033,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P2 -Tags 'P2','OuterLoop' {
         try
         {
             # No warning during Install and Update as externally managed modules are already installed.
-            $version = '1.0'
+            $version = '1.0.0'
             $wa = $null
             Install-Module -Name $ModuleName -RequiredVersion $version -Repository $repoName -WarningVariable wa -WarningAction SilentlyContinue
             AssertEquals $wa.Count 0 "No warning messages are expected when installing a module whose external dependencies are pre-installed. $wa"
@@ -2042,7 +2042,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P2 -Tags 'P2','OuterLoop' {
             Assert ($module1 -and ($module1.Name -eq $ModuleName)) "$ModuleName is not installed properly when it's external dependencies are pre-installed. $module1"
 
             $wa = $null
-            $version = '2.0'
+            $version = '2.0.0'
             Update-Module -Name $ModuleName -RequiredVersion $version -WarningVariable wa -WarningAction SilentlyContinue
             AssertEquals $wa.Count 0 "No warning messages are expected when updating a module whose external dependencies are pre-installed. $wa"
 
@@ -2060,7 +2060,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P2 -Tags 'P2','OuterLoop' {
             try
             {
                 # Waring cases during install and update when externally managed modules are not preinstalled.
-                $version = '1.0'
+                $version = '1.0.0'
                 Install-Module -Name $ModuleName -RequiredVersion $version -Repository $repoName -WarningVariable wa -WarningAction SilentlyContinue
                 Assert ($wa.Count -ge 2) "Two warning messages are expected (Actual count: $($wa.Count)) when installing a module whose external dependencies are not preinstalled. $wa"
                 Assert ("$wa".Contains($ExternalRequiredModuleDep)) "Warning message for $ExternalRequiredModuleDep is not returned, $wa"
@@ -2070,7 +2070,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P2 -Tags 'P2','OuterLoop' {
                 Assert ($module1 -and ($module1.Name -eq $ModuleName)) "$ModuleName is not installed properly when it's external dependencies are not pre-installed. $module1"
 
                 $wa = $null
-                $version = '2.0'
+                $version = '2.0.0'
                 Update-Module -Name $ModuleName -RequiredVersion $version -WarningVariable wa -WarningAction SilentlyContinue
                 Assert ($wa.Count -ge 2) "Two warning messages are expected (Actual count: $($wa.Count)) when updating a module whose external dependencies are not preinstalled. $wa"
                 Assert ("$wa".Contains($ExternalRequiredModuleDep)) "During update module, warning message for $ExternalRequiredModuleDep is not returned, $wa"

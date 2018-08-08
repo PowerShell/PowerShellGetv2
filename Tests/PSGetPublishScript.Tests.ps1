@@ -27,7 +27,7 @@ function SuiteSetup {
     $script:PSGetLocalAppDataPath = Get-PSGetLocalAppDataPath
     $script:TempPath = Get-TempPath
     $script:CurrentPSGetFormatVersion = "1.0"
-    $script:OutdatedNuGetExeVersion = "2.8.60717.93"
+    $script:OutdatedNuGetExeVersion = [System.Version]"2.8.60717.93"
 
     #Bootstrap NuGet binaries
     Install-NuGetBinaries
@@ -991,7 +991,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
             Import-LocalizedData  script:LocalizedData -filename PSGet.Resource.psd1 -BaseDirectory $script:psgetModuleInfo.ModuleBase
 
             # Install-OutdatedNugetExe saves NuGet.exe in $script:ProgramDataExePath
-            $oldNuGetExeVersion = (Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion
+            $oldNuGetExeVersion = [System.Version](Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion
             AssertEquals $oldNuGetExeVersion $script:OutdatedNuGetExeVersion "Outdated NuGet.exe version is $oldNuGetExeVersion when it should have been $script:OutdatedNuGetExeVersion."
             $err = $null
 
@@ -1006,7 +1006,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
             AssertNull $result "$result"
             Assert (test-path $script:ProgramDataExePath) "NuGet.exe did not install properly.  The file could not be found under path $script:ProgramDataExePath."
 
-            $currentNuGetExeVersion = (Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion
+            $currentNuGetExeVersion = [System.Version](Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion
             Assert ($currentNuGetExeVersion -gt $oldNuGetExeVersion) "Current NuGet.exe version is $currentNuGetExeVersion when it should have been greater than version $oldNuGetExeVersion."
 
             $psgetItemInfo = Find-Script $script:PublishScriptName -RequiredVersion $script:PublishScriptVersion
@@ -1036,7 +1036,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
             Import-LocalizedData  script:LocalizedData -filename PSGet.Resource.psd1 -BaseDirectory $script:psgetModuleInfo.ModuleBase
 
             # Install-OutdatedNugetExe saves NuGet.exe in $script:ProgramDataExePath
-            $oldNuGetExeVersion = (Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion
+            $oldNuGetExeVersion = [System.Version](Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion
             AssertEquals $oldNuGetExeVersion $script:OutdatedNuGetExeVersion "Outdated NuGet.exe version is $oldNuGetExeVersion when it should have been $script:OutdatedNuGetExeVersion."
 
             $outputPath = $script:TempPath
@@ -1070,7 +1070,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
             Assert ($content -and ($content -match 'upgrade')) "Publish script confirm prompt is not working, $content."
             Assert (test-path $script:ProgramDataExePath) "NuGet.exe did not install properly.  The file could not be found under path $script:ProgramDataExePath."
 
-            $currentNuGetExeVersion = (Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion
+            $currentNuGetExeVersion = [System.Version](Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion
             Assert ($currentNuGetExeVersion -gt $oldNuGetExeVersion) "Current NuGet.exe version is $currentNuGetExeVersion when it should have been greater than version $oldNuGetExeVersion."
 
             $psgetItemInfo = Find-Script -Name $script:PublishScriptName -RequiredVersion $script:PublishScriptVersion
@@ -1160,7 +1160,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
             Import-LocalizedData  script:LocalizedData -filename PSGet.Resource.psd1 -BaseDirectory $script:psgetModuleInfo.ModuleBase
 
             # Install-OutdatedNugetExe saves NuGet.exe in $script:ProgramDataExePath
-            $oldNuGetExeVersion = (Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion
+            $oldNuGetExeVersion = [System.Version](Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion
             AssertEquals $oldNuGetExeVersion $script:OutdatedNuGetExeVersion "Outdated NuGet.exe version is $oldNuGetExeVersion when it should have been $script:OutdatedNuGetExeVersion."
 
             $outputPath = $script:TempPath
@@ -1195,7 +1195,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
             Assert ($content -and ($content -match 'upgrade')) "Publish script confirm prompt is not working, $content."
             Assert (test-path $script:ProgramDataExePath) "NuGet.exe did not install properly.  The file could not be found under path $script:ProgramDataExePath."
 
-            $currentNuGetExeVersion = (Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion
+            $currentNuGetExeVersion = [System.Version](Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion
             AssertEquals $currentNuGetExeVersion $script:OutdatedNuGetExeVersion "Current version of NuGet.exe is $currentNuGetExeVersion when it should have been $script:OutdatedNuGetExeVersion."
 
             $psgetItemInfo = Find-Script -Name $script:PublishScriptName -RequiredVersion $script:PublishScriptVersion -ErrorAction SilentlyContinue

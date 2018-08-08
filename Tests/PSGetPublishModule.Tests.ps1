@@ -27,6 +27,7 @@ function SuiteSetup {
     $script:PSGetLocalAppDataPath = Get-PSGetLocalAppDataPath
     $script:TempPath = Get-TempPath
     $script:CurrentPSGetFormatVersion = "1.0"
+    $script:OutdatedNuGetExeVersion = [System.Version]"2.8.60717.93"
 
     #Bootstrap NuGet binaries
     Install-NuGetBinaries
@@ -1055,7 +1056,8 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
             Import-LocalizedData  script:LocalizedData -filename PSGet.Resource.psd1 -BaseDirectory $script:psgetModuleInfo.ModuleBase
 
             # Install-OutdatedNugetExe saves NuGet.exe in $script:ProgramDataExePath
-            $oldNuGetExeVersion = (Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion
+            $oldNuGetExeVersion = [System.Version](Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion
+            AssertEquals $oldNuGetExeVersion $script:OutdatedNuGetExeVersion "Outdated NuGet.exe version is $oldNuGetExeVersion when it should have been $script:OutdatedNuGetExeVersion."
             $err = $null
 
             try {
@@ -1067,11 +1069,13 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
 
             AssertNull $err "$err"
             AssertNull $result "$result"
-            Assert (test-path $script:ProgramDataExePath) "NuGet.exe did not install properly"
-            AssertNotEquals (Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion $oldNuGetExeVersion "Incorrect version of NuGet.exe"
+            Assert (test-path $script:ProgramDataExePath) "NuGet.exe did not install properly.  The file could not be found under path $script:PSGetProgramDataPath."
+
+            $currentNuGetExeVersion = [System.Version](Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion
+            Assert ($currentNuGetExeVersion -gt $oldNuGetExeVersion) "Current NuGet.exe version is $currentNuGetExeVersion when it should have been greater than version $oldNuGetExeVersion."
 
             $module = find-module $script:PublishModuleName -RequiredVersion $version
-            AssertEquals $module.Name $script:PublishModuleName "Module did not successfully publish"
+            AssertEquals $module.Name $script:PublishModuleName "Module did not successfully publish. Module name was $($module.Name) when it should have been $script:PublishModuleName."
         }
         finally {
             Install-NuGetBinaries
@@ -1096,7 +1100,8 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
             Import-LocalizedData  script:LocalizedData -filename PSGet.Resource.psd1 -BaseDirectory $script:psgetModuleInfo.ModuleBase
 
             # Install-OutdatedNugetExe saves NuGet.exe in $script:ProgramDataExePath
-            $oldNuGetExeVersion = (Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion
+            $oldNuGetExeVersion = [System.Version](Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion
+            AssertEquals $oldNuGetExeVersion $script:OutdatedNuGetExeVersion "Outdated NuGet.exe version is $oldNuGetExeVersion when it should have been $script:OutdatedNuGetExeVersion."
 
             $outputPath = $script:TempPath
             $guid = [system.guid]::newguid().tostring()
@@ -1126,12 +1131,14 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
             }
 
             AssertNull $result "$result"
-            Assert (test-path $script:ProgramDataExePath) "NuGet.exe did not install properly"
-            AssertNotEquals (Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion $oldNuGetExeVersion "Incorrect version of NuGet.exe"
-            Assert ($content -and ($content -match 'upgrade')) "Publish module confirm prompt is not working, $content"
+            Assert ($content -and ($content -match 'upgrade')) "Publish module confirm prompt is not working, $content."
+            Assert (test-path $script:ProgramDataExePath) "NuGet.exe did not install properly.  The file could not be found under path $script:PSGetProgramDataPath."
+
+            $currentNuGetExeVersion = [System.Version](Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion
+            Assert ($currentNuGetExeVersion -gt $oldNuGetExeVersion) "Current NuGet.exe version is $currentNuGetExeVersion when it should have been greater than version $oldNuGetExeVersion."
 
             $module = find-module $script:PublishModuleName -RequiredVersion $version
-            Assert ($module.Name -eq $script:PublishModuleName) "Module did not successfully publish"
+            AssertEquals $module.Name $script:PublishModuleName "Module did not successfully publish. Module name was $($module.Name) when it should have been $script:PublishModuleName."
         }
         finally {
             Install-NuGetBinaries
@@ -1154,6 +1161,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
             # Re-import PowerShellGet module
             $script:psgetModuleInfo = Import-Module PowerShellGet -Global -Force -Passthru
             Import-LocalizedData  script:LocalizedData -filename PSGet.Resource.psd1 -BaseDirectory $script:psgetModuleInfo.ModuleBase
+            Assert ((test-path $script:ProgramDataExePath) -eq $false) "NuGet.exe did not install properly uninstall."
 
             $outputPath = $script:TempPath
             $guid = [system.guid]::newguid().tostring()
@@ -1184,11 +1192,11 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
 
             AssertNull $err "$err"
             AssertNull $result "$result"
-            Assert ((test-path $script:ProgramDataExePath) -and (Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion) "NuGet.exe did not install properly"
-            Assert ($content -and ($content -match 'install')) "Publish module confirm prompt is not working, $content"
+            Assert ($content -and ($content -match 'install')) "Publish module confirm prompt is not working, $content."
+            Assert (test-path $script:ProgramDataExePath) "NuGet.exe did not install properly.  The file could not be found under path $script:PSGetProgramDataPath."
 
             $module = find-module $script:PublishModuleName -RequiredVersion $version
-            Assert ($module.Name -eq $script:PublishModuleName) "Module did not successfully publish"
+            AssertEquals $module.Name $script:PublishModuleName "Module did not successfully publish. Module name was $($module.Name) when it should have been $script:PublishModuleName."
         }
         finally {
             Install-NuGetBinaries
@@ -1216,7 +1224,8 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
             Import-LocalizedData  script:LocalizedData -filename PSGet.Resource.psd1 -BaseDirectory $script:psgetModuleInfo.ModuleBase
 
             # Install-OutdatedNugetExe saves NuGet.exe in $script:ProgramDataExePath
-            $oldNuGetExeVersion = (Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion
+            $oldNuGetExeVersion = [System.Version](Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion
+            AssertEquals $oldNuGetExeVersion $script:OutdatedNuGetExeVersion "Outdated NuGet.exe version is $oldNuGetExeVersion when it should have been $script:OutdatedNuGetExeVersion."
 
             $outputPath = $script:TempPath
             $guid = [system.guid]::newguid().tostring()
@@ -1246,12 +1255,14 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
 
             AssertNotNull $err "$err"
             AssertNull $result "$result"
-            Assert (test-path $script:ProgramDataExePath) "NuGet.exe did not install properly"
-            AssertEquals (Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion $oldNuGetExeVersion "Incorrect version of NuGet.exe"
-            Assert ($content -and ($content -match 'upgrade')) "Publish module confirm prompt is not working, $content"
+            Assert ($content -and ($content -match 'upgrade')) "Publish module confirm prompt is not working, $content."
+            Assert (test-path $script:ProgramDataExePath) "NuGet.exe did not install properly.  The file could not be found under path $script:PSGetProgramDataPath."
+
+            $currentNuGetExeVersion = [System.Version](Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion
+            AssertEquals $currentNuGetExeVersion $script:OutdatedNuGetExeVersion "Current version of NuGet.exe is $currentNuGetExeVersion when it should have been $script:OutdatedNuGetExeVersion."
 
             $module = find-module $script:PublishModuleName -RequiredVersion $version -ErrorAction SilentlyContinue
-            AssertNull ($module) "Module published when it should not have"
+            AssertNull ($module) "Module published when it should not have."
         }
         finally {
             Install-NuGetBinaries
@@ -1274,6 +1285,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
             # Re-import PowerShellGet module
             $script:psgetModuleInfo = Import-Module PowerShellGet -Global -Force -Passthru
             Import-LocalizedData  script:LocalizedData -filename PSGet.Resource.psd1 -BaseDirectory $script:psgetModuleInfo.ModuleBase
+            Assert ((test-path $script:ProgramDataExePath) -eq $false) "NuGet.exe did not install properly uninstall."
 
             $outputPath = $script:TempPath
             $guid = [system.guid]::newguid().tostring()
@@ -1303,11 +1315,11 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
 
             AssertNotNull $err "$err"
             AssertNull $result "$result"
-            Assert ((Test-Path $script:ProgramDataExePath) -eq $false) "NuGet.exe installed when it should not have"
-            Assert ($content -and ($content -match 'install')) "Publish module confirm prompt is not working, $content"
+            Assert ($content -and ($content -match 'install')) "Publish module confirm prompt is not working, $content."
+            Assert ((Test-Path $script:ProgramDataExePath) -eq $false) "NuGet.exe installed when it should not have."
 
             $module = find-module $script:PublishModuleName -RequiredVersion $version -ErrorAction SilentlyContinue
-            AssertNull ($module) "Module published when it should not have"
+            AssertNull ($module) "Module published when it should not have."
         }
         finally {
             Install-NuGetBinaries

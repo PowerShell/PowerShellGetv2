@@ -1004,7 +1004,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
 
             AssertNull $err "$err"
             AssertNull $result "$result"
-            Assert (test-path $script:ProgramDataExePath) "NuGet.exe did not install properly.  The file could not be found under path $script:ProgramDataExePath."
+            Assert (test-path $script:ProgramDataExePath) "NuGet.exe did not install properly.  The file could not be found under path $script:PSGetProgramDataPath."
 
             $currentNuGetExeVersion = [System.Version](Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion
             Assert ($currentNuGetExeVersion -gt $oldNuGetExeVersion) "Current NuGet.exe version is $currentNuGetExeVersion when it should have been greater than version $oldNuGetExeVersion."
@@ -1068,7 +1068,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
 
             AssertNull $result "$result"
             Assert ($content -and ($content -match 'upgrade')) "Publish script confirm prompt is not working, $content."
-            Assert (test-path $script:ProgramDataExePath) "NuGet.exe did not install properly.  The file could not be found under path $script:ProgramDataExePath."
+            Assert (test-path $script:ProgramDataExePath) "NuGet.exe did not install properly.  The file could not be found under path $script:PSGetProgramDataPath."
 
             $currentNuGetExeVersion = [System.Version](Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion
             Assert ($currentNuGetExeVersion -gt $oldNuGetExeVersion) "Current NuGet.exe version is $currentNuGetExeVersion when it should have been greater than version $oldNuGetExeVersion."
@@ -1129,7 +1129,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
 
             AssertNull $result "$result"
             Assert ($content -and ($content -match 'install')) "Publish script confirm prompt is not working, $content."
-            Assert (test-path $script:ProgramDataExePath) "NuGet.exe did not install properly.  The file could not be found under path $script:ProgramDataExePath."
+            Assert (test-path $script:ProgramDataExePath) "NuGet.exe did not install properly.  The file could not be found under path $script:PSGetProgramDataPath."
 
             $psgetItemInfo = Find-Script -Name $script:PublishScriptName -RequiredVersion $script:PublishScriptVersion
             AssertEquals $psgetItemInfo.Name $script:PublishScriptName "Script name was $($psgetItemInfo.Name) when it should have been $script:PublishScriptName."
@@ -1193,7 +1193,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
             AssertNotNull $err "$err"
             AssertNull $result "$result"
             Assert ($content -and ($content -match 'upgrade')) "Publish script confirm prompt is not working, $content."
-            Assert (test-path $script:ProgramDataExePath) "NuGet.exe did not install properly.  The file could not be found under path $script:ProgramDataExePath."
+            Assert (test-path $script:ProgramDataExePath) "NuGet.exe did not install properly.  The file could not be found under path $script:PSGetProgramDataPath."
 
             $currentNuGetExeVersion = [System.Version](Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion
             AssertEquals $currentNuGetExeVersion $script:OutdatedNuGetExeVersion "Current version of NuGet.exe is $currentNuGetExeVersion when it should have been $script:OutdatedNuGetExeVersion."

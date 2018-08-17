@@ -208,8 +208,7 @@ function Invoke-PowerShellGetTest {
 
     $PesterTag = '' # Conveys all test priorities
     if (-not $IsFullTestPass) {
-        # $PesterTag = 'BVT' # Only BVTs
-        # Temporarily disabling this to run full test pass during this PR. I will remove it prior to merging it.
+        $PesterTag = 'BVT' # Only BVTs
     }
 
     $TestResults = @()

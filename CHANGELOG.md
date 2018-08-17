@@ -1,4 +1,11 @@
 # Changelog
+## 1.6.7
+
+Bug fixes
+- Resolved Install/Save-Module error in PSCore 6.1.0-preview.4 on Ubuntu 18.04 OS (WSL/Azure) (#313)
+- Updated error message in Save-Module cmdlet when the specified path is not accessible (#313)
+- Added few additional verbose messages (#313)
+
 ## 1.6.6
 
 Dependency Updates

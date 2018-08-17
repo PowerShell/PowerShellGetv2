@@ -12,6 +12,11 @@ function Test-ValidManifestModule
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
         [string]
+        $ModuleName,
+
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
         $InstallLocation,
 
         [Parameter()]
@@ -27,45 +32,57 @@ function Test-ValidManifestModule
         $IsUpdateOperation
     )
 
-    $moduleName = Microsoft.PowerShell.Management\Split-Path $ModuleBasePath -Leaf
-    $manifestPath = Join-PathUtility -Path $ModuleBasePath -ChildPath "$moduleName.psd1" -PathType File
+    Write-Verbose -Message ($LocalizedData.ValidatingTheModule -f $ModuleName,$ModuleBasePath)
+    $manifestPath = Join-PathUtility -Path $ModuleBasePath -ChildPath "$ModuleName.psd1" -PathType File
     $PSModuleInfo = $null
 
-    if(Microsoft.PowerShell.Management\Test-Path $manifestPath)
+    if(-not (Microsoft.PowerShell.Management\Test-Path $manifestPath -PathType Leaf))
     {
-       $PSModuleInfo = Microsoft.PowerShell.Core\Test-ModuleManifest -Path $manifestPath -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
+        $message = $LocalizedData.PathNotFound -f ($manifestPath)
+        ThrowError -ExceptionName 'System.InvalidOperationException' `
+                    -ExceptionMessage $message `
+                    -ErrorId 'PathNotFound' `
+                    -CallerPSCmdlet $PSCmdlet `
+                    -ErrorCategory InvalidOperation
+    }
 
-        if(-not $PSModuleInfo)
+    $PSModuleInfo = Microsoft.PowerShell.Core\Test-ModuleManifest -Path $manifestPath -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
+
+    if(-not $PSModuleInfo)
+    {
+        $message = $LocalizedData.InvalidPSModule -f ($moduleName)
+        ThrowError -ExceptionName 'System.InvalidOperationException' `
+                    -ExceptionMessage $message `
+                    -ErrorId 'InvalidManifestModule' `
+                    -CallerPSCmdlet $PSCmdlet `
+                    -ErrorCategory InvalidOperation
+    }
+    else
+    {
+        Write-Verbose -Message ($LocalizedData.ValidatedModuleManifestFile -f $ModuleBasePath)
+    }
+
+    if($script:IsWindows)
+    {
+        Write-Verbose -Message ($LocalizedData.ValidateModuleAuthenticodeSignature -f $ModuleName)
+        $ValidationResult = Validate-ModuleAuthenticodeSignature -CurrentModuleInfo $PSModuleInfo `
+                                                                    -InstallLocation $InstallLocation `
+                                                                    -IsUpdateOperation:$IsUpdateOperation `
+                                                                    -SkipPublisherCheck:$SkipPublisherCheck
+        
+        if($ValidationResult)
         {
-            $message = $LocalizedData.InvalidPSModule -f ($moduleName)
-            ThrowError -ExceptionName 'System.InvalidOperationException' `
-                       -ExceptionMessage $message `
-                       -ErrorId 'InvalidManifestModule' `
-                       -CallerPSCmdlet $PSCmdlet `
-                       -ErrorCategory InvalidOperation
+            # Checking for the possible command clobbering.
+            Write-Verbose -Message ($LocalizedData.ValidateModuleCommandAlreadyAvailable -f $ModuleName)
+            $ValidationResult = Validate-ModuleCommandAlreadyAvailable -CurrentModuleInfo $PSModuleInfo `
+                                                                        -InstallLocation $InstallLocation `
+                                                                        -AllowClobber:$AllowClobber `
+                                                                        -IsUpdateOperation:$IsUpdateOperation
         }
-        elseif($script:IsWindows)
+
+        if(-not $ValidationResult)
         {
-            $ValidationResult = Validate-ModuleAuthenticodeSignature -CurrentModuleInfo $PSModuleInfo `
-                                                                     -InstallLocation $InstallLocation `
-                                                                     -IsUpdateOperation:$IsUpdateOperation `
-                                                                     -SkipPublisherCheck:$SkipPublisherCheck
-
-            if($ValidationResult)
-            {
-                # Checking for the possible command clobbering.
-                $ValidationResult = Validate-ModuleCommandAlreadyAvailable -CurrentModuleInfo $PSModuleInfo `
-                                                                           -InstallLocation $InstallLocation `
-                                                                           -AllowClobber:$AllowClobber `
-                                                                           -IsUpdateOperation:$IsUpdateOperation
-
-
-            }
-
-            if(-not $ValidationResult)
-            {
-                $PSModuleInfo = $null
-            }
+            $PSModuleInfo = $null
         }
     }
 

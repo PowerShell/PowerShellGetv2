@@ -260,5 +260,12 @@ ConvertFrom-StringData @'
         FailedToParseRequiredScripts=Cannot parse REQUIREDSCRIPTS '{0}'. Acceptable formats are: '{1}'.
         FailedToParseRequiredScriptsVersion=Version format error: {0}, '{1}'. Acceptable formats are: '{2}'. 
         PublishersMismatchAsWarning=Module '{0}' version '{1}' published by '{2}' will be superceded by version '{3}' published by '{4}'. If you do not trust the new publisher, uninstall the module.
+        UnableToDownloadThePackage=The PackageManagement provider '{0}' is unable to download the package '{1}' version '{2}' to '{3}' path.
+        ValidatingTheModule=Validating the '{0}' module contents under '{1}' path.
+        ModuleValidationFailed=Unable to validate the '{0}' module contents under '{1}' path.
+        ValidatedModuleManifestFile=Test-ModuleManifest successfully validated the module manifest file '{0}'.
+        ValidateModuleAuthenticodeSignature=Validating the authenticode signature and publisher of the catalog file or module manifest file of the module '{0}'.
+        ValidateModuleCommandAlreadyAvailable=Checking for possible command collisions for the module '{0}' commands.
+        UnauthorizedAccessError=Access to the path '{0}' is denied.
 ###PSLOC
 '@

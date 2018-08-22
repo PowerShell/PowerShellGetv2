@@ -101,7 +101,7 @@ function Install-Module
                 $Scope = "AllUsers"
             }
         }
-        
+
         Install-NuGetClientBinaries -CallerPSCmdlet $PSCmdlet -Proxy $Proxy -ProxyCredential $ProxyCredential
 
         # Module names already tried in the current pipeline for InputObject parameterset

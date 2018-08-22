@@ -275,8 +275,6 @@ Describe "PowerShellGet - Script tests" -tags "Feature" {
         $installedScriptInfo.InstalledLocation.StartsWith($script:MyDocumentsScriptsPath, [System.StringComparison]::OrdinalIgnoreCase) | Should Be $true
     }
 
-
-
     AfterAll {
         Remove-InstalledScripts
     }

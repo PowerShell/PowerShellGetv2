@@ -125,8 +125,31 @@ Describe "PowerShellGet - Module tests" -tags "Feature" {
         $psgetModuleInfo.Repository | Should Be $RepositoryName
     }
 
-    It "Should install a module correctly to the required location with CurrentUser scope" {
+    It "Should install a module correctly to the required location with CurrentUser scope and no elevated privileges" {
         Install-Module -Name $ContosoServer -Repository $RepositoryName -Scope CurrentUser
+        $installedModuleInfo = Get-InstalledModule -Name $ContosoServer
+
+        $installedModuleInfo | Should Not Be $null
+        $installedModuleInfo.Name | Should Be $ContosoServer
+        $installedModuleInfo.InstalledLocation.StartsWith($script:MyDocumentsModulesPath, [System.StringComparison]::OrdinalIgnoreCase) | Should Be $true
+
+        $module = Get-Module $ContosoServer -ListAvailable
+        $module.Name | Should Be $ContosoServer
+        $module.ModuleBase | Should Be $installedModuleInfo.InstalledLocation
+    }
+
+    It "Should NOT install module and should throw an error with AllUsers scope and no elevated privileges" {
+        Install-Module -Name $ContosoServer -Repository $RepositoryName -Scope AllUsers -ErrorVariable ev -ErrorAction SilentlyContinue
+
+        $ev | Should Not Be $null
+        $ev | Should belike "*Administrator rights are required to install modules*"
+
+        $installedModuleInfo = Get-InstalledModule -Name $ContosoServer -ErrorAction SilentlyContinue
+        $installedModuleInfo | Should Be $null
+    }
+
+    It "Should install a module correctly to the required location with default CurrentUser scope and no elevated privileges" {
+        Install-Module -Name $ContosoServer -Repository $RepositoryName
         $installedModuleInfo = Get-InstalledModule -Name $ContosoServer
 
         $installedModuleInfo | Should Not Be $null
@@ -156,7 +179,33 @@ Describe "PowerShellGet - Module tests (Admin)" -tags @('Feature', 'RequireAdmin
         Remove-InstalledModules
     }
 
-    It "Should install a module correctly to the required location with default AllUsers scope" {
+    It "Should install a module correctly to the required location with CurrentUser scope and elevated privileges" {
+        Install-Module -Name $ContosoServer -Repository $RepositoryName -Scope CurrentUser
+        $installedModuleInfo = Get-InstalledModule -Name $ContosoServer
+
+        $installedModuleInfo | Should Not Be $null
+        $installedModuleInfo.Name | Should Be $ContosoServer
+        $installedModuleInfo.InstalledLocation.StartsWith($script:MyDocumentsModulesPath, [System.StringComparison]::OrdinalIgnoreCase) | Should Be $true
+
+        $module = Get-Module $ContosoServer -ListAvailable
+        $module.Name | Should be $ContosoServer
+        $module.ModuleBase | Should Be $installedModuleInfo.InstalledLocation
+    }
+
+    It "Should install a module correctly to the required location with AllUsers scope and elevated privileges" {
+        Install-Module -Name $ContosoServer -Repository $RepositoryName -Scope AllUsers
+        $installedModuleInfo = Get-InstalledModule -Name $ContosoServer
+
+        $installedModuleInfo | Should Not Be $null
+        $installedModuleInfo.Name | Should Be $ContosoServer
+        $installedModuleInfo.InstalledLocation.StartsWith($script:programFilesModulesPath, [System.StringComparison]::OrdinalIgnoreCase) | Should Be $true
+
+        $module = Get-Module $ContosoServer -ListAvailable
+        $module.Name | Should be $ContosoServer
+        $module.ModuleBase | Should Be $installedModuleInfo.InstalledLocation
+    }
+
+    It "Should install a module correctly to the required location with default AllUsers scope and elevated privileges" {
         Install-Module -Name $ContosoServer -Repository $RepositoryName
         $installedModuleInfo = Get-InstalledModule -Name $ContosoServer
 
@@ -198,7 +247,7 @@ Describe "PowerShellGet - Script tests" -tags "Feature" {
         $psgetScriptInfo.Repository | Should Be $RepositoryName
     }
 
-    It "Should install a script correctly to the required location with CurrentUser scope" {
+    It "Should install a script correctly to the required location with CurrentUser scope and no elevated privileges" {
         Install-Script -Name $FabrikamServerScript -Repository $RepositoryName -Scope CurrentUser -NoPathUpdate
         $installedScriptInfo = Get-InstalledScript -Name $FabrikamServerScript
 
@@ -206,6 +255,27 @@ Describe "PowerShellGet - Script tests" -tags "Feature" {
         $installedScriptInfo.Name | Should Be $FabrikamServerScript
         $installedScriptInfo.InstalledLocation.StartsWith($script:MyDocumentsScriptsPath, [System.StringComparison]::OrdinalIgnoreCase) | Should Be $true
     }
+
+    It "Should NOT install script and should throw an error with AllUsers scope and no elevated privileges" {
+        Install-Script -Name $FabrikamServerScript -Repository $RepositoryName -Scope AllUsers -NoPathUpdate -ErrorVariable ev -ErrorAction SilentlyContinue
+
+        $ev | Should Not Be $null
+        $ev | Should belike "*Administrator rights are required to install script*"
+
+        $installedScriptInfo = Get-InstalledScript -Name $FabrikamServerScript -ErrorAction SilentlyContinue
+        $installedScriptInfo | Should Be $null
+    }
+
+    It "Should install a script correctly to the required location with default CurrentUser scope and no elevated privileges" {
+        Install-Script -Name $FabrikamServerScript -Repository $RepositoryName -NoPathUpdate
+        $installedScriptInfo = Get-InstalledScript -Name $FabrikamServerScript
+
+        $installedScriptInfo | Should Not Be $null
+        $installedScriptInfo.Name | Should Be $FabrikamServerScript
+        $installedScriptInfo.InstalledLocation.StartsWith($script:MyDocumentsScriptsPath, [System.StringComparison]::OrdinalIgnoreCase) | Should Be $true
+    }
+
+
 
     AfterAll {
         Remove-InstalledScripts
@@ -225,7 +295,25 @@ Describe "PowerShellGet - Script tests (Admin)" -tags @('Feature', 'RequireAdmin
         Remove-InstalledScripts
     }
 
-    It "Should install a script correctly to the required location with default AllUsers scope" {
+    It "Should install a script correctly to the required location with CurrentUser scope and elevated privileges" {
+        Install-Script -Name $FabrikamServerScript -Repository $RepositoryName -Scope CurrentUser -NoPathUpdate
+        $installedScriptInfo = Get-InstalledScript -Name $FabrikamServerScript
+
+        $installedScriptInfo | Should Not Be $null
+        $installedScriptInfo.Name | Should Be $FabrikamServerScript
+        $installedScriptInfo.InstalledLocation.StartsWith($script:MyDocumentsScriptsPath, [System.StringComparison]::OrdinalIgnoreCase) | Should Be $true
+    }
+
+    It "Should install a script correctly to the required location with AllUsers scope and elevated privileges" {
+        Install-Script -Name $FabrikamServerScript -Repository $RepositoryName -Scope AllUsers -NoPathUpdate
+        $installedScriptInfo = Get-InstalledScript -Name $FabrikamServerScript
+
+        $installedScriptInfo | Should Not Be $null
+        $installedScriptInfo.Name | Should Be $FabrikamServerScript
+        $installedScriptInfo.InstalledLocation.StartsWith($script:ProgramFilesScriptsPath, [System.StringComparison]::OrdinalIgnoreCase) | Should Be $true
+    }
+
+    It "Should install a script correctly to the required location with default AllUsers scope and elevated privileges" {
         Install-Script -Name $FabrikamServerScript -Repository $RepositoryName -NoPathUpdate
         $installedScriptInfo = Get-InstalledScript -Name $FabrikamServerScript
 

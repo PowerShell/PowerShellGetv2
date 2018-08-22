@@ -55,7 +55,7 @@ function Install-Module
         [Parameter()]
         [ValidateSet("CurrentUser","AllUsers")]
         [string]
-        $Scope = "AllUsers",
+        $Scope,
 
         [Parameter(ValueFromPipelineByPropertyName=$true)]
         [ValidateNotNullOrEmpty()]
@@ -91,18 +91,17 @@ function Install-Module
     {
         Get-PSGalleryApiAvailability -Repository $Repository
 
-        if(-not (Test-RunningAsElevated) -and ($Scope -ne "CurrentUser"))
+        # If user has elevated privileges and no scope is specified, default installation will be to all users,
+        # Otherwise default installation will be to current user.
+        if (-not ($Scope)) 
         {
-            # Throw an error when Install-Module is used as a non-admin user and '-Scope CurrentUser' is not specified
-            $message = $LocalizedData.InstallModuleNeedsCurrentUserScopeParameterForNonAdminUser -f @($script:programFilesModulesPath, $script:MyDocumentsModulesPath)
-
-            ThrowError -ExceptionName "System.ArgumentException" `
-                        -ExceptionMessage $message `
-                        -ErrorId "InstallModuleNeedsCurrentUserScopeParameterForNonAdminUser" `
-                        -CallerPSCmdlet $PSCmdlet `
-                        -ErrorCategory InvalidArgument
+            $Scope = "CurrentUser"
+            if(Test-RunningAsElevated)
+            {
+                $Scope = "AllUsers"
+            }
         }
-
+        
         Install-NuGetClientBinaries -CallerPSCmdlet $PSCmdlet -Proxy $Proxy -ProxyCredential $ProxyCredential
 
         # Module names already tried in the current pipeline for InputObject parameterset

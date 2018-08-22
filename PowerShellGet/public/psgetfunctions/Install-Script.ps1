@@ -51,7 +51,7 @@ function Install-Script
         [Parameter()]
         [ValidateSet("CurrentUser","AllUsers")]
         [string]
-        $Scope = 'AllUsers',
+        $Scope,
 
         [Parameter()]
         [Switch]
@@ -87,17 +87,15 @@ function Install-Script
     {
         Get-PSGalleryApiAvailability -Repository $Repository
 
-        if(-not (Test-RunningAsElevated) -and ($Scope -ne "CurrentUser"))
+        # If user has elevated privileges and no scope is specified, default installation will be to all users,
+        # Otherwise default installation will be to current user.
+        if (-not ($Scope)) 
         {
-            # Throw an error when Install-Script is used as a non-admin user and '-Scope CurrentUser' is not specified
-            $AdminPrivilegeErrorMessage = $LocalizedData.InstallScriptNeedsCurrentUserScopeParameterForNonAdminUser -f @($script:ProgramFilesScriptsPath, $script:MyDocumentsScriptsPath)
-            $AdminPrivilegeErrorId = 'InstallScriptNeedsCurrentUserScopeParameterForNonAdminUser'
-
-            ThrowError -ExceptionName "System.ArgumentException" `
-                        -ExceptionMessage $AdminPrivilegeErrorMessage `
-                        -ErrorId $AdminPrivilegeErrorId `
-                        -CallerPSCmdlet $PSCmdlet `
-                        -ErrorCategory InvalidArgument
+            $Scope = "CurrentUser"
+            if(Test-RunningAsElevated)
+            {
+                $Scope = "AllUsers"
+            }
         }
 
         # Check and add the scope path to PATH environment variable

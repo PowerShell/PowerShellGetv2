@@ -87,6 +87,13 @@ function Install-Script
     {
         Get-PSGalleryApiAvailability -Repository $Repository
 
+        # Default scope for non-Windows plantforms should be CurrentUser
+        $script:IsWindowsOS = (-not (Get-Variable -Name IsWindows -ErrorAction Ignore)) -or $IsWindows
+        if (-not $script:IsWindowsOS)
+        {
+            $Scope = "CurrentUser"
+        }
+
         # If user has elevated privileges and no scope is specified, default installation will be to all users,
         # Otherwise default installation will be to current user.
         if (-not ($Scope)) 

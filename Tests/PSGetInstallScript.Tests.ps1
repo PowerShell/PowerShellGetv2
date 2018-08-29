@@ -493,40 +493,6 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
         AssertEquals $res2.InstalledLocation $script:ProgramFilesScriptsPath "Install-Script with AllUsers scope and -Force did not install Fabrikam-ServerScript to program files scripts folder, $res2"
     }
 
-    # Purpose: InstallScriptNeedsCurrentUserScopeParameterForNonAdminUser
-    #
-    # Action: try to install a script without current user scope in a non-admin console
-    #
-    # Expected Result: it should fail with an error
-    #
-    It "InstallScriptNeedsCurrentUserScopeParameterForNonAdminUser" {
-        $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
-        Start-Process "$PSHOME\PowerShell.exe" -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
-                                                              $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
-                                                              Install-Script -Name Fabrikam-ServerScript -Scope AllUsers' `
-                                               -Credential $script:credential `
-                                               -Wait `
-                                               -WorkingDirectory $PSHOME `
-                                               -RedirectStandardOutput $NonAdminConsoleOutput
-
-        waitFor {Test-Path $NonAdminConsoleOutput} -timeoutInMilliseconds $script:assertTimeOutms -exceptionMessage "Install-Script on non-admin console failed to complete"
-        $content = Get-Content $NonAdminConsoleOutput
-        RemoveItem $NonAdminConsoleOutput
-        Assert ($content -match "InstallScriptNeedsCurrentUserScopeParameter") "Install script without currentuser scope on non-admin user console should fail, $content"
-        $res = Get-InstalledScript Fabrikam-ServerScript -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
-        Assert (-not $res) "Install script without currentuser scope on non-admin user console should not install, $res"
-    } `
-    -Skip:$(
-        $whoamiValue = (whoami)
-
-        ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
-        ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
-        ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
-        ($env:APPVEYOR_TEST_PASS -eq 'True') -or
-        ($PSEdition -eq 'Core') -or
-        ($PSVersionTable.PSVersion -lt '4.0.0')
-    )
-
     # Purpose: InstallScript_AllUsers_NO_toThePromptForAddingtoPATHVariable
     #
     # Action: Install-Script Fabrikam-ServerScript
@@ -981,6 +947,165 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
 
         $scripts2 = Get-InstalledScript
         AssertEquals $scripts1.count $scripts2.count "script count should be same before and after updating a script, before: $($scripts1.count), after: $($scripts2.count)"
+    }
+
+    # Purpose: InstallScriptWithCurrentUserScopeParameterForNonAdminUser
+    #
+    # Action: Try to install a script with current user scope in a non-admin console
+    #
+    # Expected Result: It should succeed and install only to current user
+    #
+    It "InstallScriptWithCurrentUserScopeParameterForNonAdminUser" {
+        $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
+
+        Start-Process "$PSHOME\PowerShell.exe" -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
+                                                              $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
+                                                              if(-not (Get-PSRepository -Name INTGallery -ErrorAction SilentlyContinue)) {
+                                                                Register-PSRepository -Name INTGallery -SourceLocation https://dtlgalleryint.cloudapp.net/api/v2/ -InstallationPolicy Trusted
+                                                              }
+                                                              Install-Script -Name Fabrikam-ServerScript -NoPathUpdate -Scope CurrentUser;
+                                                              Get-InstalledScript Fabrikam-ServerScript | Format-List Name, InstalledLocation' `
+                                               -Credential $script:credential `
+                                               -Wait `
+                                               -WorkingDirectory $PSHOME `
+                                               -RedirectStandardOutput $NonAdminConsoleOutput
+
+        waitFor {Test-Path $NonAdminConsoleOutput} -timeoutInMilliseconds $script:assertTimeOutms -exceptionMessage "Install-Script on non-admin console failed to complete"
+        $content = Get-Content $NonAdminConsoleOutput
+        RemoveItem $NonAdminConsoleOutput
+
+        AssertNotNull ($content) "Install script with CurrentUser scope on non-admin user console should succeed"
+        Assert ($content -match "Fabrikam-ServerScript") "Script did not install correctly"
+        Assert ($content -match "Documents") "Script did not install to the correct location"
+    } `
+    -Skip:$(
+        $whoamiValue = (whoami)
+
+        ($PSEdition -eq 'Core') -or
+        ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
+        ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
+        ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
+        ($env:APPVEYOR_TEST_PASS -eq 'True') -or
+        ($PSVersionTable.PSVersion -lt '4.0.0')
+    )
+
+    # Purpose: InstallScriptWithAllUsersScopeParameterForNonAdminUser
+    #
+    # Action: Try to install a script with all users scope in a non-admin console
+    #
+    # Expected Result: It should fail with an error
+    #
+    It "InstallScriptWithAllUsersScopeParameterForNonAdminUser" {
+        $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
+
+        Start-Process "$PSHOME\PowerShell.exe" -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope AllUsers;
+                                                              $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
+                                                              Install-Script -Name Fabrikam-ServerScript -Scope AllUsers -ErrorAction SilentlyContinue;
+                                                              Get-InstalledScript Fabrikam-ServerScript | Format-List Name, InstalledLocation' `
+                                               -Credential $script:credential `
+                                               -Wait `
+                                               -WorkingDirectory $PSHOME `
+                                               -RedirectStandardOutput $NonAdminConsoleOutput
+
+
+        waitFor {Test-Path $NonAdminConsoleOutput} -timeoutInMilliseconds $script:assertTimeOutms -exceptionMessage "Install-Script on non-admin console failed to complete"
+        $content = Get-Content $NonAdminConsoleOutput
+        RemoveItem $NonAdminConsoleOutput
+
+        AssertNotNull ($content) "Install script with CurrentUser scope on non-admin user console should not succeed"
+        Assert ($content -match "Administrator rights are required to install packages") "Install script with AllUsers scope on non-admin user console should fail, $content"
+    } `
+    -Skip:$(
+        $whoamiValue = (whoami)
+
+        ($PSEdition -eq 'Core') -or
+        ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
+        ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
+        ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
+        ($env:APPVEYOR_TEST_PASS -eq 'True') -or
+        ($PSVersionTable.PSVersion -lt '4.0.0')
+    )
+
+    # Purpose: InstallScriptWithDefaultScopeParameterForNonAdminUser
+    #
+    # Action: Try to install a script with default (current user) scope in a non-admin console
+    #
+    # Expected Result: It should succeed and install only to current user
+    #
+    It "InstallScriptWithDefaultScopeParameterForNonAdminUser" {
+        $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
+
+        Start-Process "$PSHOME\PowerShell.exe" -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
+                                                              $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
+                                                              Install-Script -Name Fabrikam-ServerScript;
+                                                              Get-InstalledScript Fabrikam-ServerScript | Format-List Name, InstalledLocation' `
+                                               -Credential $script:credential `
+                                               -Wait `
+                                               -WorkingDirectory $PSHOME `
+                                               -RedirectStandardOutput $NonAdminConsoleOutput
+
+        waitFor {Test-Path $NonAdminConsoleOutput} -timeoutInMilliseconds $script:assertTimeOutms -exceptionMessage "Install-Script on non-admin console failed to complete"
+        $content = Get-Content $NonAdminConsoleOutput
+
+        RemoveItem $NonAdminConsoleOutput
+        AssertNotNull ($content) "Install script with CurrentUser scope on non-admin user console should succeed"
+        Assert ($content -match "Fabrikam-ServerScript") "Script did not install correctly"
+        Assert ($content -match "Documents") "Script did not install to the correct location"
+    } `
+    -Skip:$(
+        $whoamiValue = (whoami)
+
+        ($PSEdition -eq 'Core') -or
+        ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
+        ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
+        ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
+        ($env:APPVEYOR_TEST_PASS -eq 'True') -or
+        ($PSVersionTable.PSVersion -lt '4.0.0')
+    )
+
+    # Purpose: InstallScriptWithCurrentUserScopeParameterForAdminUser
+    #
+    # Action: Try to install a script with current user scope in an admin console
+    #
+    # Expected Result: It should succeed and install to current user
+    #
+    It "InstallScriptWithCurrentUserScopeParameterForAdminUser" {
+        Install-Script -Name Fabrikam-ServerScript -Scope CurrentUser
+        $script = Get-InstalledScript -Name Fabrikam-ServerScript
+
+        $script | Should Not Be $null
+        $script.Name | Should Be Fabrikam-ServerScript
+        $script.InstalledLocation.StartsWith($script:MyDocumentsModulesPath, [System.StringComparison]::OrdinalIgnoreCase) | Should Be $true
+    }
+
+    # Purpose: InstallScriptWithAllUsersScopeParameterForAdminUser
+    #
+    # Action: Try to install a script with all users scope in an admin console
+    #
+    # Expected Result: It should succeed and install to all users
+    #
+    It "InstallScriptWithAllUsersScopeParameterForAdminUser" {
+        Install-Script -Name Fabrikam-ServerScript -Scope AllUsers
+        $script = Get-InstalledScript -Name Fabrikam-ServerScript
+
+        $script | Should Not Be $null
+        $script.Name | Should Be Fabrikam-ServerScript
+        $script.InstalledLocation.StartsWith($script:programFilesModulesPath, [System.StringComparison]::OrdinalIgnoreCase) | Should Be $true
+    }
+
+    # Purpose: InstallScriptWithDefaultScopeParameterForAdminUser
+    #
+    # Action: Try to install a script with default (all users) scope in an admin console
+    #
+    # Expected Result: It should succeed and install to all users
+    #
+    It "InstallScriptWithDefaultScopeParameterForAdminUser" {
+        Install-Script -Name Fabrikam-ServerScript
+        $script = Get-InstalledScript -Name Fabrikam-ServerScript
+
+        $script | Should Not Be $null
+        $script.Name | Should Be Fabrikam-ServerScript
+        $script.InstalledLocation.StartsWith($script:programFilesModulesPath, [System.StringComparison]::OrdinalIgnoreCase) | Should Be $true
     }
 }
 

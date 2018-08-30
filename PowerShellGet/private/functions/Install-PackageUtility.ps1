@@ -34,6 +34,7 @@ function Install-PackageUtility
     $Scope = $null
     $NoPathUpdate = $false
     $AcceptLicense = $false
+    $script:IsWindowsOS = (-not (Get-Variable -Name IsWindows -ErrorAction Ignore)) -or $IsWindows
 
     # take the fastPackageReference and get the package object again.
     $parts = $fastPackageReference -Split '[|]'
@@ -98,16 +99,6 @@ function Install-PackageUtility
                 {
                     $scriptDestination = $script:ProgramFilesScriptsPath
                     $moduleDestination = $script:programFilesModulesPath
-
-                    if(-not (Test-RunningAsElevated))
-                    {
-                        # Throw an error when Install-Module/Script is used as a non-admin user and '-Scope CurrentUser' is not specified
-                        ThrowError -ExceptionName "System.ArgumentException" `
-                                    -ExceptionMessage $AdminPrivilegeErrorMessage `
-                                    -ErrorId $AdminPrivilegeErrorId `
-                                    -CallerPSCmdlet $PSCmdlet `
-                                    -ErrorCategory InvalidArgument
-                    }
                 }
             }
             elseif($Location)
@@ -118,14 +109,13 @@ function Install-PackageUtility
                 $moduleDestination = $Location
                 $scriptDestination = $Location
             }
-            # if no scope and no destination path and not elevated, then raise an error
-            elseif(-not (Test-RunningAsElevated))
-            {
-                ThrowError -ExceptionName "System.ArgumentException" `
-                           -ExceptionMessage $AdminPrivilegeErrorMessage `
-                           -ErrorId $AdminPrivilegeErrorId `
-                           -CallerPSCmdlet $PSCmdlet `
-                           -ErrorCategory InvalidArgument
+            else if ($script:IsWindowsOS -and (Test-RunningAsElevated))
+                $scriptDestination = $script:ProgramFilesScriptsPath
+                $moduleDestination = $script:ProgramFilesModulesPath
+            }
+            else {
+                $scriptDestination = $script:MyDocumentsScriptsPath
+                $moduleDestination = $script:MyDocumentsModulesPath
             }
 
             if($options.ContainsKey('SkipPublisherCheck'))

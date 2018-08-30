@@ -15,6 +15,8 @@
 #>
 
 function SuiteSetup {
+    $script:IsWindows = (-not (Get-Variable -Name IsWindows -ErrorAction Ignore)) -or $IsWindows
+
     Import-Module "$PSScriptRoot\PSGetTestUtils.psm1" -WarningAction SilentlyContinue
     Import-Module "$PSScriptRoot\Asserts.psm1" -WarningAction SilentlyContinue
 
@@ -956,9 +958,14 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
     # Expected Result: It should succeed and install only to current user
     #
     It "InstallScriptWithCurrentUserScopeParameterForNonAdminUser" {
+        $PSprocess = "PowerShell.pwsh"
+        if ($isWindows) {
+            $PSprocess = "PowerShell.exe";
+        }
+
         $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
 
-        Start-Process "$PSHOME\PowerShell.exe" -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
+        Start-Process $PSprocess -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
                                                               $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
                                                               if(-not (Get-PSRepository -Name INTGallery -ErrorAction SilentlyContinue)) {
                                                                 Register-PSRepository -Name INTGallery -SourceLocation https://dtlgalleryint.cloudapp.net/api/v2/ -InstallationPolicy Trusted
@@ -967,7 +974,6 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
                                                               Get-InstalledScript Fabrikam-ServerScript | Format-List Name, InstalledLocation' `
                                                -Credential $script:credential `
                                                -Wait `
-                                               -WorkingDirectory $PSHOME `
                                                -RedirectStandardOutput $NonAdminConsoleOutput
 
         waitFor {Test-Path $NonAdminConsoleOutput} -timeoutInMilliseconds $script:assertTimeOutms -exceptionMessage "Install-Script on non-admin console failed to complete"
@@ -981,7 +987,6 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
     -Skip:$(
         $whoamiValue = (whoami)
 
-        ($PSEdition -eq 'Core') -or
         ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
         ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
         ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
@@ -996,15 +1001,19 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
     # Expected Result: It should fail with an error
     #
     It "InstallScriptWithAllUsersScopeParameterForNonAdminUser" {
+        $PSprocess = "PowerShell.pwsh"
+        if ($isWindows) {
+            $PSprocess = "PowerShell.exe";
+        }
+
         $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
 
-        Start-Process "$PSHOME\PowerShell.exe" -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope AllUsers;
+        Start-Process $PSprocess -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope AllUsers;
                                                               $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
                                                               Install-Script -Name Fabrikam-ServerScript -Scope AllUsers -ErrorAction SilentlyContinue;
                                                               Get-InstalledScript Fabrikam-ServerScript | Format-List Name, InstalledLocation' `
                                                -Credential $script:credential `
                                                -Wait `
-                                               -WorkingDirectory $PSHOME `
                                                -RedirectStandardOutput $NonAdminConsoleOutput
 
 
@@ -1018,7 +1027,6 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
     -Skip:$(
         $whoamiValue = (whoami)
 
-        ($PSEdition -eq 'Core') -or
         ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
         ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
         ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
@@ -1033,15 +1041,19 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
     # Expected Result: It should succeed and install only to current user
     #
     It "InstallScriptWithDefaultScopeParameterForNonAdminUser" {
+        $PSprocess = "PowerShell.pwsh"
+        if ($isWindows) {
+            $PSprocess = "sPowerShell.exe";
+        }
+
         $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
 
-        Start-Process "$PSHOME\PowerShell.exe" -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
+        Start-Process $PSprocess -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
                                                               $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
                                                               Install-Script -Name Fabrikam-ServerScript;
                                                               Get-InstalledScript Fabrikam-ServerScript | Format-List Name, InstalledLocation' `
                                                -Credential $script:credential `
                                                -Wait `
-                                               -WorkingDirectory $PSHOME `
                                                -RedirectStandardOutput $NonAdminConsoleOutput
 
         waitFor {Test-Path $NonAdminConsoleOutput} -timeoutInMilliseconds $script:assertTimeOutms -exceptionMessage "Install-Script on non-admin console failed to complete"
@@ -1055,7 +1067,6 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
     -Skip:$(
         $whoamiValue = (whoami)
 
-        ($PSEdition -eq 'Core') -or
         ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
         ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
         ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or

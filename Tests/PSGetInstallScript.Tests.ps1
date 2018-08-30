@@ -949,7 +949,7 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
         AssertEquals $scripts1.count $scripts2.count "script count should be same before and after updating a script, before: $($scripts1.count), after: $($scripts2.count)"
     }
 
-    # Purpose: InstallScriptWithCurrentUserScopeParameterForNonAdminUser
+    # Purpose: Install a script with current user scope parameter for non-admin User
     #
     # Action: Try to install a script with current user scope in a non-admin console
     #
@@ -989,7 +989,7 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
         ($PSVersionTable.PSVersion -lt '4.0.0')
     )
 
-    # Purpose: InstallScriptWithAllUsersScopeParameterForNonAdminUser
+    # Purpose: Install a script with all users scope parameter for non-admin user
     #
     # Action: Try to install a script with all users scope in a non-admin console
     #
@@ -1026,7 +1026,7 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
         ($PSVersionTable.PSVersion -lt '4.0.0')
     )
 
-    # Purpose: InstallScriptWithDefaultScopeParameterForNonAdminUser
+    # Purpose: Install a script with default scope parameter for non-admin user
     #
     # Action: Try to install a script with default (current user) scope in a non-admin console
     #
@@ -1063,7 +1063,7 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
         ($PSVersionTable.PSVersion -lt '4.0.0')
     )
 
-    # Purpose: InstallScriptWithCurrentUserScopeParameterForAdminUser
+    # Purpose: Install a script with current user scope parameter for admin user
     #
     # Action: Try to install a script with current user scope in an admin console
     #
@@ -1078,7 +1078,7 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
         $script.InstalledLocation.StartsWith($script:MyDocumentsModulesPath, [System.StringComparison]::OrdinalIgnoreCase) | Should Be $true
     }
 
-    # Purpose: InstallScriptWithAllUsersScopeParameterForAdminUser
+    # Purpose: Install a script with all users scope parameter for admin user
     #
     # Action: Try to install a script with all users scope in an admin console
     #
@@ -1093,7 +1093,7 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
         $script.InstalledLocation.StartsWith($script:programFilesModulesPath, [System.StringComparison]::OrdinalIgnoreCase) | Should Be $true
     }
 
-    # Purpose: InstallScriptWithDefaultScopeParameterForAdminUser
+    # Purpose: Install a script with default scope parameter for admin user
     #
     # Action: Try to install a script with default (all users) scope in an admin console
     #

@@ -914,7 +914,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
     } `
     -Skip:$((-not (Get-Module PKI -ListAvailable)) -or ([Environment]::OSVersion.Version -lt '10.0'))
 
-    # Purpose: InstallModuleWithCurrentUserScopeParameterForNonAdminUser
+    # Purpose: Install a module with current user scope parameter for non-admin User
     #
     # Action: Try to install a module with current user scope in a non-admin console
     #
@@ -954,7 +954,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         ($PSVersionTable.PSVersion -lt '4.0.0')
     )
 
-    # Purpose: InstallModuleWithAllUsersScopeParameterForNonAdminUser
+    # Purpose: Install a  module with all users scope parameter for non-admin user
     #
     # Action: Try to install a module with all users scope in a non-admin console
     #
@@ -991,7 +991,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         ($PSVersionTable.PSVersion -lt '4.0.0')
     )
 
-    # Purpose: InstallModuleWithDefaultScopeParameterForNonAdminUser
+    # Purpose: Install a module with default scope parameter for non-admin user
     #
     # Action: Try to install a module with default (current user) scope in a non-admin console
     #
@@ -1028,7 +1028,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         ($PSVersionTable.PSVersion -lt '4.0.0')
     )
 
-    # Purpose: InstallModuleWithCurrentUserScopeParameterForAdminUser
+    # Purpose: Install a module with current user scope parameter for admin user
     #
     # Action: Try to install a module with current user scope in an admin console
     #
@@ -1043,7 +1043,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         $installedModuleInfo.InstalledLocation.StartsWith($script:MyDocumentsModulesPath, [System.StringComparison]::OrdinalIgnoreCase) | Should Be $true
     }
 
-    # Purpose: InstallModuleWithAllUsersScopeParameterForAdminUser
+    # Purpose: Install a module with all users scope parameter for admin user
     #
     # Action: Try to install a module with all users scope in an admin console
     #
@@ -1058,7 +1058,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         $installedModuleInfo.InstalledLocation.StartsWith($script:programFilesModulesPath, [System.StringComparison]::OrdinalIgnoreCase) | Should Be $true
     }
 
-    # Purpose: InstallModuleWithDefaultScopeParameterForAdminUser
+    # Purpose: Install a module with default scope parameter for admin user
     #
     # Action: Try to install a module with default (all users) scope in an admin console
     #

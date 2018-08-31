@@ -958,7 +958,7 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
     # Expected Result: It should succeed and install only to current user
     #
     It "InstallScriptWithCurrentUserScopeParameterForNonAdminUser" {
-        $PSprocess = "PowerShell.pwsh"
+        $PSprocess = "pwsh"
         if ($isWindows) {
             $PSprocess = "PowerShell.exe";
         }
@@ -983,6 +983,12 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
         AssertNotNull ($content) "Install script with CurrentUser scope on non-admin user console should succeed"
         Assert ($content -match "Fabrikam-ServerScript") "Script did not install correctly"
         Assert ($content -match "Documents") "Script did not install to the correct location"
+        if ($script:IsWindows) {
+            Assert ($content -match "Documents") "Script did not install to the correct location"
+        }
+        else {
+            Assert ($content -match "home") "Script did not install to the correct location"
+        }
     } `
     -Skip:$(
         $whoamiValue = (whoami)
@@ -1001,7 +1007,7 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
     # Expected Result: It should fail with an error
     #
     It "InstallScriptWithAllUsersScopeParameterForNonAdminUser" {
-        $PSprocess = "PowerShell.pwsh"
+        $PSprocess = "pwsh"
         if ($isWindows) {
             $PSprocess = "PowerShell.exe";
         }
@@ -1041,9 +1047,9 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
     # Expected Result: It should succeed and install only to current user
     #
     It "InstallScriptWithDefaultScopeParameterForNonAdminUser" {
-        $PSprocess = "PowerShell.pwsh"
+        $PSprocess = "pwsh"
         if ($isWindows) {
-            $PSprocess = "sPowerShell.exe";
+            $PSprocess = "PowerShell.exe";
         }
 
         $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
@@ -1062,7 +1068,12 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
         RemoveItem $NonAdminConsoleOutput
         AssertNotNull ($content) "Install script with CurrentUser scope on non-admin user console should succeed"
         Assert ($content -match "Fabrikam-ServerScript") "Script did not install correctly"
-        Assert ($content -match "Documents") "Script did not install to the correct location"
+        if ($script:IsWindows) {
+            Assert ($content -match "Documents") "Script did not install to the correct location"
+        }
+        else {
+            Assert ($content -match "home") "Script did not install to the correct location"
+        }
     } `
     -Skip:$(
         $whoamiValue = (whoami)
@@ -1084,9 +1095,9 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
         Install-Script -Name Fabrikam-ServerScript -Scope CurrentUser
         $script = Get-InstalledScript -Name Fabrikam-ServerScript
 
-        $script | Should Not Be $null
-        $script.Name | Should Be Fabrikam-ServerScript
-        $script.InstalledLocation.StartsWith($script:MyDocumentsModulesPath, [System.StringComparison]::OrdinalIgnoreCase) | Should Be $true
+        AssertNotNull ($script) "Script did not install properly."
+        Assert ($script.Name -eq "Fabrikam-ServerScript") "Get-InstalledScript returned wrong module, $($script.Name)"
+        Assert ($script.InstalledLocation.StartsWith($script:MyDocumentsModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($script.Name) did not install to the correct location"
     }
 
     # Purpose: Install a script with all users scope parameter for admin user
@@ -1099,9 +1110,9 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
         Install-Script -Name Fabrikam-ServerScript -Scope AllUsers
         $script = Get-InstalledScript -Name Fabrikam-ServerScript
 
-        $script | Should Not Be $null
-        $script.Name | Should Be Fabrikam-ServerScript
-        $script.InstalledLocation.StartsWith($script:programFilesModulesPath, [System.StringComparison]::OrdinalIgnoreCase) | Should Be $true
+        AssertNotNull ($script) "Script did not install properly."
+        Assert ($script.Name -eq "Fabrikam-ServerScript") "Get-InstalledScript returned wrong module, $($script.Name)"
+        Assert ($script.InstalledLocation.StartsWith($script:programFilesModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($script.Name) did not install to the correct location"
     }
 
     # Purpose: Install a script with default scope parameter for admin user
@@ -1114,9 +1125,9 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
         Install-Script -Name Fabrikam-ServerScript
         $script = Get-InstalledScript -Name Fabrikam-ServerScript
 
-        $script | Should Not Be $null
-        $script.Name | Should Be Fabrikam-ServerScript
-        $script.InstalledLocation.StartsWith($script:programFilesModulesPath, [System.StringComparison]::OrdinalIgnoreCase) | Should Be $true
+        AssertNotNull ($script) "Script did not install properly."
+        Assert ($script.Name -eq "Fabrikam-ServerScript") "Get-InstalledScript returned wrong module, $($script.Name)"
+        Assert ($script.InstalledLocation.StartsWith($script:programFilesModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($script.Name) did not install to the correct location"
     }
 }
 

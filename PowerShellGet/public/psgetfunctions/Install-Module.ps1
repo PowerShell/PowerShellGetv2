@@ -93,7 +93,7 @@ function Install-Module
 
         # Default scope for non-Windows plantforms should be CurrentUser
         $script:IsWindowsOS = (-not (Get-Variable -Name IsWindows -ErrorAction Ignore)) -or $IsWindows
-        if (-not $script:IsWindowsOS)
+        if (-not $script:IsWindowsOS -and (-not $Scope))
         {
             $Scope = "CurrentUser"
         }

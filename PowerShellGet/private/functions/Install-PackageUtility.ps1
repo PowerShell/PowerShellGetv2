@@ -109,11 +109,13 @@ function Install-PackageUtility
                 $moduleDestination = $Location
                 $scriptDestination = $Location
             }
-            else if ($script:IsWindowsOS -and (Test-RunningAsElevated))
+            elseif($script:IsWindowsOS -and (Test-RunningAsElevated))
+            {
                 $scriptDestination = $script:ProgramFilesScriptsPath
                 $moduleDestination = $script:ProgramFilesModulesPath
             }
-            else {
+            else
+            {
                 $scriptDestination = $script:MyDocumentsScriptsPath
                 $moduleDestination = $script:MyDocumentsModulesPath
             }

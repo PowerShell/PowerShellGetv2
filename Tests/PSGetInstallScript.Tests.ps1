@@ -15,8 +15,6 @@
 #>
 
 function SuiteSetup {
-    $script:IsWindows = (-not (Get-Variable -Name IsWindows -ErrorAction Ignore)) -or $IsWindows
-
     Import-Module "$PSScriptRoot\PSGetTestUtils.psm1" -WarningAction SilentlyContinue
     Import-Module "$PSScriptRoot\Asserts.psm1" -WarningAction SilentlyContinue
 
@@ -46,14 +44,17 @@ function SuiteSetup {
     Get-InstalledScript -Name Fabrikam-ServerScript -ErrorAction SilentlyContinue | Uninstall-Script -Force
     Get-InstalledScript -Name Fabrikam-ClientScript -ErrorAction SilentlyContinue | Uninstall-Script -Force
 
+    $script:userName = "PSGetUser"
+    $password = "Password1"
     if($PSEdition -ne 'Core')
     {
-        $script:userName = "PSGetUser"
-        $password = "Password1"
         $null = net user $script:userName $password /add
-        $secstr = ConvertTo-SecureString $password -AsPlainText -Force
-        $script:credential = new-object -typename System.Management.Automation.PSCredential -argumentlist $script:userName, $secstr
     }
+    else{
+        $null = useradd $script:userName --password $password
+    }
+    $secstr = ConvertTo-SecureString $password -AsPlainText -Force
+    $script:credential = new-object -typename System.Management.Automation.PSCredential -argumentlist $script:userName, $secstr
 
     $script:assertTimeOutms = 20000
     $script:UntrustedRepoSourceLocation = 'https://powershell.myget.org/F/powershellget-test-items/api/v2/'

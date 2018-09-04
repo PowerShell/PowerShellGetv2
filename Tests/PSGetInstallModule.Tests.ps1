@@ -1062,8 +1062,9 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         AssertNotNull ($mod) "Module did not install properly."
         Assert ($mod.Name -eq "ContosoServer") "Get-InstalledModule returned wrong module, $($mod.Name)"
         Write-Host("install location: " + $mod.InstalledLocation)
-        Assert ($mod.InstalledLocation.StartsWith($script:MyDocumentsModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($mod.Name) did not install to the correct location"
         Write-Host("$script:MyDocumentsModulesPath: " + $script:MyDocumentsModulesPath)
+        Assert ($mod.InstalledLocation.StartsWith($script:MyDocumentsModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($mod.Name) did not install to the correct location"
+        
     }
 
     # Purpose: Install a module with all users scope parameter for admin user
@@ -1093,9 +1094,9 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
 
         AssertNotNull ($mod) "Module did not install properly."
         Assert ($mod.Name -eq "ContosoServer") "Get-InstalledModule returned wrong module, $($mod.Name)"
-        Assert ($mod.InstalledLocation.StartsWith($script:programFilesModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($mod.Name) did not install to the correct location"
         Write-Host("install location: " + $mod.InstalledLocation)
         Write-Host("$script:MyDocumentsModulesPath: " + $script:MyDocumentsModulesPath)
+        Assert ($mod.InstalledLocation.StartsWith($script:programFilesModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($mod.Name) did not install to the correct location"
     }
 }
 

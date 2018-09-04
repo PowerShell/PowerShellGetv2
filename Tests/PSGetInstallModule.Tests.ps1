@@ -45,14 +45,17 @@ function SuiteSetup {
     PSGetTestUtils\Uninstall-Module ContosoServer
     PSGetTestUtils\Uninstall-Module ContosoClient
 
+    $script:userName = "PSGetUser"
+    $password = "Password1"
     if($PSEdition -ne 'Core')
     {
-        $script:userName = "PSGetUser"
-        $password = "Password1"
         $null = net user $script:userName $password /add
-        $secstr = ConvertTo-SecureString $password -AsPlainText -Force
-        $script:credential = new-object -typename System.Management.Automation.PSCredential -argumentlist $script:userName, $secstr
     }
+    else{
+        $null = useradd $script:userName --password $password
+    }
+    $secstr = ConvertTo-SecureString $password -AsPlainText -Force
+    $script:credential = new-object -typename System.Management.Automation.PSCredential -argumentlist $script:userName, $secstr
 
     $script:assertTimeOutms = 20000
     $script:UntrustedRepoSourceLocation = 'https://powershell.myget.org/F/powershellget-test-items/api/v2/'
@@ -1060,12 +1063,8 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
 
         AssertNotNull ($mod) "Module did not install properly."
         Assert ($mod.Name -eq "ContosoServer") "Get-InstalledModule returned wrong module, $($mod.Name)"
-        if ($script:IsWindows) {
-            Assert ($mod.InstalledLocation.StartsWith($script:MyDocumentsModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($mod.Name) did not install to the correct location"
-        }
-        else {
-            Assert ($mod.InstalledLocation.StartsWith("home", [System.StringComparison]::OrdinalIgnoreCase)) "$($mod.Name) did not install to the correct location"
-        }
+        Assert ($mod.InstalledLocation.StartsWith($script:MyDocumentsModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($mod.Name) did not install to the correct location"
+        Assert ($mod.InstalledLocation.StartsWith("home", [System.StringComparison]::OrdinalIgnoreCase)) "$($mod.Name) did not install to the correct location"
     }
 
     # Purpose: Install a module with all users scope parameter for admin user
@@ -1080,12 +1079,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
 
         AssertNotNull ($mod) "Module did not install properly."
         Assert ($mod.Name -eq "ContosoServer") "Get-InstalledModule returned wrong module, $($mod.Name)"
-        if ($script:IsWindows) {
-            Assert ($mod.InstalledLocation.StartsWith($script:programFilesModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($mod.Name) did not install to the correct location"
-        }
-        else {
-            Assert ($mod.InstalledLocation.StartsWith("home", [System.StringComparison]::OrdinalIgnoreCase)) "$($mod.Name) did not install to the correct location"
-        }
+        Assert ($mod.InstalledLocation.StartsWith($script:programFilesModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($mod.Name) did not install to the correct location"
     }
 
     # Purpose: Install a module with default scope parameter for admin user
@@ -1100,12 +1094,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
 
         AssertNotNull ($mod) "Module did not install properly."
         Assert ($mod.Name -eq "ContosoServer") "Get-InstalledModule returned wrong module, $($mod.Name)"
-        if ($script:IsWindows) {
-            Assert ($mod.InstalledLocation.StartsWith($script:programFilesModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($mod.Name) did not install to the correct location"
-        }
-        else {
-            Assert ($mod.InstalledLocation.StartsWith("home", [System.StringComparison]::OrdinalIgnoreCase)) "$($mod.Name) did not install to the correct location"
-        }
+        Assert ($mod.InstalledLocation.StartsWith($script:programFilesModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($mod.Name) did not install to the correct location"
     }
 }
 

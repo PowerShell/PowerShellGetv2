@@ -960,7 +960,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
         ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
         ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
-        ($env:APPVEYOR_TEST_PASS -eq 'True') -or
+        #($env:APPVEYOR_TEST_PASS -eq 'True') -or
         ($PSVersionTable.PSVersion -lt '4.0.0')
     )
 
@@ -1000,7 +1000,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
         ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
         ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
-        ($env:APPVEYOR_TEST_PASS -eq 'True') -or
+        #($env:APPVEYOR_TEST_PASS -eq 'True') -or
         ($PSVersionTable.PSVersion -lt '4.0.0')
     )
 
@@ -1045,7 +1045,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
         ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
         ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
-        ($env:APPVEYOR_TEST_PASS -eq 'True') -or
+        #($env:APPVEYOR_TEST_PASS -eq 'True') -or
         ($PSVersionTable.PSVersion -lt '4.0.0')
     )
 
@@ -1061,8 +1061,9 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
 
         AssertNotNull ($mod) "Module did not install properly."
         Assert ($mod.Name -eq "ContosoServer") "Get-InstalledModule returned wrong module, $($mod.Name)"
+        Write-Host("install location: " + $mod.InstalledLocation)
         Assert ($mod.InstalledLocation.StartsWith($script:MyDocumentsModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($mod.Name) did not install to the correct location"
-        Assert ($mod.InstalledLocation.StartsWith("home", [System.StringComparison]::OrdinalIgnoreCase)) "$($mod.Name) did not install to the correct location"
+        Write-Host("$script:MyDocumentsModulesPath: " + $script:MyDocumentsModulesPath)
     }
 
     # Purpose: Install a module with all users scope parameter for admin user
@@ -1093,6 +1094,8 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         AssertNotNull ($mod) "Module did not install properly."
         Assert ($mod.Name -eq "ContosoServer") "Get-InstalledModule returned wrong module, $($mod.Name)"
         Assert ($mod.InstalledLocation.StartsWith($script:programFilesModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($mod.Name) did not install to the correct location"
+        Write-Host("install location: " + $mod.InstalledLocation)
+        Write-Host("$script:MyDocumentsModulesPath: " + $script:MyDocumentsModulesPath)
     }
 }
 

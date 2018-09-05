@@ -146,6 +146,13 @@ function SuiteCleanup {
             RemoveItem $userProfile.LocalPath
         }
     }
+    else
+    {
+        if(grep $script:UserName /etc/passwd)
+        {
+            userdel $script:UserName
+        }
+    }
       
     RemoveItem $script:TempModulesPath
     RemoveItem $script:TestPSModulePath
@@ -1061,8 +1068,6 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
 
         AssertNotNull ($mod) "Module did not install properly."
         Assert ($mod.Name -eq "ContosoServer") "Get-InstalledModule returned wrong module, $($mod.Name)"
-        Write-Host("install location: " + $mod.InstalledLocation)
-        Write-Host("$script:MyDocumentsModulesPath: " + $script:MyDocumentsModulesPath)
         Assert ($mod.InstalledLocation.StartsWith($script:MyDocumentsModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($mod.Name) did not install to the correct location"
         
     }
@@ -1086,7 +1091,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
     #
     # Action: Try to install a module with default (all users) scope in an admin console
     #
-    # Expected Result: It should succeed and install to all users
+    # Expected Result: It should succeed and install to all users if Windows, and current user if non-Windows.
     #
     It "InstallModuleWithDefaultScopeParameterForAdminUser" {
         Install-Module -Name ContosoServer
@@ -1094,9 +1099,14 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
 
         AssertNotNull ($mod) "Module did not install properly."
         Assert ($mod.Name -eq "ContosoServer") "Get-InstalledModule returned wrong module, $($mod.Name)"
-        Write-Host("install location: " + $mod.InstalledLocation)
-        Write-Host("$script:MyDocumentsModulesPath: " + $script:MyDocumentsModulesPath)
-        Assert ($mod.InstalledLocation.StartsWith($script:programFilesModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($mod.Name) did not install to the correct location"
+        if ($script:IsWindows)
+        {
+            Assert ($mod.InstalledLocation.StartsWith($script:programFilesModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($mod.Name) did not install to the correct location"
+        }
+        else
+        {
+            Assert ($mod.InstalledLocation.StartsWith($script:MyDocumentsModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($mod.Name) did not install to the correct location"
+        }
     }
 }
 

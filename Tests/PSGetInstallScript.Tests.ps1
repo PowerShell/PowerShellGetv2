@@ -101,6 +101,13 @@ function SuiteCleanup {
             RemoveItem $userProfile.LocalPath
         }
     }
+    else
+    {
+        if(grep $script:UserName /etc/passwd)
+        {
+            userdel $script:UserName
+        }
+    }
 
     RemoveItem $script:TempSavePath
 
@@ -997,7 +1004,7 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
         ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
         ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
         ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
-        ($env:APPVEYOR_TEST_PASS -eq 'True') -or
+        #($env:APPVEYOR_TEST_PASS -eq 'True') -or
         ($PSVersionTable.PSVersion -lt '4.0.0')
     )
 
@@ -1037,7 +1044,7 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
         ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
         ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
         ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
-        ($env:APPVEYOR_TEST_PASS -eq 'True') -or
+        #($env:APPVEYOR_TEST_PASS -eq 'True') -or
         ($PSVersionTable.PSVersion -lt '4.0.0')
     )
 
@@ -1082,7 +1089,7 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
         ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
         ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
         ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
-        ($env:APPVEYOR_TEST_PASS -eq 'True') -or
+        #($env:APPVEYOR_TEST_PASS -eq 'True') -or
         ($PSVersionTable.PSVersion -lt '4.0.0')
     )
 
@@ -1128,7 +1135,14 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
 
         AssertNotNull ($script) "Script did not install properly."
         Assert ($script.Name -eq "Fabrikam-ServerScript") "Get-InstalledScript returned wrong module, $($script.Name)"
-        Assert ($script.InstalledLocation.StartsWith($script:programFilesModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($script.Name) did not install to the correct location"
+        if ($script:IsWindows)
+        {
+            Assert ($mod.InstalledLocation.StartsWith($script:programFilesModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($mod.Name) did not install to the correct location"
+        }
+        else
+        {
+            Assert ($mod.InstalledLocation.StartsWith($script:MyDocumentsModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($mod.Name) did not install to the correct location"
+        }
     }
 }
 

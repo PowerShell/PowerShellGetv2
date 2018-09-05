@@ -13,8 +13,8 @@ $Script:RepositoryName = 'Local'
 $SourceLocation = "$PSScriptRoot\PSGalleryTestRepo"
 $Script:RegisteredLocalRepo = $false
 
-$Script:INTRepositoryName = 'DTLGalleryINT'
-$Script:INTRepoLocation = 'https://dtlgalleryint.cloudapp.net/api/v2'
+$Script:INTRepositoryName = 'poshtestgallery'
+$Script:INTRepoLocation = 'https://www.poshtestgallery.com/api/v2'
 $Script:RegisteredINTRepo = $false
 
 $MicrosoftPowerShellArchive = 'Microsoft.PowerShell.Archive'

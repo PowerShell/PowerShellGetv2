@@ -163,9 +163,9 @@ function GetAndSet-PSGetTestGalleryDetails
         }
         else
         {
-            $SourceUri        = 'https://dtlgalleryint.cloudapp.net/api/v2/'
-            $PublishUri       = 'https://dtlgalleryint.cloudapp.net/api/v2/package'
-            $ScriptSourceUri  = 'https://dtlgalleryint.cloudapp.net/api/v2/items/psscript/'
+            $SourceUri        = 'https://www.poshtestgallery.com/api/v2/'
+            $PublishUri       = 'https://www.poshtestgallery.com/api/v2/package'
+            $ScriptSourceUri  = 'https://www.poshtestgallery.com/api/v2/items/psscript/'
             $ScriptPublishUri = $PublishUri
         }
     }

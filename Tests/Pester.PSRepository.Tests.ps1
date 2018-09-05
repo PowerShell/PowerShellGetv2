@@ -5,10 +5,10 @@
 Import-Module "$PSScriptRoot\PSGetTestUtils.psm1" -WarningAction SilentlyContinue
 
 $RepositoryName = 'PSGallery'
-$SourceLocation = 'https://dtlgalleryint.cloudapp.net/api/v2/'
-$PublishLocation= 'https://dtlgalleryint.cloudapp.net/api/v2/package/'
-$ScriptSourceLocation= 'https://dtlgalleryint.cloudapp.net/api/v2/items/psscript/'
-$ScriptPublishLocation= 'https://dtlgalleryint.cloudapp.net/api/v2/package/'
+$SourceLocation = 'https://www.poshtestgallery.com/api/v2/'
+$PublishLocation= 'https://www.poshtestgallery.com/api/v2/package/'
+$ScriptSourceLocation= 'https://www.poshtestgallery.com/api/v2/items/psscript/'
+$ScriptPublishLocation= 'https://www.poshtestgallery.com/api/v2/package/'
 
 Describe 'Test Register-PSRepository and Register-PackageSource for PSGallery repository' -tags 'BVT','InnerLoop' {
 

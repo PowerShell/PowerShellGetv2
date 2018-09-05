@@ -213,7 +213,7 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
         AssertEquals $res.Repository $findScriptOutput.Repository "Invalid Repository value in Get-InstalledScript metadata, $res"
         AssertEquals $res.RepositorySourceLocation $findScriptOutput.RepositorySourceLocation "Invalid RepositorySourceLocation value in Get-InstalledScript metadata, $res"
         AssertEquals $res.PackageManagementProvider $findScriptOutput.PackageManagementProvider "Invalid PackageManagementProvider value in Get-InstalledScript metadata, $res"
-        AssertEquals $res.InstalledLocation $script:ProgramFilesScriptsPath "Invalid InstalledLocation value in Get-InstalledScript metadata, $res"
+        AssertEquals $res.InstalledLocation $script:MyDocumentsScriptsPath "Invalid InstalledLocation value in Get-InstalledScript metadata, $res"
         AssertEquals $res.PowerShellGetFormatVersion $findScriptOutput.PowerShellGetFormatVersion "Invalid PowerShellGetFormatVersion value in Get-InstalledScript metadata, $res"
 
         AssertNotNull $res.InstalledDate "Get-InstalledScript results are not expected, InstalledDate should not be null, $res"
@@ -1105,7 +1105,7 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
 
         AssertNotNull ($script) "Script did not install properly."
         Assert ($script.Name -eq "Fabrikam-ServerScript") "Get-InstalledScript returned wrong module, $($script.Name)"
-        Assert ($script.InstalledLocation.StartsWith($script:MyDocumentsModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($script.Name) did not install to the correct location"
+        Assert ($script.InstalledLocation.StartsWith($script:MyDocumentsScriptsPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($script.Name) did not install to the correct location"
     }
 
     # Purpose: Install a script with all users scope parameter for admin user
@@ -1120,7 +1120,7 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
 
         AssertNotNull ($script) "Script did not install properly."
         Assert ($script.Name -eq "Fabrikam-ServerScript") "Get-InstalledScript returned wrong module, $($script.Name)"
-        Assert ($script.InstalledLocation.StartsWith($script:programFilesModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($script.Name) did not install to the correct location"
+        Assert ($script.InstalledLocation.StartsWith($script:ProgramFilesScriptsPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($script.Name) did not install to the correct location"
     }
 
     # Purpose: Install a script with default scope parameter for admin user
@@ -1137,11 +1137,11 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
         Assert ($script.Name -eq "Fabrikam-ServerScript") "Get-InstalledScript returned wrong module, $($script.Name)"
         if ($script:IsWindows)
         {
-            Assert ($mod.InstalledLocation.StartsWith($script:programFilesModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($mod.Name) did not install to the correct location"
+            Assert ($script.InstalledLocation.StartsWith($script:ProgramFilesScriptsPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($script.Name) did not install to the correct location"
         }
         else
         {
-            Assert ($mod.InstalledLocation.StartsWith($script:MyDocumentsModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($mod.Name) did not install to the correct location"
+            Assert ($script.InstalledLocation.StartsWith($script:MyDocumentsScriptsPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($script.Name) did not install to the correct location"
         }
     }
 }

@@ -1533,7 +1533,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
     #
     It PublishModuleToWebbasedGalleryWithoutNuGetApiKey {
         try {
-            Register-PSRepository -Name '_TempTestRepo_' -SourceLocation 'https://dtlgalleryint.cloudapp.net'
+            Register-PSRepository -Name '_TempTestRepo_' -SourceLocation 'https://www.poshtestgallery.com'
 
             $version = "1.0"
             New-ModuleManifest -Path (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"

@@ -1308,7 +1308,7 @@ Describe PowerShell.PSGet.PublishScriptTests.P1 -Tags 'P1','OuterLoop' {
     #
     It PublishScriptToWebbasedGalleryWithoutNuGetApiKey {
         try {
-            Register-PSRepository -Name '_TempTestRepo_' -SourceLocation 'https://dtlgalleryint.cloudapp.net'
+            Register-PSRepository -Name '_TempTestRepo_' -SourceLocation 'https://www.poshtestgallery.com'
 
             AssertFullyQualifiedErrorIdEquals -scriptblock {Publish-Script -Path $script:PublishScriptFilePath -Repository '_TempTestRepo_'} `
                                               -expectedFullyQualifiedErrorId 'NuGetApiKeyIsRequiredForNuGetBasedGalleryService,Publish-Script'

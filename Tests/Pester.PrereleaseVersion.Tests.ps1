@@ -45,7 +45,7 @@ $script:TempPath = Get-TempPath
 
 # Register test repository
 $TestRepositoryName = "GalleryRolling"
-$TestRepositorySource = "https://dtlgalleryint.cloudapp.net/api/v2/"
+$TestRepositorySource = "https://www.poshtestgallery.com/api/v2/"
 RegisterTestRepository
 
 # Test Items

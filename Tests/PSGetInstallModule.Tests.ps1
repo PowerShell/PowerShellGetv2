@@ -882,7 +882,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         $env:PSModulePath = $script:TestPSModulePath
         try {
             # Install v1 of signed module
-            Install-Module Pester -RequiredVersion 99.99.99.98 -Repository $script:localGalleryName -ErrorVariable iev -WarningVariable iwv -Force
+            Install-Module Pester -RequiredVersion 99.99.99.98 -Repository $script:localGalleryName -ErrorVariable iev -WarningVariable iwv -WarningAction SilentlyContinue -Force
             # Expect: Warning and Success
             $iev | should be $null
             $iwv | should not be $null
@@ -938,7 +938,8 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
 
         $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
 
-        Start-Process $PSprocess -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
+        Start-Process $PSprocess -ArgumentList 'Get-InstalledModule -Name ContosoServer | Uninstall-Module;
+                                                             $null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
                                                               $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
                                                               if(-not (Get-PSRepository -Name INTGallery -ErrorAction SilentlyContinue)) {
                                                                 Register-PSRepository -Name INTGallery -SourceLocation https://dtlgalleryint.cloudapp.net/api/v2/ -InstallationPolicy Trusted
@@ -987,7 +988,8 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
 
         $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
 
-        Start-Process $PSprocess -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope AllUsers;
+        Start-Process $PSprocess -ArgumentList 'Get-InstalledModule -Name ContosoServer | Uninstall-Module;
+                                                              $null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
                                                               $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
                                                               Install-Module -Name ContosoServer -scope AllUsers -ErrorAction SilentlyContinue -Repository INTGallery
                                                               Get-InstalledModule -Name ContosoServer | Format-List Name, InstalledLocation' `
@@ -1028,7 +1030,8 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
 
         $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
 
-        Start-Process $PSprocess -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
+        Start-Process $PSprocess -ArgumentList 'Get-InstalledModule -Name ContosoServer | Uninstall-Module;
+                                                              $null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
                                                               $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
                                                               Install-Module -Name ContosoServer -Repository INTGallery
                                                               Get-InstalledModule -Name ContosoServer | Format-List Name, InstalledLocation' `

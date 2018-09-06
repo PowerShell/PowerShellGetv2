@@ -18,6 +18,7 @@ function SuiteSetup {
     Import-Module "$PSScriptRoot\PSGetTestUtils.psm1" -WarningAction SilentlyContinue
     Import-Module "$PSScriptRoot\Asserts.psm1" -WarningAction SilentlyContinue
     
+    $script:IsWindows = (-not (Get-Variable -Name IsWindows -ErrorAction Ignore)) -or $IsWindows
     $script:ProgramFilesModulesPath = Get-AllUsersModulesPath
     $script:MyDocumentsModulesPath = Get-CurrentUserModulesPath
     $script:PSGetLocalAppDataPath = Get-PSGetLocalAppDataPath
@@ -967,11 +968,12 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
         ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
         ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
-        #($env:APPVEYOR_TEST_PASS -eq 'True') -or
-        ($PSVersionTable.PSVersion -lt '4.0.0')
+        ($PSVersionTable.PSVersion -lt '4.0.0') -or
+        # Temporarily skip tests until .NET Core is updated to v2.1
+        ($PSEdition -eq 'Core')
     )
 
-    # Purpose: Install a  module with all users scope parameter for non-admin user
+    # Purpose: Install a module with all users scope parameter for non-admin user
     #
     # Action: Try to install a module with all users scope in a non-admin console
     #
@@ -1007,8 +1009,9 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
         ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
         ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
-        #($env:APPVEYOR_TEST_PASS -eq 'True') -or
-        ($PSVersionTable.PSVersion -lt '4.0.0')
+        ($PSVersionTable.PSVersion -lt '4.0.0') -or
+        # Temporarily skip tests until .NET Core is updated to v2.1
+        ($PSEdition -eq 'Core')
     )
 
     # Purpose: Install a module with default scope parameter for non-admin user
@@ -1052,8 +1055,9 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
         ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
         ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
-        #($env:APPVEYOR_TEST_PASS -eq 'True') -or
-        ($PSVersionTable.PSVersion -lt '4.0.0')
+        ($PSVersionTable.PSVersion -lt '4.0.0') -or
+        # Temporarily skip tests until .NET Core is updated to v2.1
+        ($PSEdition -eq 'Core')
     )
 
     # Purpose: Install a module with current user scope parameter for admin user
@@ -1069,7 +1073,6 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         AssertNotNull ($mod) "Module did not install properly."
         Assert ($mod.Name -eq "ContosoServer") "Get-InstalledModule returned wrong module, $($mod.Name)"
         Assert ($mod.InstalledLocation.StartsWith($script:MyDocumentsModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($mod.Name) did not install to the correct location"
-        
     }
 
     # Purpose: Install a module with all users scope parameter for admin user

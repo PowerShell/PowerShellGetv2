@@ -111,11 +111,13 @@ function Install-PackageUtility
             }
             elseif($script:IsWindowsOS -and (Test-RunningAsElevated))
             {
+                # If Windows and elevated default scope will be all users
                 $scriptDestination = $script:ProgramFilesScriptsPath
                 $moduleDestination = $script:ProgramFilesModulesPath
             }
             else
             {
+                # If non-Windows or non-elevated default scope will be current user
                 $scriptDestination = $script:MyDocumentsScriptsPath
                 $moduleDestination = $script:MyDocumentsModulesPath
             }

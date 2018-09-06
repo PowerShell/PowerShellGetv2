@@ -18,6 +18,7 @@ function SuiteSetup {
     Import-Module "$PSScriptRoot\PSGetTestUtils.psm1" -WarningAction SilentlyContinue
     Import-Module "$PSScriptRoot\Asserts.psm1" -WarningAction SilentlyContinue
 
+    $script:IsWindows = (-not (Get-Variable -Name IsWindows -ErrorAction Ignore)) -or $IsWindows
     $script:ProgramFilesScriptsPath = Get-AllUsersScriptsPath 
     $script:MyDocumentsScriptsPath = Get-CurrentUserScriptsPath 
     $script:PSGetLocalAppDataPath = Get-PSGetLocalAppDataPath
@@ -195,7 +196,7 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
         $findScriptOutput = Find-Script $scriptName
         $DateTimeBeforeInstall = Get-Date
 
-        Install-Script $scriptName
+        Install-Script $scriptName -scope CurrentUser
         $res = Get-InstalledScript $scriptName
 
         AssertEquals $res.Name $scriptName "Install-Script failed to install $scriptName, $res"
@@ -1004,8 +1005,9 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
         ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
         ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
         ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
-        #($env:APPVEYOR_TEST_PASS -eq 'True') -or
-        ($PSVersionTable.PSVersion -lt '4.0.0')
+        ($PSVersionTable.PSVersion -lt '4.0.0') -or
+        # Temporarily skip tests until .NET Core is updated to v2.1
+        ($PSEdition -eq 'Core')
     )
 
     # Purpose: Install a script with all users scope parameter for non-admin user
@@ -1044,8 +1046,9 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
         ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
         ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
         ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
-        #($env:APPVEYOR_TEST_PASS -eq 'True') -or
-        ($PSVersionTable.PSVersion -lt '4.0.0')
+        ($PSVersionTable.PSVersion -lt '4.0.0') -or
+        # Temporarily skip tests until .NET Core is updated to v2.1
+        ($PSEdition -eq 'Core')
     )
 
     # Purpose: Install a script with default scope parameter for non-admin user
@@ -1089,8 +1092,9 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
         ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
         ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
         ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
-        #($env:APPVEYOR_TEST_PASS -eq 'True') -or
-        ($PSVersionTable.PSVersion -lt '4.0.0')
+        ($PSVersionTable.PSVersion -lt '4.0.0') -or
+        # Temporarily skip tests until .NET Core is updated to v2.1
+        ($PSEdition -eq 'Core')
     )
 
     # Purpose: Install a script with current user scope parameter for admin user

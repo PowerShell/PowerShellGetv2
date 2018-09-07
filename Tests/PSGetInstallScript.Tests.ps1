@@ -18,7 +18,7 @@ function SuiteSetup {
     Import-Module "$PSScriptRoot\PSGetTestUtils.psm1" -WarningAction SilentlyContinue
     Import-Module "$PSScriptRoot\Asserts.psm1" -WarningAction SilentlyContinue
 
-    $script:IsWindows = (-not (Get-Variable -Name IsWindows -ErrorAction Ignore)) -or $IsWindows
+    $script:IsWindows = Get-Variable -Name IsWindows -ErrorAction Ignore
     $script:ProgramFilesScriptsPath = Get-AllUsersScriptsPath 
     $script:MyDocumentsScriptsPath = Get-CurrentUserScriptsPath 
     $script:PSGetLocalAppDataPath = Get-PSGetLocalAppDataPath
@@ -212,7 +212,7 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
 
         $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
 
-        Start-Process $PSprocess -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope AllUsers;
+        Start-Process $PSprocess -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
                                                               $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
                                                               Install-Script -Name Fabrikam-ServerScript -Scope AllUsers -ErrorAction SilentlyContinue;
                                                               Get-InstalledScript Fabrikam-ServerScript | Format-List Name, InstalledLocation' `

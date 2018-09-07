@@ -13,7 +13,7 @@
         ContosoClient: versions 1.0, 1.5, 2.0, 2.5
         ContosoServer: versions 1.0, 1.5, 2.0, 2.5
 #>
-### IGNORE
+
 function SuiteSetup {
     Import-Module "$PSScriptRoot\PSGetTestUtils.psm1" -WarningAction SilentlyContinue
     Import-Module "$PSScriptRoot\Asserts.psm1" -WarningAction SilentlyContinue
@@ -240,7 +240,8 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
 
         $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
 
-        Start-Process $PSprocess -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope AllUsers;
+        Start-Process $PSprocess -ArgumentList 'Get-InstalledModule -Name ContosoServer | Uninstall-Module
+                                                              $null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
                                                               $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
                                                               Install-Module -Name ContosoServer -scope AllUsers -ErrorAction SilentlyContinue -Repository INTGallery
                                                               Get-InstalledModule -Name ContosoServer | Format-List Name, InstalledLocation' `

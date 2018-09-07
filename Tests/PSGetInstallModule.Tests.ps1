@@ -15,10 +15,11 @@
 #>
 
 function SuiteSetup {
+    $script:IsWindows = (-not (Get-Variable -Name IsWindows -ErrorAction Ignore)) -or $IsWindows
+
     Import-Module "$PSScriptRoot\PSGetTestUtils.psm1" -WarningAction SilentlyContinue
     Import-Module "$PSScriptRoot\Asserts.psm1" -WarningAction SilentlyContinue
     
-    $script:IsWindows = Get-Variable -Name IsWindows -ErrorAction Ignore
     $script:ProgramFilesModulesPath = Get-AllUsersModulesPath
     $script:MyDocumentsModulesPath = Get-CurrentUserModulesPath
     $script:PSGetLocalAppDataPath = Get-PSGetLocalAppDataPath
@@ -124,7 +125,7 @@ function SuiteSetup {
 }
 
 function SuiteCleanup {
-    if($script:moduleSourcesBackupFilePath -and (Test-Path $script:moduleSourcesBackupFilePath))
+    if(Test-Path $script:moduleSourcesBackupFilePath)
     {
         Move-Item $script:moduleSourcesBackupFilePath $script:moduleSourcesFilePath -Force
     }
@@ -145,13 +146,6 @@ function SuiteCleanup {
         if($userProfile)
         {
             RemoveItem $userProfile.LocalPath
-        }
-    }
-    else
-    {
-        if(grep $script:UserName /etc/passwd)
-        {
-            userdel $script:UserName
         }
     }
       
@@ -176,7 +170,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         PSGetTestUtils\Uninstall-Module DscTestModule
     }
 
-    
+
     # Purpose: Install a module with current user scope parameter for non-admin User
     #
     # Action: Try to install a module with current user scope in a non-admin console
@@ -240,7 +234,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
 
         $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
 
-        Start-Process $PSprocess -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
+        Start-Process $PSprocess -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope AllUsers;
                                                               $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
                                                               Install-Module -Name ContosoServer -scope AllUsers -ErrorAction SilentlyContinue -Repository INTGallery
                                                               Get-InstalledModule -Name ContosoServer | Format-List Name, InstalledLocation' `
@@ -312,6 +306,59 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         # Temporarily skip tests until .NET Core is updated to v2.1
         ($PSEdition -eq 'Core')
     )
+
+
+        # Purpose: Install a module with current user scope parameter for admin user
+    #
+    # Action: Try to install a module with current user scope in an admin console
+    #
+    # Expected Result: It should succeed and install to current user
+    #
+    It "InstallModuleWithCurrentUserScopeParameterForAdminUser" {
+        Install-Module -Name ContosoServer -Scope CurrentUser
+        $mod = Get-InstalledModule -Name ContosoServer
+
+        AssertNotNull ($mod) "Module did not install properly."
+        Assert ($mod.Name -eq "ContosoServer") "Get-InstalledModule returned wrong module, $($mod.Name)"
+        Assert ($mod.InstalledLocation.StartsWith($script:MyDocumentsModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($mod.Name) did not install to the correct location"
+    }
+
+    # Purpose: Install a module with all users scope parameter for admin user
+    #
+    # Action: Try to install a module with all users scope in an admin console
+    #
+    # Expected Result: It should succeed and install to all users
+    #
+    It "InstallModuleWithAllUsersScopeParameterForAdminUser" {
+        Install-Module -Name ContosoServer -Scope AllUsers
+        $mod = Get-InstalledModule -Name ContosoServer
+
+        AssertNotNull ($mod) "Module did not install properly."
+        Assert ($mod.Name -eq "ContosoServer") "Get-InstalledModule returned wrong module, $($mod.Name)"
+        Assert ($mod.InstalledLocation.StartsWith($script:programFilesModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($mod.Name) did not install to the correct location"
+    }
+
+    # Purpose: Install a module with default scope parameter for admin user
+    #
+    # Action: Try to install a module with default (all users) scope in an admin console
+    #
+    # Expected Result: It should succeed and install to all users if Windows, and current user if non-Windows.
+    #
+    It "InstallModuleWithDefaultScopeParameterForAdminUser" {
+        Install-Module -Name ContosoServer
+        $mod = Get-InstalledModule -Name ContosoServer
+
+        AssertNotNull ($mod) "Module did not install properly."
+        Assert ($mod.Name -eq "ContosoServer") "Get-InstalledModule returned wrong module, $($mod.Name)"
+        if ($script:IsWindows)
+        {
+            Assert ($mod.InstalledLocation.StartsWith($script:programFilesModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($mod.Name) did not install to the correct location"
+        }
+        else
+        {
+            Assert ($mod.InstalledLocation.StartsWith($script:MyDocumentsModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($mod.Name) did not install to the correct location"
+        }
+    }
 
     # Purpose: InstallNotAvailableModuleWithWildCard
     #
@@ -1061,57 +1108,6 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
     } `
     -Skip:$((-not (Get-Module PKI -ListAvailable)) -or ([Environment]::OSVersion.Version -lt '10.0'))
 
-    # Purpose: Install a module with current user scope parameter for admin user
-    #
-    # Action: Try to install a module with current user scope in an admin console
-    #
-    # Expected Result: It should succeed and install to current user
-    #
-    It "InstallModuleWithCurrentUserScopeParameterForAdminUser" {
-        Install-Module -Name ContosoServer -Scope CurrentUser
-        $mod = Get-InstalledModule -Name ContosoServer
-
-        AssertNotNull ($mod) "Module did not install properly."
-        Assert ($mod.Name -eq "ContosoServer") "Get-InstalledModule returned wrong module, $($mod.Name)"
-        Assert ($mod.InstalledLocation.StartsWith($script:MyDocumentsModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($mod.Name) did not install to the correct location"
-    }
-
-    # Purpose: Install a module with all users scope parameter for admin user
-    #
-    # Action: Try to install a module with all users scope in an admin console
-    #
-    # Expected Result: It should succeed and install to all users
-    #
-    It "InstallModuleWithAllUsersScopeParameterForAdminUser" {
-        Install-Module -Name ContosoServer -Scope AllUsers
-        $mod = Get-InstalledModule -Name ContosoServer
-
-        AssertNotNull ($mod) "Module did not install properly."
-        Assert ($mod.Name -eq "ContosoServer") "Get-InstalledModule returned wrong module, $($mod.Name)"
-        Assert ($mod.InstalledLocation.StartsWith($script:programFilesModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($mod.Name) did not install to the correct location"
-    }
-
-    # Purpose: Install a module with default scope parameter for admin user
-    #
-    # Action: Try to install a module with default (all users) scope in an admin console
-    #
-    # Expected Result: It should succeed and install to all users if Windows, and current user if non-Windows.
-    #
-    It "InstallModuleWithDefaultScopeParameterForAdminUser" {
-        Install-Module -Name ContosoServer
-        $mod = Get-InstalledModule -Name ContosoServer
-
-        AssertNotNull ($mod) "Module did not install properly."
-        Assert ($mod.Name -eq "ContosoServer") "Get-InstalledModule returned wrong module, $($mod.Name)"
-        if ($script:IsWindows)
-        {
-            Assert ($mod.InstalledLocation.StartsWith($script:programFilesModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($mod.Name) did not install to the correct location"
-        }
-        else
-        {
-            Assert ($mod.InstalledLocation.StartsWith($script:MyDocumentsModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($mod.Name) did not install to the correct location"
-        }
-    }
 }
 
 Describe PowerShell.PSGet.InstallModuleTests.P1 -Tags 'P1','OuterLoop' {

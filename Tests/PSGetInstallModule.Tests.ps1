@@ -13,7 +13,7 @@
         ContosoClient: versions 1.0, 1.5, 2.0, 2.5
         ContosoServer: versions 1.0, 1.5, 2.0, 2.5
 #>
-
+###IGNORE
 function SuiteSetup {
     Import-Module "$PSScriptRoot\PSGetTestUtils.psm1" -WarningAction SilentlyContinue
     Import-Module "$PSScriptRoot\Asserts.psm1" -WarningAction SilentlyContinue

@@ -235,8 +235,12 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
 
         Start-Process $PSprocess -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
                                                               $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
-                                                              Install-Module -Name ContosoServer -scope AllUsers -ErrorAction SilentlyContinue -Repository INTGallery
-                                                              Get-InstalledModule -Name ContosoServer | Format-List Name, InstalledLocation' `
+                                                              if (Get-InstalledModule -Name ContosoServer -ErrorAction ignore)
+                                                              {
+                                                                  Uninstall-Module ContosoServer;
+                                                              }
+                                                              Install-Module -Name ContosoServer -scope AllUsers -Repository INTGallery;
+                                                              Get-InstalledModule -Name ContosoServer' `
                                                -Credential $script:credential `
                                                -Wait `
                                                -RedirectStandardOutput $NonAdminConsoleOutput
@@ -247,7 +251,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         RemoveItem $NonAdminConsoleOutput
 
         AssertNotNull ($content) "Install module with CurrentUser scope on non-admin user console should not succeed"
-        Assert ($content -match "Administrator rights are required to install packages") "Install module with AllUsers scope on non-admin user console should fail, $content"
+        Assert ($content -match "Administrator rights are required to install") "Install module with AllUsers scope on non-admin user console should fail, $content"
     } `
     -Skip:$(
         $whoamiValue = (whoami)

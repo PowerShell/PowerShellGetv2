@@ -18,7 +18,7 @@ function SuiteSetup {
     Import-Module "$PSScriptRoot\PSGetTestUtils.psm1" -WarningAction SilentlyContinue
     Import-Module "$PSScriptRoot\Asserts.psm1" -WarningAction SilentlyContinue
 
-    $script:IsWindows = Get-Variable -Name IsWindows -ErrorAction Ignore
+    $script:IsWindows = (-not (Get-Variable -Name IsWindows -ErrorAction Ignore)) -or $IsWindows
     $script:ProgramFilesScriptsPath = Get-AllUsersScriptsPath 
     $script:MyDocumentsScriptsPath = Get-CurrentUserScriptsPath 
     $script:PSGetLocalAppDataPath = Get-PSGetLocalAppDataPath
@@ -79,7 +79,7 @@ function SuiteSetup {
 }
 
 function SuiteCleanup {
-    if($script:moduleSourcesBackupFilePath -and (Test-Path $script:moduleSourcesBackupFilePath))
+    if(Test-Path $script:moduleSourcesBackupFilePath)
     {
         Move-Item $script:moduleSourcesBackupFilePath $script:moduleSourcesFilePath -Force
     }
@@ -253,7 +253,7 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
 
         $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
 
-        Start-Process $PSprocess -ArgumentList 's$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
+        Start-Process $PSprocess -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
                                                               $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
                                                               Install-Script -Name Fabrikam-ServerScript;
                                                               Get-InstalledScript Fabrikam-ServerScript | Format-List Name, InstalledLocation' `
@@ -336,7 +336,6 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
             Assert ($script.InstalledLocation.StartsWith($script:MyDocumentsScriptsPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($script.Name) did not install to the correct location"
         }
     }
-    
     # Purpose: InstallScriptWithRangeWildCards
     #
     # Action: Install-Script "Fab[rR]ikam?Ser[a-z]erScr?pt"
@@ -1148,8 +1147,6 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
         $scripts2 = Get-InstalledScript
         AssertEquals $scripts1.count $scripts2.count "script count should be same before and after updating a script, before: $($scripts1.count), after: $($scripts2.count)"
     }
-
-
 }
 
 Describe PowerShell.PSGet.InstallScriptTests.P1 -Tags 'P1','OuterLoop' {

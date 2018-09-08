@@ -250,6 +250,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         $content = Get-Content $NonAdminConsoleOutput
         RemoveItem $NonAdminConsoleOutput
 
+        Write-Host($content)
         AssertNotNull ($content) "Install module with CurrentUser scope on non-admin user console should not succeed"
         Assert ($content -match "Administrator rights are required to install") "Install module with AllUsers scope on non-admin user console should fail, $content"
     } `

@@ -225,6 +225,7 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
         $content = Get-Content $NonAdminConsoleOutput
         RemoveItem $NonAdminConsoleOutput
 
+        WRite-Host($content)
         AssertNotNull ($content) "Install script with CurrentUser scope on non-admin user console should not succeed"
         # Install-Script should throw an error saying "Access to the path <path> is denied."
         Assert ($content -match "is denied" ) "Install script with AllUsers scope on non-admin user console should fail, $content"

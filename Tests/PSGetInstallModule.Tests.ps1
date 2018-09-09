@@ -239,7 +239,8 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
                                                               {
                                                                   Uninstall-Module ContosoServer;
                                                               }
-                                                              Install-Module -Name ContosoServer -scope AllUsers -Repository INTGallery -ErrorAction SilentlyContinue' `
+                                                              Install-Module -Name ContosoServer -scope AllUsers -Repository INTGallery -ErrorAction SilentlyContinue
+                                                              Get-InstalledModule -Name ContosoServer' `
                                                -Credential $script:credential `
                                                -Wait `
                                                -RedirectStandardOutput $NonAdminConsoleOutput
@@ -247,9 +248,10 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
 
         waitFor {Test-Path $NonAdminConsoleOutput} -timeoutInMilliseconds $script:assertTimeOutms -exceptionMessage "Install-Module on non-admin console failed to complete"
         $content = Get-Content $NonAdminConsoleOutput
+        Write-Host($content)
+
         RemoveItem $NonAdminConsoleOutput
 
-        Write-Warning($content)
         #AssertNotNull ($content) "Install module with CurrentUser scope on non-admin user console should not succeed"
         Assert ($content -match "Administrator rights are required to install") "Install module with AllUsers scope on non-admin user console should fail, $content"
     } `

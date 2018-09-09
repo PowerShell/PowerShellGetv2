@@ -213,13 +213,9 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
         $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
 
         Start-Process $PSprocess -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser -ErrorAction SilentlyContinue;
-                                                              Write-Warning("1");
                                                               $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -ErrorAction SilentlyContinue -Force;
-                                                              Write-Warning("2");
-                                                              Install-Script -Name Fabrikam-Script -NoPathUpdate -Scope AllUsers;
-                                                              Write-Warning("3");
-                                                              Get-InstalledScript Fabrikam-Script -ErrorAction SilentlyContinue;
-                                                              Write-Warning("4");' `
+                                                              Install-Script -Name Fabrikam-Script -NoPathUpdate -Scope AllUsers -ErrorVariable ev -ErrorAction SilentlyContinue;
+                                                              Write-Host($ev);' `
                                                -Credential $script:credential `
                                                -Wait `
                                                -RedirectStandardOutput $NonAdminConsoleOutput

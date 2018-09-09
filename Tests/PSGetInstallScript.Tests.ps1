@@ -214,8 +214,8 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
 
         Start-Process $PSprocess -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
                                                               $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
-                                                              Install-Script -Name Fabrikam-Script -NoPathUpdate -Scope AllUsers
-                                                              Get-InstalledScript Fabrikam-ServerScript | Format-List Name, InstalledLocation' `
+                                                              Install-Script -Name Fabrikam-Script -NoPathUpdate -Scope AllUsers -ErrorAction SilentlyContinue;
+                                                              Get-InstalledScript Fabrikam-Script | Format-List Name, InstalledLocation' `
                                                -Credential $script:credential `
                                                -Wait `
                                                -RedirectStandardOutput $NonAdminConsoleOutput
@@ -225,8 +225,8 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
         $content = Get-Content $NonAdminConsoleOutput
         RemoveItem $NonAdminConsoleOutput
 
-        WRite-Host($content)
-        AssertNotNull ($content) "Install script with CurrentUser scope on non-admin user console should not succeed"
+        Write-Host($content)
+        #AssertNotNull ($content) "Install script with CurrentUser scope on non-admin user console should not succeed"
         # Install-Script should throw an error saying "Access to the path <path> is denied."
         Assert ($content -match "is denied" ) "Install script with AllUsers scope on non-admin user console should fail, $content"
     } `

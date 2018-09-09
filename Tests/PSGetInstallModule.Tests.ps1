@@ -232,14 +232,18 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         }
 
         $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
-
+        Write-Host($NonAdminConsoleOutput)
         Start-Process $PSprocess -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
+                                                              Write-Warning("1");
                                                               $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
+                                                              Write-Warning("2");
                                                               if (Get-InstalledModule -Name ContosoServer -ErrorAction ignore)
                                                               {
                                                                   Uninstall-Module ContosoServer;
                                                               }
-                                                              Install-Module -Name ContosoServer -scope AllUsers -Repository INTGallery -ErrorAction SilentlyContinue
+                                                              Write-Warning("3");
+                                                              Install-Module -Name ContosoServer -scope AllUsers -Repository INTGallery -ErrorAction SilentlyContinue;
+                                                              Write-Warning("4");
                                                               Get-InstalledModule -Name ContosoServer' `
                                                -Credential $script:credential `
                                                -Wait `

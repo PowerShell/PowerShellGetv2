@@ -212,14 +212,18 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
 
         $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
 
-        Start-Process $PSprocess -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
-                                                              $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
+        Write-Host($NonAdminConsoleOutput)
+        Start-Process $PSprocess -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser -ErrorAction SilentlyContinue;
+                                                              Write-Warning("1");
+                                                              $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -ErrorAction SilentlyContinue -Force;
+                                                              Write-Warning("2");
                                                               Install-Script -Name Fabrikam-Script -NoPathUpdate -Scope AllUsers -ErrorAction SilentlyContinue;
-                                                              Get-InstalledScript Fabrikam-Script' `
+                                                              Write-Warning("3");
+                                                              Get-InstalledScript Fabrikam-Script -ErrorAction SilentlyContinue;
+                                                              Write-Warning("4");' `
                                                -Credential $script:credential `
                                                -Wait `
                                                -RedirectStandardOutput $NonAdminConsoleOutput
-
 
         waitFor {Test-Path $NonAdminConsoleOutput} -timeoutInMilliseconds $script:assertTimeOutms -exceptionMessage "Install-Script on non-admin console failed to complete"
         $content = Get-Content $NonAdminConsoleOutput

@@ -102,13 +102,14 @@ function SuiteCleanup {
             RemoveItem $userProfile.LocalPath
         }
     }
-    else
-    {
-        if(grep $script:UserName /etc/passwd)
-        {
-            userdel $script:UserName
-        }
-    }
+    # clean up for previously created linux user
+    #else
+    #{
+    #    if(grep $script:UserName /etc/passwd)
+    #    {
+    #        userdel $script:UserName
+    #    }
+    #}
 
     RemoveItem $script:TempSavePath
 

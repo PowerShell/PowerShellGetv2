@@ -18,7 +18,7 @@ function SuiteSetup {
     Import-Module "$PSScriptRoot\PSGetTestUtils.psm1" -WarningAction SilentlyContinue
     Import-Module "$PSScriptRoot\Asserts.psm1" -WarningAction SilentlyContinue
     
-    $script:IsWindows = (-not (Get-Variable -Name IsWindows -ErrorAction Ignore)) -or $IsWindows
+    $script:IsWindowsOS = (-not (Get-Variable -Name IsWindows -ErrorAction Ignore)) -or $IsWindows
     $script:ProgramFilesModulesPath = Get-AllUsersModulesPath
     $script:MyDocumentsModulesPath = Get-CurrentUserModulesPath
     $script:PSGetLocalAppDataPath = Get-PSGetLocalAppDataPath
@@ -50,9 +50,10 @@ function SuiteSetup {
     {
         $null = net user $script:userName $password /add
     }
-    else{
-        $null = useradd $script:userName --password $password
-    }
+    #elseif ($IsLinux)
+    #{
+    #    $null = useradd $script:userName --password $password
+    #}
     $secstr = ConvertTo-SecureString $password -AsPlainText -Force
     $script:credential = new-object -typename System.Management.Automation.PSCredential -argumentlist $script:userName, $secstr
 
@@ -178,7 +179,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
     #
     It "InstallModuleWithCurrentUserScopeParameterForNonAdminUser" {
         $PSprocess = "pwsh"
-        if ($script:IsWindows) {
+        if ($script:IsWindowsOS) {
             $PSprocess = "PowerShell.exe";
         }
 
@@ -201,7 +202,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
 
         AssertNotNull ($content) "Install module with CurrentUser scope on non-admin user console should succeed"
         Assert ($content -match "ContosoServer") "Module did not install correctly"
-        if ($script:IsWindows) {
+        if ($script:IsWindowsOS) {
             Assert ($content -match "Documents") "Module did not install to the correct location"
         }
         else {
@@ -227,7 +228,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
     #
     It "InstallModuleWithAllUsersScopeParameterForNonAdminUser" {
         $PSprocess = "pwsh"
-        if ($script:IsWindows) {
+        if ($script:IsWindowsOS) {
             $PSprocess = "PowerShell.exe";
         }
 
@@ -248,11 +249,10 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
 
         waitFor {Test-Path $NonAdminConsoleOutput} -timeoutInMilliseconds $script:assertTimeOutms -exceptionMessage "Install-Module on non-admin console failed to complete"
         $content = Get-Content $NonAdminConsoleOutput
-        Write-Host($content)
 
         RemoveItem $NonAdminConsoleOutput
 
-        #AssertNotNull ($content) "Install module with CurrentUser scope on non-admin user console should not succeed"
+        AssertNotNull ($content) "Install module with CurrentUser scope on non-admin user console should not succeed"
         Assert ($content -match "Administrator rights are required to install") "Install module with AllUsers scope on non-admin user console should fail, $content"
     } `
     -Skip:$(
@@ -274,7 +274,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
     #
     It "InstallModuleWithDefaultScopeParameterForNonAdminUser" {
         $PSprocess = "pwsh"
-        if ($script:IsWindows) {
+        if ($script:IsWindowsOS) {
             $PSprocess = "PowerShell.exe";
         }
 
@@ -294,7 +294,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         RemoveItem $NonAdminConsoleOutput
         AssertNotNull ($content) "Install module with CurrentUser scope on non-admin user console should succeed"
         Assert ($content -match "ContosoServer") "Module did not install correctly"
-        if ($script:IsWindows) {
+        if ($script:IsWindowsOS) {
             Assert ($content -match "Documents") "Module did not install to the correct location"
         }
         else {
@@ -355,7 +355,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
 
         AssertNotNull ($mod) "Module did not install properly."
         Assert ($mod.Name -eq "ContosoServer") "Get-InstalledModule returned wrong module, $($mod.Name)"
-        if ($script:IsWindows)
+        if ($script:IsWindowsOS)
         {
             Assert ($mod.InstalledLocation.StartsWith($script:programFilesModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($mod.Name) did not install to the correct location"
         }

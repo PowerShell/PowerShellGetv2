@@ -18,7 +18,7 @@ function SuiteSetup {
     Import-Module "$PSScriptRoot\PSGetTestUtils.psm1" -WarningAction SilentlyContinue
     Import-Module "$PSScriptRoot\Asserts.psm1" -WarningAction SilentlyContinue
 
-    $script:IsWindows = (-not (Get-Variable -Name IsWindows -ErrorAction Ignore)) -or $IsWindows
+    $script:IsWindowsOS = (-not (Get-Variable -Name IsWindows -ErrorAction Ignore)) -or $IsWindows
     $script:ProgramFilesScriptsPath = Get-AllUsersScriptsPath 
     $script:MyDocumentsScriptsPath = Get-CurrentUserScriptsPath 
     $script:PSGetLocalAppDataPath = Get-PSGetLocalAppDataPath
@@ -51,9 +51,9 @@ function SuiteSetup {
     {
         $null = net user $script:userName $password /add
     }
-    else{
-        $null = useradd $script:userName --password $password
-    }
+    #elseif ($IsLinux){
+    #    $null = useradd $script:userName --password $password
+    #}
     $secstr = ConvertTo-SecureString $password -AsPlainText -Force
     $script:credential = new-object -typename System.Management.Automation.PSCredential -argumentlist $script:userName, $secstr
 
@@ -156,7 +156,7 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
     #
     It "InstallScriptWithCurrentUserScopeParameterForNonAdminUser" {
         $PSprocess = "pwsh"
-        if ($isWindows) {
+        if ($script:IsWindowsOS) {
             $PSprocess = "PowerShell.exe";
         }
 
@@ -180,7 +180,7 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
         AssertNotNull ($content) "Install script with CurrentUser scope on non-admin user console should succeed"
         Assert ($content -match "Fabrikam-ServerScript") "Script did not install correctly"
         Assert ($content -match "Documents") "Script did not install to the correct location"
-        if ($script:IsWindows) {
+        if ($script:IsWindowsOS) {
             Assert ($content -match "Documents") "Script did not install to the correct location"
         }
         else {
@@ -206,7 +206,7 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
     #
     It "InstallScriptWithAllUsersScopeParameterForNonAdminUser" {
         $PSprocess = "pwsh"
-        if ($isWindows) {
+        if ($script:IsWindowsOS) {
             $PSprocess = "PowerShell.exe";
         }
 
@@ -222,11 +222,10 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
 
         waitFor {Test-Path $NonAdminConsoleOutput} -timeoutInMilliseconds $script:assertTimeOutms -exceptionMessage "Install-Script on non-admin console failed to complete"
         $content = Get-Content $NonAdminConsoleOutput
-        Write-Host($content)
         RemoveItem $NonAdminConsoleOutput
 
         
-        #AssertNotNull ($content) "Install script with CurrentUser scope on non-admin user console should not succeed"
+        AssertNotNull ($content) "Install script with CurrentUser scope on non-admin user console should not succeed"
         # Install-Script should throw an error saying "Access to the path <path> is denied."
         Assert ($content -match "is denied" ) "Install script with AllUsers scope on non-admin user console should fail, $content"
     } `
@@ -249,7 +248,7 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
     #
     It "InstallScriptWithDefaultScopeParameterForNonAdminUser" {
         $PSprocess = "pwsh"
-        if ($isWindows) {
+        if ($script:IsWindowsOS) {
             $PSprocess = "PowerShell.exe";
         }
 
@@ -269,7 +268,7 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
         RemoveItem $NonAdminConsoleOutput
         AssertNotNull ($content) "Install script with CurrentUser scope on non-admin user console should succeed"
         Assert ($content -match "Fabrikam-ServerScript") "Script did not install correctly"
-        if ($script:IsWindows) {
+        if ($script:IsWindowsOS) {
             Assert ($content -match "Documents") "Script did not install to the correct location"
         }
         else {
@@ -329,7 +328,7 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
 
         AssertNotNull ($script) "Script did not install properly."
         Assert ($script.Name -eq "Fabrikam-ServerScript") "Get-InstalledScript returned wrong module, $($script.Name)"
-        if ($script:IsWindows)
+        if ($script:IsWindowsOS)
         {
             Assert ($script.InstalledLocation.StartsWith($script:ProgramFilesScriptsPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($script.Name) did not install to the correct location"
         }

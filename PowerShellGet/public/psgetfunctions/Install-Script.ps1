@@ -87,8 +87,20 @@ function Install-Script
     {
         Get-PSGalleryApiAvailability -Repository $Repository
 
+        if(-not (Test-RunningAsElevated) -and ($Scope -eq "AllUsers"))
+        {
+            # Throw an error when Install-Script is used as a non-admin user and '-Scope AllUsers'
+            $message = $LocalizedData.InstallScriptAllUsersScopeParameterForNonAdminUser -f @($script:programFilesModulesPath, $script:MyDocumentsModulesPath)
+
+            ThrowError -ExceptionName "System.ArgumentException" `
+                        -ExceptionMessage $message `
+                        -ErrorId "InstallScriptAllUsersScopeParameterForNonAdminUser" `
+                        -CallerPSCmdlet $PSCmdlet `
+                        -ErrorCategory InvalidArgument
+        }
+
         # If no scope is specified, default installation will be to AllUsers only 
-        # if running admin on Windows with PowerShell version less than 6 (ie not a PowerShell Core console).
+        # If running admin on Windows with PowerShell less than v6.
         if (-not ($Scope)) 
         {
             $Scope = "CurrentUser"

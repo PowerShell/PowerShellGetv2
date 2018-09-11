@@ -34,7 +34,6 @@ function Install-PackageUtility
     $Scope = $null
     $NoPathUpdate = $false
     $AcceptLicense = $false
-    $script:IsWindowsOS = (-not (Get-Variable -Name IsWindows -ErrorAction Ignore)) -or $IsWindows
 
     # take the fastPackageReference and get the package object again.
     $parts = $fastPackageReference -Split '[|]'
@@ -65,13 +64,13 @@ function Install-PackageUtility
 
         if($artifactType -eq $script:PSArtifactTypeScript)
         {
-            $AdminPrivilegeErrorMessage = $LocalizedData.InstallScriptNeedsCurrentUserScopeParameterForNonAdminUser -f @($script:ProgramFilesScriptsPath, $script:MyDocumentsScriptsPath)
-            $AdminPrivilegeErrorId = 'InstallScriptNeedsCurrentUserScopeParameterForNonAdminUser'
+            $AdminPrivilegeErrorMessage = $LocalizedData.InstallScriptAllUsersScopeParameterForNonAdminUser -f @($script:ProgramFilesScriptsPath, $script:MyDocumentsScriptsPath)
+            $AdminPrivilegeErrorId = 'InstallScriptAllUsersScopeParameterForNonAdminUser'
         }
         else
         {
-            $AdminPrivilegeErrorMessage = $LocalizedData.InstallModuleNeedsCurrentUserScopeParameterForNonAdminUser -f @($script:programFilesModulesPath, $script:MyDocumentsModulesPath)
-            $AdminPrivilegeErrorId = 'InstallModuleNeedsCurrentUserScopeParameterForNonAdminUser'
+            $AdminPrivilegeErrorMessage = $LocalizedData.InstallModuleAllUsersScopeParameterForNonAdminUser -f @($script:programFilesModulesPath, $script:MyDocumentsModulesPath)
+            $AdminPrivilegeErrorId = 'InstallModuleAllUsersScopeParameterForNonAdminUser'
         }
 
         $installUpdate = $false
@@ -99,6 +98,16 @@ function Install-PackageUtility
                 {
                     $scriptDestination = $script:ProgramFilesScriptsPath
                     $moduleDestination = $script:programFilesModulesPath
+
+                    if(-not (Test-RunningAsElevated))
+                    {
+                        # Throw an error when Install-Module/Script is used as a non-admin user and '-Scope AllUsers'
+                        ThrowError -ExceptionName "System.ArgumentException" `
+                                    -ExceptionMessage $AdminPrivilegeErrorMessage `
+                                    -ErrorId $AdminPrivilegeErrorId `
+                                    -CallerPSCmdlet $PSCmdlet `
+                                    -ErrorCategory InvalidArgument
+                    }
                 }
             }
             elseif($Location)
@@ -109,7 +118,7 @@ function Install-PackageUtility
                 $moduleDestination = $Location
                 $scriptDestination = $Location
             }
-            elseif($script:IsWindowsOS -and (Test-RunningAsElevated))
+            elseif($script:IsWindows -and (Test-RunningAsElevated))
             {
                 # If Windows and elevated default scope will be all users
                 $scriptDestination = $script:ProgramFilesScriptsPath

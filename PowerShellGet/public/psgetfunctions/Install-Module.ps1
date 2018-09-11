@@ -91,19 +91,24 @@ function Install-Module
     {
         Get-PSGalleryApiAvailability -Repository $Repository
 
-        # Default scope for non-Windows plantforms should be CurrentUser
-        $script:IsWindowsOS = (-not (Get-Variable -Name IsWindows -ErrorAction Ignore)) -or $IsWindows
-        if (-not $script:IsWindowsOS -and (-not $Scope))
+        if(-not (Test-RunningAsElevated) -and ($Scope -eq "AllUsers"))
         {
-            $Scope = "CurrentUser"
+            # Throw an error when Install-Module is used as a non-admin user and '-Scope AllUsers'
+            $message = $LocalizedData.InstallModuleAllUsersScopeParameterForNonAdminUser -f @($script:programFilesModulesPath, $script:MyDocumentsModulesPath)
+
+            ThrowError -ExceptionName "System.ArgumentException" `
+                        -ExceptionMessage $message `
+                        -ErrorId "InstallModuleAllUsersScopeParameterForNonAdminUser" `
+                        -CallerPSCmdlet $PSCmdlet `
+                        -ErrorCategory InvalidArgument
         }
 
-        # If user has elevated privileges and no scope is specified, default installation will be to all users,
-        # Otherwise default installation will be to current user.
+        # If no scope is specified, default installation will be to AllUsers only 
+        # If running admin on Windows with PowerShell less than v6.
         if (-not ($Scope)) 
         {
             $Scope = "CurrentUser"
-            if(Test-RunningAsElevated)
+            if((Test-RunningAsElevated) -and $script:IsWindows -and (-not $script:IsCoreCLR))
             {
                 $Scope = "AllUsers"
             }

@@ -297,26 +297,6 @@ Describe PowerShell.PSGet.PackageManagementIntegrationTests -Tags 'P1','OuterLoo
         AssertEquals $packages1.count $packages2.count "package count should be same before and after updating a package, before: $($packages1.count), after: $($packages2.count)"
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
     # Purpose: Install a package with all users scope parameter for non-admin user
     #
     # Action: Try to install a package with all users scope in a non-admin console
@@ -390,29 +370,4 @@ Describe PowerShell.PSGet.PackageManagementIntegrationTests -Tags 'P1','OuterLoo
         ($PSVersionTable.PSVersion -lt '4.0.0') -or
         (-not $script:IsWindowsOS)
     )
-
-    # Purpose: Install a package with default scope parameter for admin user
-    #
-    # Action: Try to install a package with default (all users) scope in an admin console
-    #
-    # Expected Result: It should succeed and install to all users if Windows, and current user if non-Windows.
-    #
-    It "InstallPackageWithDefaultScopeParameterForAdminUser" {
-        Register-PSRepository -Name PoshTest -SourceLocation https://www.poshtestgallery.com/api/v2/ -InstallationPolicy Trusted
-        Install-Package -Name ContosoServer
-        $pkg = Get-Package -Name ContosoServer
-        Get-PSRepository -Name PoshTest -ErrorAction SilentlyContinue -WarningAction SilentlyContinue | Unregister-PSRepository
-
-
-        AssertNotNull ($pkg) "Package did not install properly."
-        Assert ($pkg.Name -eq "ContosoServer") "Get-Package returned wrong module, $($pkg.Name)"
-        if ($script:IsWindows)
-        {
-            Assert($pkg.SwidTagText -match "Program Files") "$($pkg.Name) did not install to the correct location"
-        }
-        else
-        {
-            Assert($pkg.SwidTagText -match "Documents") "$($pkg.Name) did not install to the correct location"
-        }
-    }
 }

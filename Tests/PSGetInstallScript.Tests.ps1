@@ -519,8 +519,7 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
         RemoveItem $NonAdminConsoleOutput
 
         AssertNotNull ($content) "Install-Script with AllUsers scope on non-admin user console should not succeed"
-        # Install-Script should throw an error saying "Access to the path <path> is denied."
-        Assert ($content -match "denied" ) "Install script with AllUsers scope on non-admin user console should fail, $content"
+        Assert ($content -match "Administrator rights are required to install" ) "Install script with AllUsers scope on non-admin user console should fail, $content"
     } `
     -Skip:$(
         $whoamiValue = (whoami)
@@ -540,6 +539,7 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
     #
     It "InstallScriptDefaultUserScopeParameterForNonAdminUser" {
         $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
+
         Start-Process "$PSHOME\PowerShell.exe" -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
                                                               $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
                                                               Install-Script -Name Fabrikam-ServerScript -NoPathUpdate;

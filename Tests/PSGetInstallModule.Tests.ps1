@@ -523,7 +523,13 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
     It "InstallModuleWithAllUsersScopeParameterForNonAdminUser" {
         $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
 
-        Start-Process "$PSHOME\PowerShell.exe" -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
+        $psProcess = "PowerShell.exe"
+        if ($script:IsCoreCLR)
+        {
+            $psProcess = "pwsh.exe"
+        }
+
+        Start-Process $psProcess -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
                                                               $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
                                                               if(-not (Get-PSRepository -Name PoshTest -ErrorAction SilentlyContinue)) {
                                                                 Register-PSRepository -Name PoshTest -SourceLocation https://www.poshtestgallery.com/api/v2/ -InstallationPolicy Trusted
@@ -561,7 +567,13 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
     It "InstallModuleDefaultUserScopeParameterForNonAdminUser" {
         $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
 
-        Start-Process "$PSHOME\PowerShell.exe" -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
+        $psProcess = "PowerShell.exe"
+        if ($script:IsCoreCLR)
+        {
+            $psProcess = "pwsh.exe"
+        }
+
+        Start-Process $psProcess -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
                                                               $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
                                                               Install-Module -Name ContosoServer -Repository PoshTest;
                                                               Get-InstalledModule -Name ContosoServer | Format-List Name, InstalledLocation' `

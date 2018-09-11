@@ -503,7 +503,13 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
     It "InstallScriptWithAllUsersScopeParameterForNonAdminUser" {
         $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
 
-        Start-Process "$PSHOME\PowerShell.exe" -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser -ErrorAction SilentlyContinue;
+        $psProcess = "PowerShell.exe"
+        if ($script:IsCoreCLR)
+        {
+            $psProcess = "pwsh.exe"
+        }
+
+        Start-Process $psProcess -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser -ErrorAction SilentlyContinue;
                                                               $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -ErrorAction SilentlyContinue -Force;
                                                               if(-not (Get-PSRepository -Name PoshTest -ErrorAction SilentlyContinue)) {
                                                                 Register-PSRepository -Name PoshTest -SourceLocation https://www.poshtestgallery.com/api/v2/ -InstallationPolicy Trusted
@@ -540,7 +546,13 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
     It "InstallScriptDefaultUserScopeParameterForNonAdminUser" {
         $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
 
-        Start-Process "$PSHOME\PowerShell.exe" -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
+        $psProcess = "PowerShell.exe"
+        if ($script:IsCoreCLR)
+        {
+            $psProcess = "pwsh.exe"
+        }
+
+        Start-Process $psProcess -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
                                                               $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
                                                               Install-Script -Name Fabrikam-ServerScript -NoPathUpdate;
                                                               Get-InstalledScript Fabrikam-ServerScript | Format-List Name, InstalledLocation' `

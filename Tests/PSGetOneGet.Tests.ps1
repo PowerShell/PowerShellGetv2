@@ -21,7 +21,7 @@ Describe PowerShell.PSGet.PackageManagementIntegrationTests -Tags 'P1','OuterLoo
         $script:MyDocumentsModulesPath = Get-CurrentUserModulesPath
         $script:BuiltInModuleSourceName = "PSGallery"
         $script:PSGetModuleProviderName = 'PowerShellGet'
-        $script:IsWindows = (-not (Get-Variable -Name IsWindows -ErrorAction Ignore)) -or $IsWindows
+        $script:IsWindowsOS = (-not (Get-Variable -Name IsWindows -ErrorAction Ignore)) -or $IsWindows
 
         #Bootstrap NuGet binaries
         Install-NuGetBinaries
@@ -297,55 +297,26 @@ Describe PowerShell.PSGet.PackageManagementIntegrationTests -Tags 'P1','OuterLoo
         AssertEquals $packages1.count $packages2.count "package count should be same before and after updating a package, before: $($packages1.count), after: $($packages2.count)"
     }
 
-    # Purpose: Install a package with current user scope parameter for non-admin User
-    #
-    # Action: Try to install a package with current user scope in a non-admin console
-    #
-    # Expected Result: It should succeed and install only to current user
-    #
-    It "InstallPackageWithCurrentUserScopeParameterForNonAdminUser" {
-        $PSprocess = "pwsh"
-        if ($script:IsWindows) {
-            $PSprocess = "PowerShell.exe";
-        }
 
-        $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
 
-        Start-Process $PSprocess -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
-                                                              $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
-                                                              if(-not (Get-PSRepository -Name INTGallery -ErrorAction SilentlyContinue)) {
-                                                                Register-PSRepository -Name INTGallery -SourceLocation https://dtlgalleryint.cloudapp.net/api/v2/ -InstallationPolicy Trusted
-                                                              }
-                                                              Install-Package -Name ContosoServer -Source INTGallery -Scope CurrentUser;
-                                                              Get-Package ContosoServer | Format-List Name, SwidTagText' `
-                                               -Credential $script:credential `
-                                               -Wait `
-                                               -RedirectStandardOutput $NonAdminConsoleOutput
 
-        waitFor {Test-Path $NonAdminConsoleOutput} -timeoutInMilliseconds $script:assertTimeOutms -exceptionMessage "Install-Module on non-admin console failed to complete"
-        $content = Get-Content $NonAdminConsoleOutput
-        RemoveItem $NonAdminConsoleOutput
 
-        AssertNotNull ($content) "Install package with CurrentUser scope on non-admin user console should succeed"
-        Assert ($content -match "ContosoServer") "Package did not install correctly"
-        if ($script:IsWindows) {
-            Assert ($content -match "Documents") "Package did not install to the correct location"
-        }
-        else {
-            Assert ($content -match "home") "Package did not install to the correct location"
-        }
-    } `
-    -Skip:$(
-        $whoamiValue = (whoami)
 
-        ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
-        ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
-        ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
-        ($PSVersionTable.PSVersion -lt '4.0.0') -or
-        # Temporarily skip tests until .NET Core is updated to v2.1
-        ($PSEdition -eq 'Core')
-    )
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
     # Purpose: Install a package with all users scope parameter for non-admin user
     #
     # Action: Try to install a package with all users scope in a non-admin console
@@ -353,17 +324,15 @@ Describe PowerShell.PSGet.PackageManagementIntegrationTests -Tags 'P1','OuterLoo
     # Expected Result: It should fail with an error
     #
     It "InstallPackageWithAllUsersScopeParameterForNonAdminUser" {
-        $PSprocess = "pwsh"
-        if ($script:IsWindows) {
-            $PSprocess = "PowerShell.exe";
-        }
-
         $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
 
-        Start-Process $PSprocess -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope AllUsers;
+        Start-Process "$PSHOME\PowerShell.exe" -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
                                                               $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
-                                                              Install-Package ContosoServer -Source INTGallery -Scope AllUsers;
-                                                              Get-InstalledModule -Name ContosoServer | Format-List Name, SwidTagText' `
+                                                              if(-not (Get-PSRepository -Name PoshTest -ErrorAction SilentlyContinue)) {
+                                                                Register-PSRepository -Name PoshTest -SourceLocation https://www.poshtestgallery.com/api/v2/ -InstallationPolicy Trusted
+                                                              }
+                                                              Install-Package -Name ContosoServer -scope AllUsers -Source PoshTest -ErrorVariable ev -ErrorAction SilentlyContinue;
+                                                              Write-Host($ev)' `
                                                -Credential $script:credential `
                                                -Wait `
                                                -RedirectStandardOutput $NonAdminConsoleOutput
@@ -373,8 +342,8 @@ Describe PowerShell.PSGet.PackageManagementIntegrationTests -Tags 'P1','OuterLoo
         $content = Get-Content $NonAdminConsoleOutput
         RemoveItem $NonAdminConsoleOutput
 
-        AssertNotNull ($content) "Install-Package with CurrentUser scope on non-admin user console should not succeed"
-        Assert ($content -match "Administrator rights are required to install packages") "Install-package with AllUsers scope on non-admin user console should fail, $content"
+        AssertNotNull ($content) "Install-Package with AllUsers scope on non-admin user console should not succeed"
+        Assert ($content -match "Administrator rights are required to install") "Install-Package with AllUsers scope on non-admin user console should fail, $content"
     } `
     -Skip:$(
         $whoamiValue = (whoami)
@@ -383,8 +352,7 @@ Describe PowerShell.PSGet.PackageManagementIntegrationTests -Tags 'P1','OuterLoo
         ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
         ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
         ($PSVersionTable.PSVersion -lt '4.0.0') -or
-        # Temporarily skip tests until .NET Core is updated to v2.1
-        ($PSEdition -eq 'Core')
+        (-not $script:IsWindowsOS)
     )
 
     # Purpose: Install a package with default scope parameter for non-admin user
@@ -393,34 +361,25 @@ Describe PowerShell.PSGet.PackageManagementIntegrationTests -Tags 'P1','OuterLoo
     #
     # Expected Result: It should succeed and install only to current user
     #
-    It "InstallPackageWithDefaultScopeParameterForNonAdminUser" {
-        $PSprocess = "pwsh"
-        if ($script:IsWindows) {
-            $PSprocess = "PowerShell.exe";
-        }
-
+    It "InstallPackageDefaultUserScopeParameterForNonAdminUser" {
         $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
 
-        Start-Process $PSprocess -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
+        Start-Process "$PSHOME\PowerShell.exe" -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
                                                               $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
-                                                              Install-Package ContosoServer -Source INTGallery;
+                                                              Install-Package -Name ContosoServer -Source PoshTest;
                                                               Get-Package ContosoServer | Format-List Name, SwidTagText' `
                                                -Credential $script:credential `
                                                -Wait `
+                                               -WorkingDirectory $PSHOME `
                                                -RedirectStandardOutput $NonAdminConsoleOutput
 
         waitFor {Test-Path $NonAdminConsoleOutput} -timeoutInMilliseconds $script:assertTimeOutms -exceptionMessage "Install-Package on non-admin console failed to complete"
         $content = Get-Content $NonAdminConsoleOutput
         RemoveItem $NonAdminConsoleOutput
 
-        AssertNotNull ($content) "Install-Package with CurrentUser scope on non-admin user console should succeed"
+        AssertNotNull ($content) "Install package with default current user scope on non-admin user console should succeed"
         Assert ($content -match "ContosoServer") "Package did not install correctly"
-        if ($script:IsWindows) {
-            Assert ($content -match "Documents") "Package did not install to the correct location"
-        }
-        else {
-            Assert ($content -match "home") "Package did not install to the correct location"
-        }
+        Assert ($content -match "Documents") "Package did not install to the correct location"
     } `
     -Skip:$(
         $whoamiValue = (whoami)
@@ -429,43 +388,8 @@ Describe PowerShell.PSGet.PackageManagementIntegrationTests -Tags 'P1','OuterLoo
         ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
         ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
         ($PSVersionTable.PSVersion -lt '4.0.0') -or
-        # Temporarily skip tests until .NET Core is updated to v2.1
-        ($PSEdition -eq 'Core')
+        (-not $script:IsWindowsOS)
     )
-
-    # Purpose: Install a packge with current user scope parameter for admin user
-    #
-    # Action: Try to install a package with current user scope in an admin console
-    #
-    # Expected Result: It should succeed and install to current user
-    #
-    It "InstallPackageWithCurrentUserScopeParameterForAdminUser" {
-        Register-PSRepository -Name INTGallery -SourceLocation https://dtlgalleryint.cloudapp.net/api/v2/ -InstallationPolicy Trusted
-        Install-Package -Name ContosoServer -Scope CurrentUser
-        $pkg = Get-Package -Name ContosoServer
-        Get-PSRepository -Name INTGallery -ErrorAction SilentlyContinue -WarningAction SilentlyContinue | Unregister-PSRepository
-
-        AssertNotNull ($pkg) "Package did not install properly."
-        Assert ($pkg.Name -eq "ContosoServer") "Get-Package returned wrong package, $($pkg.Name)"
-        Assert($pkg.SwidTagText -match "Documents") "$($pkg.Name) did not install to the correct location"
-    }
-
-    # Purpose: Install a package with all users scope parameter for admin user
-    #
-    # Action: Try to install a package with all users scope in an admin console
-    #
-    # Expected Result: It should succeed and install to all users
-    #
-    It "InstallPackageWithAllUsersScopeParameterForAdminUser" {
-        Register-PSRepository -Name INTGallery -SourceLocation https://dtlgalleryint.cloudapp.net/api/v2/ -InstallationPolicy Trusted
-        Install-Package -Name ContosoServer -Scope AllUsers
-        $pkg = Get-Package -Name ContosoServer
-        Get-PSRepository -Name INTGallery -ErrorAction SilentlyContinue -WarningAction SilentlyContinue | Unregister-PSRepository
-
-        AssertNotNull ($pkg) "Package did not install properly."
-        Assert ($pkg.Name -eq "ContosoServer") "Get-Package returned wrong package, $($pkg.Name)"
-        Assert($pkg.SwidTagText -match "Program Files") "$($pkg.Name) did not install to the correct location"
-    }
 
     # Purpose: Install a package with default scope parameter for admin user
     #
@@ -474,10 +398,10 @@ Describe PowerShell.PSGet.PackageManagementIntegrationTests -Tags 'P1','OuterLoo
     # Expected Result: It should succeed and install to all users if Windows, and current user if non-Windows.
     #
     It "InstallPackageWithDefaultScopeParameterForAdminUser" {
-        Register-PSRepository -Name INTGallery -SourceLocation https://dtlgalleryint.cloudapp.net/api/v2/ -InstallationPolicy Trusted
+        Register-PSRepository -Name PoshTest -SourceLocation https://www.poshtestgallery.com/api/v2/ -InstallationPolicy Trusted
         Install-Package -Name ContosoServer
         $pkg = Get-Package -Name ContosoServer
-        Get-PSRepository -Name INTGallery -ErrorAction SilentlyContinue -WarningAction SilentlyContinue | Unregister-PSRepository
+        Get-PSRepository -Name PoshTest -ErrorAction SilentlyContinue -WarningAction SilentlyContinue | Unregister-PSRepository
 
 
         AssertNotNull ($pkg) "Package did not install properly."

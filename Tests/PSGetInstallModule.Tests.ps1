@@ -44,18 +44,14 @@ function SuiteSetup {
     PSGetTestUtils\Uninstall-Module ContosoServer
     PSGetTestUtils\Uninstall-Module ContosoClient
 
-    $script:userName = "PSGetUser"
-    $password = "Password1"
-    if($PSEdition -ne 'Core')
+    if($script:IsWindowsOS)
     {
+        $script:userName = "PSGetUser"
+        $password = "Password1"
         $null = net user $script:userName $password /add
+        $secstr = ConvertTo-SecureString $password -AsPlainText -Force
+        $script:credential = new-object -typename System.Management.Automation.PSCredential -argumentlist $script:userName, $secstr
     }
-    #elseif ($IsLinux)
-    #{
-    #    $null = useradd $script:userName --password $password
-    #}
-    $secstr = ConvertTo-SecureString $password -AsPlainText -Force
-    $script:credential = new-object -typename System.Management.Automation.PSCredential -argumentlist $script:userName, $secstr
 
     $script:assertTimeOutms = 20000
     $script:UntrustedRepoSourceLocation = 'https://powershell.myget.org/F/powershellget-test-items/api/v2/'
@@ -137,7 +133,7 @@ function SuiteCleanup {
     # Import the PowerShellGet provider to reload the repositories.
     $null = Import-PackageProvider -Name PowerShellGet -Force
 
-    if($PSEdition -ne 'Core')
+    if($script:IsWindowsOS)
     {
         # Delete the user
         net user $script:UserName /delete | Out-Null
@@ -168,201 +164,6 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         PSGetTestUtils\Uninstall-Module ContosoServer
         PSGetTestUtils\Uninstall-Module ContosoClient
         PSGetTestUtils\Uninstall-Module DscTestModule
-    }
-
-
-    # Purpose: Install a module with current user scope parameter for non-admin User
-    #
-    # Action: Try to install a module with current user scope in a non-admin console
-    #
-    # Expected Result: It should succeed and install only to current user
-    #
-    It "InstallModuleWithCurrentUserScopeParameterForNonAdminUser" {
-        $PSprocess = "pwsh"
-        if ($script:IsWindowsOS) {
-            $PSprocess = "PowerShell.exe";
-        }
-
-        $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
-
-        Start-Process $PSprocess -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
-                                                              $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
-                                                              if(-not (Get-PSRepository -Name INTGallery -ErrorAction SilentlyContinue)) {
-                                                                Register-PSRepository -Name INTGallery -SourceLocation https://dtlgalleryint.cloudapp.net/api/v2/ -InstallationPolicy Trusted
-                                                              }
-                                                              Install-Module -Name ContosoServer -Repository INTGallery -Scope CurrentUser;
-                                                              Get-InstalledModule ContosoServer | Format-List Name, InstalledLocation' `
-                                               -Credential $script:credential `
-                                               -Wait `
-                                               -RedirectStandardOutput $NonAdminConsoleOutput
-
-        waitFor {Test-Path $NonAdminConsoleOutput} -timeoutInMilliseconds $script:assertTimeOutms -exceptionMessage "Install-Module on non-admin console failed to complete"
-        $content = Get-Content $NonAdminConsoleOutput
-        RemoveItem $NonAdminConsoleOutput
-
-        AssertNotNull ($content) "Install module with CurrentUser scope on non-admin user console should succeed"
-        Assert ($content -match "ContosoServer") "Module did not install correctly"
-        if ($script:IsWindowsOS) {
-            Assert ($content -match "Documents") "Module did not install to the correct location"
-        }
-        else {
-            Assert ($content -match "home") "Module did not install to the correct location"
-        }
-    } `
-    -Skip:$(
-        $whoamiValue = (whoami)
-
-        ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
-        ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
-        ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
-        ($PSVersionTable.PSVersion -lt '4.0.0') -or
-        # Temporarily skip tests until .NET Core is updated to v2.1
-        ($PSEdition -eq 'Core')
-    )
-
-    # Purpose: Install a module with all users scope parameter for non-admin user
-    #
-    # Action: Try to install a module with all users scope in a non-admin console
-    #
-    # Expected Result: It should fail with an error
-    #
-    It "InstallModuleWithAllUsersScopeParameterForNonAdminUser" {
-        $PSprocess = "pwsh"
-        if ($script:IsWindowsOS) {
-            $PSprocess = "PowerShell.exe";
-        }
-
-        $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
-
-        Start-Process $PSprocess -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
-                                                              $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
-                                                              if (Get-InstalledModule -Name ContosoServer -ErrorAction SilentlyContinue)
-                                                              {
-                                                                  Uninstall-Module ContosoServer -ErrorAction SilentlyContinue;
-                                                              }
-                                                              Install-Module -Name ContosoServer -scope AllUsers -Repository INTGallery -ErrorVariable ev -ErrorAction SilentlyContinue;
-                                                              Write-Host($ev)' `
-                                               -Credential $script:credential `
-                                               -Wait `
-                                               -RedirectStandardOutput $NonAdminConsoleOutput
-
-
-        waitFor {Test-Path $NonAdminConsoleOutput} -timeoutInMilliseconds $script:assertTimeOutms -exceptionMessage "Install-Module on non-admin console failed to complete"
-        $content = Get-Content $NonAdminConsoleOutput
-
-        RemoveItem $NonAdminConsoleOutput
-
-        AssertNotNull ($content) "Install module with CurrentUser scope on non-admin user console should not succeed"
-        Assert ($content -match "Administrator rights are required to install") "Install module with AllUsers scope on non-admin user console should fail, $content"
-    } `
-    -Skip:$(
-        $whoamiValue = (whoami)
-
-        ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
-        ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
-        ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
-        ($PSVersionTable.PSVersion -lt '4.0.0') -or
-        # Temporarily skip tests until .NET Core is updated to v2.1
-        ($PSEdition -eq 'Core')
-    )
-
-    # Purpose: Install a module with default scope parameter for non-admin user
-    #
-    # Action: Try to install a module with default (current user) scope in a non-admin console
-    #
-    # Expected Result: It should succeed and install only to current user
-    #
-    It "InstallModuleWithDefaultScopeParameterForNonAdminUser" {
-        $PSprocess = "pwsh"
-        if ($script:IsWindowsOS) {
-            $PSprocess = "PowerShell.exe";
-        }
-
-        $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
-
-        Start-Process $PSprocess -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
-                                                              $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
-                                                              Install-Module -Name ContosoServer -Repository INTGallery
-                                                              Get-InstalledModule -Name ContosoServer | Format-List Name, InstalledLocation' `
-                                               -Credential $script:credential `
-                                               -Wait `
-                                               -RedirectStandardOutput $NonAdminConsoleOutput
-
-        waitFor {Test-Path $NonAdminConsoleOutput} -timeoutInMilliseconds $script:assertTimeOutms -exceptionMessage "Install-Module on non-admin console failed to complete"
-        $content = Get-Content $NonAdminConsoleOutput
-
-        RemoveItem $NonAdminConsoleOutput
-        AssertNotNull ($content) "Install module with CurrentUser scope on non-admin user console should succeed"
-        Assert ($content -match "ContosoServer") "Module did not install correctly"
-        if ($script:IsWindowsOS) {
-            Assert ($content -match "Documents") "Module did not install to the correct location"
-        }
-        else {
-            Assert ($content -match "home") "Module did not install to the correct location"
-        }
-    } `
-    -Skip:$(
-        $whoamiValue = (whoami)
-
-        ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
-        ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
-        ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
-        ($PSVersionTable.PSVersion -lt '4.0.0') -or
-        # Temporarily skip tests until .NET Core is updated to v2.1
-        ($PSEdition -eq 'Core')
-    )
-
-
-        # Purpose: Install a module with current user scope parameter for admin user
-    #
-    # Action: Try to install a module with current user scope in an admin console
-    #
-    # Expected Result: It should succeed and install to current user
-    #
-    It "InstallModuleWithCurrentUserScopeParameterForAdminUser" {
-        Install-Module -Name ContosoServer -Scope CurrentUser
-        $mod = Get-InstalledModule -Name ContosoServer
-
-        AssertNotNull ($mod) "Module did not install properly."
-        Assert ($mod.Name -eq "ContosoServer") "Get-InstalledModule returned wrong module, $($mod.Name)"
-        Assert ($mod.InstalledLocation.StartsWith($script:MyDocumentsModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($mod.Name) did not install to the correct location"
-    }
-
-    # Purpose: Install a module with all users scope parameter for admin user
-    #
-    # Action: Try to install a module with all users scope in an admin console
-    #
-    # Expected Result: It should succeed and install to all users
-    #
-    It "InstallModuleWithAllUsersScopeParameterForAdminUser" {
-        Install-Module -Name ContosoServer -Scope AllUsers
-        $mod = Get-InstalledModule -Name ContosoServer
-
-        AssertNotNull ($mod) "Module did not install properly."
-        Assert ($mod.Name -eq "ContosoServer") "Get-InstalledModule returned wrong module, $($mod.Name)"
-        Assert ($mod.InstalledLocation.StartsWith($script:programFilesModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($mod.Name) did not install to the correct location"
-    }
-
-    # Purpose: Install a module with default scope parameter for admin user
-    #
-    # Action: Try to install a module with default (all users) scope in an admin console
-    #
-    # Expected Result: It should succeed and install to all users if Windows, and current user if non-Windows.
-    #
-    It "InstallModuleWithDefaultScopeParameterForAdminUser" {
-        Install-Module -Name ContosoServer
-        $mod = Get-InstalledModule -Name ContosoServer
-
-        AssertNotNull ($mod) "Module did not install properly."
-        Assert ($mod.Name -eq "ContosoServer") "Get-InstalledModule returned wrong module, $($mod.Name)"
-        if ($script:IsWindowsOS)
-        {
-            Assert ($mod.InstalledLocation.StartsWith($script:programFilesModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($mod.Name) did not install to the correct location"
-        }
-        else
-        {
-            Assert ($mod.InstalledLocation.StartsWith($script:MyDocumentsModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) "$($mod.Name) did not install to the correct location"
-        }
     }
 
     # Purpose: InstallNotAvailableModuleWithWildCard
@@ -712,6 +513,84 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         $mod2 = Get-Module ContosoServer -ListAvailable
         Assert ($mod2.Count -ge 2) "Atleast two versions of ContosoServer should be available after changing the -Scope with -Force and without -AllowClobber on Install-Module cmdlet, $mod2"
     }
+
+    # Purpose: Install a module with all users scope parameter for non-admin user
+    #
+    # Action: Try to install a module with all users scope in a non-admin console
+    #
+    # Expected Result: It should fail with an error
+    #
+    It "InstallModuleWithAllUsersScopeParameterForNonAdminUser" {
+        $PSprocess = "PowerShell.exe";
+
+        $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
+
+        Start-Process $PSprocess -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
+                                                              $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
+                                                              if(-not (Get-PSRepository -Name PoshTest -ErrorAction SilentlyContinue)) {
+                                                                Register-PSRepository -Name PoshTest -SourceLocation https://www.poshtestgallery.com/api/v2/ -InstallationPolicy Trusted
+                                                              }
+                                                              Install-Module -Name ContosoServer -scope AllUsers -Repository PoshTest -ErrorVariable ev -ErrorAction SilentlyContinue;
+                                                              Write-Host($ev)' `
+                                               -Credential $script:credential `
+                                               -Wait `
+                                               -RedirectStandardOutput $NonAdminConsoleOutput
+
+
+        waitFor {Test-Path $NonAdminConsoleOutput} -timeoutInMilliseconds $script:assertTimeOutms -exceptionMessage "Install-Module on non-admin console failed to complete"
+        $content = Get-Content $NonAdminConsoleOutput
+        RemoveItem $NonAdminConsoleOutput
+
+        AssertNotNull ($content) "Install-Module with AllUsers scope on non-admin user console should not succeed"
+        Assert ($content -match "Administrator rights are required to install") "Install module with AllUsers scope on non-admin user console should fail, $content"
+    } `
+    -Skip:$(
+        $whoamiValue = (whoami)
+
+        ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
+        ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
+        ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
+        ($PSVersionTable.PSVersion -lt '4.0.0') -or
+        (-not $script:IsWindowsOS)
+    )
+
+    # Purpose: Install a module with default scope parameter for non-admin user
+    #
+    # Action: Try to install a module with default (current user) scope in a non-admin console
+    #
+    # Expected Result: It should succeed and install only to current user
+    #
+    It "InstallModuleDefaultUserScopeParameterForNonAdminUser" {
+        $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
+
+        Start-Process "$PSHOME\PowerShell.exe" -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
+                                                              $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
+                                                              Install-Module -Name ContosoServer -Repository PoshTest;
+                                                              Get-InstalledModule -Name ContosoServer | Format-List Name, InstalledLocation' `
+                                               -Credential $script:credential `
+                                               -Wait `
+                                               -WorkingDirectory $PSHOME `
+                                               -RedirectStandardOutput $NonAdminConsoleOutput
+
+        waitFor {Test-Path $NonAdminConsoleOutput} -timeoutInMilliseconds $script:assertTimeOutms -exceptionMessage "Install-Module on non-admin console failed to complete"
+        $content = Get-Content $NonAdminConsoleOutput
+        RemoveItem $NonAdminConsoleOutput
+
+        AssertNotNull ($content) "Install-Module with default current user scope on non-admin user console should succeed"
+        Assert ($content -match "ContosoServer") "Module did not install correctly"
+        Assert ($content -match "Documents") "Module did not install to the correct location"
+
+
+    } `
+    -Skip:$(
+        $whoamiValue = (whoami)
+
+        ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
+        ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
+        ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
+        ($PSVersionTable.PSVersion -lt '4.0.0') -or
+        (-not $script:IsWindowsOS)
+    )
 
     # Purpose: ValidateModuleIsInUseError
     #

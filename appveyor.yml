@@ -46,7 +46,6 @@ branches:
   only:
     - master
     - development
-    - scopeForInstallModule
 
 # Run Pester tests and store the results
 test_script:

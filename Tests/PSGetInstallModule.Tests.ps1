@@ -540,6 +540,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
                                                 Write-Output "$ev"' `
                                 -Credential $script:credential `
                                 -Wait `
+                                -WorkingDirectory $PSHOME `
                                 -RedirectStandardOutput $NonAdminConsoleOutput
 
         waitFor {Test-Path $NonAdminConsoleOutput} -timeoutInMilliseconds $script:assertTimeOutms -exceptionMessage "Install-Module on non-admin console failed to complete"
@@ -556,7 +557,10 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
         ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
         ($PSVersionTable.PSVersion -lt '4.0.0') -or
-        (-not $script:IsWindowsOS)
+        (-not $script:IsWindowsOS) -or
+        # Temporarily disable tests for Core
+        ($script:IsCoreCLR)
+
     )
 
     # Purpose: Install a module with default scope parameter for non-admin user
@@ -596,7 +600,9 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
         ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
         ($PSVersionTable.PSVersion -lt '4.0.0') -or
-        (-not $script:IsWindowsOS)
+        (-not $script:IsWindowsOS) -or
+        # Temporarily disable tests for Core
+        ($script:IsCoreCLR)
     )
 
     # Purpose: ValidateModuleIsInUseError

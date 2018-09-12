@@ -118,7 +118,7 @@ function Install-PackageUtility
                 $moduleDestination = $Location
                 $scriptDestination = $Location
             }
-            elseif($script:IsWindows -and (Test-RunningAsElevated))
+            elseif(-not $script:IsCoreCLR -and (Test-RunningAsElevated))
             {
                 # If Windows and elevated default scope will be all users
                 $scriptDestination = $script:ProgramFilesScriptsPath

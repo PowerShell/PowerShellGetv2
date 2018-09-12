@@ -16,11 +16,24 @@ function Copy-Module
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
         [PSCustomObject]
-        $PSGetItemInfo
+        $PSGetItemInfo,
+
+        [Parameter(Mandatory=$false)]        
+        [Switch]
+        $IsSavePackage
     )
 
     $ev = $null
-    $message = $LocalizedData.AdministratorRightsNeededOrSpecifyCurrentUserScope
+    if(-not $IsSavePackage)
+    {
+        $message = $LocalizedData.AdministratorRightsNeededOrSpecifyCurrentUserScope
+        $errorId = 'AdministratorRightsNeededOrSpecifyCurrentUserScope'
+    }
+    else
+    {
+        $message = $LocalizedData.UnauthorizedAccessError -f $DestinationPath
+        $errorId = 'UnauthorizedAccessError'
+    }
 
     if(Microsoft.PowerShell.Management\Test-Path $DestinationPath)
     {
@@ -38,7 +51,7 @@ function Copy-Module
             $script:IsRunningAsElevated = $false
             ThrowError -ExceptionName "System.ArgumentException" `
                        -ExceptionMessage $message `
-                       -ErrorId "AdministratorRightsNeededOrSpecifyCurrentUserScope" `
+                       -ErrorId $errorId `
                        -CallerPSCmdlet $PSCmdlet `
                        -ErrorCategory InvalidArgument `
                        -ExceptionObject $ev
@@ -61,13 +74,13 @@ function Copy-Module
         $script:IsRunningAsElevated = $false
         ThrowError -ExceptionName "System.ArgumentException" `
                    -ExceptionMessage $message `
-                   -ErrorId "AdministratorRightsNeededOrSpecifyCurrentUserScope" `
+                   -ErrorId $errorId `
                    -CallerPSCmdlet $PSCmdlet `
                    -ErrorCategory InvalidArgument `
                    -ExceptionObject $ev
     }
 
-    Microsoft.PowerShell.Management\Copy-Item -Path "$SourcePath\*" `
+    Microsoft.PowerShell.Management\Copy-Item -Path (Microsoft.PowerShell.Management\Join-Path -Path $SourcePath -ChildPath '*') `
                                               -Destination $DestinationPath `
                                               -Force `
                                               -Recurse `
@@ -81,7 +94,7 @@ function Copy-Module
         $script:IsRunningAsElevated = $false
         ThrowError -ExceptionName "System.ArgumentException" `
                    -ExceptionMessage $message `
-                   -ErrorId "AdministratorRightsNeededOrSpecifyCurrentUserScope" `
+                   -ErrorId $errorId `
                    -CallerPSCmdlet $PSCmdlet `
                    -ErrorCategory InvalidArgument `
                    -ExceptionObject $ev

@@ -536,7 +536,6 @@ function Install-PackageUtility
 
             $ProviderOptions = @{
                                     Destination=$tempDestination;
-                                    ExcludeVersion=$true
                                 }
 
             if($InstalledItemsList)
@@ -560,7 +559,7 @@ function Install-PackageUtility
 
             $YesToAll = $false
             $NoToAll = $false
-
+           
             foreach($pkg in $installedPkgs)
             {
                 if($request.IsCanceled)
@@ -593,16 +592,21 @@ function Install-PackageUtility
                 # Get actual artifact type from the package
                 $packageType = $script:PSArtifactTypeModule
                 $installLocation = $destinationModulePath
-                $tempPackagePath = Microsoft.PowerShell.Management\Join-Path -Path $tempDestination -ChildPath $pkg.Name
-                if(Microsoft.PowerShell.Management\Test-Path -Path $tempPackagePath)
+                # Below logic handles the package folder name with version.
+                $tempPackagePath = Microsoft.PowerShell.Management\Join-Path -Path $tempDestination -ChildPath "$($pkg.Name).$($pkg.Version)"
+                if(-not (Microsoft.PowerShell.Management\Test-Path -Path $tempPackagePath -PathType Container))
                 {
-                    $packageFiles = Microsoft.PowerShell.Management\Get-ChildItem -Path $tempPackagePath -Recurse -Exclude "*.nupkg","*.nuspec"
+                    $message = $LocalizedData.UnableToDownloadThePackage -f ($provider.ProviderName, $pkg.Name, $pkg.Version, $tempPackagePath)
+                    Write-Error -Message $message -ErrorId 'UnableToDownloadThePackage' -Category InvalidOperation
+                    return
+                }
 
-                    if($packageFiles -and $packageFiles.GetType().ToString() -eq 'System.IO.FileInfo' -and $packageFiles.Name -eq "$($pkg.Name).ps1")
-                    {
-                        $packageType = $script:PSArtifactTypeScript
-                        $installLocation = $destinationscriptPath
-                    }
+                $packageFiles = Microsoft.PowerShell.Management\Get-ChildItem -Path $tempPackagePath -Recurse -Exclude "*.nupkg","*.nuspec"
+
+                if($packageFiles -and $packageFiles.GetType().ToString() -eq 'System.IO.FileInfo' -and $packageFiles.Name -eq "$($pkg.Name).ps1")
+                {
+                    $packageType = $script:PSArtifactTypeScript
+                    $installLocation = $destinationscriptPath
                 }
 
                 $AdditionalParams = @{}
@@ -663,13 +667,13 @@ function Install-PackageUtility
                         continue
                     }
 
+                    $sourceModulePath = $tempPackagePath
                     if($psgItemInfo.PowerShellGetFormatVersion -eq "1.0")
                     {
-                        $sourceModulePath = Microsoft.PowerShell.Management\Join-Path $tempDestination "$($pkg.Name)\Content\*\$script:ModuleReferences\$($pkg.Name)"
-                    }
-                    else
-                    {
-                        $sourceModulePath = Microsoft.PowerShell.Management\Join-Path $tempDestination $pkg.Name
+                        $sourceModulePath = Microsoft.PowerShell.Management\Join-Path -Path $sourceModulePath -ChildPath 'Content' |
+                            Microsoft.PowerShell.Management\Join-Path -ChildPath '*' |
+                                Microsoft.PowerShell.Management\Join-Path -ChildPath $script:ModuleReferences |
+                                    Microsoft.PowerShell.Management\Join-Path -ChildPath $pkg.Name
                     }
 
                     #Prompt if module requires license Acceptance
@@ -727,6 +731,7 @@ function Install-PackageUtility
                     if(-not $IsSavePackage)
                     {
                         $CurrentModuleInfo = Test-ValidManifestModule -ModuleBasePath $sourceModulePath `
+                                                                      -ModuleName $pkg.Name `
                                                                       -InstallLocation $InstallLocation `
                                                                       -AllowClobber:$AllowClobber `
                                                                       -SkipPublisherCheck:$SkipPublisherCheck `
@@ -734,6 +739,7 @@ function Install-PackageUtility
 
                         if(-not $CurrentModuleInfo)
                         {
+                            Write-Verbose -Message ($LocalizedData.ModuleValidationFailed -f $ModuleName,$ModuleBasePath)
                             # This Install-Package provider API gets called once per an item/package/SoftwareIdentity.
                             # Return if there is an error instead of continuing further to install the dependencies or current module.
                             #
@@ -845,7 +851,7 @@ function Install-PackageUtility
                         $psgItemInfo.Version = $CurrentModuleInfo.Version
                     }
 
-                    Copy-Module -SourcePath $sourceModulePath -DestinationPath $destinationModulePath -PSGetItemInfo $psgItemInfo
+                    Copy-Module -SourcePath $sourceModulePath -DestinationPath $destinationModulePath -PSGetItemInfo $psgItemInfo -IsSavePackage:$IsSavePackage
 
                     if(-not $IsSavePackage)
                     {

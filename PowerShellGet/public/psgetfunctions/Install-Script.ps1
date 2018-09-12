@@ -90,7 +90,7 @@ function Install-Script
         if($Scope -eq "AllUsers" -and -not (Test-RunningAsElevated))
         {
             # Throw an error when Install-Script is used as a non-admin user and '-Scope AllUsers'
-            $message = $LocalizedData.InstallScriptAdminPrivilegeRequiredForAllUsersScope -f @($script:programFilesModulesPath, $script:MyDocumentsModulesPath)
+            $message = $LocalizedData.InstallScriptAdminPrivilegeRequiredForAllUsersScope -f @($script:ProgramFilesScriptsPath, $script:MyDocumentsScriptsPath)
 
             ThrowError -ExceptionName "System.ArgumentException" `
                         -ExceptionMessage $message `

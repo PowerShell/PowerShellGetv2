@@ -533,11 +533,11 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
             $psProcess = "$pshome\pwsh.exe"
         }
 
-        # Install-Module -Name ContosoServer -scope AllUsers -Repository PoshTest -ErrorVariable ev -ErrorAction SilentlyContinue;  
         Start-Process $psProcess -ArgumentList '-command if(-not (Get-PSRepository -Name PoshTest -ErrorAction SilentlyContinue)) {
                                                 Register-PSRepository -Name PoshTest -SourceLocation https://www.poshtestgallery.com/api/v2/ -InstallationPolicy Trusted
                                                 }
-                                                Install-Module -Name ContosoServer -scope AllUsers -Repository PoshTest' `
+                                                Install-Module -Name ContosoServer -scope AllUsers -Repository PoshTest -ErrorVariable ev -ErrorAction SilentlyContinue;
+                                                Write-Output "$ev"' `
                                 -Credential $script:credential `
                                 -Wait `
                                 -RedirectStandardOutput $NonAdminConsoleOutput

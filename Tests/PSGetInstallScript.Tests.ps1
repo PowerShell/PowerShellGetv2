@@ -93,10 +93,14 @@ function SuiteCleanup {
         # Delete the user
         net user $script:UserName /delete | Out-Null
         # Delete the user profile
-        $userProfile = (Get-WmiObject -Class Win32_UserProfile | Where-Object {$_.LocalPath -match $script:UserName})
-        if($userProfile)
+        # run only if cmd is available
+        if(Get-Command -Name Get-WmiObject -ErrorAction SilentlyContinue)
         {
-            RemoveItem $userProfile.LocalPath
+            $userProfile = (Get-WmiObject -Class Win32_UserProfile | Where-Object {$_.LocalPath -match $script:UserName})
+            if($userProfile)
+            {
+                RemoveItem $userProfile.LocalPath
+            }
         }
     }
 
@@ -509,13 +513,10 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
             $psProcess = "pwsh.exe"
         }
 
-        Start-Process $psProcess -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser -ErrorAction SilentlyContinue;
-                                                              $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -ErrorAction SilentlyContinue -Force;
-                                                              if(-not (Get-PSRepository -Name PoshTest -ErrorAction SilentlyContinue)) {
-                                                                Register-PSRepository -Name PoshTest -SourceLocation https://www.poshtestgallery.com/api/v2/ -InstallationPolicy Trusted
-                                                              }
-                                                              Install-Script -Name Fabrikam-Script -NoPathUpdate -Scope AllUsers -ErrorVariable ev -ErrorAction SilentlyContinue;
-                                                              Write-Host($ev);' `
+        Start-Process $psProcess -ArgumentList '-command if(-not (Get-PSRepository -Name PoshTest -ErrorAction SilentlyContinue)) {
+                                                    Register-PSRepository -Name PoshTest -SourceLocation https://www.poshtestgallery.com/api/v2/ -InstallationPolicy Trusted
+                                                }
+                                                Install-Script -Name Fabrikam-Script -NoPathUpdate -Scope AllUsers' `
                                                -Credential $script:credential `
                                                -Wait `
                                                -RedirectStandardOutput $NonAdminConsoleOutput
@@ -552,10 +553,8 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
             $psProcess = "pwsh.exe"
         }
 
-        Start-Process $psProcess -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
-                                                              $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
-                                                              Install-Script -Name Fabrikam-ServerScript -NoPathUpdate;
-                                                              Get-InstalledScript Fabrikam-ServerScript | Format-List Name, InstalledLocation' `
+        Start-Process $psProcess -ArgumentList '-command Install-Script -Name Fabrikam-ServerScript -NoPathUpdate;
+                                                Get-InstalledScript Fabrikam-ServerScript | Format-List Name, InstalledLocation' `
                                                -Credential $script:credential `
                                                -Wait `
                                                -WorkingDirectory $PSHOME `
@@ -1766,7 +1765,12 @@ Describe PowerShell.PSGet.InstallScriptTests.P1 -Tags 'P1','OuterLoop' {
             AssertEquals $res1.RepositorySourceLocation $Global:PSGallerySourceUri "PSGetItemInfo object was created with wrong RepositorySourceLocation"
             AssertEquals $res1.Repository $RepositoryName "PSGetItemInfo object was created with wrong repository name"
 
-            AssertEquals $res1.InstalledLocation $script:ProgramFilesScriptsPath "Invalid InstalledLocation value on PSGetItemInfo object"
+            $expectedInstalledLocation = $script:ProgramFilesScriptsPath
+            if($script:IsCoreCLR)
+            {
+                $expectedInstalledLocation = $script:MyDocumentsScriptsPath
+            }
+            AssertEquals $res1.InstalledLocation $expectedInstalledLocation "Invalid InstalledLocation value on PSGetItemInfo object"
         }
         finally
         {

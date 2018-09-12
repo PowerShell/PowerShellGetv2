@@ -138,10 +138,14 @@ function SuiteCleanup {
         # Delete the user
         net user $script:UserName /delete | Out-Null
         # Delete the user profile
-        $userProfile = (Get-WmiObject -Class Win32_UserProfile | Where-Object {$_.LocalPath -match $script:UserName})
-        if($userProfile)
+        # run only if cmd is available
+        if(Get-Command -Name Get-WmiObject -ErrorAction SilentlyContinue)
         {
-            RemoveItem $userProfile.LocalPath
+            $userProfile = (Get-WmiObject -Class Win32_UserProfile | Where-Object {$_.LocalPath -match $script:UserName})
+            if($userProfile)
+            {
+                RemoveItem $userProfile.LocalPath
+            }
         }
     }
       
@@ -523,23 +527,20 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
     It "InstallModuleWithAllUsersScopeParameterForNonAdminUser" {
         $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
 
-        $psProcess = "PowerShell.exe"
+        $psProcess = "$pshome\PowerShell.exe"
         if ($script:IsCoreCLR)
         {
-            $psProcess = "pwsh.exe"
+            $psProcess = "$pshome\pwsh.exe"
         }
 
-        Start-Process $psProcess -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
-                                                              $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
-                                                              if(-not (Get-PSRepository -Name PoshTest -ErrorAction SilentlyContinue)) {
-                                                                Register-PSRepository -Name PoshTest -SourceLocation https://www.poshtestgallery.com/api/v2/ -InstallationPolicy Trusted
-                                                              }
-                                                              Install-Module -Name ContosoServer -scope AllUsers -Repository PoshTest -ErrorVariable ev -ErrorAction SilentlyContinue;
-                                                              Write-Host($ev)' `
-                                               -Credential $script:credential `
-                                               -Wait `
-                                               -RedirectStandardOutput $NonAdminConsoleOutput
-
+        # Install-Module -Name ContosoServer -scope AllUsers -Repository PoshTest -ErrorVariable ev -ErrorAction SilentlyContinue;  
+        Start-Process $psProcess -ArgumentList '-command if(-not (Get-PSRepository -Name PoshTest -ErrorAction SilentlyContinue)) {
+                                                Register-PSRepository -Name PoshTest -SourceLocation https://www.poshtestgallery.com/api/v2/ -InstallationPolicy Trusted
+                                                }
+                                                Install-Module -Name ContosoServer -scope AllUsers -Repository PoshTest' `
+                                -Credential $script:credential `
+                                -Wait `
+                                -RedirectStandardOutput $NonAdminConsoleOutput
 
         waitFor {Test-Path $NonAdminConsoleOutput} -timeoutInMilliseconds $script:assertTimeOutms -exceptionMessage "Install-Module on non-admin console failed to complete"
         $content = Get-Content $NonAdminConsoleOutput
@@ -573,10 +574,8 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
             $psProcess = "pwsh.exe"
         }
 
-        Start-Process $psProcess -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
-                                                              $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
-                                                              Install-Module -Name ContosoServer -Repository PoshTest;
-                                                              Get-InstalledModule -Name ContosoServer | Format-List Name, InstalledLocation' `
+        Start-Process $psProcess -ArgumentList '-command Install-Module -Name ContosoServer -Repository PoshTest;
+                                                Get-InstalledModule -Name ContosoServer | Format-List Name, InstalledLocation' `
                                                -Credential $script:credential `
                                                -Wait `
                                                -WorkingDirectory $PSHOME `
@@ -589,8 +588,6 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         AssertNotNull ($content) "Install-Module with default current user scope on non-admin user console should succeed"
         Assert ($content -match "ContosoServer") "Module did not install correctly"
         Assert ($content -match "Documents") "Module did not install to the correct location"
-
-
     } `
     -Skip:$(
         $whoamiValue = (whoami)
@@ -1366,6 +1363,10 @@ Describe PowerShell.PSGet.InstallModuleTests.P1 -Tags 'P1','OuterLoop' {
             AssertEquals $res1.Repository $RepositoryName "PSGetItemInfo object was created with wrong repository name"
 
             $expectedInstalledLocation = Join-Path $script:ProgramFilesModulesPath -ChildPath $res1.Name
+            if($script:IsCoreCLR)
+            {
+                $expectedInstalledLocation = Join-Path -Path $script:MyDocumentsModulesPath -ChildPath $res1.Name
+            }
             if($PSVersionTable.PSVersion -ge '5.0.0')
             {
                 $expectedInstalledLocation = Join-Path -Path $expectedInstalledLocation -ChildPath $res1.Version

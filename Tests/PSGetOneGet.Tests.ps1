@@ -47,17 +47,14 @@ Describe PowerShell.PSGet.PackageManagementIntegrationTests -Tags 'P1','OuterLoo
 
         $script:TestModuleSourceName = "PSGetTestModuleSource"
 
-        $script:userName = "PSGetUser"
-        $password = "Password1"
-        if($PSEdition -ne 'Core')
+        if($script:IsWindowsOS)
         {
+            $script:userName = "PSGetUser"
+            $password = "Password1"
             $null = net user $script:userName $password /add
+            $secstr = ConvertTo-SecureString $password -AsPlainText -Force
+            $script:credential = new-object -typename System.Management.Automation.PSCredential -argumentlist $script:userName, $secstr
         }
-        else{
-            $null = useradd $script:userName --password $password
-        }
-        $secstr = ConvertTo-SecureString $password -AsPlainText -Force
-        $script:credential = new-object -typename System.Management.Automation.PSCredential -argumentlist $script:userName, $secstr
     }
 
     AfterAll {

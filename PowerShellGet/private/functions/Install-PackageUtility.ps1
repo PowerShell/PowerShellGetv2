@@ -64,13 +64,13 @@ function Install-PackageUtility
 
         if($artifactType -eq $script:PSArtifactTypeScript)
         {
-            $AdminPrivilegeErrorMessage = $LocalizedData.InstallScriptAllUsersScopeParameterForNonAdminUser -f @($script:ProgramFilesScriptsPath, $script:MyDocumentsScriptsPath)
-            $AdminPrivilegeErrorId = 'InstallScriptAllUsersScopeParameterForNonAdminUser'
+            $AdminPrivilegeErrorMessage = $LocalizedData.InstallScriptAdminPrivilegeRequiredForAllUsersScope -f @($script:ProgramFilesScriptsPath, $script:MyDocumentsScriptsPath)
+            $AdminPrivilegeErrorId = 'InstallScriptAdminPrivilegeRequiredForAllUsersScope'
         }
         else
         {
-            $AdminPrivilegeErrorMessage = $LocalizedData.InstallModuleAllUsersScopeParameterForNonAdminUser -f @($script:programFilesModulesPath, $script:MyDocumentsModulesPath)
-            $AdminPrivilegeErrorId = 'InstallModuleAllUsersScopeParameterForNonAdminUser'
+            $AdminPrivilegeErrorMessage = $LocalizedData.InstallModuleAdminPrivilegeRequiredForAllUsersScope -f @($script:programFilesModulesPath, $script:MyDocumentsModulesPath)
+            $AdminPrivilegeErrorId = 'InstallModuleAdminPrivilegeRequiredForAllUsersScope'
         }
 
         $installUpdate = $false

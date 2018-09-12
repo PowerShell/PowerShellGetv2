@@ -91,24 +91,24 @@ function Install-Module
     {
         Get-PSGalleryApiAvailability -Repository $Repository
 
-        if(-not (Test-RunningAsElevated) -and ($Scope -eq "AllUsers"))
+        if($Scope -eq "AllUsers" -and -not (Test-RunningAsElevated))
         {
             # Throw an error when Install-Module is used as a non-admin user and '-Scope AllUsers'
-            $message = $LocalizedData.InstallModuleAllUsersScopeParameterForNonAdminUser -f @($script:programFilesModulesPath, $script:MyDocumentsModulesPath)
+            $message = $LocalizedData.InstallModuleAdminPrivilegeRequiredForAllUsersScope -f @($script:programFilesModulesPath, $script:MyDocumentsModulesPath)
 
             ThrowError -ExceptionName "System.ArgumentException" `
                         -ExceptionMessage $message `
-                        -ErrorId "InstallModuleAllUsersScopeParameterForNonAdminUser" `
+                        -ErrorId "InstallModuleAdminPrivilegeRequiredForAllUsersScope" `
                         -CallerPSCmdlet $PSCmdlet `
                         -ErrorCategory InvalidArgument
         }
 
         # If no scope is specified, default installation will be to AllUsers only 
         # If running admin on Windows with PowerShell less than v6.
-        if (-not ($Scope)) 
+        if (-not $Scope) 
         {
             $Scope = "CurrentUser"
-            if((Test-RunningAsElevated) -and $script:IsWindows -and (-not $script:IsCoreCLR))
+            if(-not $script:IsCoreCLR -and (Test-RunningAsElevated))
             {
                 $Scope = "AllUsers"
             }

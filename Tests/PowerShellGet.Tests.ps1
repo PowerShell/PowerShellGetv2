@@ -156,7 +156,7 @@ Describe "PowerShellGet - Module tests (Admin)" -tags @('Feature', 'RequireAdmin
         Remove-InstalledModules
     }
 
-    It "Should install a module correctly to the required location with default AllUsers scope" {
+    It "Should install a module correctly to the required location with default AllUsers scope - PS 5.1 and below" {
         Install-Module -Name $ContosoServer -Repository $RepositoryName
         $installedModuleInfo = Get-InstalledModule -Name $ContosoServer
 
@@ -167,9 +167,24 @@ Describe "PowerShellGet - Module tests (Admin)" -tags @('Feature', 'RequireAdmin
         $module = Get-Module $ContosoServer -ListAvailable
         $module.Name | Should be $ContosoServer
         $module.ModuleBase | Should Be $installedModuleInfo.InstalledLocation
-    }
+    } `
+    -Skip:$($script:IsCoreCLR)
 
-    AfterAll {
+    It "Should install a module correctly to the required location with default CurrentUser scope - PS 6.0 and above" {
+        Install-Module -Name $ContosoServer -Repository $RepositoryName
+        $installedModuleInfo = Get-InstalledModule -Name $ContosoServer
+
+        $installedModuleInfo | Should Not Be $null
+        $installedModuleInfo.Name | Should Be $ContosoServer
+        $installedModuleInfo.InstalledLocation.StartsWith($script:MyDocumentsModulesPath, [System.StringComparison]::OrdinalIgnoreCase) | Should Be $true
+
+        $module = Get-Module $ContosoServer -ListAvailable
+        $module.Name | Should be $ContosoServer
+        $module.ModuleBase | Should Be $installedModuleInfo.InstalledLocation
+    } `
+    -Skip:$(-not $script:IsCoreCLR)
+
+    AfterEach {
         Remove-InstalledModules
     }
 }
@@ -225,14 +240,25 @@ Describe "PowerShellGet - Script tests (Admin)" -tags @('Feature', 'RequireAdmin
         Remove-InstalledScripts
     }
 
-    It "Should install a script correctly to the required location with default AllUsers scope" {
+    It "Should install a script correctly to the required location with default AllUsers scope - PS 5.1 and below" {
         Install-Script -Name $FabrikamServerScript -Repository $RepositoryName -NoPathUpdate
         $installedScriptInfo = Get-InstalledScript -Name $FabrikamServerScript
 
         $installedScriptInfo | Should Not Be $null
         $installedScriptInfo.Name | Should Be $FabrikamServerScript
         $installedScriptInfo.InstalledLocation.StartsWith($script:ProgramFilesScriptsPath, [System.StringComparison]::OrdinalIgnoreCase) | Should Be $true
-    }
+    } `
+    -Skip:$($script:IsCoreCLR)
+
+    It "Should install a script correctly to the required location with default CurrentUser scope - PS 6.0 and above" {
+        Install-Script -Name $FabrikamServerScript -Repository $RepositoryName -NoPathUpdate
+        $installedScriptInfo = Get-InstalledScript -Name $FabrikamServerScript
+
+        $installedScriptInfo | Should Not Be $null
+        $installedScriptInfo.Name | Should Be $FabrikamServerScript
+        $installedScriptInfo.InstalledLocation.StartsWith($script:MyDocumentsScriptsPath, [System.StringComparison]::OrdinalIgnoreCase) | Should Be $true
+    } `
+    -Skip:$(-not $script:IsCoreCLR)
 
     AfterAll {
         Remove-InstalledScripts

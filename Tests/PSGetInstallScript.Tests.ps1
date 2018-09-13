@@ -1330,13 +1330,13 @@ Describe PowerShell.PSGet.InstallScriptTests.P1 -Tags 'P1','OuterLoop' {
     } `
     -Skip:$($IsWindows -eq $false)
 
-    # Purpose: InstallPackage_Script_Default_AllUsers_Force_NoPromptForAddingtoPATHVariable_PS5.1_and_below
+    # Purpose: InstallPackage_Script_Default_User_Force_NoPromptForAddingtoPATHVariable
     #
     # Action: Install-Package -Provider PowerShellGet -Type Script -Name Fabrikam-ServerScript -Source PSGallery -Force
     #
     # Expected Result: script install location should not be added to PATH varaible.
     #
-    It "InstallPackage_Script_Default_AllUsers_Force_NoPromptForAddingtoPATHVariable_PS5.1_and_below" {
+    It "InstallPackage_Script_Default_User_Force_NoPromptForAddingtoPATHVariable" {
         try {
             # Remove PSGetSettings.xml file to get the prompt
             RemoveItem -Path $script:PSGetSettingsFilePath
@@ -1351,7 +1351,13 @@ Describe PowerShell.PSGet.InstallScriptTests.P1 -Tags 'P1','OuterLoop' {
             $res = Get-InstalledScript Fabrikam-ServerScript
             AssertEquals $res.Name 'Fabrikam-ServerScript' "Install-Script should install a script, $res"
 
-            Assert (($env:PATH -split ';') -contains $script:ProgramFilesScriptsPath) "Install-Package should add AllUsers scope path to PATH environment variable."
+            if ($script:IsCoreCLR) {
+                Assert (($env:PATH -split ';') -contains $script:MyDocumentsScriptsPath) "Install-Package should add CurrentUser scope path to PATH environment variable."
+            }
+            else
+            {
+                Assert (($env:PATH -split ';') -contains $script:ProgramFilesScriptsPath) "Install-Package should add AllUsers scope path to PATH environment variable."
+            }
         }
         finally {
             # Set the PATH variable to not have the scripts install location in the PATH variable.
@@ -1359,40 +1365,7 @@ Describe PowerShell.PSGet.InstallScriptTests.P1 -Tags 'P1','OuterLoop' {
 
             Get-InstalledScript -Name Fabrikam-ServerScript -ErrorAction SilentlyContinue | Uninstall-Script -Force
         }
-    } `
-    -Skip:$($script:IsCoreCLR)
-
-    # Purpose: InstallPackage_Script_Default_CurrentUser_Force_NoPromptForAddingtoPATHVariable_PS6.0_and_above
-    #
-    # Action: Install-Package -Provider PowerShellGet -Type Script -Name Fabrikam-ServerScript -Source PSGallery -Force
-    #
-    # Expected Result: script install location should not be added to PATH varaible.
-    #
-    It "InstallPackage_Script_Default_CurrentUser_Force_NoPromptForAddingtoPATHVariable_PS6.0_and_above" {
-        try {
-            # Remove PSGetSettings.xml file to get the prompt
-            RemoveItem -Path $script:PSGetSettingsFilePath
-
-            # Reset the PATH variable to not have the scripts install location in the PATH variable.
-            Reset-PATHVariableForScriptsInstallLocation -Scope AllUsers
-
-            $null = PackageManagement\Import-PackageProvider -Name PowerShellGet -Force
-
-            Install-Package -Provider PowerShellGet -Type Script -Name Fabrikam-ServerScript -Source PSGallery -Force
-
-            $res = Get-InstalledScript Fabrikam-ServerScript
-            AssertEquals $res.Name 'Fabrikam-ServerScript' "Install-Script should install a script, $res"
-
-            Assert (($env:PATH -split ';') -contains $script:MyDocumentsScriptsPath) "Install-Package should add CurrentUser scope path to PATH environment variable."
-        }
-        finally {
-            # Set the PATH variable to not have the scripts install location in the PATH variable.
-            Set-PATHVariableForScriptsInstallLocation -Scope AllUsers
-
-            Get-InstalledScript -Name Fabrikam-ServerScript -ErrorAction SilentlyContinue | Uninstall-Script -Force
-        }
-    } `
-    -Skip:$(-not $script:IsCoreCLR)
+    } 
 
     # Purpose: InstallPackage_Script_CurrentUser_NO_toThePromptForAddingtoPATHVariable
     #

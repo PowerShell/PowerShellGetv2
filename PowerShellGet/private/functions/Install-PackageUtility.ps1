@@ -64,13 +64,13 @@ function Install-PackageUtility
 
         if($artifactType -eq $script:PSArtifactTypeScript)
         {
-            $AdminPrivilegeErrorMessage = $LocalizedData.InstallScriptNeedsCurrentUserScopeParameterForNonAdminUser -f @($script:ProgramFilesScriptsPath, $script:MyDocumentsScriptsPath)
-            $AdminPrivilegeErrorId = 'InstallScriptNeedsCurrentUserScopeParameterForNonAdminUser'
+            $AdminPrivilegeErrorMessage = $LocalizedData.InstallScriptAdminPrivilegeRequiredForAllUsersScope -f @($script:ProgramFilesScriptsPath, $script:MyDocumentsScriptsPath)
+            $AdminPrivilegeErrorId = 'InstallScriptAdminPrivilegeRequiredForAllUsersScope'
         }
         else
         {
-            $AdminPrivilegeErrorMessage = $LocalizedData.InstallModuleNeedsCurrentUserScopeParameterForNonAdminUser -f @($script:programFilesModulesPath, $script:MyDocumentsModulesPath)
-            $AdminPrivilegeErrorId = 'InstallModuleNeedsCurrentUserScopeParameterForNonAdminUser'
+            $AdminPrivilegeErrorMessage = $LocalizedData.InstallModuleAdminPrivilegeRequiredForAllUsersScope -f @($script:programFilesModulesPath, $script:MyDocumentsModulesPath)
+            $AdminPrivilegeErrorId = 'InstallModuleAdminPrivilegeRequiredForAllUsersScope'
         }
 
         $installUpdate = $false
@@ -101,7 +101,7 @@ function Install-PackageUtility
 
                     if(-not (Test-RunningAsElevated))
                     {
-                        # Throw an error when Install-Module/Script is used as a non-admin user and '-Scope CurrentUser' is not specified
+                        # Throw an error when Install-Module/Script is used as a non-admin user and '-Scope AllUsers'
                         ThrowError -ExceptionName "System.ArgumentException" `
                                     -ExceptionMessage $AdminPrivilegeErrorMessage `
                                     -ErrorId $AdminPrivilegeErrorId `
@@ -118,14 +118,17 @@ function Install-PackageUtility
                 $moduleDestination = $Location
                 $scriptDestination = $Location
             }
-            # if no scope and no destination path and not elevated, then raise an error
-            elseif(-not (Test-RunningAsElevated))
+            elseif(-not $script:IsCoreCLR -and (Test-RunningAsElevated))
             {
-                ThrowError -ExceptionName "System.ArgumentException" `
-                           -ExceptionMessage $AdminPrivilegeErrorMessage `
-                           -ErrorId $AdminPrivilegeErrorId `
-                           -CallerPSCmdlet $PSCmdlet `
-                           -ErrorCategory InvalidArgument
+                # If Windows and elevated default scope will be all users
+                $scriptDestination = $script:ProgramFilesScriptsPath
+                $moduleDestination = $script:ProgramFilesModulesPath
+            }
+            else
+            {
+                # If non-Windows or non-elevated default scope will be current user
+                $scriptDestination = $script:MyDocumentsScriptsPath
+                $moduleDestination = $script:MyDocumentsModulesPath
             }
 
             if($options.ContainsKey('SkipPublisherCheck'))

@@ -1,6 +1,6 @@
 @{
 RootModule = 'PSModule.psm1'
-ModuleVersion = '1.6.7'
+ModuleVersion = '2.0.0'
 GUID = '1d73a601-4a6c-43c5-ba3f-619b18bbb404'
 Author = 'Microsoft Corporation'
 CompanyName = 'Microsoft Corporation'
@@ -54,6 +54,12 @@ PrivateData = @{
         ProjectUri = 'https://go.microsoft.com/fwlink/?LinkId=828955'
         LicenseUri = 'https://go.microsoft.com/fwlink/?LinkId=829061'
         ReleaseNotes = @'
+## 2.0.0
+
+Breaking Change
+- Default installation scope for Install-Module, Install-Script, and Install-Package has changed. For Windows PowerShell (version 5.1 or below), the default scope is AllUsers when running in an elevated session, and CurrentUser at all other times.
+  For PowerShell version 6.0.0 and above, the default installation scope is always CurrentUser.
+
 ## 1.6.7
 
 Bug fixes

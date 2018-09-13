@@ -918,7 +918,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
                                           -expectedFullyQualifiedErrorId 'CommandAlreadyAvailableWitScriptName,Install-Script'
 
         $wv = $null
-        Install-Package -Name $scriptName -Type Script -ProviderName PowerShellGet -WarningVariable wv -WarningAction SilentlyContinue
+        Install-Package -Name $scriptName -Type Script -ProviderName PowerShellGet -WarningVariable wv -WarningAction SilentlyContinue -NoPathUpdate
         $message = $script:LocalizedData.CommandAlreadyAvailable -f ($scriptName)
         AssertEquals $wv.Message $message "Install-Package should not install a script if there is a command with the same name"
     }

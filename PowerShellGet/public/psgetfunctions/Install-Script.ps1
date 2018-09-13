@@ -51,7 +51,7 @@ function Install-Script
         [Parameter()]
         [ValidateSet("CurrentUser","AllUsers")]
         [string]
-        $Scope = 'AllUsers',
+        $Scope,
 
         [Parameter()]
         [Switch]
@@ -87,17 +87,27 @@ function Install-Script
     {
         Get-PSGalleryApiAvailability -Repository $Repository
 
-        if(-not (Test-RunningAsElevated) -and ($Scope -ne "CurrentUser"))
+        if($Scope -eq "AllUsers" -and -not (Test-RunningAsElevated))
         {
-            # Throw an error when Install-Script is used as a non-admin user and '-Scope CurrentUser' is not specified
-            $AdminPrivilegeErrorMessage = $LocalizedData.InstallScriptNeedsCurrentUserScopeParameterForNonAdminUser -f @($script:ProgramFilesScriptsPath, $script:MyDocumentsScriptsPath)
-            $AdminPrivilegeErrorId = 'InstallScriptNeedsCurrentUserScopeParameterForNonAdminUser'
+            # Throw an error when Install-Script is used as a non-admin user and '-Scope AllUsers'
+            $message = $LocalizedData.InstallScriptAdminPrivilegeRequiredForAllUsersScope -f @($script:ProgramFilesScriptsPath, $script:MyDocumentsScriptsPath)
 
             ThrowError -ExceptionName "System.ArgumentException" `
-                        -ExceptionMessage $AdminPrivilegeErrorMessage `
-                        -ErrorId $AdminPrivilegeErrorId `
+                        -ExceptionMessage $message `
+                        -ErrorId "InstallScriptAdminPrivilegeRequiredForAllUsersScope" `
                         -CallerPSCmdlet $PSCmdlet `
                         -ErrorCategory InvalidArgument
+        }
+
+        # If no scope is specified, default installation will be to AllUsers only 
+        # If running admin on Windows with PowerShell less than v6.
+        if (-not $Scope) 
+        {
+            $Scope = "CurrentUser"
+            if(-not $script:IsCoreCLR -and (Test-RunningAsElevated))
+            {
+                $Scope = "AllUsers"
+            }
         }
 
         # Check and add the scope path to PATH environment variable

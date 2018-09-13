@@ -1,4 +1,10 @@
 # Changelog
+## 2.0.0
+Breaking Change
+- Default installation scope for Install-Module, Install-Script, and Install-Package has changed. For Windows PowerShell (version 5.1 or below), the default scope is AllUsers when running in an elevated session, and CurrentUser at all other times.
+  For PowerShell version 6.0.0 and above, the default installation scope is always CurrentUser.
+
+
 ## 1.6.7
 
 Bug fixes

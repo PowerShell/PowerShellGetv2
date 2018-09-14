@@ -175,7 +175,7 @@ Describe "PowerShellGet - Module tests (Admin)" -tags @('Feature', 'RequireAdmin
         $module.ModuleBase | Should Be $installedModuleInfo.InstalledLocation
     }
 
-    AfterEach {
+    AfterAll {
         Remove-InstalledModules
     }
 }
@@ -246,7 +246,6 @@ Describe "PowerShellGet - Script tests (Admin)" -tags @('Feature', 'RequireAdmin
             $installedScriptInfo.InstalledLocation.StartsWith($script:ProgramFilesScriptsPath, [System.StringComparison]::OrdinalIgnoreCase) | Should Be $true
         }
     } 
-
 
     AfterAll {
         Remove-InstalledScripts

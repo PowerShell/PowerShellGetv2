@@ -1365,7 +1365,8 @@ Describe PowerShell.PSGet.InstallScriptTests.P1 -Tags 'P1','OuterLoop' {
 
             Get-InstalledScript -Name Fabrikam-ServerScript -ErrorAction SilentlyContinue | Uninstall-Script -Force
         }
-    } 
+    } `
+    -Skip:$($IsWindows -eq $false)
 
     # Purpose: InstallPackage_Script_CurrentUser_NO_toThePromptForAddingtoPATHVariable
     #

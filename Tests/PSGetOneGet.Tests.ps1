@@ -325,9 +325,7 @@ Describe PowerShell.PSGet.PackageManagementIntegrationTests -Tags 'P1','OuterLoo
             $psProcess = "pwsh.exe"
         }
 
-        Start-Process $psProcess -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
-                                                              $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
-                                                              if(-not (Get-PSRepository -Name PoshTest -ErrorAction SilentlyContinue)) {
+        Start-Process $psProcess -ArgumentList '-command if(-not (Get-PSRepository -Name PoshTest -ErrorAction SilentlyContinue)) {
                                                                 Register-PSRepository -Name PoshTest -SourceLocation https://www.poshtestgallery.com/api/v2/ -InstallationPolicy Trusted
                                                               }
                                                               Install-Package -Name ContosoServer -scope AllUsers -Source PoshTest -ErrorVariable ev -ErrorAction SilentlyContinue;
@@ -370,9 +368,7 @@ Describe PowerShell.PSGet.PackageManagementIntegrationTests -Tags 'P1','OuterLoo
             $psProcess = "pwsh.exe"
         }
 
-        Start-Process $psProcess -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
-                                                              $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
-                                                              Install-Package -Name ContosoServer -Source PoshTest;
+        Start-Process $psProcess -ArgumentList '-command Install-Package -Name ContosoServer -Source PoshTest;
                                                               Get-Package ContosoServer | Format-List Name, SwidTagText' `
                                                -Credential $script:credential `
                                                -Wait `

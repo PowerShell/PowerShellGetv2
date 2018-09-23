@@ -1,6 +1,6 @@
 @{
 RootModule = 'PSModule.psm1'
-ModuleVersion = '2.0.0'
+ModuleVersion = '2.0.1'
 GUID = '1d73a601-4a6c-43c5-ba3f-619b18bbb404'
 Author = 'Microsoft Corporation'
 CompanyName = 'Microsoft Corporation'
@@ -54,6 +54,10 @@ PrivateData = @{
         ProjectUri = 'https://go.microsoft.com/fwlink/?LinkId=828955'
         LicenseUri = 'https://go.microsoft.com/fwlink/?LinkId=829061'
         ReleaseNotes = @'
+## 2.0.1
+Bug fix
+- Resolved Publish-Module doesn't report error but fails to publish module (#316)
+
 ## 2.0.0
 
 Breaking Change

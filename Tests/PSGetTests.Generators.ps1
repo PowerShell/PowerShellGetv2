@@ -5,7 +5,7 @@ function Get-FindModuleParameterSets {
 
   $testParameterSets = @()
 
-  $variations | %{
+  $variations | Foreach-Object {
 
       $FindModuleInputParameters = [ordered]@{}
       if($_.Name)           {$FindModuleInputParameters['Name']=$_.Name}
@@ -37,7 +37,7 @@ function Get-FindModuleWithSourcesParameterSets {
 
   $testParameterSets = @()  
 
-  $variations | %{     
+  $variations | Foreach-Object {     
     if(-not ($_.Source -like "http*"))
     {
         $testParameterSets += @{   
@@ -60,7 +60,7 @@ function Get-InstallModuleWithSourcesParameterSets {
 
   $testParameterSets = @()  
 
-  $variations | %{     
+  $variations | Foreach-Object {     
     if(-not ($_.Source -like "http*"))
     {
         $testParameterSets += @{   

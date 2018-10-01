@@ -44,15 +44,15 @@ function Get-PrivateData
 
 
     #Validate each of the property of PSData is of the desired data type
-    $Tags= $PrivateData["Tags"] -join "','" | %{"'$_'"}
-    $LicenseUri = $PrivateData["LicenseUri"]| %{"'$_'"}
-    $ProjectUri = $PrivateData["ProjectUri"] | %{"'$_'"}
-    $IconUri = $PrivateData["IconUri"] | %{"'$_'"}
+    $Tags= $PrivateData["Tags"] -join "','" | Foreach-Object {"'$_'"}
+    $LicenseUri = $PrivateData["LicenseUri"]| Foreach-Object {"'$_'"}
+    $ProjectUri = $PrivateData["ProjectUri"] | Foreach-Object {"'$_'"}
+    $IconUri = $PrivateData["IconUri"] | Foreach-Object {"'$_'"}
     $ReleaseNotesEscape = $PrivateData["ReleaseNotes"] -Replace "'","''"
-    $ReleaseNotes = $ReleaseNotesEscape | %{"'$_'"}
-    $Prerelease = $PrivateData[$script:Prerelease] | %{"'$_'"}
+    $ReleaseNotes = $ReleaseNotesEscape | Foreach-Object {"'$_'"}
+    $Prerelease = $PrivateData[$script:Prerelease] | Foreach-Object {"'$_'"}
     $RequireLicenseAcceptance = $PrivateData["RequireLicenseAcceptance"]
-    $ExternalModuleDependencies = $PrivateData["ExternalModuleDependencies"] -join "','" | %{"'$_'"}
+    $ExternalModuleDependencies = $PrivateData["ExternalModuleDependencies"] -join "','" | Foreach-Object {"'$_'"}
     $DefaultProperties = @("Tags","LicenseUri","ProjectUri","IconUri","ReleaseNotes",$script:Prerelease,"ExternalModuleDependencies","RequireLicenseAcceptance")
 
     $ExtraProperties = @()
@@ -65,7 +65,7 @@ function Get-PrivateData
             if(($PrivateData[$key]).GetType().IsArray)
             {
                 $PropertyString += $key +" = " +" @("
-                $PrivateData[$key] | % { $PropertyString += "'" + $_ +"'" + "," }
+                $PrivateData[$key] | Foreach-Object { $PropertyString += "'" + $_ +"'" + "," }
                 if($PrivateData[$key].Length -ge 1)
                 {
                     #Remove extra ,

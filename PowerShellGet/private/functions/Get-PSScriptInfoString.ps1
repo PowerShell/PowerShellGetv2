@@ -69,34 +69,34 @@ function Get-PSScriptInfoString
 
 <#PSScriptInfo
 
-.VERSION $Version
+.VERSION$(if ($Version) {" $Version"})
 
-.GUID $Guid
+.GUID$(if ($Guid) {" $Guid"})
 
-.AUTHOR $Author
+.AUTHOR$(if ($Author) {" $Author"})
 
-.COMPANYNAME $CompanyName
+.COMPANYNAME$(if ($CompanyName) {" $CompanyName"})
 
-.COPYRIGHT $Copyright
+.COPYRIGHT$(if ($Copyright) {" $Copyright"})
 
-.TAGS $Tags
+.TAGS$(if ($Tags) {" $Tags"})
 
-.LICENSEURI $LicenseUri
+.LICENSEURI$(if ($LicenseUri) {" $LicenseUri"})
 
-.PROJECTURI $ProjectUri
+.PROJECTURI$(if ($ProjectUri) {" $ProjectUri"})
 
-.ICONURI $IconUri
+.ICONURI$(if ($IconUri) {" $IconUri"})
 
-.EXTERNALMODULEDEPENDENCIES $($ExternalModuleDependencies -join ',')
+.EXTERNALMODULEDEPENDENCIES$(if ($ExternalModuleDependencies) {" $($ExternalModuleDependencies -join ',')"}) 
 
-.REQUIREDSCRIPTS $($RequiredScripts -join ',')
+.REQUIREDSCRIPTS$(if ($RequiredScripts) {" $($RequiredScripts -join ',')"})
 
-.EXTERNALSCRIPTDEPENDENCIES $($ExternalScriptDependencies -join ',')
+.EXTERNALSCRIPTDEPENDENCIES$(if ($ExternalScriptDependencies) {" $($ExternalScriptDependencies -join ',')"})
 
 .RELEASENOTES
 $($ReleaseNotes -join "`r`n")
 
-.PRIVATEDATA $PrivateData
+.PRIVATEDATA$(if ($PrivateData) {" $PrivateData"})
 
 #>
 "@

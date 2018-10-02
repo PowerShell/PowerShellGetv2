@@ -515,11 +515,13 @@ $CsprojContent = @"
         $tempOutputFile = Microsoft.PowerShell.Management\Join-Path -Path $nugetPackageRoot -ChildPath "TempPublishOutput.txt"
 
         $errorMsg = $null
+        $outputMsg = $null
         $StartProcess_params = @{
             RedirectStandardError = $tempErrorFile
             RedirectStandardOutput = $tempOutputFile
             NoNewWindow = $true
             Wait = $true
+            PassThru = $true
         }
 
         if($script:DotnetCommandPath) {
@@ -547,13 +549,31 @@ $CsprojContent = @"
             $StartProcess_params['Confirm'] = $false
         }
 
-        Microsoft.PowerShell.Management\Start-Process @StartProcess_params
+        $process = Microsoft.PowerShell.Management\Start-Process @StartProcess_params
 
         if(Test-Path -Path $tempErrorFile -PathType Leaf) {
             $errorMsg = Microsoft.PowerShell.Management\Get-Content -Path $tempErrorFile -Raw
+            
+            if($errorMsg) {
+                Write-Verbose -Message $errorMsg
+            }
         }
 
-        if($errorMsg)
+        if(Test-Path -Path $tempOutputFile -PathType Leaf) {
+            $outputMsg = Microsoft.PowerShell.Management\Get-Content -Path $tempOutputFile -Raw
+
+            if($outputMsg) {
+                Write-Verbose -Message $outputMsg
+            }
+        }
+
+        # The newer version of dotnet cli writes the error message into output stream instead of error stream
+        # Get the error message from output stream when ExitCode is non zero (error).
+        if($process -and $process.ExitCode -and -not $errorMsg -and $outputMsg) {
+            $errorMsg = $outputMsg
+        }
+
+        if(-not $process -or $process.ExitCode)
         {
             if(($NugetApiKey -eq 'VSTS') -and
                ($errorMsg -match 'Cannot prompt for input in non-interactive mode.') )

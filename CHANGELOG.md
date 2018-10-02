@@ -1,4 +1,9 @@
 # Changelog
+## 2.0.1
+Bug fixes
+- Resolved Publish-Module doesn't report error but fails to publish module (#316)
+- Resolved CommandAlreadyAvailable error while installing the latest version of PackageManagement module (#333)
+
 ## 2.0.0
 Breaking Change
 - Default installation scope for Install-Module, Install-Script, and Install-Package has changed. For Windows PowerShell (version 5.1 or below), the default scope is AllUsers when running in an elevated session, and CurrentUser at all other times.

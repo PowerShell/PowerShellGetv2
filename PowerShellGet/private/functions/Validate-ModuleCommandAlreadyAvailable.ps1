@@ -56,6 +56,7 @@ function Validate-ModuleCommandAlreadyAvailable
                                                                       -WarningAction SilentlyContinue |
                                     Microsoft.PowerShell.Core\Where-Object { ($CommandNames -contains $_.Name) -and
                                                                              ($_.ModuleName -ne $script:PSModuleProviderName) -and
+                                                                             ($_.ModuleName -ne 'PSModule') -and
                                                                              ($_.ModuleName -ne $CurrentModuleInfo.Name) }
             if($AvailableCommands)
             {

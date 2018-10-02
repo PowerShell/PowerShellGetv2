@@ -245,15 +245,15 @@ function Invoke-PowerShellGetTest {
                 $env:PSModulePath;
 
                 # Current Process
-                $ValueWithUniqueEntries = ([System.Environment]::GetEnvironmentVariable('PSModulePath', [System.EnvironmentVariableTarget]::Process) -split ';' | %{$_.Trim('\\')} | Select-Object -Unique) -join ';'
+                $ValueWithUniqueEntries = ([System.Environment]::GetEnvironmentVariable('PSModulePath', [System.EnvironmentVariableTarget]::Process) -split ';' | Foreach-Object {$_.Trim('\\')} | Select-Object -Unique) -join ';'
                 [System.Environment]::SetEnvironmentVariable('PSModulePath', $ValueWithUniqueEntries, [System.EnvironmentVariableTarget]::Process)
 
                 # Current User
-                $ValueWithUniqueEntries = ([System.Environment]::GetEnvironmentVariable('PSModulePath', [System.EnvironmentVariableTarget]::User) -split ';' | %{$_.Trim('\\')} | Select-Object -Unique) -join ';'
+                $ValueWithUniqueEntries = ([System.Environment]::GetEnvironmentVariable('PSModulePath', [System.EnvironmentVariableTarget]::User) -split ';' | Foreach-Object {$_.Trim('\\')} | Select-Object -Unique) -join ';'
                 [System.Environment]::SetEnvironmentVariable('PSModulePath', $ValueWithUniqueEntries, [System.EnvironmentVariableTarget]::User)
 
                 # Current Machine
-                $ValueWithUniqueEntries = ([System.Environment]::GetEnvironmentVariable('PSModulePath', [System.EnvironmentVariableTarget]::Machine) -split ';' | %{$_.Trim('\\')} | Select-Object -Unique) -join ';'
+                $ValueWithUniqueEntries = ([System.Environment]::GetEnvironmentVariable('PSModulePath', [System.EnvironmentVariableTarget]::Machine) -split ';' | Foreach-Object {$_.Trim('\\')} | Select-Object -Unique) -join ';'
                 [System.Environment]::SetEnvironmentVariable('PSModulePath', $ValueWithUniqueEntries, [System.EnvironmentVariableTarget]::Machine)
 
                 Write-Host "PSModulePath value after removing the duplicate entries:"
@@ -265,7 +265,7 @@ function Invoke-PowerShellGetTest {
             Push-Location $PowerShellGetTestsPath
 
             $TestResultsFile = Microsoft.PowerShell.Management\Join-Path -Path $PowerShellGetTestsPath -ChildPath "TestResults$TestScenario.xml"
-            & $PowerShellExePath -Command "`$env:PSModulePath = (`$env:PSModulePath -split ';' | %{`$_.Trim('\\')} | Select-Object -Unique) -join ';' ;
+            & $PowerShellExePath -Command "`$env:PSModulePath = (`$env:PSModulePath -split ';' | Foreach-Object {`$_.Trim('\\')} | Select-Object -Unique) -join ';' ;
                                         Write-Host 'After updating the PSModulePath value:' ;
                                         `$env:PSModulePath ;
                                         `$ProgressPreference = 'SilentlyContinue'

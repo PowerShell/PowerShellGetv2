@@ -156,13 +156,19 @@ Describe "PowerShellGet - Module tests (Admin)" -tags @('Feature', 'RequireAdmin
         Remove-InstalledModules
     }
 
-    It "Should install a module correctly to the required location with default AllUsers scope" {
+    It "Should install a module correctly to the required location with default user scope" {
         Install-Module -Name $ContosoServer -Repository $RepositoryName
         $installedModuleInfo = Get-InstalledModule -Name $ContosoServer
 
         $installedModuleInfo | Should Not Be $null
         $installedModuleInfo.Name | Should Be $ContosoServer
-        $installedModuleInfo.InstalledLocation.StartsWith($script:programFilesModulesPath, [System.StringComparison]::OrdinalIgnoreCase) | Should Be $true
+        if ($script:IsCoreCLR)
+        {
+            $installedModuleInfo.InstalledLocation.StartsWith($script:MyDocumentsModulesPath, [System.StringComparison]::OrdinalIgnoreCase) | Should Be $true
+        }
+        else {
+            $installedModuleInfo.InstalledLocation.StartsWith($script:programFilesModulesPath, [System.StringComparison]::OrdinalIgnoreCase) | Should Be $true
+        }
 
         $module = Get-Module $ContosoServer -ListAvailable
         $module.Name | Should be $ContosoServer
@@ -225,14 +231,21 @@ Describe "PowerShellGet - Script tests (Admin)" -tags @('Feature', 'RequireAdmin
         Remove-InstalledScripts
     }
 
-    It "Should install a script correctly to the required location with default AllUsers scope" {
+    It "Should install a script correctly to the required location with default user scope" {
         Install-Script -Name $FabrikamServerScript -Repository $RepositoryName -NoPathUpdate
         $installedScriptInfo = Get-InstalledScript -Name $FabrikamServerScript
 
         $installedScriptInfo | Should Not Be $null
         $installedScriptInfo.Name | Should Be $FabrikamServerScript
-        $installedScriptInfo.InstalledLocation.StartsWith($script:ProgramFilesScriptsPath, [System.StringComparison]::OrdinalIgnoreCase) | Should Be $true
-    }
+        if ($script:IsCoreCLR)
+        {
+            $installedScriptInfo.InstalledLocation.StartsWith($script:MyDocumentsScriptsPath, [System.StringComparison]::OrdinalIgnoreCase) | Should Be $true
+        }
+        else
+        {
+            $installedScriptInfo.InstalledLocation.StartsWith($script:ProgramFilesScriptsPath, [System.StringComparison]::OrdinalIgnoreCase) | Should Be $true
+        }
+    } 
 
     AfterAll {
         Remove-InstalledScripts

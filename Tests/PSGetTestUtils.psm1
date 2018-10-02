@@ -1060,7 +1060,7 @@ function Uninstall-Module
         $Name    
     )
 
-    Get-Module $Name -ListAvailable | %{ 
+    Get-Module $Name -ListAvailable | Foreach-Object { 
             
             Remove-Module $_ -Force -ErrorAction SilentlyContinue; 
             

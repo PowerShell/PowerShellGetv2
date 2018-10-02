@@ -46,7 +46,7 @@ function NewException
   )
   
   $callstack = get-pscallstack
-  $callStackStr = CallStackToString ($callstack | select -skip 1);
+  $callStackStr = CallStackToString ($callstack | Select-Object -skip 1);
   $errMessage = $message;
   $exception = new-object System.Management.Automation.RuntimeException $errMessage;
   $exception.Data['PSCallStack'] = $callstack;

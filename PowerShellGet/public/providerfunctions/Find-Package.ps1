@@ -431,7 +431,7 @@ function Find-Package
                     }
 
                     # $pkg.Name has to match any of the supplied names, using PowerShell wildcards
-                    if ($namesParameterEmpty -or ($names | % { if ($pkg.Name -like $_){return $true; break} } -End {return $false}))
+                    if ($namesParameterEmpty -or ($names | Foreach-Object { if ($pkg.Name -like $_){return $true; break} } -End {return $false}))
                     {
 						$includePackage = $true
 

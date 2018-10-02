@@ -1774,7 +1774,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
             $version = "1.0"
 
             # Module dependencies should be available under PSModulePath other Test-ModuleManifest will fail.
-            $RequiredModuleDep, $NestedModuleDep, $ExternalRequiredModuleDep, $ExternalNestedModuleDep | %{
+            $RequiredModuleDep, $NestedModuleDep, $ExternalRequiredModuleDep, $ExternalNestedModuleDep | Foreach-Object {
                 $DepModuleBase = Join-Path $script:ProgramFilesModulesPath $_
                 $null = New-Item -Path $DepModuleBase -ItemType Directory -Force
                 New-ModuleManifest -Path (Join-Path $DepModuleBase "$_.psd1") `
@@ -1818,7 +1818,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
         }
         finally
         {
-            $ModuleName, $RequiredModuleDep, $NestedModuleDep, $ExternalRequiredModuleDep, $ExternalNestedModuleDep | % { PSGetTestUtils\Uninstall-Module -Name $_ }
+            $ModuleName, $RequiredModuleDep, $NestedModuleDep, $ExternalRequiredModuleDep, $ExternalNestedModuleDep | Foreach-Object { PSGetTestUtils\Uninstall-Module -Name $_ }
         }
     }
 }
@@ -1986,7 +1986,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P2 -Tags 'P2','OuterLoop' {
             $version = "1.0.0"
 
             # Module dependencies should be available under PSModulePath other Test-ModuleManifest will fail.
-            $RequiredModuleDep, $NestedModuleDep, $ExternalRequiredModuleDep, $ExternalNestedModuleDep | %{
+            $RequiredModuleDep, $NestedModuleDep, $ExternalRequiredModuleDep, $ExternalNestedModuleDep | Foreach-Object {
                 $DepModuleBase = Join-Path $script:ProgramFilesModulesPath $_
                 $null = New-Item -Path $DepModuleBase -ItemType Directory -Force
                 New-ModuleManifest -Path (Join-Path $DepModuleBase "$_.psd1") `
@@ -2039,7 +2039,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P2 -Tags 'P2','OuterLoop' {
         }
         finally
         {
-            $ModuleName, $RequiredModuleDep, $NestedModuleDep | % { PSGetTestUtils\Uninstall-Module -Name $_ }
+            $ModuleName, $RequiredModuleDep, $NestedModuleDep | Foreach-Object { PSGetTestUtils\Uninstall-Module -Name $_ }
         }
 
         try
@@ -2063,7 +2063,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P2 -Tags 'P2','OuterLoop' {
         }
         finally
         {
-            $ModuleName, $RequiredModuleDep, $NestedModuleDep, $ExternalRequiredModuleDep, $ExternalNestedModuleDep | % { PSGetTestUtils\Uninstall-Module -Name $_ }
+            $ModuleName, $RequiredModuleDep, $NestedModuleDep, $ExternalRequiredModuleDep, $ExternalNestedModuleDep | Foreach-Object { PSGetTestUtils\Uninstall-Module -Name $_ }
         }
 
         # WarningVariable value doesnt get the warning messages on PS 3.0 and 4.0, known issue.
@@ -2093,7 +2093,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P2 -Tags 'P2','OuterLoop' {
             }
             finally
             {
-                $ModuleName, $RequiredModuleDep, $NestedModuleDep, $ExternalRequiredModuleDep, $ExternalNestedModuleDep | % { PSGetTestUtils\Uninstall-Module -Name $_ }
+                $ModuleName, $RequiredModuleDep, $NestedModuleDep, $ExternalRequiredModuleDep, $ExternalNestedModuleDep | Foreach-Object { PSGetTestUtils\Uninstall-Module -Name $_ }
             }
         }
     }

@@ -26,6 +26,29 @@ if(-not (Microsoft.PowerShell.Management\Test-Path -Path $script:MyDocumentsInst
                                                      -WhatIf:$false
 }
 
+# allow -repository params to be tab-completed
+$commandsWithRepositoryParameter = @(
+    "Find-Command"
+    "Find-DscResource"
+    "Find-Module"
+    "Find-RoleCapability"
+    "Find-Script"
+    "Install-Module"
+    "Install-Script"
+    "Publish-Module"
+    "Publish-Script"
+    "Save-Module"
+    "Save-Script")
+
+Register-ArgumentCompleter -CommandName $commandsWithRepositoryParameter -ParameterName Repository -ScriptBlock {
+    param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameter) 
+    
+    Get-PSRepository -Name "$wordTocomplete*"-ErrorAction SilentlyContinue -WarningAction SilentlyContinue | Foreach-Object { 
+        [System.Management.Automation.CompletionResult]::new($_.Name, $_.Name, 'ParameterValue', $_.Name) 
+    } 
+}
+
+
 Set-Alias -Name fimo -Value Find-Module
 Set-Alias -Name inmo -Value Install-Module
 Set-Alias -Name upmo -Value Update-Module

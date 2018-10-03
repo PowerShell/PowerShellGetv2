@@ -26,6 +26,34 @@ if(-not (Microsoft.PowerShell.Management\Test-Path -Path $script:MyDocumentsInst
                                                      -WhatIf:$false
 }
 
+function Add-ArgumentCompleter()
+{
+    [CmdletBinding()]
+    param(
+        [string[]]$cmdlets,
+        [string]$parameterName
+    )
+
+    try
+    {
+        if(Get-Command -Name Register-ArgumentCompleter -ErrorAction SilentlyContinue)
+        {
+            Register-ArgumentCompleter -CommandName $cmdlets -ParameterName $parameterName -ScriptBlock {
+                param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameter) 
+                
+                Get-PSRepository -Name "$wordTocomplete*"-ErrorAction SilentlyContinue -WarningAction SilentlyContinue | Foreach-Object { 
+                    [System.Management.Automation.CompletionResult]::new($_.Name, $_.Name, 'ParameterValue', $_.Name) 
+                } 
+           }
+        }
+    }
+    catch 
+    {
+        # All this functionality is optional, so suppress errors 
+        Write-Debug -Message "Error registering argument completer: $_"      
+    }
+}
+
 # allow -repository params to be tab-completed
 $commandsWithRepositoryParameter = @(
     "Find-Command"
@@ -40,14 +68,14 @@ $commandsWithRepositoryParameter = @(
     "Save-Module"
     "Save-Script")
 
-Register-ArgumentCompleter -CommandName $commandsWithRepositoryParameter -ParameterName Repository -ScriptBlock {
-    param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameter) 
-    
-    Get-PSRepository -Name "$wordTocomplete*"-ErrorAction SilentlyContinue -WarningAction SilentlyContinue | Foreach-Object { 
-        [System.Management.Automation.CompletionResult]::new($_.Name, $_.Name, 'ParameterValue', $_.Name) 
-    } 
-}
+$commandsWithRepositoryAsName = @(
+    "Get-PSRepository",
+    "Register-PSRepository"
+    "Unregister-PSRepository"
+)
 
+Add-ArgumentCompleter -Cmdlets $commandsWithRepositoryParameter -ParameterName "Repository"
+Add-ArgumentCompleter -Cmdlets $commandsWithRepositoryAsName -ParameterName "Name"
 
 Set-Alias -Name fimo -Value Find-Module
 Set-Alias -Name inmo -Value Install-Module

@@ -48,6 +48,8 @@ function SuiteSetup {
     {
         $script:userName = "PSGetUser"
         $password = "Password1"
+        # remove the user in case they already exist
+        net user $script:UserName /delete 2>&1 | Out-Null
         $null = net user $script:userName $password /add
         $secstr = ConvertTo-SecureString $password -AsPlainText -Force
         $script:credential = new-object -typename System.Management.Automation.PSCredential -argumentlist $script:userName, $secstr

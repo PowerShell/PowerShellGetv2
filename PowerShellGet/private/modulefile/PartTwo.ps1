@@ -30,7 +30,10 @@ function Add-ArgumentCompleter()
 {
     [CmdletBinding()]
     param(
+        [Parameter(Mandatory=$true)]
         [string[]]$cmdlets,
+        
+        [Parameter(Mandatory=$true)]
         [string]$parameterName
     )
 

@@ -1520,3 +1520,81 @@ ValidityPeriodUnits = "1"
     remove-item signing.inf -Force -ErrorAction SilentlyContinue
     remove-item signing.pfx -Force -ErrorAction SilentlyContinue
 }
+
+# Ensure the local directory is at the front of the psmodulepath so that we test that instead of some other version on the system
+function Add-LocalTreeInPSModulePath() {
+    # we are in repo\tests, module is in repo\PowerShellGet
+    # add repo to $psmodulepath so PowerShellGet is found 
+    $modulepath= (Split-Path $psscriptroot -parent)
+    Write-Verbose "Ensure we load PowerShellGet from $modulepath"
+
+    $paths = $env:PSModulePath -split ";"
+    if ($paths[0] -notlike $modulepath)
+    {
+        $env:PSModulePath = "$modulepath;$env:PSModulePath"
+    }
+    Write-Verbose "New PSModulePath: $($env:psmodulepath -replace ";",`"`n`")"
+}
+
+function Remove-LocalTreeInPSModulePath() {
+    $modulepath= (Split-Path $psscriptroot -parent)
+    $paths = $env:PSModulePath -split ";"
+    if ($paths[0] -like $modulepath)
+    {
+        $env:PSModulePath = ($paths[1..($paths.Length-1)] -join ";")
+    }
+    Write-Verbose "New PSModulePath: $($env:psmodulepath -replace ";",`"`n`")"
+}
+
+
+# Set up things so that tests run reliably and don't conflict with/overwrite user's local configuration during testing
+function Set-TestEnvironment() {
+    [cmdletbinding(supportsshouldprocess=$true)]
+    param(
+
+    )
+
+    $ErrorActionPreference="Stop"
+
+    Add-LocalTreeInPSModulePath
+
+    # Normally we want to test the code in this repo, not some other version of PowerShellGet on the system
+    $expectedModuleBase= Join-Path -Path (Split-Path $psscriptroot -parent) -ChildPath "PowerShellGet"
+
+    Write-Verbose "Ensure we load PowerShellGet from $expectedModuleBase"
+    
+    $psgetmodule = Import-Module -Name PowerShellGet -PassThru -Scope Global -Force
+    if($psgetmodule.ModuleBase -ne $expectedModuleBase) {
+        Write-Warning "Loading PowerShellGet from $($psgetmodule.ModuleBase), but the PowerShellGet under development is in $expectedModuleBase."
+    }
+
+    #Set-TestRepositoryLocation -Verbose:$VerbosePreference
+
+    <#
+    Write-Verbose "Checking PSGallery Repository"
+    $repo = Get-PSRepository PSGallery -ErrorAction SilentlyContinue
+
+    if(-not $repo) {
+        Write-Warning "No PSGallery repository found"
+        if($psCmdlet.ShouldProcess("PSGallery", "Register default PSGallery")) {
+            Register-PSRepository -Default
+            $repo = Get-PSRepository PSGallery
+        }
+        else { throw "No PSGallery, can't continue"}
+    }
+
+    if ($repo.SourceLocation -ne "https://www.powershellgallery.com/api/v2" -or $repo.PublishLocation -ne "https://www.powershellgallery.com/api/v2/package/") {
+        Write-Warning "PSGallery set to unexpected location $($repo.SourceLocation) / $($repo.PublishLocation)"
+        if($psCmdlet.ShouldProcess("PSGallery", "Restore PSGallery to default")) {
+            Unregister-PSRepository PSGallery
+            Register-PSRepository -Default
+        }
+    }
+    #>
+}
+
+# All the test environment changes are inside the loaded module. So just reloading it clears everything
+function Remove-TestEnvironment
+{
+    Remove-LocalTreeInPSModulePath
+}

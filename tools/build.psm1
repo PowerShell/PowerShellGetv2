@@ -5,7 +5,7 @@ $script:IsWindows = (-not (Get-Variable -Name IsWindows -ErrorAction Ignore)) -o
 $script:IsCoreCLR = $PSVersionTable.ContainsKey('PSEdition') -and $PSVersionTable.PSEdition -eq 'Core'
 
 $script:ProjectRoot = Split-Path -Path $PSScriptRoot -Parent
-$script:ModuleRoot = Join-Path -Path $ProjectRoot -ChildPath "PowerShellGet"
+$script:ModuleRoot = Join-Path -Path $ProjectRoot -ChildPath "src\PowerShellGet"
 $script:ModuleFile = Join-Path -Path $ModuleRoot -ChildPath "PSModule.psm1"
 $script:ArtifactRoot = Join-Path -Path $ProjectRoot -ChildPath "dist"
 
@@ -305,13 +305,13 @@ function Test-DailyBuild {
 }
 function New-ModulePSMFile {
     $moduleFile = New-Item -Path $ArtifactRoot\PowerShellGet\PSModule.psm1 -ItemType File -Force
-
-    # Add the localized data
+    
+   # Add the localized data
     'Import-LocalizedData LocalizedData -filename PSGet.Resource.psd1' | Out-File -FilePath $moduleFile
     # Add the first part of the distributed .psm1 file from template.
     Get-Content -Path "$ModuleRoot\private\modulefile\PartOne.ps1" | Out-File -FilePath $moduleFile -Append
 
-    # Add a region and write out the private functions.
+    # Add a region and write out the private functi
     "`n#region Private Functions" | Out-File -FilePath $moduleFile -Append
     Get-Content $PrivateFunctions | Out-String | Out-File -FilePath $moduleFile -Append
     "#endregion`n" | Out-File -FilePath $moduleFile -Append

@@ -46,7 +46,7 @@ ConvertFrom-StringData @'
         DownloadingModuleFromGallery=Downloading module '{0}' with version '{1}' from the repository '{2}'.
         DownloadingScriptFromGallery=Downloading script '{0}' with version '{1}' from the repository '{2}'.
         NoUpdateAvailable=No updates were found for module '{0}'.
-        NoScriptUpdateAvailable=No updates were found for module '{0}'.
+        NoScriptUpdateAvailable=No updates were found for script '{0}'.
         FoundModuleUpdate=An update for the module '{0}' was found with version '{1}'.
         FoundScriptUpdate=An update for the script '{0}' was found with version '{1}'.
         InvalidPSModuleDuringUpdate= Module '{0}' was not updated because the module in the repository '{1}' is not a valid Windows PowerShell module.

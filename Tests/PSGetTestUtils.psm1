@@ -1521,11 +1521,16 @@ ValidityPeriodUnits = "1"
     remove-item signing.pfx -Force -ErrorAction SilentlyContinue
 }
 
+function Get-LocalModulePath() {
+    $modulepath= Join-Path -Path (Split-Path $psscriptroot -parent) -ChildPath "src"
+    return $modulepath
+}
+
 # Ensure the local directory is at the front of the psmodulepath so that we test that instead of some other version on the system
 function Add-LocalTreeInPSModulePath() {
-    # we are in repo\tests, module is in repo\PowerShellGet
-    # add repo to $psmodulepath so PowerShellGet is found 
-    $modulepath= (Split-Path $psscriptroot -parent)
+    # we are in repo\tests, module is in repo\src\PowerShellGet
+    # add repo\src to $psmodulepath so PowerShellGet is found 
+    $modulepath= Get-LocalModulePath
     Write-Verbose "Ensure we load PowerShellGet from $modulepath"
 
     $paths = $env:PSModulePath -split ";"
@@ -1537,7 +1542,7 @@ function Add-LocalTreeInPSModulePath() {
 }
 
 function Remove-LocalTreeInPSModulePath() {
-    $modulepath= (Split-Path $psscriptroot -parent)
+    $modulepath= Get-LocalModulePath
     $paths = $env:PSModulePath -split ";"
     if ($paths[0] -like $modulepath)
     {

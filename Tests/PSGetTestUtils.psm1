@@ -1564,13 +1564,21 @@ function Set-TestEnvironment() {
     Add-LocalTreeInPSModulePath
 
     # Normally we want to test the code in this repo, not some other version of PowerShellGet on the system
-    $expectedModuleBase= Join-Path -Path (Split-Path $psscriptroot -parent) -ChildPath "PowerShellGet"
+    $expectedModuleBase= Join-Path -Path (Split-Path $psscriptroot -parent) -ChildPath "src\PowerShellGet"
+    $expectedProviderPath = Join-Path -Path $expectedModuleBase -ChildPath "PSModule.psm1"
 
     Write-Verbose "Ensure we load PowerShellGet from $expectedModuleBase"
     
     $psgetmodule = Import-Module -Name PowerShellGet -PassThru -Scope Global -Force
     if($psgetmodule.ModuleBase -ne $expectedModuleBase) {
         Write-Warning "Loading PowerShellGet from $($psgetmodule.ModuleBase), but the PowerShellGet under development is in $expectedModuleBase."
+    }
+
+    Write-Verbose "Ensure we load PowerShellGet Provider from $expectedModuleBase"
+    $psgetprovider = Import-PackageProvider -Name PowerShellGet -Force
+    
+    if($psgetprovider.ProviderPath -ne $expectedProviderPath) {
+        Write-Warning "Loading PowerShellGet Package Provider from $($psgetprovider.ProviderPath), but the PowerShellGet under development is in $expectedModuleBase."
     }
 
     #Set-TestRepositoryLocation -Verbose:$VerbosePreference

@@ -5,7 +5,7 @@ $script:IsWindows = (-not (Get-Variable -Name IsWindows -ErrorAction Ignore)) -o
 $script:IsCoreCLR = $PSVersionTable.ContainsKey('PSEdition') -and $PSVersionTable.PSEdition -eq 'Core'
 
 $script:ProjectRoot = Split-Path -Path $PSScriptRoot -Parent
-$script:ModuleRoot = Join-Path -Path $ProjectRoot -ChildPath "PowerShellGet"
+$script:ModuleRoot = Join-Path -Path $ProjectRoot -ChildPath "src\PowerShellGet"
 $script:ModuleFile = Join-Path -Path $ModuleRoot -ChildPath "PSModule.psm1"
 $script:ArtifactRoot = Join-Path -Path $ProjectRoot -ChildPath "dist"
 

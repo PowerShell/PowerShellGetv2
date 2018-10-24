@@ -49,12 +49,14 @@ function Validate-ModuleCommandAlreadyAvailable
             # Get-Command loads the module if a command is already available.
             # To avoid that, appending '*' at the end for each name then comparing the results.
             $CommandNames = $CurrentModuleInfo.ExportedCommands.Values.Name
-            $CommandNamesWithWildcards = $CommandNames | Microsoft.PowerShell.Core\Foreach-Object { "$_*" }
 
-            $AvailableCommands = Microsoft.PowerShell.Core\Get-Command -Name $CommandNamesWithWildcards `
+            # construct a regex matching any of the commands in this module.
+            $Matcher = [regex](($CommandNames | % { "($_)" }) -join "|")
+            
+            $AvailableCommands = Microsoft.PowerShell.Core\Get-Command -Name *  `
                                                                       -ErrorAction Ignore `
                                                                       -WarningAction SilentlyContinue |
-                                    Microsoft.PowerShell.Core\Where-Object { ($CommandNames -contains $_.Name) -and
+                                    Microsoft.PowerShell.Core\Where-Object { ($Matcher.IsMatch($_.Name)) -and
                                                                              ($_.ModuleName -ne $script:PSModuleProviderName) -and
                                                                              ($_.ModuleName -ne 'PSModule') -and
                                                                              ($_.ModuleName -ne $CurrentModuleInfo.Name) }

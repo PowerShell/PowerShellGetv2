@@ -46,15 +46,16 @@ function Validate-ModuleCommandAlreadyAvailable
         if(-not $InstalledModuleInfo -or -not $InstalledModuleInfo.ModuleBase.StartsWith($InstallLocation, [System.StringComparison]::OrdinalIgnoreCase))
         {
             # Throw an error if there is a command with the same name from a different source.
-            # Get-Command loads the module if a command is already available.
-            # To avoid that, appending '*' at the end for each name then comparing the results.
             $CommandNames = $CurrentModuleInfo.ExportedCommands.Values.Name
-            $CommandNamesWithWildcards = $CommandNames | Microsoft.PowerShell.Core\Foreach-Object { "$_*" }
 
-            $AvailableCommands = Microsoft.PowerShell.Core\Get-Command -Name $CommandNamesWithWildcards `
+            # construct a hash with all of the commands in this module.
+            $CommandNameHash = @{}
+            $CommandNames | % { $CommandNameHash[$_] = 1 }
+            
+            $AvailableCommands = Microsoft.PowerShell.Core\Get-Command  `
                                                                       -ErrorAction Ignore `
                                                                       -WarningAction SilentlyContinue |
-                                    Microsoft.PowerShell.Core\Where-Object { ($CommandNames -contains $_.Name) -and
+                                    Microsoft.PowerShell.Core\Where-Object { ($CommandNameHash.ContainsKey($_.Name)) -and
                                                                              ($_.ModuleName -ne $script:PSModuleProviderName) -and
                                                                              ($_.ModuleName -ne 'PSModule') -and
                                                                              ($_.ModuleName -ne $CurrentModuleInfo.Name) }

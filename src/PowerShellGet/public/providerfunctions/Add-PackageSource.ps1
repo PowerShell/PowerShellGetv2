@@ -266,8 +266,7 @@ function Add-PackageSource
                                      -Credential $Credential `
                                      -Proxy $Proxy `
                                      -ProxyCredential $ProxyCredential `
-                                     -CallerPSCmdlet $PSCmdlet `
-                                     -SkipLocationWarning # otherwise we get duplicate warnings for unreachable repos
+                                     -CallerPSCmdlet $PSCmdlet
     }
 
     if(-not (Microsoft.PowerShell.Management\Test-Path -Path $Location) -and

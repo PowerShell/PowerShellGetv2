@@ -149,8 +149,9 @@ function Register-PSRepository
                                                -Credential $Credential `
                                                -Proxy $Proxy `
                                                -ProxyCredential $ProxyCredential `
-                                               -CallerPSCmdlet $PSCmdlet
-                                               
+                                               -CallerPSCmdlet $PSCmdlet `
+                                               -SkipLocationWarning
+
             $providerName = $null
 
             if($PackageManagementProvider)

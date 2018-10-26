@@ -73,8 +73,10 @@ function Resolve-Location
         else
         {
             # We couldn't reach the repo. Register it anyway but warn the user if we're able
+            # We'd like to include the parameter name here, but Register-PSRepository calls Add-PackageSource, 
+            # and both use different param names, so the parameter name becomes confusing
             if($CallerPSCmdlet -and -not $SkipLocationWarning) {
-                $message = $LocalizedData.WarnUnableToReachWebUri -f ($Location, $LocationParameterName)
+                $message = $LocalizedData.WarnUnableToReachWebUri -f ($Location)
                 Write-Warning $message
             }
             return $Location

@@ -263,6 +263,11 @@ Describe 'Managing repositories' -Tag BVT {
         $warning | Should BeLike "*Unable to reach URL*"
     }
 
+    It "Should let you update a package source but produce a warning" {
+        Register-PackageSource NewRepo -Location https://microsoft.com/api/v2 -ProviderName powershellget -WarningAction SilentlyContinue
+        Set-PackageSource -Name NewRepo -Location https://microsoft.com/api/v2 -NewLocation https://docs.microsoft.com/api/v2 -ProviderName powershellget  -WarningVariable warning -WarningAction SilentlyContinue
+        $warning | Should BeLike "*Unable to reach URL 'https://docs*"
+    }
 
     It "Should not let you register 2 repositories which differ only by /" {
         Register-PSRepository -Name NewRepo -SourceLocation "https://nowhere.com/api/v2" -WarningAction SilentlyContinue

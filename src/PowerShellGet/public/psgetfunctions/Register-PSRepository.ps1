@@ -150,12 +150,7 @@ function Register-PSRepository
                                                -Proxy $Proxy `
                                                -ProxyCredential $ProxyCredential `
                                                -CallerPSCmdlet $PSCmdlet
-            if(-not $SourceLocation)
-            {
-                # Above Resolve-Location function throws an error when it is not able to resolve a location
-                return
-            }
-
+                                               
             $providerName = $null
 
             if($PackageManagementProvider)

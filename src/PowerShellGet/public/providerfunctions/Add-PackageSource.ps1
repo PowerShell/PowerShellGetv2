@@ -266,13 +266,8 @@ function Add-PackageSource
                                      -Credential $Credential `
                                      -Proxy $Proxy `
                                      -ProxyCredential $ProxyCredential `
-                                     -CallerPSCmdlet $PSCmdlet
-    }
-
-    if(-not $Location)
-    {
-        # Above Resolve-Location function throws an error when it is not able to resolve a location
-        return
+                                     -CallerPSCmdlet $PSCmdlet `
+                                     -SkipLocationWarning # otherwise we get duplicate warnings for unreachable repos
     }
 
     if(-not (Microsoft.PowerShell.Management\Test-Path -Path $Location) -and

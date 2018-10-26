@@ -99,6 +99,7 @@ ConvertFrom-StringData @'
         FailedToPublish=Failed to publish module '{0}': '{1}'.
         PublishedSuccessfully=Successfully published module '{0}' to the module publish location '{1}'. Please allow few minutes for '{2}' to show up in the search results.
         InvalidWebUri=The specified Uri '{0}' for parameter '{1}' is an invalid Web Uri. Please ensure that it meets the Web Uri requirements.
+        WarnUnableToReachWebUri=Unable to reach URL at '{0}' for parameter '{1}'. Please check that the URL is correct.
         RepositoryAlreadyRegistered=The repository could not be registered because there exists a registered repository with Name '{0}' and SourceLocation '{1}'. To register another repository with Name '{2}', please unregister the existing repository using the Unregister-PSRepository cmdlet.
         RepositoryToBeUnregisteredNotFound=The repository '{0}' was not removed because no repository was found with that name. Please run Get-PSRepository and ensure that a repository of that name is present.
         RepositoryCannotBeUnregistered=The specified repository '{0}' cannot be unregistered.

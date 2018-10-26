@@ -226,3 +226,33 @@ Describe 'Test Set-PSRepository and Set-PackageSource for PSGallery repository' 
     } `
     -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
 }
+
+Describe 'Managing repositories' -Tag BVT {
+    BeforeAll {        
+	    Install-NuGetBinaries
+    }
+
+    AfterAll {    
+            
+    }
+
+    BeforeEach {
+        Unregister-PSRepository NewRepo -ErrorAction SilentlyContinue
+        Unregister-PSRepository NewRepoSlash -ErrorAction SilentlyContinue
+    }
+
+    AfterEach {
+        Unregister-PSRepository NewRepo -ErrorAction SilentlyContinue
+        Unregister-PSRepository NewRepoSlash -ErrorAction SilentlyContinue
+    }
+
+    It "Should let you register an unreachable repository but produce a warning" {
+        Register-PSRepository -Name NewRepo -SourceLocation "https://nowhere.com/api/v2" -WarningVariable warning -WarningAction SilentlyContinue
+        $warning | Should BeLike "*Unable to reach URL*"
+    }
+    
+    It "Should not let you register 2 repositories which differ only by /" {
+        Register-PSRepository -Name NewRepo -SourceLocation "https://nowhere.com/api/v2" -WarningAction SilentlyContinue
+        { Register-PSRepository -Name NewRepoSlash -SourceLocation "https://nowhere.com/api/v2/" -WarningAction SilentlyContinue } | Should -Throw
+    } -Skip
+}

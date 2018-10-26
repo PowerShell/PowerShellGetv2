@@ -58,7 +58,7 @@ function Get-ValidModuleLocation
                                                  -Proxy $Proxy `
                                                  -ProxyCredential $ProxyCredential `
                                                  -ErrorAction SilentlyContinue `
-                                                 -WarningAction SilentlyContinue
+                                                 -SkipLocationWarning
                 if($tempLocation)
                 {
                    return $tempLocation
@@ -73,7 +73,8 @@ function Get-ValidModuleLocation
                                            -Credential $Credential `
                                            -Proxy $Proxy `
                                            -ProxyCredential $ProxyCredential `
-                                           -CallerPSCmdlet $PSCmdlet
+                                           -CallerPSCmdlet $PSCmdlet `
+                                           -SkipLocationWarning
     }
 
     return $LocationString

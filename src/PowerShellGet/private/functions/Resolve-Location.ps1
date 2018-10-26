@@ -23,7 +23,11 @@ function Resolve-Location
 
         [Parameter()]
         [System.Management.Automation.PSCmdlet]
-        $CallerPSCmdlet
+        $CallerPSCmdlet,
+
+        [Parameter()]
+        [switch]
+        $SkipLocationWarning
     )
 
     # Ping and resolve the specified location
@@ -66,15 +70,14 @@ function Resolve-Location
         {
             return $resolvedLocation
         }
-        elseif($CallerPSCmdlet)
+        else
         {
-            $message = $LocalizedData.InvalidWebUri -f ($Location, $LocationParameterName)
-            ThrowError -ExceptionName "System.ArgumentException" `
-                       -ExceptionMessage $message `
-                       -ErrorId "InvalidWebUri" `
-                       -CallerPSCmdlet $CallerPSCmdlet `
-                       -ErrorCategory InvalidArgument `
-                       -ExceptionObject $Location
+            # We couldn't reach the repo. Register it anyway but warn the user if we're able
+            if($CallerPSCmdlet -and -not $SkipLocationWarning) {
+                $message = $LocalizedData.WarnUnableToReachWebUri -f ($Location, $LocationParameterName)
+                Write-Warning $message
+            }
+            return $Location
         }
     }
 }

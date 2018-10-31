@@ -247,7 +247,7 @@ function Add-PackageSource
     if($Name -eq $Script:PSGalleryModuleSource)
     {
         # Add or update the PSGallery repository
-        $repository = Set-PSGalleryRepository -Trusted:$Trusted
+        $repository = Set-PSGalleryRepository -Trusted:$Trusted -CallerPSCmdlet $PSCmdlet
 
         if($repository)
         {
@@ -262,7 +262,6 @@ function Add-PackageSource
     {
         # Ping and resolve the specified location
         $Location = Resolve-Location -Location $Location `
-                                     -LocationParameterName 'Location' `
                                      -Credential $Credential `
                                      -Proxy $Proxy `
                                      -ProxyCredential $ProxyCredential `

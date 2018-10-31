@@ -10,22 +10,26 @@ function Set-PSGalleryRepository
         $Proxy,
 
         [Parameter()]
-        $ProxyCredential
+        $ProxyCredential,
+
+        [Parameter()]
+        [System.Management.Automation.PSCmdlet]
+        $CallerPSCmdlet
     )
 
     $psgalleryLocation = Resolve-Location -Location $Script:PSGallerySourceUri `
-                                          -LocationParameterName 'SourceLocation' `
                                           -Proxy $Proxy `
                                           -ProxyCredential $ProxyCredential `
-                                          -ErrorAction SilentlyContinue `
-                                          -WarningAction SilentlyContinue
+                                          -CallerPSCmdlet $CallerPSCmdlet `
+                                          -ErrorAction SilentlyContinue
+                                          
 
     $scriptSourceLocation = Resolve-Location -Location $Script:PSGalleryScriptSourceUri `
-                                             -LocationParameterName 'ScriptSourceLocation' `
                                              -Proxy $Proxy `
                                              -ProxyCredential $ProxyCredential `
-                                             -ErrorAction SilentlyContinue `
-                                             -WarningAction SilentlyContinue
+                                             -CallerPSCmdlet $CallerPSCmdlet `
+                                             -ErrorAction SilentlyContinue 
+                                              
     if($psgalleryLocation)
     {
         $result = Ping-Endpoint -Endpoint $Script:PSGalleryPublishUri -AllowAutoRedirect:$false -Proxy $Proxy -ProxyCredential $ProxyCredential

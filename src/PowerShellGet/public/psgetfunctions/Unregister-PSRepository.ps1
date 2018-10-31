@@ -13,11 +13,6 @@ function Unregister-PSRepository
         $Name
     )
 
-    Begin
-    {
-        Get-PSGalleryApiAvailability -Repository $Name
-    }
-
     Process
     {
         $PSBoundParameters["Provider"] = $script:PSModuleProviderName

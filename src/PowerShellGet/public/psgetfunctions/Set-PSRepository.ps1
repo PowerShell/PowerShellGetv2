@@ -121,7 +121,6 @@ function Set-PSRepository
         {
             # Ping and resolve the specified location
             $SourceLocation = Resolve-Location -Location (Get-LocationString -LocationUri $SourceLocation) `
-                                               -LocationParameterName 'SourceLocation' `
                                                -Credential $Credential `
                                                -Proxy $Proxy `
                                                -ProxyCredential $ProxyCredential `

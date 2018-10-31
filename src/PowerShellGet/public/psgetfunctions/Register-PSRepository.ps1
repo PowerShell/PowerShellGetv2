@@ -88,8 +88,6 @@ function Register-PSRepository
 
     Begin
     {
-        Get-PSGalleryApiAvailability -Repository $Name
-
         Install-NuGetClientBinaries -CallerPSCmdlet $PSCmdlet -Proxy $Proxy -ProxyCredential $ProxyCredential
 
         if($PackageManagementProvider)
@@ -145,7 +143,6 @@ function Register-PSRepository
 
             # Ping and resolve the specified location
             $SourceLocation = Resolve-Location -Location (Get-LocationString -LocationUri $SourceLocation) `
-                                               -LocationParameterName 'SourceLocation' `
                                                -Credential $Credential `
                                                -Proxy $Proxy `
                                                -ProxyCredential $ProxyCredential `

@@ -274,3 +274,32 @@ Describe 'Managing repositories' -Tag BVT {
         { Register-PSRepository -Name NewRepoSlash -SourceLocation "https://nowhere.com/api/v2/" -WarningAction SilentlyContinue } | Should -Throw
     } -Skip
 }
+
+Describe "Managing galleries while offline" -Tag BVT {
+    BeforeAll {
+        if(-not (Get-PSRepository PSGallery -ErrorAction SilentlyContinue)) {
+            Register-PSRepository -Default
+        }
+    }
+
+    AfterAll {
+        if(-not (Get-PSRepository PSGallery -ErrorAction SilentlyContinue)) {
+            Register-PSRepository -Default
+        }
+    }
+
+    Context "Mock network failures" {
+        # Pinging any endpoint results in no response
+        Mock Ping-EndPoint -ModuleName powershellget {}
+
+        It "Should let you unregister and reregister PSGallery" {
+            Unregister-PSRepository PSGallery -WarningVariable unregisterWarning -WarningAction SilentlyContinue
+            $unregisterWarning | Should Be $null
+
+            Register-PSRepository -Default -WarningAction SilentlyContinue -WarningVariable warning
+            $defaultRepo = Get-PSRepository -Name PSGallery
+            $DefaultRepo.SourceLocation | Should Be "https://www.powershellgallery.com/api/v2"
+            $warning -join "" | Should BeLike "*Unable to reach URL 'https://www.powershellgallery.com/api/v2'*"
+        }
+    }
+}

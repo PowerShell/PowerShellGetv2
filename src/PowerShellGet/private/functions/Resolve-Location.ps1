@@ -8,10 +8,6 @@ function Resolve-Location
         [string]
         $Location,
 
-        [Parameter(Mandatory=$true)]
-        [string]
-        $LocationParameterName,
-
         [Parameter()]
         $Credential,
 

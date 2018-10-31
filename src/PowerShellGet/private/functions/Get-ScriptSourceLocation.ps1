@@ -43,7 +43,6 @@ function Get-ScriptSourceLocation
             {
                 # Ping and resolve the specified location
                 $scriptLocation = Resolve-Location -Location $tempScriptLocation `
-                                                   -LocationParameterName 'ScriptSourceLocation' `
                                                    -Credential $Credential `
                                                    -Proxy $Proxy `
                                                    -ProxyCredential $ProxyCredential `

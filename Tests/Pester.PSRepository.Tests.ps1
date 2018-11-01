@@ -302,7 +302,7 @@ Describe "Managing galleries while offline" -Tag BVT {
             $DefaultRepo.SourceLocation | Should Be "https://www.powershellgallery.com/api/v2"
         }
 
-        It "Should let you trusted the gallery when it is unavailable" {
+        It "Should let you trust the gallery even when it is unavailable" {
             Set-PSRepository PSGallery -InstallationPolicy Trusted
         }
     }

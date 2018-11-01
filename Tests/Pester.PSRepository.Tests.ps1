@@ -289,17 +289,21 @@ Describe "Managing galleries while offline" -Tag BVT {
     }
 
     Context "Mock network failures" {
-        # Pinging any endpoint results in no response
+        # Pinging any endpoint results in no response. However this only affects the front-end of powershellget,
+        # not code running in the package provider, so it is not truly blocking all network access.
         Mock Ping-EndPoint -ModuleName powershellget {}
 
         It "Should let you unregister and reregister PSGallery" {
             Unregister-PSRepository PSGallery -WarningVariable unregisterWarning -WarningAction SilentlyContinue
             $unregisterWarning | Should Be $null
 
-            Register-PSRepository -Default -WarningAction SilentlyContinue -WarningVariable warning
+            Register-PSRepository -Default -WarningAction SilentlyContinue
             $defaultRepo = Get-PSRepository -Name PSGallery
             $DefaultRepo.SourceLocation | Should Be "https://www.powershellgallery.com/api/v2"
-            $warning -join "" | Should BeLike "*Unable to reach URL 'https://www.powershellgallery.com/api/v2'*"
+        }
+
+        It "Should let you trusted the gallery when it is unavailable" {
+            Set-PSRepository PSGallery -InstallationPolicy Trusted
         }
     }
 }

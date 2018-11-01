@@ -85,8 +85,6 @@ function Set-PSRepository
 
     Begin
     {
-        Get-PSGalleryApiAvailability -Repository $Name
-
         Install-NuGetClientBinaries -CallerPSCmdlet $PSCmdlet -Proxy $Proxy -ProxyCredential $ProxyCredential
 
         if($PackageManagementProvider)

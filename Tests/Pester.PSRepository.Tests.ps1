@@ -249,13 +249,17 @@ Describe 'Managing repositories' -Tag BVT {
     It "Should let you register an unreachable repository but produce a warning" {
         # microsoft.com exists but doesn't host a nuget repo
         Register-PSRepository -Name NewRepo -SourceLocation "https://microsoft.com/api/v2" -WarningVariable warning -WarningAction SilentlyContinue
-        $warning -join "" | Should BeLike "*Unable to reach URL*"
+	    if($psversiontable.PSVersion -ge '5.0.0') { # -warningvariable doesn't seem to work in ps4?
+            $warning -join "" | Should BeLike "*Unable to reach URL*"
+        }
     }
     
     It "Should let you change a repo to an unreachable location but produce a warning" {
         Register-PSRepository -Name NewRepo -SourceLocation "https://www.microsoft.com/api/v2"-WarningAction SilentlyContinue
         Set-PSRepository -Name NewRepo -SourceLocation "https://docs.microsoft.com/api/v2" -WarningVariable warning -WarningAction SilentlyContinue
-        $warning -join "" | Should BeLike "*Unable to reach URL 'https://docs*"
+        if($psversiontable.PSVersion -ge '5.0.0') { # -warningvariable doesn't seem to work in ps4?
+            $warning -join "" | Should BeLike "*Unable to reach URL 'https://docs*"
+        }
     }
 
     It "Should let you add a package source but produce a warning" {

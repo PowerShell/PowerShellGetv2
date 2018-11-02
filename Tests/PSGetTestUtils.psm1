@@ -149,9 +149,18 @@ function GetAndSet-PSGetTestGalleryDetails
     {
         $SourceUri        = 'http://localhost:8765/api/v2/'
         $psgetModule = Import-Module -Name PowerShellGet -PassThru -Scope Local
-        $ResolvedLocalSource = & $psgetModule Resolve-Location -Location $SourceUri -LocationParameterName 'SourceLocation'
 
-        if($ResolvedLocalSource -and 
+        # see if the localhost repo used in CI is present
+        $pingSuccess = $false
+        try
+        {
+            Invoke-WebRequest -Uri $SourceUri 
+            $pingSuccess = $true
+        } catch {
+
+        }
+
+        if($pingSuccess -and 
            $PSVersionTable.PSVersion -ge '5.0.0' -and 
            [System.Environment]::OSVersion.Version -ge "6.2.9200.0" -and 
            $PSCulture -eq 'en-US')

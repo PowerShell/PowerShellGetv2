@@ -122,12 +122,12 @@ $script:PSGetInstalledScripts = $null
 
 # Public PSGallery module source name and location
 $Script:PSGalleryModuleSource="PSGallery"
-$Script:PSGallerySourceUri  = 'https://go.microsoft.com/fwlink/?LinkID=397631&clcid=0x409'
-$Script:PSGalleryPublishUri = 'https://go.microsoft.com/fwlink/?LinkID=397527&clcid=0x409'
-$Script:PSGalleryScriptSourceUri = 'https://go.microsoft.com/fwlink/?LinkID=622995&clcid=0x409'
+$Script:PSGallerySourceUri  = 'https://www.powershellgallery.com/api/v2'
+$Script:PSGalleryPublishUri = 'https://www.powershellgallery.com/api/v2/package/'
+$Script:PSGalleryScriptSourceUri = 'https://www.powershellgallery.com/api/v2/items/psscript'
 
 # PSGallery V3 Source
-$Script:PSGalleryV3SourceUri = 'https://go.microsoft.com/fwlink/?LinkId=528403&clcid=0x409'
+$Script:PSGalleryV3SourceUri = 'https://www.powershellgallery.com/api/v3'
 
 $Script:PSGalleryV2ApiAvailable = $true
 $Script:PSGalleryV3ApiAvailable = $false

@@ -247,7 +247,7 @@ function Add-PackageSource
     if($Name -eq $Script:PSGalleryModuleSource)
     {
         # Add or update the PSGallery repository
-        $repository = Set-PSGalleryRepository -Trusted:$Trusted
+        $repository = Set-PSGalleryRepository -Trusted:$Trusted -CallerPSCmdlet $PSCmdlet
 
         if($repository)
         {
@@ -262,17 +262,10 @@ function Add-PackageSource
     {
         # Ping and resolve the specified location
         $Location = Resolve-Location -Location $Location `
-                                     -LocationParameterName 'Location' `
                                      -Credential $Credential `
                                      -Proxy $Proxy `
                                      -ProxyCredential $ProxyCredential `
                                      -CallerPSCmdlet $PSCmdlet
-    }
-
-    if(-not $Location)
-    {
-        # Above Resolve-Location function throws an error when it is not able to resolve a location
-        return
     }
 
     if(-not (Microsoft.PowerShell.Management\Test-Path -Path $Location) -and

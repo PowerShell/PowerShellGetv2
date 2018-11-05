@@ -32,7 +32,7 @@ Function Save-PowerShellGetForOffline {
   
 
         [Parameter(Mandatory = $false)]
-        [string] $NuGetSource = "https://dist.nuget.org/win-x86-commandline/v2.8.6/nuget.exe"
+        [string] $NuGetSource = "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe"
     )
     
     <#

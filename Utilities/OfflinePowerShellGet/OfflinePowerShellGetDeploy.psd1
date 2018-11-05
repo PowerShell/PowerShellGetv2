@@ -15,7 +15,7 @@ RootModule = 'OfflinePowerShellGetSetup.psm1'
 ModuleVersion = '0.1.0'
 
 # Supported PSEditions
-# CompatiblePSEditions = @()
+CompatiblePSEditions = @('Desktop')
 
 # ID used to uniquely identify this module
 GUID = 'af90b757-6253-44c0-aa4c-03a741d03b50'

@@ -102,19 +102,19 @@ PrivateData = @{
     PSData = @{
 
         # Tags applied to this module. These help with module discovery in online galleries.
-        # Tags = @()
+        Tags = @('PSEdition_Desktop', 'PowerShellGet')
 
         # A URL to the license for this module.
         # LicenseUri = ''
 
         # A URL to the main website for this project.
-        # ProjectUri = 'https://github.com/powershell/powershellget/<<NEED TO CREATE>>'
+        ProjectUri = 'https://github.com/powershell/powershellget/<<NEED TO CREATE>>'
 
         # A URL to an icon representing this module.
         # IconUri = ''
 
 	# Prerelease item
-	Prerelease = ''	
+	# Prerelease = ''	
 
         # ReleaseNotes of this module
         # ReleaseNotes = ''

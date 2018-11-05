@@ -6,6 +6,7 @@ Function Save-PowerShellGetForOffline {
 .DESCRIPTION
     This function acquires all the items needed to do a disconnnected setup of PowerShellGet, PackageManagement, and Nuget.exe.
     The resultant folders are prepped to be deployed directly to target devices using Install-PowerShellGetOffline
+    This module currently only supports Windows. 
     
     The script sequence assumes that you are installing everything as though these steps were performed by an administrator.
     One implication is that you must run the script as admin, which will ensure that the modules work for all users. 

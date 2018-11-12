@@ -24,12 +24,12 @@ function Save-Script
                    ValueFromPipeline=$true,
                    ValueFromPipelineByPropertyName=$true,
                    Position=0,
-                   ParameterSetName='InputOjectAndPathParameterSet')]
+                   ParameterSetName='InputObjectAndPathParameterSet')]
         [Parameter(Mandatory=$true,
                    ValueFromPipeline=$true,
                    ValueFromPipelineByPropertyName=$true,
                    Position=0,
-                   ParameterSetName='InputOjectAndLiteralPathParameterSet')]
+                   ParameterSetName='InputObjectAndLiteralPathParameterSet')]
         [ValidateNotNull()]
         [PSCustomObject[]]
         $InputObject,
@@ -74,7 +74,7 @@ function Save-Script
         [Parameter(Mandatory=$true,
                    ValueFromPipelineByPropertyName=$true,
                    Position=1,
-                   ParameterSetName='InputOjectAndPathParameterSet')]
+                   ParameterSetName='InputObjectAndPathParameterSet')]
         [string]
         $Path,
 
@@ -84,7 +84,7 @@ function Save-Script
 
         [Parameter(Mandatory=$true,
                    ValueFromPipelineByPropertyName=$true,
-                   ParameterSetName='InputOjectAndLiteralPathParameterSet')]
+                   ParameterSetName='InputObjectAndLiteralPathParameterSet')]
         [string]
         $LiteralPath,
 

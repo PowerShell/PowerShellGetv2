@@ -24,12 +24,12 @@ function Save-Module
                    ValueFromPipeline=$true,
                    ValueFromPipelineByPropertyName=$true,
                    Position=0,
-                   ParameterSetName='InputOjectAndPathParameterSet')]
+                   ParameterSetName='InputObjectAndPathParameterSet')]
         [Parameter(Mandatory=$true,
                    ValueFromPipeline=$true,
                    ValueFromPipelineByPropertyName=$true,
                    Position=0,
-                   ParameterSetName='InputOjectAndLiteralPathParameterSet')]
+                   ParameterSetName='InputObjectAndLiteralPathParameterSet')]
         [ValidateNotNull()]
         [PSCustomObject[]]
         $InputObject,
@@ -67,12 +67,12 @@ function Save-Module
         $Repository,
 
         [Parameter(Mandatory=$true, Position=1, ParameterSetName='NameAndPathParameterSet')]
-        [Parameter(Mandatory=$true, Position=1, ParameterSetName='InputOjectAndPathParameterSet')]
+        [Parameter(Mandatory=$true, Position=1, ParameterSetName='InputObjectAndPathParameterSet')]
         [string]
         $Path,
 
         [Parameter(Mandatory=$true, ParameterSetName='NameAndLiteralPathParameterSet')]
-        [Parameter(Mandatory=$true, ParameterSetName='InputOjectAndLiteralPathParameterSet')]
+        [Parameter(Mandatory=$true, ParameterSetName='InputObjectAndLiteralPathParameterSet')]
         [string]
         $LiteralPath,
 

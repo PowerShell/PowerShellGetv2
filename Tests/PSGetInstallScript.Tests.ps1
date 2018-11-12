@@ -1801,6 +1801,7 @@ Describe PowerShell.PSGet.InstallScriptTests.P1 -Tags 'P1','OuterLoop' {
             Register-PSRepository -Name TestRepo -SourceLocation https://www.nuget.org/api/v2
             $scriptRepo = Get-PSRepository -Name TestRepo
             Assert (-not $scriptRepo.ScriptSourceLocation) "Test repository 'TestRepo' is not registered properly"
+            Assert (-not $scriptRepo.ScriptPublishLocation) "Test repository 'TestRepo' is not registered properly"
 
             $repoName = 'TestRepo'
 

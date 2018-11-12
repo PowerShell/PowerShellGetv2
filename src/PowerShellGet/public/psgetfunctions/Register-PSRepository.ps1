@@ -174,14 +174,22 @@ function Register-PSRepository
                 $PSBoundParameters[$script:PublishLocation] = Get-LocationString -LocationUri $PublishLocation
             }
 
-            if($ScriptPublishLocation)
+            if($Default)
             {
-                $PSBoundParameters[$script:ScriptPublishLocation] = Get-LocationString -LocationUri $ScriptPublishLocation
+                $PSBoundParameters[$script:ScriptPublishLocation] = Get-LocationString -LocationUri $Script:PSGalleryPublishUri
+                $PSBoundParameters[$script:ScriptSourceLocation] = Get-LocationString -LocationUri $Script:PSGalleryScriptSourceUri
             }
-
-            if($ScriptSourceLocation)
+            else
             {
-                $PSBoundParameters[$script:ScriptSourceLocation] = Get-LocationString -LocationUri $ScriptSourceLocation
+                if($ScriptPublishLocation)
+                {
+                    $PSBoundParameters[$script:ScriptPublishLocation] = Get-LocationString -LocationUri $ScriptPublishLocation
+                }
+    
+                if($ScriptSourceLocation)
+                {
+                    $PSBoundParameters[$script:ScriptSourceLocation] = Get-LocationString -LocationUri $ScriptSourceLocation
+                }
             }
 
             $PSBoundParameters["Location"] = Get-LocationString -LocationUri $SourceLocation

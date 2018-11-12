@@ -17,24 +17,6 @@ function Get-PublishLocation
         {
             $PublishLocation = $Location
         }
-        else
-        {
-            $tempPublishLocation = $null
-
-            if($Location.EndsWith('/api/v2', [System.StringComparison]::OrdinalIgnoreCase))
-            {
-                $tempPublishLocation = $Location + '/package/'
-            }
-            elseif($Location.EndsWith('/api/v2/', [System.StringComparison]::OrdinalIgnoreCase))
-            {
-                $tempPublishLocation = $Location + 'package/'
-            }
-
-            if($tempPublishLocation)
-            {
-                $PublishLocation = $tempPublishLocation
-            }
-        }
     }
 
     return $PublishLocation

@@ -26,30 +26,6 @@ function Get-ScriptSourceLocation
         {
             $scriptLocation = $Location
         }
-        else
-        {
-            $tempScriptLocation = $null
-
-            if($Location.EndsWith('/api/v2', [System.StringComparison]::OrdinalIgnoreCase))
-            {
-                $tempScriptLocation = $Location + '/items/psscript/'
-            }
-            elseif($Location.EndsWith('/api/v2/', [System.StringComparison]::OrdinalIgnoreCase))
-            {
-                $tempScriptLocation = $Location + 'items/psscript/'
-            }
-
-            if($tempScriptLocation)
-            {
-                # Ping and resolve the specified location
-                $scriptLocation = Resolve-Location -Location $tempScriptLocation `
-                                                   -Credential $Credential `
-                                                   -Proxy $Proxy `
-                                                   -ProxyCredential $ProxyCredential `
-                                                   -ErrorAction SilentlyContinue `
-                                                   -WarningAction SilentlyContinue
-            }
-        }
     }
 
     return $scriptLocation

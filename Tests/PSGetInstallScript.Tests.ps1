@@ -514,7 +514,9 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
         }
 
         Start-Process $psProcess -ArgumentList '-command if(-not (Get-PSRepository -Name PoshTest -ErrorAction SilentlyContinue)) {
-                                                    Register-PSRepository -Name PoshTest -SourceLocation https://www.poshtestgallery.com/api/v2/ -InstallationPolicy Trusted
+                                                    Register-PSRepository -Name PoshTest -SourceLocation https://www.poshtestgallery.com/api/v2/ -InstallationPolicy Trusted `
+                                                        -ScriptPublishLocation "https://www.poshtestgallery.com/api/v2/package/" `
+                                                        -ScriptSourceLocation "https://www.poshtestgallery.com/api/v2/items/psscript"
                                                 }
                                                 Install-Script -Name Fabrikam-Script -NoPathUpdate -Scope AllUsers -ErrorVariable ev -ErrorAction SilentlyContinue;
                                                 Write-Output "$ev"' `
@@ -1801,6 +1803,7 @@ Describe PowerShell.PSGet.InstallScriptTests.P1 -Tags 'P1','OuterLoop' {
             Register-PSRepository -Name TestRepo -SourceLocation https://www.nuget.org/api/v2
             $scriptRepo = Get-PSRepository -Name TestRepo
             Assert (-not $scriptRepo.ScriptSourceLocation) "Test repository 'TestRepo' is not registered properly"
+            Assert (-not $scriptRepo.ScriptPublishLocation) "Test repository 'TestRepo' is not registered properly"
 
             $repoName = 'TestRepo'
 

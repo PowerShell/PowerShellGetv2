@@ -1,4 +1,21 @@
 # Changelog
+## 2.1.0
+Breaking Change
+* Behavior for Register-PSRepository has changed. If -ScriptPublishLocation or -ScriptSourceLocation is not specified, the default value is now set as null.  If running "Register-PSRepository -Default", -ScriptPublishLocation will be "https://www.powershellgallery.com/api/v2/package" and -ScriptSourceLocation will be "https://www.powershellgallery.com/api/v2/items/psscript". (#358)
+
+Bug fixes
+* Add warning message, instead of error, when a repository is unreachable (#352)
+* Fix Update-ScriptInfoFile to preserve PrivateData (#346) (Thanks @tnieto88)
+* Expanded aliases for improved readability (#338) (Thanks @lazywinadmin)
+* Remove trailing whitespace when value is not provided for Get-PSScriptInfoString (#337) (Thanks @thomasrayner)
+* Fix CommandAlreadyAvailable error for PackageManagement module (#333)
+* Improvements for Catalog tests (#343)
+
+New Features
+* Functionality for bootstrapping PowerShellGet offline (#354)
+* Check for clobbered commands faster (#351)
+* Tab completion for Publish-Module -Name (#359) (Thanks @matt9ucci) and for -Repository parameter (#339)
+
 ## 2.0.1
 Bug fixes
 - Resolved Publish-Module doesn't report error but fails to publish module (#316)

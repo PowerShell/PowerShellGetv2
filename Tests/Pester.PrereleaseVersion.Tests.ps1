@@ -4,7 +4,7 @@ function RegisterTestRepository {
     # Register test repository
     $testRepoRegistered = Get-PSRepository -Name $TestRepositoryName -ErrorAction SilentlyContinue
     if (-not $testRepoRegistered) {
-        Register-PSRepository -Name $TestRepositoryName -SourceLocation $TestRepositorySource -InstallationPolicy Trusted  
+        Register-PSRepository -Name $TestRepositoryName -SourceLocation $TestRepositorySource -ScriptSourceLocation 'https://www.powershellgallery.com/api/v2/items/psscript' -ScriptPublishLocation 'https://www.powershellgallery.com/api/v2/package/' -InstallationPolicy Trusted  
         
         $testRepoRegistered = Get-PSRepository -Name $TestRepositoryName
 

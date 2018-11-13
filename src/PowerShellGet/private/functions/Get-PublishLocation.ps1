@@ -8,16 +8,9 @@ function Get-PublishLocation
         $Location
     )
 
-    $PublishLocation = $null
-
-    if($Location)
+    # For local dir or SMB-share locations, ScriptPublishLocation is PublishLocation.
+    if($Location -and (Microsoft.PowerShell.Management\Test-Path -Path $Location))
     {
-        # For local dir or SMB-share locations, ScriptPublishLocation is PublishLocation.
-        if(Microsoft.PowerShell.Management\Test-Path -Path $Location)
-        {
-            $PublishLocation = $Location
-        }
+        return $Location
     }
-
-    return $PublishLocation
 }

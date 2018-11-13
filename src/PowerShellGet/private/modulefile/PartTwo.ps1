@@ -49,6 +49,25 @@ $commandsWithRepositoryAsName = @(
 Add-ArgumentCompleter -Cmdlets $commandsWithRepositoryParameter -ParameterName "Repository"
 Add-ArgumentCompleter -Cmdlets $commandsWithRepositoryAsName -ParameterName "Name"
 
+try
+{
+    if (Get-Command -Name Register-ArgumentCompleter -ErrorAction SilentlyContinue)
+    {
+        Register-ArgumentCompleter -CommandName Publish-Module -ParameterName Name -ScriptBlock {
+            param ($commandName, $parameterName, $wordToComplete)
+
+            Get-Module -Name $wordToComplete* -ListAvailable -ErrorAction SilentlyContinue -WarningAction SilentlyContinue | Foreach-Object {
+                [System.Management.Automation.CompletionResult]::new($_.Name, $_.Name, 'ParameterValue', $_.Name)
+            }
+        }
+    }
+}
+catch
+{
+    # All this functionality is optional, so suppress errors
+    Write-Debug -Message "Error registering argument completer: $_"
+}
+
 Set-Alias -Name fimo -Value Find-Module
 Set-Alias -Name inmo -Value Install-Module
 Set-Alias -Name upmo -Value Update-Module

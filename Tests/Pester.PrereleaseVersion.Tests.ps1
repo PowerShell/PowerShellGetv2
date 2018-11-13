@@ -4,7 +4,7 @@ function RegisterTestRepository {
     # Register test repository
     $testRepoRegistered = Get-PSRepository -Name $TestRepositoryName -ErrorAction SilentlyContinue
     if (-not $testRepoRegistered) {
-        Register-PSRepository -Name $TestRepositoryName -SourceLocation $TestRepositorySource -ScriptSourceLocation 'https://www.powershellgallery.com/api/v2/items/psscript' -ScriptPublishLocation 'https://www.powershellgallery.com/api/v2/package/' -InstallationPolicy Trusted  
+        Register-PSRepository -Name $TestRepositoryName -SourceLocation $TestRepositorySource -ScriptSourceLocation $TestRepoScriptSourceLocation -ScriptPublishLocation $TestRepoScriptPublishLocation -InstallationPolicy Trusted
         
         $testRepoRegistered = Get-PSRepository -Name $TestRepositoryName
 
@@ -46,6 +46,8 @@ $script:TempPath = Get-TempPath
 # Register test repository
 $TestRepositoryName = "GalleryRolling"
 $TestRepositorySource = "https://www.poshtestgallery.com/api/v2/"
+$TestRepoScriptSourceLocation = "https://www.poshtestgallery.com/api/v2/items/psscript"
+$TestRepoScriptPublishLocation = "https://www.poshtestgallery.com/api/v2/package/"
 RegisterTestRepository
 
 # Test Items

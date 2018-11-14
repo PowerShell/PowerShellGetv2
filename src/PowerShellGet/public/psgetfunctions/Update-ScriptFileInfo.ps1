@@ -330,7 +330,6 @@ function Update-ScriptFileInfo
 
         $PSScriptInfoString = Get-PSScriptInfoString @params
 
-        $requiresStrings = ""
         $requiresStrings = Get-RequiresString -RequiredModules $RequiredModules
 
         $DescriptionValue = if($Description) {$Description} else {$psscriptInfo.Description}
@@ -349,10 +348,6 @@ function Update-ScriptFileInfo
         $ScriptMetadataString += "`r`n"
         $ScriptMetadataString += $ScriptCommentHelpInfoString
         $ScriptMetadataString += "`r`nParam()`r`n`r`n"
-        if(-not $ScriptMetadataString)
-        {
-            return
-        }
 
         $tempScriptFilePath = Microsoft.PowerShell.Management\Join-Path -Path $script:TempPath -ChildPath "$(Get-Random).ps1"
 

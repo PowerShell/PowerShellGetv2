@@ -14,16 +14,17 @@ If using any online repository other than PowerShell Gallery, make sure to speci
     -ScriptPublishLocation as "<SourceLocation>/api/v2/package"
     -ScriptSourceLocation as "<SourceLocation>/api/v2/items/psscript"
 
-Bug fixes
-* Add warning message, instead of error, when a repository is unreachable (#352)
-* Fix Update-ScriptInfoFile to preserve PrivateData (#346) (Thanks @tnieto88)
-* Expanded aliases for improved readability (#338) (Thanks @lazywinadmin)
-* Remove trailing whitespace when value is not provided for Get-PSScriptInfoString (#337) (Thanks @thomasrayner)
+Bug fixes and Improvements
 * Fix CommandAlreadyAvailable error for PackageManagement module (#333)
+* Remove trailing whitespace when value is not provided for Get-PSScriptInfoString (#337) (Thanks @thomasrayner)
+* Expanded aliases for improved readability (#338) (Thanks @lazywinadmin)
 * Improvements for Catalog tests (#343)
+* Fix Update-ScriptInfoFile to preserve PrivateData (#346) (Thanks @tnieto88)
+* Check for clobbered commands faster (#351)
+* Add warning message, instead of error, when a repository is unreachable (#352)
 
 New Features
-* Tab completion for Publish-Module -Name (#359) (Thanks @matt9ucci) and for -Repository parameter (#339)
+* Tab completion for -Repository parameter (#339) and for Publish-Module -Name (#359) (Thanks @matt9ucci)
 
 ## 2.0.1
 Bug fixes

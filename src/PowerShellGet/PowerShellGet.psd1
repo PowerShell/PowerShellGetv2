@@ -79,8 +79,6 @@ Bug fixes
 * Improvements for Catalog tests (#343)
 
 New Features
-* Functionality for bootstrapping PowerShellGet offline (#354)
-* Check for clobbered commands faster (#351)
 * Tab completion for Publish-Module -Name (#359) (Thanks @matt9ucci) and for -Repository parameter (#339)
 
 ## 2.0.1

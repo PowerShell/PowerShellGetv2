@@ -14,9 +14,6 @@ If using any online repository other than PowerShell Gallery, make sure to speci
     -ScriptPublishLocation as "<SourceLocation>/api/v2/package"
     -ScriptSourceLocation as "<SourceLocation>/api/v2/items/psscript"
 
-
-(#358)
-
 Bug fixes
 * Add warning message, instead of error, when a repository is unreachable (#352)
 * Fix Update-ScriptInfoFile to preserve PrivateData (#346) (Thanks @tnieto88)
@@ -26,7 +23,6 @@ Bug fixes
 * Improvements for Catalog tests (#343)
 
 New Features
-* Check for clobbered commands faster (#351)
 * Tab completion for Publish-Module -Name (#359) (Thanks @matt9ucci) and for -Repository parameter (#339)
 
 ## 2.0.1

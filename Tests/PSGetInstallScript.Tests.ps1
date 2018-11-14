@@ -514,7 +514,9 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
         }
 
         Start-Process $psProcess -ArgumentList '-command if(-not (Get-PSRepository -Name PoshTest -ErrorAction SilentlyContinue)) {
-                                                    Register-PSRepository -Name PoshTest -SourceLocation https://www.poshtestgallery.com/api/v2/ -InstallationPolicy Trusted
+                                                    Register-PSRepository -Name PoshTest -SourceLocation https://www.poshtestgallery.com/api/v2/ -InstallationPolicy Trusted `
+                                                        -ScriptPublishLocation "https://www.poshtestgallery.com/api/v2/package/" `
+                                                        -ScriptSourceLocation "https://www.poshtestgallery.com/api/v2/items/psscript"
                                                 }
                                                 Install-Script -Name Fabrikam-Script -NoPathUpdate -Scope AllUsers -ErrorVariable ev -ErrorAction SilentlyContinue;
                                                 Write-Output "$ev"' `
@@ -1330,13 +1332,13 @@ Describe PowerShell.PSGet.InstallScriptTests.P1 -Tags 'P1','OuterLoop' {
     } `
     -Skip:$($IsWindows -eq $false)
 
-    # Purpose: InstallPackage_Script_AllUsers_Force_NoPromptForAddingtoPATHVariable
+    # Purpose: InstallPackage_Script_Default_User_Force_NoPromptForAddingtoPATHVariable
     #
     # Action: Install-Package -Provider PowerShellGet -Type Script -Name Fabrikam-ServerScript -Source PSGallery -Force
     #
     # Expected Result: script install location should not be added to PATH varaible.
     #
-    It "InstallPackage_Script_AllUsers_Force_NoPromptForAddingtoPATHVariable" {
+    It "InstallPackage_Script_Default_User_Force_NoPromptForAddingtoPATHVariable" {
         try {
             # Remove PSGetSettings.xml file to get the prompt
             RemoveItem -Path $script:PSGetSettingsFilePath
@@ -1351,7 +1353,13 @@ Describe PowerShell.PSGet.InstallScriptTests.P1 -Tags 'P1','OuterLoop' {
             $res = Get-InstalledScript Fabrikam-ServerScript
             AssertEquals $res.Name 'Fabrikam-ServerScript' "Install-Script should install a script, $res"
 
-            Assert (($env:PATH -split ';') -contains $script:ProgramFilesScriptsPath) "Install-Package should add AllUsers scope path to PATH environment variable."
+            if ($script:IsCoreCLR) {
+                Assert (($env:PATH -split ';') -contains $script:MyDocumentsScriptsPath) "Install-Package should add CurrentUser scope path to PATH environment variable."
+            }
+            else
+            {
+                Assert (($env:PATH -split ';') -contains $script:ProgramFilesScriptsPath) "Install-Package should add AllUsers scope path to PATH environment variable."
+            }
         }
         finally {
             # Set the PATH variable to not have the scripts install location in the PATH variable.
@@ -1795,6 +1803,7 @@ Describe PowerShell.PSGet.InstallScriptTests.P1 -Tags 'P1','OuterLoop' {
             Register-PSRepository -Name TestRepo -SourceLocation https://www.nuget.org/api/v2
             $scriptRepo = Get-PSRepository -Name TestRepo
             Assert (-not $scriptRepo.ScriptSourceLocation) "Test repository 'TestRepo' is not registered properly"
+            Assert (-not $scriptRepo.ScriptPublishLocation) "Test repository 'TestRepo' is not registered properly"
 
             $repoName = 'TestRepo'
 

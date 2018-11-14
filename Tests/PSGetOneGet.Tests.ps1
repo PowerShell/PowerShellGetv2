@@ -69,6 +69,22 @@ Describe PowerShell.PSGet.PackageManagementIntegrationTests -Tags 'P1','OuterLoo
 
         # To reload the repositories
         $null = Import-PackageProvider -Name PowerShellGet -Force
+
+        if($script:IsWindowsOS)
+        {
+            # Delete the user
+            net user $script:UserName /delete | Out-Null
+            # Delete the user profile
+            # Run only if cmd is available
+            if(Get-Command -Name Get-WmiObject -ErrorAction SilentlyContinue)
+            {
+                $userProfile = (Get-WmiObject -Class Win32_UserProfile | Where-Object {$_.LocalPath -match $script:UserName})
+                if($userProfile)
+                {
+                    RemoveItem $userProfile.LocalPath
+                }
+            }
+        }
     }
 
     AfterEach {
@@ -303,9 +319,13 @@ Describe PowerShell.PSGet.PackageManagementIntegrationTests -Tags 'P1','OuterLoo
     It "InstallPackageWithAllUsersScopeParameterForNonAdminUser" {
         $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
 
-        Start-Process "$PSHOME\PowerShell.exe" -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
-                                                              $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
-                                                              if(-not (Get-PSRepository -Name PoshTest -ErrorAction SilentlyContinue)) {
+        $psProcess = "PowerShell.exe"
+        if ($script:IsCoreCLR)
+        {
+            $psProcess = "pwsh.exe"
+        }
+
+        Start-Process $psProcess -ArgumentList '-command if(-not (Get-PSRepository -Name PoshTest -ErrorAction SilentlyContinue)) {
                                                                 Register-PSRepository -Name PoshTest -SourceLocation https://www.poshtestgallery.com/api/v2/ -InstallationPolicy Trusted
                                                               }
                                                               Install-Package -Name ContosoServer -scope AllUsers -Source PoshTest -ErrorVariable ev -ErrorAction SilentlyContinue;
@@ -329,7 +349,8 @@ Describe PowerShell.PSGet.PackageManagementIntegrationTests -Tags 'P1','OuterLoo
         ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
         ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
         ($PSVersionTable.PSVersion -lt '4.0.0') -or
-        (-not $script:IsWindowsOS)
+        # Temporarily disable tests for Core
+        ($script:IsCoreCLR)
     )
 
     # Purpose: Install a package with default scope parameter for non-admin user
@@ -341,9 +362,13 @@ Describe PowerShell.PSGet.PackageManagementIntegrationTests -Tags 'P1','OuterLoo
     It "InstallPackageDefaultUserScopeParameterForNonAdminUser" {
         $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
 
-        Start-Process "$PSHOME\PowerShell.exe" -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
-                                                              $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
-                                                              Install-Package -Name ContosoServer -Source PoshTest;
+        $psProcess = "PowerShell.exe"
+        if ($script:IsCoreCLR)
+        {
+            $psProcess = "pwsh.exe"
+        }
+
+        Start-Process $psProcess -ArgumentList '-command Install-Package -Name ContosoServer -Source PoshTest;
                                                               Get-Package ContosoServer | Format-List Name, SwidTagText' `
                                                -Credential $script:credential `
                                                -Wait `
@@ -365,6 +390,7 @@ Describe PowerShell.PSGet.PackageManagementIntegrationTests -Tags 'P1','OuterLoo
         ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
         ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
         ($PSVersionTable.PSVersion -lt '4.0.0') -or
-        (-not $script:IsWindowsOS)
+        # Temporarily disable tests for Core
+        ($script:IsCoreCLR)
     )
 }

@@ -57,7 +57,18 @@ PrivateData = @{
 ## 2.1.0
 
 Breaking Change
-* Behavior for Register-PSRepository has changed. If -ScriptPublishLocation or -ScriptSourceLocation is not specified, the default value is now set as null.  If running "Register-PSRepository -Default", -ScriptPublishLocation will be "https://www.powershellgallery.com/api/v2/package" and -ScriptSourceLocation will be "https://www.powershellgallery.com/api/v2/items/psscript". (#358)
+* Behavior for Register-PSRepository has changed.
+Previously, Register-PSRepository would propagate the following default values:
+    -PublishLocation was "<SourceLocation>/api/v2/package"
+    -ScriptPublishLocation was "<SourceLocation>/api/v2/package"
+    -ScriptSourceLocation was "<SourceLocation>/api/v2/items/psscript"
+With current changes, if -PublishLocation, -ScriptPublishLocation, or -ScriptSourceLocation is not specified, the default value is now set as null.
+The behavior of running "Register-PSRepository -Default" has not changed.
+*Note*
+If using any online repository other than PowerShell Gallery, make sure to specify the following in order to properly interact with the repository:
+    -PublishLocation as "<SourceLocation>/api/v2/package"
+    -ScriptPublishLocation as "<SourceLocation>/api/v2/package"
+    -ScriptSourceLocation as "<SourceLocation>/api/v2/items/psscript"
 
 Bug fixes
 * Add warning message, instead of error, when a repository is unreachable (#352)

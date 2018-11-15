@@ -62,11 +62,11 @@ function Check-PSGalleryApiAvailability
 
     # ping V2
     $res_v2 = Ping-Endpoint -Endpoint $PSGalleryV2ApiUri
-    if ($res_v2 -and $res_v2.ContainsKey($Script:ResponseUri))
+    if ($res_v2.ContainsKey($Script:ResponseUri))
     {
         $resolvedUri_v2 = $res_v2[$Script:ResponseUri]
     }
-    if ($res_v2 -and $res_v2.ContainsKey($Script:StatusCode))
+    if ($res_v2.ContainsKey($Script:StatusCode))
     {
         $statusCode_v2 = $res_v2[$Script:StatusCode]
     }
@@ -74,11 +74,11 @@ function Check-PSGalleryApiAvailability
 
     # ping V3
     $res_v3 = Ping-Endpoint -Endpoint $PSGalleryV3ApiUri
-    if ($res_v3 -and $res_v3.ContainsKey($Script:ResponseUri))
+    if ($res_v3.ContainsKey($Script:ResponseUri))
     {
         $resolvedUri_v3 = $res_v3[$Script:ResponseUri]
     }
-    if ($res_v3 -and $res_v3.ContainsKey($Script:StatusCode))
+    if ($res_v3.ContainsKey($Script:StatusCode))
     {
         $statusCode_v3 = $res_v3[$Script:StatusCode]
     }

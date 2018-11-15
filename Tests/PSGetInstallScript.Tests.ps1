@@ -514,9 +514,7 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT','InnerLoop' {
         }
 
         Start-Process $psProcess -ArgumentList '-command if(-not (Get-PSRepository -Name PoshTest -ErrorAction SilentlyContinue)) {
-                                                    Register-PSRepository -Name PoshTest -SourceLocation https://www.poshtestgallery.com/api/v2/ -InstallationPolicy Trusted `
-                                                        -ScriptPublishLocation "https://www.poshtestgallery.com/api/v2/package/" `
-                                                        -ScriptSourceLocation "https://www.poshtestgallery.com/api/v2/items/psscript"
+                                                    Register-PSRepository -Name PoshTest -SourceLocation https://www.poshtestgallery.com/api/v2/ -InstallationPolicy Trusted
                                                 }
                                                 Install-Script -Name Fabrikam-Script -NoPathUpdate -Scope AllUsers -ErrorVariable ev -ErrorAction SilentlyContinue;
                                                 Write-Output "$ev"' `

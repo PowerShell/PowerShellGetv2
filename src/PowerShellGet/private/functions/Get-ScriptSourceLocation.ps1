@@ -17,8 +17,9 @@ function Get-ScriptSourceLocation
         $ProxyCredential
     )
 
-    # For local dir or SMB-share locations, ScriptSourceLocation is SourceLocation.
-    if($Location -and (Microsoft.PowerShell.Management\Test-Path -Path $Location))
+    $scriptLocation = $null
+
+    if($Location)
     {
         # For local dir or SMB-share locations, ScriptSourceLocation is SourceLocation.
         if(Microsoft.PowerShell.Management\Test-Path -Path $Location)
@@ -51,4 +52,5 @@ function Get-ScriptSourceLocation
             }
         }
     }
+    return $scriptLocation
 }

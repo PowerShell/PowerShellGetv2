@@ -6,7 +6,7 @@ Bug fixes and Improvements
 * Expanded aliases for improved readability (#338) (Thanks @lazywinadmin)
 * Improvements for Catalog tests (#343)
 * Fix Update-ScriptInfoFile to preserve PrivateData (#346) (Thanks @tnieto88)
-* Import modules with many commands faster (#351)
+* Install modules with many commands faster (#351)
 
 New Features
 * Tab completion for -Repository parameter (#339) and for Publish-Module -Name (#359) (Thanks @matt9ucci)

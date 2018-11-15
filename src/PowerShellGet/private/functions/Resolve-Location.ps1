@@ -8,6 +8,10 @@ function Resolve-Location
         [string]
         $Location,
 
+        [Parameter(Mandatory=$true)]
+        [string]
+        $LocationParameterName,
+
         [Parameter()]
         $Credential,
 
@@ -19,11 +23,7 @@ function Resolve-Location
 
         [Parameter()]
         [System.Management.Automation.PSCmdlet]
-        $CallerPSCmdlet,
-
-        [Parameter()]
-        [switch]
-        $SkipLocationWarning
+        $CallerPSCmdlet
     )
 
     # Ping and resolve the specified location
@@ -66,16 +66,15 @@ function Resolve-Location
         {
             return $resolvedLocation
         }
-        else
+        elseif($CallerPSCmdlet)
         {
-            # We couldn't reach the repo. Register it anyway but warn the user if we're able
-            # We'd like to include the parameter name here, but Register-PSRepository calls Add-PackageSource, 
-            # and both use different param names, so the parameter name becomes confusing
-            if($CallerPSCmdlet -and -not $SkipLocationWarning) {
-                $message = $LocalizedData.WarnUnableToReachWebUri -f ($Location)
-                Write-Warning $message
-            }
-            return $Location
+            $message = $LocalizedData.InvalidWebUri -f ($Location, $LocationParameterName)
+            ThrowError -ExceptionName "System.ArgumentException" `
+                       -ExceptionMessage $message `
+                       -ErrorId "InvalidWebUri" `
+                       -CallerPSCmdlet $CallerPSCmdlet `
+                       -ErrorCategory InvalidArgument `
+                       -ExceptionObject $Location
         }
     }
 }

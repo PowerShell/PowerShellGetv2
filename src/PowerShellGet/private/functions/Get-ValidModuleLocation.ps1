@@ -53,11 +53,12 @@ function Get-ValidModuleLocation
             {
                 # Ping and resolve the specified location
                 $tempLocation = Resolve-Location -Location $tempLocation `
+                                                 -LocationParameterName $ParameterName `
                                                  -Credential $Credential `
                                                  -Proxy $Proxy `
                                                  -ProxyCredential $ProxyCredential `
                                                  -ErrorAction SilentlyContinue `
-                                                 -SkipLocationWarning                                               
+                                                 -WarningAction SilentlyContinue
                 if($tempLocation)
                 {
                    return $tempLocation
@@ -68,6 +69,7 @@ function Get-ValidModuleLocation
 
         # Ping and resolve the specified location
         $LocationString = Resolve-Location -Location $LocationString `
+                                           -LocationParameterName $ParameterName `
                                            -Credential $Credential `
                                            -Proxy $Proxy `
                                            -ProxyCredential $ProxyCredential `

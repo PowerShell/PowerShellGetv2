@@ -25,6 +25,7 @@ function Get-DynamicParameters
 
     # Ping and resolve the specified location
     $loc = Resolve-Location -Location $loc `
+                            -LocationParameterName 'Location' `
                             -ErrorAction SilentlyContinue `
                             -WarningAction SilentlyContinue
     if(-not $loc)

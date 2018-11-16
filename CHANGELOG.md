@@ -1,5 +1,5 @@
 # Changelog
-## 2.0.2
+## 2.0.3
 Bug fixes and Improvements
 * Fix CommandAlreadyAvailable error for PackageManagement module (#333)
 * Remove trailing whitespace when value is not provided for Get-PSScriptInfoString (#337) (Thanks @thomasrayner)

@@ -1566,7 +1566,17 @@ Describe "--- Update-Module ---" -Tags 'Module','BVT','InnerLoop' {
 
     # Updated to latest release version by default: When release version is installed (ex. 1.0.0 --> 2.0.0)
     It "UpdateModuleFromReleaseToReleaseVersionByDefault" {
+        Get-InstalledModule $PrereleaseTestModule -ErrorAction SilentlyContinue | Should Be $null
+
         Install-Module $PrereleaseTestModule -RequiredVersion "1.0.0" -Repository $TestRepositoryName
+
+        $res = Get-InstalledModule -Name $PrereleaseTestModule
+
+        $res | Should Not Be $null
+        $res | Measure-Object | ForEach-Object { $_.Count } | Should Be 1
+        $res.Name | Should Be $PrereleaseTestModule
+        $res.Version | Should Match "1.0.0"
+
         Update-Module $PrereleaseTestModule # Should update to latest stable version 3.0.0
 
         $res = Get-InstalledModule -Name $PrereleaseTestModule

@@ -1,68 +1,67 @@
-function Install-Module
-{
+function Install-Module {
     <#
     .ExternalHelp PSModule-help.xml
     #>
-    [CmdletBinding(DefaultParameterSetName='NameParameterSet',
-                   HelpUri='https://go.microsoft.com/fwlink/?LinkID=398573',
-                   SupportsShouldProcess=$true)]
+    [CmdletBinding(DefaultParameterSetName = 'NameParameterSet',
+        HelpUri = 'https://go.microsoft.com/fwlink/?LinkID=398573',
+        SupportsShouldProcess = $true)]
     Param
     (
-        [Parameter(Mandatory=$true,
-                   ValueFromPipelineByPropertyName=$true,
-                   Position=0,
-                   ParameterSetName='NameParameterSet')]
+        [Parameter(Mandatory = $true,
+            ValueFromPipelineByPropertyName = $true,
+            Position = 0,
+            ParameterSetName = 'NameParameterSet')]
         [ValidateNotNullOrEmpty()]
         [string[]]
         $Name,
 
-        [Parameter(Mandatory=$true,
-                   ValueFromPipeline=$true,
-                   ValueFromPipelineByPropertyName=$true,
-                   Position=0,
-                   ParameterSetName='InputObject')]
+        [Parameter(Mandatory = $true,
+            ValueFromPipeline = $true,
+            ValueFromPipelineByPropertyName = $true,
+            Position = 0,
+            ParameterSetName = 'InputObject')]
         [ValidateNotNull()]
         [PSCustomObject[]]
         $InputObject,
 
-        [Parameter(ValueFromPipelineByPropertyName=$true,
-                   ParameterSetName='NameParameterSet')]
+        [Parameter(ValueFromPipelineByPropertyName = $true,
+            ParameterSetName = 'NameParameterSet')]
         [ValidateNotNull()]
         [string]
         $MinimumVersion,
 
-        [Parameter(ValueFromPipelineByPropertyName=$true,
-                   ParameterSetName='NameParameterSet')]
+        [Parameter(ValueFromPipelineByPropertyName = $true,
+            ParameterSetName = 'NameParameterSet')]
         [ValidateNotNull()]
         [string]
         $MaximumVersion,
 
-        [Parameter(ValueFromPipelineByPropertyName=$true,
-                   ParameterSetName='NameParameterSet')]
+        [Parameter(ValueFromPipelineByPropertyName = $true,
+            ParameterSetName = 'NameParameterSet')]
         [ValidateNotNull()]
         [string]
         $RequiredVersion,
 
-        [Parameter(ParameterSetName='NameParameterSet')]
+        [Parameter(ParameterSetName = 'NameParameterSet')]
         [ValidateNotNullOrEmpty()]
         [string[]]
         $Repository,
 
-        [Parameter(ValueFromPipelineByPropertyName=$true)]
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
         [PSCredential]
         $Credential,
 
         [Parameter()]
-        [ValidateSet("CurrentUser","AllUsers")]
+        [ValidateSet("CurrentUser", "AllUsers")]
         [string]
         $Scope,
 
-        [Parameter(ValueFromPipelineByPropertyName=$true)]
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
         [ValidateNotNullOrEmpty()]
         [Uri]
         $Proxy,
 
-        [Parameter(ValueFromPipelineByPropertyName=$true)]
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
         [PSCredential]
         $ProxyCredential,
 
@@ -78,7 +77,7 @@ function Install-Module
         [switch]
         $Force,
 
-        [Parameter(ParameterSetName='NameParameterSet')]
+        [Parameter(ParameterSetName = 'NameParameterSet')]
         [switch]
         $AllowPrerelease,
 
@@ -87,29 +86,23 @@ function Install-Module
         $AcceptLicense
     )
 
-    Begin
-    {
-        Get-PSGalleryApiAvailability -Repository $Repository
-
-        if($Scope -eq "AllUsers" -and -not (Test-RunningAsElevated))
-        {
+    Begin {
+        if ($Scope -eq "AllUsers" -and -not (Test-RunningAsElevated)) {
             # Throw an error when Install-Module is used as a non-admin user and '-Scope AllUsers'
             $message = $LocalizedData.InstallModuleAdminPrivilegeRequiredForAllUsersScope -f @($script:programFilesModulesPath, $script:MyDocumentsModulesPath)
 
             ThrowError -ExceptionName "System.ArgumentException" `
-                        -ExceptionMessage $message `
-                        -ErrorId "InstallModuleAdminPrivilegeRequiredForAllUsersScope" `
-                        -CallerPSCmdlet $PSCmdlet `
-                        -ErrorCategory InvalidArgument
+                -ExceptionMessage $message `
+                -ErrorId "InstallModuleAdminPrivilegeRequiredForAllUsersScope" `
+                -CallerPSCmdlet $PSCmdlet `
+                -ErrorCategory InvalidArgument
         }
 
-        # If no scope is specified, default installation will be to AllUsers only 
+        # If no scope is specified, default installation will be to AllUsers only
         # If running admin on Windows with PowerShell less than v6.
-        if (-not $Scope) 
-        {
+        if (-not $Scope) {
             $Scope = "CurrentUser"
-            if(-not $script:IsCoreCLR -and (Test-RunningAsElevated))
-            {
+            if (-not $script:IsCoreCLR -and (Test-RunningAsElevated)) {
                 $Scope = "AllUsers"
             }
         }
@@ -124,8 +117,7 @@ function Install-Module
         $SourcesDeniedTrust = @()
     }
 
-    Process
-    {
+    Process {
         $RepositoryIsNotTrusted = $LocalizedData.RepositoryIsNotTrusted
         $QueryInstallUntrustedPackage = $LocalizedData.QueryInstallUntrustedPackage
         $PackageTarget = $LocalizedData.InstallModulewhatIfMessage
@@ -134,46 +126,41 @@ function Install-Module
         $PSBoundParameters["MessageResolver"] = $script:PackageManagementInstallModuleMessageResolverScriptBlock
         $PSBoundParameters[$script:PSArtifactType] = $script:PSArtifactTypeModule
         $PSBoundParameters['Scope'] = $Scope
-        if($AllowPrerelease) {
+        if ($AllowPrerelease) {
             $PSBoundParameters[$script:AllowPrereleaseVersions] = $true
         }
         $null = $PSBoundParameters.Remove("AllowPrerelease")
 
-        if($PSCmdlet.ParameterSetName -eq "NameParameterSet")
-        {
+        if ($PSCmdlet.ParameterSetName -eq "NameParameterSet") {
             $ValidationResult = Validate-VersionParameters -CallerPSCmdlet $PSCmdlet `
-                                                           -Name $Name `
-                                                           -TestWildcardsInName `
-                                                           -MinimumVersion $MinimumVersion `
-                                                           -MaximumVersion $MaximumVersion `
-                                                           -RequiredVersion $RequiredVersion `
-                                                           -AllowPrerelease:$AllowPrerelease
+                -Name $Name `
+                -TestWildcardsInName `
+                -MinimumVersion $MinimumVersion `
+                -MaximumVersion $MaximumVersion `
+                -RequiredVersion $RequiredVersion `
+                -AllowPrerelease:$AllowPrerelease
 
-            if(-not $ValidationResult)
-            {
+            if (-not $ValidationResult) {
                 # Validate-VersionParameters throws the error.
                 # returning to avoid further execution when different values are specified for -ErrorAction parameter
                 return
             }
 
-            if($PSBoundParameters.ContainsKey("Repository"))
-            {
+            if ($PSBoundParameters.ContainsKey("Repository")) {
                 $PSBoundParameters["Source"] = $Repository
                 $null = $PSBoundParameters.Remove("Repository")
 
                 $ev = $null
                 $null = Get-PSRepository -Name $Repository -ErrorVariable ev -verbose:$false
-                if($ev) { return }
+                if ($ev) { return }
             }
 
             $null = PackageManagement\Install-Package @PSBoundParameters
         }
-        elseif($PSCmdlet.ParameterSetName -eq "InputObject")
-        {
+        elseif ($PSCmdlet.ParameterSetName -eq "InputObject") {
             $null = $PSBoundParameters.Remove("InputObject")
 
-            foreach($inputValue in $InputObject)
-            {
+            foreach ($inputValue in $InputObject) {
                 if (($inputValue.PSTypeNames -notcontains "Microsoft.PowerShell.Commands.PSRepositoryItemInfo") -and
                     ($inputValue.PSTypeNames -notcontains "Deserialized.Microsoft.PowerShell.Commands.PSRepositoryItemInfo") -and
                     ($inputValue.PSTypeNames -notcontains "Microsoft.PowerShell.Commands.PSGetCommandInfo") -and
@@ -181,41 +168,36 @@ function Install-Module
                     ($inputValue.PSTypeNames -notcontains "Microsoft.PowerShell.Commands.PSGetDscResourceInfo") -and
                     ($inputValue.PSTypeNames -notcontains "Deserialized.Microsoft.PowerShell.Commands.PSGetDscResourceInfo") -and
                     ($inputValue.PSTypeNames -notcontains "Microsoft.PowerShell.Commands.PSGetRoleCapabilityInfo") -and
-                    ($inputValue.PSTypeNames -notcontains "Deserialized.Microsoft.PowerShell.Commands.PSGetRoleCapabilityInfo"))
-                {
+                    ($inputValue.PSTypeNames -notcontains "Deserialized.Microsoft.PowerShell.Commands.PSGetRoleCapabilityInfo")) {
                     ThrowError -ExceptionName "System.ArgumentException" `
-                                -ExceptionMessage $LocalizedData.InvalidInputObjectValue `
-                                -ErrorId "InvalidInputObjectValue" `
-                                -CallerPSCmdlet $PSCmdlet `
-                                -ErrorCategory InvalidArgument `
-                                -ExceptionObject $inputValue
+                        -ExceptionMessage $LocalizedData.InvalidInputObjectValue `
+                        -ErrorId "InvalidInputObjectValue" `
+                        -CallerPSCmdlet $PSCmdlet `
+                        -ErrorCategory InvalidArgument `
+                        -ExceptionObject $inputValue
                 }
 
-                if( ($inputValue.PSTypeNames -contains "Microsoft.PowerShell.Commands.PSGetDscResourceInfo") -or
+                if ( ($inputValue.PSTypeNames -contains "Microsoft.PowerShell.Commands.PSGetDscResourceInfo") -or
                     ($inputValue.PSTypeNames -contains "Deserialized.Microsoft.PowerShell.Commands.PSGetDscResourceInfo") -or
                     ($inputValue.PSTypeNames -contains "Microsoft.PowerShell.Commands.PSGetCommandInfo") -or
                     ($inputValue.PSTypeNames -contains "Deserialized.Microsoft.PowerShell.Commands.PSGetCommandInfo") -or
                     ($inputValue.PSTypeNames -contains "Microsoft.PowerShell.Commands.PSGetRoleCapabilityInfo") -or
-                    ($inputValue.PSTypeNames -contains "Deserialized.Microsoft.PowerShell.Commands.PSGetRoleCapabilityInfo"))
-                {
+                    ($inputValue.PSTypeNames -contains "Deserialized.Microsoft.PowerShell.Commands.PSGetRoleCapabilityInfo")) {
                     $psgetModuleInfo = $inputValue.PSGetModuleInfo
                 }
-                else
-                {
+                else {
                     $psgetModuleInfo = $inputValue
                 }
 
                 # Skip the module name if it is already tried in the current pipeline
-                if($moduleNamesInPipeline -contains $psgetModuleInfo.Name)
-                {
+                if ($moduleNamesInPipeline -contains $psgetModuleInfo.Name) {
                     continue
                 }
 
                 $moduleNamesInPipeline += $psgetModuleInfo.Name
 
                 if ($psgetModuleInfo.PowerShellGetFormatVersion -and
-                    ($script:SupportedPSGetFormatVersionMajors -notcontains $psgetModuleInfo.PowerShellGetFormatVersion.Major))
-                {
+                    ($script:SupportedPSGetFormatVersionMajors -notcontains $psgetModuleInfo.PowerShellGetFormatVersion.Major)) {
                     $message = $LocalizedData.NotSupportedPowerShellGetFormatVersion -f ($psgetModuleInfo.Name, $psgetModuleInfo.PowerShellGetFormatVersion, $psgetModuleInfo.Name)
                     Write-Error -Message $message -ErrorId "NotSupportedPowerShellGetFormatVersion" -Category InvalidOperation
                     continue
@@ -236,48 +218,38 @@ function Install-Module
 
                 #Check if module is already installed
                 $InstalledModuleInfo = Test-ModuleInstalled -Name $psgetModuleInfo.Name -RequiredVersion $psgetModuleInfo.Version
-                if(-not $Force -and $InstalledModuleInfo -ne $null)
-                {
+                if (-not $Force -and $InstalledModuleInfo -ne $null) {
                     $message = $LocalizedData.ModuleAlreadyInstalledVerbose -f ($InstalledModuleInfo.Version, $InstalledModuleInfo.Name, $InstalledModuleInfo.ModuleBase)
                     Write-Verbose -Message $message
                 }
-                else
-                {
-                    $source =  $psgetModuleInfo.Repository
+                else {
+                    $source = $psgetModuleInfo.Repository
                     $installationPolicy = (Get-PSRepository -Name $source).InstallationPolicy
                     $ShouldProcessMessage = $PackageTarget -f ($psgetModuleInfo.Name, $psgetModuleInfo.Version)
 
-                    if($psCmdlet.ShouldProcess($ShouldProcessMessage))
-                    {
-                        if($installationPolicy.Equals("Untrusted", [StringComparison]::OrdinalIgnoreCase))
-                        {
-    	                    if(-not($YesToAll -or $NoToAll -or $SourceSGrantedTrust.Contains($source) -or $sourcesDeniedTrust.Contains($source) -or $Force))
-                            {
-	                            $message = $QueryInstallUntrustedPackage -f ($psgetModuleInfo.Name, $psgetModuleInfo.RepositorySourceLocation)
-                                if($PSVersionTable.PSVersion -ge '5.0.0')
-                                {
-                                     $sourceTrusted = $psCmdlet.ShouldContinue("$message", "$RepositoryIsNotTrusted",$true, [ref]$YesToAll, [ref]$NoToAll)
+                    if ($psCmdlet.ShouldProcess($ShouldProcessMessage)) {
+                        if ($installationPolicy.Equals("Untrusted", [StringComparison]::OrdinalIgnoreCase)) {
+                            if (-not($YesToAll -or $NoToAll -or $SourceSGrantedTrust.Contains($source) -or $sourcesDeniedTrust.Contains($source) -or $Force)) {
+                                $message = $QueryInstallUntrustedPackage -f ($psgetModuleInfo.Name, $psgetModuleInfo.RepositorySourceLocation)
+                                if ($PSVersionTable.PSVersion -ge '5.0.0') {
+                                    $sourceTrusted = $psCmdlet.ShouldContinue("$message", "$RepositoryIsNotTrusted", $true, [ref]$YesToAll, [ref]$NoToAll)
                                 }
-                                else
-                                {
-                                     $sourceTrusted = $psCmdlet.ShouldContinue("$message", "$RepositoryIsNotTrusted", [ref]$YesToAll, [ref]$NoToAll)
+                                else {
+                                    $sourceTrusted = $psCmdlet.ShouldContinue("$message", "$RepositoryIsNotTrusted", [ref]$YesToAll, [ref]$NoToAll)
                                 }
 
-                                if($sourceTrusted)
-                                {
-                                    $SourceSGrantedTrust+=$source
+                                if ($sourceTrusted) {
+                                    $SourceSGrantedTrust += $source
                                 }
-                                else
-                                {
-                                    $SourcesDeniedTrust+=$source
+                                else {
+                                    $SourcesDeniedTrust += $source
                                 }
                             }
                         }
 
-                        if($installationPolicy.Equals("trusted", [StringComparison]::OrdinalIgnoreCase) -or $SourceSGrantedTrust.Contains($source) -or $YesToAll -or $Force)
-                        {
+                        if ($installationPolicy.Equals("trusted", [StringComparison]::OrdinalIgnoreCase) -or $SourceSGrantedTrust.Contains($source) -or $YesToAll -or $Force) {
                             $PSBoundParameters["Force"] = $true
-	                        $null = PackageManagement\Install-Package @PSBoundParameters
+                            $null = PackageManagement\Install-Package @PSBoundParameters
                         }
                     }
                 }

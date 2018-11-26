@@ -1,29 +1,28 @@
-function Find-Module
-{
+function Find-Module {
     <#
     .ExternalHelp PSModule-help.xml
     #>
-    [CmdletBinding(HelpUri='https://go.microsoft.com/fwlink/?LinkID=398574')]
+    [CmdletBinding(HelpUri = 'https://go.microsoft.com/fwlink/?LinkID=398574')]
     [outputtype("PSCustomObject[]")]
     Param
     (
-        [Parameter(ValueFromPipelineByPropertyName=$true,
-                   Position=0)]
+        [Parameter(ValueFromPipelineByPropertyName = $true,
+            Position = 0)]
         [ValidateNotNullOrEmpty()]
         [string[]]
         $Name,
 
-        [Parameter(ValueFromPipelineByPropertyName=$true)]
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
         [ValidateNotNull()]
         [string]
         $MinimumVersion,
 
-        [Parameter(ValueFromPipelineByPropertyName=$true)]
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
         [ValidateNotNull()]
         [string]
         $MaximumVersion,
 
-        [Parameter(ValueFromPipelineByPropertyName=$true)]
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
         [ValidateNotNull()]
         [string]
         $RequiredVersion,
@@ -48,7 +47,7 @@ function Find-Module
 
         [Parameter()]
         [ValidateNotNull()]
-        [ValidateSet('DscResource','Cmdlet','Function','RoleCapability')]
+        [ValidateSet('DscResource', 'Cmdlet', 'Function', 'RoleCapability')]
         [string[]]
         $Includes,
 
@@ -67,12 +66,12 @@ function Find-Module
         [string[]]
         $Command,
 
-        [Parameter(ValueFromPipelineByPropertyName=$true)]
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
         [ValidateNotNullOrEmpty()]
         [Uri]
         $Proxy,
 
-        [Parameter(ValueFromPipelineByPropertyName=$true)]
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
         [PSCredential]
         $ProxyCredential,
 
@@ -81,7 +80,7 @@ function Find-Module
         [string[]]
         $Repository,
 
-        [Parameter(ValueFromPipelineByPropertyName=$true)]
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
         [PSCredential]
         $Credential,
 
@@ -90,25 +89,20 @@ function Find-Module
         $AllowPrerelease
     )
 
-    Begin
-    {
-        Get-PSGalleryApiAvailability -Repository $Repository
-
+    Begin {
         Install-NuGetClientBinaries -CallerPSCmdlet $PSCmdlet -Proxy $Proxy -ProxyCredential $ProxyCredential
     }
 
-    Process
-    {
+    Process {
         $ValidationResult = Validate-VersionParameters -CallerPSCmdlet $PSCmdlet `
-                                                       -Name $Name `
-                                                       -MinimumVersion $MinimumVersion `
-                                                       -MaximumVersion $MaximumVersion `
-                                                       -RequiredVersion $RequiredVersion `
-                                                       -AllVersions:$AllVersions `
-                                                       -AllowPrerelease:$AllowPrerelease
+            -Name $Name `
+            -MinimumVersion $MinimumVersion `
+            -MaximumVersion $MaximumVersion `
+            -RequiredVersion $RequiredVersion `
+            -AllVersions:$AllVersions `
+            -AllowPrerelease:$AllowPrerelease
 
-        if(-not $ValidationResult)
-        {
+        if (-not $ValidationResult) {
             # Validate-VersionParameters throws the error.
             # returning to avoid further execution when different values are specified for -ErrorAction parameter
             return
@@ -116,19 +110,18 @@ function Find-Module
 
         $PSBoundParameters["Provider"] = $script:PSModuleProviderName
         $PSBoundParameters[$script:PSArtifactType] = $script:PSArtifactTypeModule
-        if($AllowPrerelease) {
+        if ($AllowPrerelease) {
             $PSBoundParameters[$script:AllowPrereleaseVersions] = $true
         }
         $null = $PSBoundParameters.Remove("AllowPrerelease")
 
-        if($PSBoundParameters.ContainsKey("Repository"))
-        {
+        if ($PSBoundParameters.ContainsKey("Repository")) {
             $PSBoundParameters["Source"] = $Repository
             $null = $PSBoundParameters.Remove("Repository")
 
             $ev = $null
             $null = Get-PSRepository -Name $Repository -ErrorVariable ev -verbose:$false
-            if($ev) { return }
+            if ($ev) { return }
         }
 
         $PSBoundParameters["MessageResolver"] = $script:PackageManagementMessageResolverScriptBlock
@@ -137,32 +130,27 @@ function Find-Module
 
         # No Telemetry must be performed if PSGallery is not in the supplied list of Repositories
         $isRepositoryNullOrPSGallerySpecified = $false
-        if ($Repository -and ($Repository -Contains $Script:PSGalleryModuleSource))
-        {
+        if ($Repository -and ($Repository -Contains $Script:PSGalleryModuleSource)) {
             $isRepositoryNullOrPSGallerySpecified = $true
         }
-        elseif(-not $Repository)
-        {
+        elseif (-not $Repository) {
             $psgalleryRepo = Get-PSRepository -Name $Script:PSGalleryModuleSource `
-                                              -ErrorAction SilentlyContinue `
-                                              -WarningAction SilentlyContinue
-            if($psgalleryRepo)
-            {
+                -ErrorAction SilentlyContinue `
+                -WarningAction SilentlyContinue
+            if ($psgalleryRepo) {
                 $isRepositoryNullOrPSGallerySpecified = $true
             }
         }
 
-		PackageManagement\Find-Package @PSBoundParameters | Microsoft.PowerShell.Core\ForEach-Object {
+        PackageManagement\Find-Package @PSBoundParameters | Microsoft.PowerShell.Core\ForEach-Object {
 
             $psgetItemInfo = New-PSGetItemInfo -SoftwareIdentity $_ -Type $script:PSArtifactTypeModule
 
-            if ($AllVersions -and -not $AllowPrerelease)
-            {
+            if ($AllVersions -and -not $AllowPrerelease) {
                 # If AllVersions is specified but not AllowPrerelease, we should only return stable release versions.
                 # PackageManagement returns ALL versions (including prerelease) when AllVersions is specified, regardless of the value of AllowPrerelease.
                 # Filtering results returned from PackageManagement based on flags.
-                if ($psgetItemInfo.AdditionalMetadata -and $psgetItemInfo.AdditionalMetadata.IsPrerelease -eq 'false')
-                {
+                if ($psgetItemInfo.AdditionalMetadata -and $psgetItemInfo.AdditionalMetadata.IsPrerelease -eq 'false') {
                     $psgetItemInfo
                 }
             }
@@ -173,8 +161,7 @@ function Find-Module
             if ($psgetItemInfo -and
                 $isRepositoryNullOrPSGallerySpecified -and
                 $script:TelemetryEnabled -and
-                ($psgetItemInfo.Repository -eq $Script:PSGalleryModuleSource))
-            {
+                ($psgetItemInfo.Repository -eq $Script:PSGalleryModuleSource)) {
                 $modulesFoundInPSGallery += $psgetItemInfo.Name
             }
         }
@@ -182,8 +169,7 @@ function Find-Module
 
         # Perform Telemetry if Repository is not supplied or Repository contains PSGallery
         # We are only interested in finding modules not in PSGallery
-        if ($isRepositoryNullOrPSGallerySpecified)
-        {
+        if ($isRepositoryNullOrPSGallerySpecified) {
             Log-ArtifactNotFoundInPSGallery -SearchedName $Name -FoundName $modulesFoundInPSGallery -operationName 'PSGET_FIND_MODULE'
         }
     }

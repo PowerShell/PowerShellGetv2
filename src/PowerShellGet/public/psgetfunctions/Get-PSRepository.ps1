@@ -1,31 +1,25 @@
-function Get-PSRepository
-{
+function Get-PSRepository {
     <#
     .ExternalHelp PSModule-help.xml
     #>
-    [CmdletBinding(HelpUri='https://go.microsoft.com/fwlink/?LinkID=517127')]
+    [CmdletBinding(HelpUri = 'https://go.microsoft.com/fwlink/?LinkID=517127')]
     Param
     (
-        [Parameter(ValueFromPipelineByPropertyName=$true)]
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
         [ValidateNotNullOrEmpty()]
         [string[]]
         $Name
     )
 
-    Begin
-    {
-        Get-PSGalleryApiAvailability -Repository $Name
+    Begin {
     }
 
-    Process
-    {
+    Process {
         $PSBoundParameters["Provider"] = $script:PSModuleProviderName
         $PSBoundParameters["MessageResolver"] = $script:PackageManagementMessageResolverScriptBlock
 
-        if($Name)
-        {
-            foreach($sourceName in $Name)
-            {
+        if ($Name) {
+            foreach ($sourceName in $Name) {
                 $PSBoundParameters["Name"] = $sourceName
 
                 $packageSources = PackageManagement\Get-PackageSource @PSBoundParameters
@@ -33,8 +27,7 @@ function Get-PSRepository
                 $packageSources | Microsoft.PowerShell.Core\ForEach-Object { New-ModuleSourceFromPackageSource -PackageSource $_ }
             }
         }
-        else
-        {
+        else {
             $packageSources = PackageManagement\Get-PackageSource @PSBoundParameters
 
             $packageSources | Microsoft.PowerShell.Core\ForEach-Object { New-ModuleSourceFromPackageSource -PackageSource $_ }

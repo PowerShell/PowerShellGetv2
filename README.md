@@ -102,7 +102,7 @@ cd path/to/PowerShellGet
 
 * Import the module
 ```powershell
-Import-Module /path/to/PowerShellGet/PowerShellGet
+Import-Module src/PowerShellGet
 ```
 
 

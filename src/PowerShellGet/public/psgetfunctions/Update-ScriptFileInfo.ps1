@@ -295,6 +295,11 @@ function Update-ScriptFileInfo
             {
                 $ReleaseNotes = $psscriptInfo.ReleaseNotes
             }
+            
+            if(-not $PrivateData -and $psscriptInfo.PrivateData)
+            {
+                $PrivateData = $psscriptInfo.PrivateData
+            }
         }
 
         $params = @{

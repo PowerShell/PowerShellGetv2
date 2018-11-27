@@ -17,29 +17,25 @@ $script:IsLinux = (Get-Variable -Name IsLinux -ErrorAction Ignore) -and $IsLinux
 $script:IsMacOS = (Get-Variable -Name IsMacOS -ErrorAction Ignore) -and $IsMacOS
 $script:IsCoreCLR = $PSVersionTable.ContainsKey('PSEdition') -and $PSVersionTable.PSEdition -eq 'Core'
 $script:IsNanoServer = & {
-    if (!$script:IsWindows)
-    {
+    if (!$script:IsWindows) {
         return $false
     }
 
     $serverLevelsPath = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Server\ServerLevels\'
-    if (Test-Path -Path $serverLevelsPath)
-    {
+    if (Test-Path -Path $serverLevelsPath) {
         $NanoItem = Get-ItemProperty -Name NanoServer -Path $serverLevelsPath -ErrorAction Ignore
-        if ($NanoItem -and ($NanoItem.NanoServer -eq 1))
-        {
+        if ($NanoItem -and ($NanoItem.NanoServer -eq 1)) {
             return $true
         }
     }
     return $false
 }
 
-if($script:IsInbox)
-{
+if ($script:IsInbox) {
     $script:ProgramFilesPSPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramFiles -ChildPath "WindowsPowerShell"
 }
-elseif($script:IsCoreCLR){
-    if($script:IsWindows) {
+elseif ($script:IsCoreCLR) {
+    if ($script:IsWindows) {
         $script:ProgramFilesPSPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramFiles -ChildPath 'PowerShell'
     }
     else {
@@ -47,40 +43,31 @@ elseif($script:IsCoreCLR){
     }
 }
 
-try
-{
+try {
     $script:MyDocumentsFolderPath = [Environment]::GetFolderPath("MyDocuments")
 }
-catch
-{
+catch {
     $script:MyDocumentsFolderPath = $null
 }
 
-if($script:IsInbox)
-{
-    $script:MyDocumentsPSPath = if($script:MyDocumentsFolderPath)
-                                {
-                                    Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsFolderPath -ChildPath "WindowsPowerShell"
-                                }
-                                else
-                                {
-                                    Microsoft.PowerShell.Management\Join-Path -Path $env:USERPROFILE -ChildPath "Documents\WindowsPowerShell"
-                                }
+if ($script:IsInbox) {
+    $script:MyDocumentsPSPath = if ($script:MyDocumentsFolderPath) {
+        Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsFolderPath -ChildPath "WindowsPowerShell"
+    }
+    else {
+        Microsoft.PowerShell.Management\Join-Path -Path $env:USERPROFILE -ChildPath "Documents\WindowsPowerShell"
+    }
 }
-elseif($script:IsCoreCLR) {
-    if($script:IsWindows)
-    {
-        $script:MyDocumentsPSPath = if($script:MyDocumentsFolderPath)
-        {
+elseif ($script:IsCoreCLR) {
+    if ($script:IsWindows) {
+        $script:MyDocumentsPSPath = if ($script:MyDocumentsFolderPath) {
             Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsFolderPath -ChildPath 'PowerShell'
         }
-        else
-        {
+        else {
             Microsoft.PowerShell.Management\Join-Path -Path $HOME -ChildPath "Documents\PowerShell"
         }
     }
-    else
-    {
+    else {
         $script:MyDocumentsPSPath = Microsoft.PowerShell.Management\Split-Path -Path ([System.Management.Automation.Platform]::SelectProductNameForDirectory('USER_MODULES')) -Parent
     }
 }
@@ -94,13 +81,11 @@ $script:MyDocumentsScriptsPath = Microsoft.PowerShell.Management\Join-Path -Path
 $script:TempPath = [System.IO.Path]::GetTempPath()
 $script:PSGetItemInfoFileName = "PSGetModuleInfo.xml"
 
-if($script:IsWindows)
-{
+if ($script:IsWindows) {
     $script:PSGetProgramDataPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramData -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
     $script:PSGetAppLocalPath = Microsoft.PowerShell.Management\Join-Path -Path $env:LOCALAPPDATA -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
 }
-else
-{
+else {
     $script:PSGetProgramDataPath = Microsoft.PowerShell.Management\Join-Path -Path ([System.Management.Automation.Platform]::SelectProductNameForDirectory('CONFIG')) -ChildPath 'PowerShellGet'
     $script:PSGetAppLocalPath = Microsoft.PowerShell.Management\Join-Path -Path ([System.Management.Automation.Platform]::SelectProductNameForDirectory('CACHE')) -ChildPath 'PowerShellGet'
 }
@@ -121,24 +106,20 @@ $script:InstalledScriptInfoFileName = 'InstalledScriptInfo.xml'
 $script:PSGetInstalledScripts = $null
 
 # Public PSGallery module source name and location
-$Script:PSGalleryModuleSource="PSGallery"
-$Script:PSGallerySourceUri  = 'https://www.powershellgallery.com/api/v2'
+$Script:PSGalleryModuleSource = "PSGallery"
+$Script:PSGallerySourceUri = 'https://www.powershellgallery.com/api/v2'
 $Script:PSGalleryPublishUri = 'https://www.powershellgallery.com/api/v2/package/'
 $Script:PSGalleryScriptSourceUri = 'https://www.powershellgallery.com/api/v2/items/psscript'
 
 # PSGallery V3 Source
 $Script:PSGalleryV3SourceUri = 'https://www.powershellgallery.com/api/v3'
 
-$Script:PSGalleryV2ApiAvailable = $true
-$Script:PSGalleryV3ApiAvailable = $false
-$Script:PSGalleryApiChecked = $false
-
 $Script:ResponseUri = "ResponseUri"
 $Script:StatusCode = "StatusCode"
 $Script:Exception = "Exception"
 
 $script:PSModuleProviderName = 'PowerShellGet'
-$script:PackageManagementProviderParam  = "PackageManagementProvider"
+$script:PackageManagementProviderParam = "PackageManagementProvider"
 $script:PublishLocation = "PublishLocation"
 $script:ScriptSourceLocation = 'ScriptSourceLocation'
 $script:ScriptPublishLocation = 'ScriptPublishLocation'
@@ -149,12 +130,12 @@ $script:VSTSAuthenticatedFeedsDocUrl = 'https://go.microsoft.com/fwlink/?LinkID=
 $script:Prerelease = "Prerelease"
 
 $script:NuGetProviderName = "NuGet"
-$script:NuGetProviderVersion  = [Version]'2.8.5.201'
+$script:NuGetProviderVersion = [Version]'2.8.5.201'
 
-$script:SupportsPSModulesFeatureName="supports-powershell-modules"
+$script:SupportsPSModulesFeatureName = "supports-powershell-modules"
 $script:FastPackRefHashtable = @{}
-$script:NuGetBinaryProgramDataPath=if($script:IsWindows) {"$env:ProgramFiles\PackageManagement\ProviderAssemblies"}
-$script:NuGetBinaryLocalAppDataPath=if($script:IsWindows) {"$env:LOCALAPPDATA\PackageManagement\ProviderAssemblies"}
+$script:NuGetBinaryProgramDataPath = if ($script:IsWindows) {"$env:ProgramFiles\PackageManagement\ProviderAssemblies"}
+$script:NuGetBinaryLocalAppDataPath = if ($script:IsWindows) {"$env:LOCALAPPDATA\PackageManagement\ProviderAssemblies"}
 # go fwlink for 'https://dist.nuget.org/win-x86-commandline/latest/nuget.exe'
 $script:NuGetClientSourceURL = 'https://aka.ms/psget-nugetexe'
 $script:NuGetExeMinRequiredVersion = [Version]'4.1.0'
@@ -173,21 +154,21 @@ $script:DotnetCommandPath = $null
 $script:PSGetRequireLicenseAcceptanceFormatVersion = [Version]'2.0'
 $script:CurrentPSGetFormatVersion = $script:PSGetRequireLicenseAcceptanceFormatVersion
 $script:PSGetFormatVersion = "PowerShellGetFormatVersion"
-$script:SupportedPSGetFormatVersionMajors = @("1","2")
+$script:SupportedPSGetFormatVersionMajors = @("1", "2")
 $script:ModuleReferences = 'Module References'
 $script:AllVersions = "AllVersions"
 $script:AllowPrereleaseVersions = "AllowPrereleaseVersions"
-$script:Filter      = "Filter"
-$script:IncludeValidSet = @('DscResource','Cmdlet','Function','Workflow','RoleCapability')
+$script:Filter = "Filter"
+$script:IncludeValidSet = @('DscResource', 'Cmdlet', 'Function', 'Workflow', 'RoleCapability')
 $script:DscResource = "PSDscResource"
-$script:Command     = "PSCommand"
-$script:Cmdlet      = "PSCmdlet"
-$script:Function    = "PSFunction"
-$script:Workflow    = "PSWorkflow"
+$script:Command = "PSCommand"
+$script:Cmdlet = "PSCmdlet"
+$script:Function = "PSFunction"
+$script:Workflow = "PSWorkflow"
 $script:RoleCapability = 'PSRoleCapability'
-$script:Includes    = "PSIncludes"
-$script:Tag         = "Tag"
-$script:NotSpecified= '_NotSpecified_'
+$script:Includes = "PSIncludes"
+$script:Tag = "Tag"
+$script:NotSpecified = '_NotSpecified_'
 $script:PSGetModuleName = 'PowerShellGet'
 $script:FindByCanonicalId = 'FindByCanonicalId'
 $script:InstalledLocation = 'InstalledLocation'
@@ -214,35 +195,35 @@ $script:ExternalModuleDependencies = 'ExternalModuleDependencies'
 $script:ReleaseNotes = 'ReleaseNotes'
 $script:RequiredScripts = 'RequiredScripts'
 $script:ExternalScriptDependencies = 'ExternalScriptDependencies'
-$script:DefinedCommands  = 'DefinedCommands'
+$script:DefinedCommands = 'DefinedCommands'
 $script:DefinedFunctions = 'DefinedFunctions'
 $script:DefinedWorkflows = 'DefinedWorkflows'
 $script:TextInfo = (Get-Culture).TextInfo
 $script:PrivateData = 'PrivateData'
 
 $script:PSScriptInfoProperties = @($script:Name
-                                   $script:Version,
-                                   $script:Guid,
-                                   $script:Path,
-                                   $script:ScriptBase,
-                                   $script:Description,
-                                   $script:Author,
-                                   $script:CompanyName,
-                                   $script:Copyright,
-                                   $script:Tags,
-                                   $script:ReleaseNotes,
-                                   $script:RequiredModules,
-                                   $script:ExternalModuleDependencies,
-                                   $script:RequiredScripts,
-                                   $script:ExternalScriptDependencies,
-                                   $script:LicenseUri,
-                                   $script:ProjectUri,
-                                   $script:IconUri,
-                                   $script:DefinedCommands,
-                                   $script:DefinedFunctions,
-                                   $script:DefinedWorkflows,
-								   $script:PrivateData
-                                   )
+    $script:Version,
+    $script:Guid,
+    $script:Path,
+    $script:ScriptBase,
+    $script:Description,
+    $script:Author,
+    $script:CompanyName,
+    $script:Copyright,
+    $script:Tags,
+    $script:ReleaseNotes,
+    $script:RequiredModules,
+    $script:ExternalModuleDependencies,
+    $script:RequiredScripts,
+    $script:ExternalScriptDependencies,
+    $script:LicenseUri,
+    $script:ProjectUri,
+    $script:IconUri,
+    $script:DefinedCommands,
+    $script:DefinedFunctions,
+    $script:DefinedWorkflows,
+    $script:PrivateData
+)
 
 $script:SystemEnvironmentKey = 'HKLM:\System\CurrentControlSet\Control\Session Manager\Environment'
 $script:UserEnvironmentKey = 'HKCU:\Environment'
@@ -252,84 +233,80 @@ $script:EnvironmentVariableTarget = @{ Process = 0; User = 1; Machine = 2 }
 
 # Wildcard pattern matching configuration.
 $script:wildcardOptions = [System.Management.Automation.WildcardOptions]::CultureInvariant -bor `
-                          [System.Management.Automation.WildcardOptions]::IgnoreCase
+    [System.Management.Automation.WildcardOptions]::IgnoreCase
 
 $script:DynamicOptionTypeMap = @{
-                                    0 = [string];       # String
-                                    1 = [string[]];     # StringArray
-                                    2 = [int];          # Int
-                                    3 = [switch];       # Switch
-                                    4 = [string];       # Folder
-                                    5 = [string];       # File
-                                    6 = [string];       # Path
-                                    7 = [Uri];          # Uri
-                                    8 = [SecureString]; #SecureString
-                                }
+    0 = [string]; # String
+    1 = [string[]]; # StringArray
+    2 = [int]; # Int
+    3 = [switch]; # Switch
+    4 = [string]; # Folder
+    5 = [string]; # File
+    6 = [string]; # Path
+    7 = [Uri]; # Uri
+    8 = [SecureString]; #SecureString
+}
 #endregion script variables
 
 #region Module message resolvers
-$script:PackageManagementMessageResolverScriptBlock =  {
-                                                param($i, $Message)
-                                                return (PackageManagementMessageResolver -MsgId $i, -Message $Message)
-                                            }
+$script:PackageManagementMessageResolverScriptBlock = {
+    param($i, $Message)
+    return (PackageManagementMessageResolver -MsgId $i, -Message $Message)
+}
 
-$script:PackageManagementSaveModuleMessageResolverScriptBlock =  {
-                                                param($i, $Message)
-                                                $PackageTarget = $LocalizedData.InstallModulewhatIfMessage
-                                                $QuerySaveUntrustedPackage = $LocalizedData.QuerySaveUntrustedPackage
+$script:PackageManagementSaveModuleMessageResolverScriptBlock = {
+    param($i, $Message)
+    $PackageTarget = $LocalizedData.InstallModulewhatIfMessage
+    $QuerySaveUntrustedPackage = $LocalizedData.QuerySaveUntrustedPackage
 
-                                                switch ($i)
-                                                {
-                                                    'ActionInstallPackage' { return "Save-Module" }
-                                                    'QueryInstallUntrustedPackage' {return $QuerySaveUntrustedPackage}
-                                                    'TargetPackage' { return $PackageTarget }
-                                                     Default {
-                                                        $Message = $Message -creplace "Install", "Download"
-                                                        $Message = $Message -creplace "install", "download"
-                                                        return (PackageManagementMessageResolver -MsgId $i, -Message $Message)
-                                                     }
-                                                }
-                                            }
+    switch ($i) {
+        'ActionInstallPackage' { return "Save-Module" }
+        'QueryInstallUntrustedPackage' {return $QuerySaveUntrustedPackage}
+        'TargetPackage' { return $PackageTarget }
+        Default {
+            $Message = $Message -creplace "Install", "Download"
+            $Message = $Message -creplace "install", "download"
+            return (PackageManagementMessageResolver -MsgId $i, -Message $Message)
+        }
+    }
+}
 
-$script:PackageManagementInstallModuleMessageResolverScriptBlock =  {
-                                                param($i, $Message)
-                                                $PackageTarget = $LocalizedData.InstallModulewhatIfMessage
+$script:PackageManagementInstallModuleMessageResolverScriptBlock = {
+    param($i, $Message)
+    $PackageTarget = $LocalizedData.InstallModulewhatIfMessage
 
-                                                switch ($i)
-                                                {
-                                                    'ActionInstallPackage' { return "Install-Module" }
-                                                    'TargetPackage' { return $PackageTarget }
-                                                     Default {
-                                                        return (PackageManagementMessageResolver -MsgId $i, -Message $Message)
-                                                     }
-                                                }
-                                            }
+    switch ($i) {
+        'ActionInstallPackage' { return "Install-Module" }
+        'TargetPackage' { return $PackageTarget }
+        Default {
+            return (PackageManagementMessageResolver -MsgId $i, -Message $Message)
+        }
+    }
+}
 
-$script:PackageManagementUnInstallModuleMessageResolverScriptBlock =  {
-                                                param($i, $Message)
-                                                $PackageTarget = $LocalizedData.InstallModulewhatIfMessage
-                                                switch ($i)
-                                                {
-                                                    'ActionUninstallPackage' { return "Uninstall-Module" }
-                                                    'TargetPackageVersion' { return $PackageTarget }
-                                                     Default {
-                                                        return (PackageManagementMessageResolver -MsgId $i, -Message $Message)
-                                                     }
-                                                }
-                                            }
+$script:PackageManagementUnInstallModuleMessageResolverScriptBlock = {
+    param($i, $Message)
+    $PackageTarget = $LocalizedData.InstallModulewhatIfMessage
+    switch ($i) {
+        'ActionUninstallPackage' { return "Uninstall-Module" }
+        'TargetPackageVersion' { return $PackageTarget }
+        Default {
+            return (PackageManagementMessageResolver -MsgId $i, -Message $Message)
+        }
+    }
+}
 
-$script:PackageManagementUpdateModuleMessageResolverScriptBlock =  {
-                                                param($i, $Message)
-                                                $PackageTarget = ($LocalizedData.UpdateModulewhatIfMessage -replace "__OLDVERSION__",$($psgetItemInfo.Version))
-                                                switch ($i)
-                                                {
-                                                    'ActionInstallPackage' { return "Update-Module" }
-                                                    'TargetPackage' { return $PackageTarget }
-                                                     Default {
-                                                        return (PackageManagementMessageResolver -MsgId $i, -Message $Message)
-                                                     }
-                                                }
-                                            }
+$script:PackageManagementUpdateModuleMessageResolverScriptBlock = {
+    param($i, $Message)
+    $PackageTarget = ($LocalizedData.UpdateModulewhatIfMessage -replace "__OLDVERSION__", $($psgetItemInfo.Version))
+    switch ($i) {
+        'ActionInstallPackage' { return "Update-Module" }
+        'TargetPackage' { return $PackageTarget }
+        Default {
+            return (PackageManagementMessageResolver -MsgId $i, -Message $Message)
+        }
+    }
+}
 
 # Modules allowed to install non-Microsoft signed modules over Microsoft signed modules
 $script:WhitelistedModules = @{
@@ -338,133 +315,125 @@ $script:WhitelistedModules = @{
 }
 
 function PackageManagementMessageResolver($MsgID, $Message) {
-              	$NoMatchFound = $LocalizedData.NoMatchFound
-              	$SourceNotFound = $LocalizedData.SourceNotFound
-                $ModuleIsNotTrusted = $LocalizedData.ModuleIsNotTrusted
-                $RepositoryIsNotTrusted = $LocalizedData.RepositoryIsNotTrusted
-                $QueryInstallUntrustedPackage = $LocalizedData.QueryInstallUntrustedPackage
+    $NoMatchFound = $LocalizedData.NoMatchFound
+    $SourceNotFound = $LocalizedData.SourceNotFound
+    $ModuleIsNotTrusted = $LocalizedData.ModuleIsNotTrusted
+    $RepositoryIsNotTrusted = $LocalizedData.RepositoryIsNotTrusted
+    $QueryInstallUntrustedPackage = $LocalizedData.QueryInstallUntrustedPackage
 
-                switch ($MsgID)
-                {
-                   'NoMatchFound' { return $NoMatchFound }
-                   'SourceNotFound' { return $SourceNotFound }
-                   'CaptionPackageNotTrusted' { return $ModuleIsNotTrusted }
-                   'CaptionSourceNotTrusted' { return $RepositoryIsNotTrusted }
-                   'QueryInstallUntrustedPackage' {return $QueryInstallUntrustedPackage}
-                    Default {
-                        if($Message)
-                        {
-                            $tempMessage = $Message     -creplace "PackageSource", "PSRepository"
-                            $tempMessage = $tempMessage -creplace "packagesource", "psrepository"
-                            $tempMessage = $tempMessage -creplace "Package", "Module"
-                            $tempMessage = $tempMessage -creplace "package", "module"
-                            $tempMessage = $tempMessage -creplace "Sources", "Repositories"
-                            $tempMessage = $tempMessage -creplace "sources", "repositories"
-                            $tempMessage = $tempMessage -creplace "Source", "Repository"
-                            $tempMessage = $tempMessage -creplace "source", "repository"
+    switch ($MsgID) {
+        'NoMatchFound' { return $NoMatchFound }
+        'SourceNotFound' { return $SourceNotFound }
+        'CaptionPackageNotTrusted' { return $ModuleIsNotTrusted }
+        'CaptionSourceNotTrusted' { return $RepositoryIsNotTrusted }
+        'QueryInstallUntrustedPackage' {return $QueryInstallUntrustedPackage}
+        Default {
+            if ($Message) {
+                $tempMessage = $Message -creplace "PackageSource", "PSRepository"
+                $tempMessage = $tempMessage -creplace "packagesource", "psrepository"
+                $tempMessage = $tempMessage -creplace "Package", "Module"
+                $tempMessage = $tempMessage -creplace "package", "module"
+                $tempMessage = $tempMessage -creplace "Sources", "Repositories"
+                $tempMessage = $tempMessage -creplace "sources", "repositories"
+                $tempMessage = $tempMessage -creplace "Source", "Repository"
+                $tempMessage = $tempMessage -creplace "source", "repository"
 
-                            return $tempMessage
-                        }
-                    }
-                }
+                return $tempMessage
+            }
+        }
+    }
 }
 
 #endregion Module message resolvers
 
 #region Script message resolvers
-$script:PackageManagementMessageResolverScriptBlockForScriptCmdlets =  {
-                                                param($i, $Message)
-                                                return (PackageManagementMessageResolverForScripts -MsgId $i, -Message $Message)
-                                            }
+$script:PackageManagementMessageResolverScriptBlockForScriptCmdlets = {
+    param($i, $Message)
+    return (PackageManagementMessageResolverForScripts -MsgId $i, -Message $Message)
+}
 
-$script:PackageManagementSaveScriptMessageResolverScriptBlock =  {
-                                                param($i, $Message)
-                                                $PackageTarget = $LocalizedData.InstallScriptwhatIfMessage
-                                                $QuerySaveUntrustedPackage = $LocalizedData.QuerySaveUntrustedScriptPackage
+$script:PackageManagementSaveScriptMessageResolverScriptBlock = {
+    param($i, $Message)
+    $PackageTarget = $LocalizedData.InstallScriptwhatIfMessage
+    $QuerySaveUntrustedPackage = $LocalizedData.QuerySaveUntrustedScriptPackage
 
-                                                switch ($i)
-                                                {
-                                                    'ActionInstallPackage' { return "Save-Script" }
-                                                    'QueryInstallUntrustedPackage' {return $QuerySaveUntrustedPackage}
-                                                    'TargetPackage' { return $PackageTarget }
-                                                     Default {
-                                                        $Message = $Message -creplace "Install", "Download"
-                                                        $Message = $Message -creplace "install", "download"
-                                                        return (PackageManagementMessageResolverForScripts -MsgId $i, -Message $Message)
-                                                     }
-                                                }
-                                            }
+    switch ($i) {
+        'ActionInstallPackage' { return "Save-Script" }
+        'QueryInstallUntrustedPackage' {return $QuerySaveUntrustedPackage}
+        'TargetPackage' { return $PackageTarget }
+        Default {
+            $Message = $Message -creplace "Install", "Download"
+            $Message = $Message -creplace "install", "download"
+            return (PackageManagementMessageResolverForScripts -MsgId $i, -Message $Message)
+        }
+    }
+}
 
-$script:PackageManagementInstallScriptMessageResolverScriptBlock =  {
-                                                param($i, $Message)
-                                                $PackageTarget = $LocalizedData.InstallScriptwhatIfMessage
+$script:PackageManagementInstallScriptMessageResolverScriptBlock = {
+    param($i, $Message)
+    $PackageTarget = $LocalizedData.InstallScriptwhatIfMessage
 
-                                                switch ($i)
-                                                {
-                                                    'ActionInstallPackage' { return "Install-Script" }
-                                                    'TargetPackage' { return $PackageTarget }
-                                                     Default {
-                                                        return (PackageManagementMessageResolverForScripts -MsgId $i, -Message $Message)
-                                                     }
-                                                }
-                                            }
+    switch ($i) {
+        'ActionInstallPackage' { return "Install-Script" }
+        'TargetPackage' { return $PackageTarget }
+        Default {
+            return (PackageManagementMessageResolverForScripts -MsgId $i, -Message $Message)
+        }
+    }
+}
 
-$script:PackageManagementUnInstallScriptMessageResolverScriptBlock =  {
-                                                param($i, $Message)
-                                                $PackageTarget = $LocalizedData.InstallScriptwhatIfMessage
-                                                switch ($i)
-                                                {
-                                                    'ActionUninstallPackage' { return "Uninstall-Script" }
-                                                    'TargetPackageVersion' { return $PackageTarget }
-                                                     Default {
-                                                        return (PackageManagementMessageResolverForScripts -MsgId $i, -Message $Message)
-                                                     }
-                                                }
-                                            }
+$script:PackageManagementUnInstallScriptMessageResolverScriptBlock = {
+    param($i, $Message)
+    $PackageTarget = $LocalizedData.InstallScriptwhatIfMessage
+    switch ($i) {
+        'ActionUninstallPackage' { return "Uninstall-Script" }
+        'TargetPackageVersion' { return $PackageTarget }
+        Default {
+            return (PackageManagementMessageResolverForScripts -MsgId $i, -Message $Message)
+        }
+    }
+}
 
-$script:PackageManagementUpdateScriptMessageResolverScriptBlock =  {
-                                                param($i, $Message)
-                                                $PackageTarget = ($LocalizedData.UpdateScriptwhatIfMessage -replace "__OLDVERSION__",$($psgetItemInfo.Version))
-                                                switch ($i)
-                                                {
-                                                    'ActionInstallPackage' { return "Update-Script" }
-                                                    'TargetPackage' { return $PackageTarget }
-                                                     Default {
-                                                        return (PackageManagementMessageResolverForScripts -MsgId $i, -Message $Message)
-                                                     }
-                                                }
-                                            }
+$script:PackageManagementUpdateScriptMessageResolverScriptBlock = {
+    param($i, $Message)
+    $PackageTarget = ($LocalizedData.UpdateScriptwhatIfMessage -replace "__OLDVERSION__", $($psgetItemInfo.Version))
+    switch ($i) {
+        'ActionInstallPackage' { return "Update-Script" }
+        'TargetPackage' { return $PackageTarget }
+        Default {
+            return (PackageManagementMessageResolverForScripts -MsgId $i, -Message $Message)
+        }
+    }
+}
 
 function PackageManagementMessageResolverForScripts($MsgID, $Message) {
-              	$NoMatchFound = $LocalizedData.NoMatchFoundForScriptName
-              	$SourceNotFound = $LocalizedData.SourceNotFound
-                $ScriptIsNotTrusted = $LocalizedData.ScriptIsNotTrusted
-                $RepositoryIsNotTrusted = $LocalizedData.RepositoryIsNotTrusted
-                $QueryInstallUntrustedPackage = $LocalizedData.QueryInstallUntrustedScriptPackage
+    $NoMatchFound = $LocalizedData.NoMatchFoundForScriptName
+    $SourceNotFound = $LocalizedData.SourceNotFound
+    $ScriptIsNotTrusted = $LocalizedData.ScriptIsNotTrusted
+    $RepositoryIsNotTrusted = $LocalizedData.RepositoryIsNotTrusted
+    $QueryInstallUntrustedPackage = $LocalizedData.QueryInstallUntrustedScriptPackage
 
-                switch ($MsgID)
-                {
-                   'NoMatchFound' { return $NoMatchFound }
-                   'SourceNotFound' { return $SourceNotFound }
-                   'CaptionPackageNotTrusted' { return $ScriptIsNotTrusted }
-                   'CaptionSourceNotTrusted' { return $RepositoryIsNotTrusted }
-                   'QueryInstallUntrustedPackage' {return $QueryInstallUntrustedPackage}
-                    Default {
-                        if($Message)
-                        {
-                            $tempMessage = $Message     -creplace "PackageSource", "PSRepository"
-                            $tempMessage = $tempMessage -creplace "packagesource", "psrepository"
-                            $tempMessage = $tempMessage -creplace "Package", "Script"
-                            $tempMessage = $tempMessage -creplace "package", "script"
-                            $tempMessage = $tempMessage -creplace "Sources", "Repositories"
-                            $tempMessage = $tempMessage -creplace "sources", "repositories"
-                            $tempMessage = $tempMessage -creplace "Source", "Repository"
-                            $tempMessage = $tempMessage -creplace "source", "repository"
+    switch ($MsgID) {
+        'NoMatchFound' { return $NoMatchFound }
+        'SourceNotFound' { return $SourceNotFound }
+        'CaptionPackageNotTrusted' { return $ScriptIsNotTrusted }
+        'CaptionSourceNotTrusted' { return $RepositoryIsNotTrusted }
+        'QueryInstallUntrustedPackage' {return $QueryInstallUntrustedPackage}
+        Default {
+            if ($Message) {
+                $tempMessage = $Message -creplace "PackageSource", "PSRepository"
+                $tempMessage = $tempMessage -creplace "packagesource", "psrepository"
+                $tempMessage = $tempMessage -creplace "Package", "Script"
+                $tempMessage = $tempMessage -creplace "package", "script"
+                $tempMessage = $tempMessage -creplace "Sources", "Repositories"
+                $tempMessage = $tempMessage -creplace "sources", "repositories"
+                $tempMessage = $tempMessage -creplace "Source", "Repository"
+                $tempMessage = $tempMessage -creplace "source", "repository"
 
-                            return $tempMessage
-                        }
-                    }
-                }
+                return $tempMessage
+            }
+        }
+    }
 }
 
 #endregion Script message resolvers
@@ -472,8 +441,7 @@ function PackageManagementMessageResolverForScripts($MsgID, $Message) {
 #region Add .Net type for Telemetry APIs and WebProxy
 
 # Check and add InternalWebProxy type
-if( -not ('Microsoft.PowerShell.Commands.PowerShellGet.InternalWebProxy' -as [Type]))
-{
+if ( -not ('Microsoft.PowerShell.Commands.PowerShellGet.InternalWebProxy' -as [Type])) {
     $RequiredAssembliesForInternalWebProxy = @(
         [System.Net.IWebProxy].Assembly.FullName,
         [System.Uri].Assembly.FullName
@@ -528,29 +496,25 @@ namespace Microsoft.PowerShell.Commands.PowerShellGet
 }
 '@
 
-    try
-    {
+    try {
         $AddType_prams = @{
             TypeDefinition = $InternalWebProxySource
-            Language = 'CSharp'
-            ErrorAction = 'SilentlyContinue'
+            Language       = 'CSharp'
+            ErrorAction    = 'SilentlyContinue'
         }
-        if (-not $script:IsCoreCLR -or $script:IsNanoServer)
-        {
+        if (-not $script:IsCoreCLR -or $script:IsNanoServer) {
             $AddType_prams['ReferencedAssemblies'] = $RequiredAssembliesForInternalWebProxy
         }
         Add-Type @AddType_prams
     }
-    catch
-    {
+    catch {
         Write-Warning -Message "InternalWebProxy: $_"
     }
 }
 
 # Check and add Telemetry type
-if(('Microsoft.PowerShell.Telemetry.Internal.TelemetryAPI' -as [Type]) -and
-   -not ('Microsoft.PowerShell.Commands.PowerShellGet.Telemetry' -as [Type]))
-{
+if (('Microsoft.PowerShell.Telemetry.Internal.TelemetryAPI' -as [Type]) -and
+    -not ('Microsoft.PowerShell.Commands.PowerShellGet.Telemetry' -as [Type])) {
     $RequiredAssembliesForTelemetry = @(
         [System.Management.Automation.PSCmdlet].Assembly.FullName
     )
@@ -576,39 +540,33 @@ namespace Microsoft.PowerShell.Commands.PowerShellGet
 }
 '@
 
-    try
-    {
+    try {
         $AddType_prams = @{
             TypeDefinition = $TelemetrySource
-            Language = 'CSharp'
-            ErrorAction = 'SilentlyContinue'
+            Language       = 'CSharp'
+            ErrorAction    = 'SilentlyContinue'
         }
         $AddType_prams['ReferencedAssemblies'] = $RequiredAssembliesForTelemetry
         Add-Type @AddType_prams
     }
-    catch
-    {
+    catch {
         Write-Warning -Message "Telemetry: $_"
     }
 }
 # Turn ON Telemetry if the infrastructure is present on the machine
 $script:TelemetryEnabled = $false
-if('Microsoft.PowerShell.Commands.PowerShellGet.Telemetry' -as [Type])
-{
+if ('Microsoft.PowerShell.Commands.PowerShellGet.Telemetry' -as [Type]) {
     $telemetryMethods = ([Microsoft.PowerShell.Commands.PowerShellGet.Telemetry] | Get-Member -Static).Name
-    if ($telemetryMethods.Contains("TraceMessageArtifactsNotFound") -and $telemetryMethods.Contains("TraceMessageNonPSGalleryRegistration"))
-    {
+    if ($telemetryMethods.Contains("TraceMessageArtifactsNotFound") -and $telemetryMethods.Contains("TraceMessageNonPSGalleryRegistration")) {
         $script:TelemetryEnabled = $true
     }
 }
 
 # Check and add Win32Helpers type
 $script:IsSafeX509ChainHandleAvailable = ($null -ne ('Microsoft.Win32.SafeHandles.SafeX509ChainHandle' -as [Type]))
-if($script:IsWindows -and -not ('Microsoft.PowerShell.Commands.PowerShellGet.Win32Helpers' -as [Type]))
-{
+if ($script:IsWindows -and -not ('Microsoft.PowerShell.Commands.PowerShellGet.Win32Helpers' -as [Type])) {
     $RequiredAssembliesForWin32Helpers = @()
-    if($script:IsSafeX509ChainHandleAvailable)
-    {
+    if ($script:IsSafeX509ChainHandleAvailable) {
         # It is not possible to define a single internal SafeHandle class in PowerShellGet namespace for all the supported versions of .Net Framework including .Net Core.
         # SafeHandleZeroOrMinusOneIsInvalid is not a public class on .Net Core,
         # therefore SafeX509ChainHandle will be used if it is available otherwise InternalSafeX509ChainHandle is defined below.
@@ -618,8 +576,7 @@ if($script:IsWindows -and -not ('Microsoft.PowerShell.Commands.PowerShellGet.Win
         $SafeX509ChainHandleClassName = 'SafeX509ChainHandle'
         $RequiredAssembliesForWin32Helpers += [Microsoft.Win32.SafeHandles.SafeX509ChainHandle].Assembly.FullName
     }
-    else
-    {
+    else {
         # SafeX509ChainHandle is not available on .Net Framework 4.5 or older versions,
         # therefore InternalSafeX509ChainHandle is defined below.
         #
@@ -818,21 +775,18 @@ $(if($script:IsSafeX509ChainHandleAvailable)
 }
 "@
 
-    try
-    {
+    try {
         $AddType_prams = @{
             TypeDefinition = $Win32HelpersSource
-            Language = 'CSharp'
-            ErrorAction = 'SilentlyContinue'
+            Language       = 'CSharp'
+            ErrorAction    = 'SilentlyContinue'
         }
-        if ((-not $script:IsCoreCLR -or $script:IsNanoServer) -and $RequiredAssembliesForWin32Helpers)
-        {
+        if ((-not $script:IsCoreCLR -or $script:IsNanoServer) -and $RequiredAssembliesForWin32Helpers) {
             $AddType_prams['ReferencedAssemblies'] = $RequiredAssembliesForWin32Helpers
         }
         Add-Type @AddType_prams
     }
-    catch
-    {
+    catch {
         Write-Warning -Message "Win32Helpers: $_"
     }
 }

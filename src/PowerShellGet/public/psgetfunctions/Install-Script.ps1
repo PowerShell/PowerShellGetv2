@@ -85,8 +85,6 @@ function Install-Script
 
     Begin
     {
-        Get-PSGalleryApiAvailability -Repository $Repository
-
         if($Scope -eq "AllUsers" -and -not (Test-RunningAsElevated))
         {
             # Throw an error when Install-Script is used as a non-admin user and '-Scope AllUsers'
@@ -99,9 +97,9 @@ function Install-Script
                         -ErrorCategory InvalidArgument
         }
 
-        # If no scope is specified, default installation will be to AllUsers only 
+        # If no scope is specified, default installation will be to AllUsers only
         # If running admin on Windows with PowerShell less than v6.
-        if (-not $Scope) 
+        if (-not $Scope)
         {
             $Scope = "CurrentUser"
             if(-not $script:IsCoreCLR -and (Test-RunningAsElevated))

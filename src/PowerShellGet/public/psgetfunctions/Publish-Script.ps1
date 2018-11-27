@@ -1,24 +1,23 @@
-function Publish-Script
-{
+function Publish-Script {
     <#
     .ExternalHelp PSModule-help.xml
     #>
-    [CmdletBinding(SupportsShouldProcess=$true,
-                   PositionalBinding=$false,
-                   DefaultParameterSetName='PathParameterSet',
-                   HelpUri='https://go.microsoft.com/fwlink/?LinkId=619788')]
+    [CmdletBinding(SupportsShouldProcess = $true,
+        PositionalBinding = $false,
+        DefaultParameterSetName = 'PathParameterSet',
+        HelpUri = 'https://go.microsoft.com/fwlink/?LinkId=619788')]
     Param
     (
-        [Parameter(Mandatory=$true,
-                   ValueFromPipelineByPropertyName=$true,
-                   ParameterSetName='PathParameterSet')]
+        [Parameter(Mandatory = $true,
+            ValueFromPipelineByPropertyName = $true,
+            ParameterSetName = 'PathParameterSet')]
         [ValidateNotNullOrEmpty()]
         [string]
         $Path,
 
-        [Parameter(Mandatory=$true,
-                   ValueFromPipelineByPropertyName=$true,
-                   ParameterSetName='LiteralPathParameterSet')]
+        [Parameter(Mandatory = $true,
+            ValueFromPipelineByPropertyName = $true,
+            ParameterSetName = 'LiteralPathParameterSet')]
         [ValidateNotNullOrEmpty()]
         [string]
         $LiteralPath,
@@ -33,7 +32,7 @@ function Publish-Script
         [string]
         $Repository = $Script:PSGalleryModuleSource,
 
-        [Parameter(ValueFromPipelineByPropertyName=$true)]
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
         [PSCredential]
         $Credential,
 
@@ -42,150 +41,129 @@ function Publish-Script
         $Force
     )
 
-    Begin
-    {
-        Get-PSGalleryApiAvailability -Repository $Repository
-
+    Begin {
         Install-NuGetClientBinaries -CallerPSCmdlet $PSCmdlet -BootstrapNuGetExe -Force:$Force
     }
 
-    Process
-    {
+    Process {
         $scriptFilePath = $null
-        if($Path)
-        {
+        if ($Path) {
             $scriptFilePath = Resolve-PathHelper -Path $Path -CallerPSCmdlet $PSCmdlet |
-                                  Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
+                Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
 
-            if(-not $scriptFilePath -or
-               -not (Microsoft.PowerShell.Management\Test-Path -Path $scriptFilePath -PathType Leaf))
-            {
+            if (-not $scriptFilePath -or
+                -not (Microsoft.PowerShell.Management\Test-Path -Path $scriptFilePath -PathType Leaf)) {
                 $errorMessage = ($LocalizedData.PathNotFound -f $Path)
                 ThrowError  -ExceptionName "System.ArgumentException" `
-                            -ExceptionMessage $errorMessage `
-                            -ErrorId "PathNotFound" `
-                            -CallerPSCmdlet $PSCmdlet `
-                            -ExceptionObject $Path `
-                            -ErrorCategory InvalidArgument
+                    -ExceptionMessage $errorMessage `
+                    -ErrorId "PathNotFound" `
+                    -CallerPSCmdlet $PSCmdlet `
+                    -ExceptionObject $Path `
+                    -ErrorCategory InvalidArgument
             }
         }
-        else
-        {
+        else {
             $scriptFilePath = Resolve-PathHelper -Path $LiteralPath -IsLiteralPath -CallerPSCmdlet $PSCmdlet |
-                                  Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
+                Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
 
-            if(-not $scriptFilePath -or
-               -not (Microsoft.PowerShell.Management\Test-Path -LiteralPath $scriptFilePath -PathType Leaf))
-            {
+            if (-not $scriptFilePath -or
+                -not (Microsoft.PowerShell.Management\Test-Path -LiteralPath $scriptFilePath -PathType Leaf)) {
                 $errorMessage = ($LocalizedData.PathNotFound -f $LiteralPath)
                 ThrowError  -ExceptionName "System.ArgumentException" `
-                            -ExceptionMessage $errorMessage `
-                            -ErrorId "PathNotFound" `
-                            -CallerPSCmdlet $PSCmdlet `
-                            -ExceptionObject $LiteralPath `
-                            -ErrorCategory InvalidArgument
+                    -ExceptionMessage $errorMessage `
+                    -ErrorId "PathNotFound" `
+                    -CallerPSCmdlet $PSCmdlet `
+                    -ExceptionObject $LiteralPath `
+                    -ErrorCategory InvalidArgument
             }
         }
 
-        if(-not $scriptFilePath.EndsWith('.ps1', [System.StringComparison]::OrdinalIgnoreCase))
-        {
+        if (-not $scriptFilePath.EndsWith('.ps1', [System.StringComparison]::OrdinalIgnoreCase)) {
             $errorMessage = ($LocalizedData.InvalidScriptFilePath -f $scriptFilePath)
             ThrowError  -ExceptionName "System.ArgumentException" `
-                        -ExceptionMessage $errorMessage `
-                        -ErrorId "InvalidScriptFilePath" `
-                        -CallerPSCmdlet $PSCmdlet `
-                        -ExceptionObject $scriptFilePath `
-                        -ErrorCategory InvalidArgument
+                -ExceptionMessage $errorMessage `
+                -ErrorId "InvalidScriptFilePath" `
+                -CallerPSCmdlet $PSCmdlet `
+                -ExceptionObject $scriptFilePath `
+                -ErrorCategory InvalidArgument
             return
         }
 
-        if($Repository -eq $Script:PSGalleryModuleSource)
-        {
+        if ($Repository -eq $Script:PSGalleryModuleSource) {
             $repo = Get-PSRepository -Name $Repository -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
-            if(-not $repo)
-            {
+            if (-not $repo) {
                 $message = $LocalizedData.PSGalleryNotFound -f ($Repository)
                 ThrowError -ExceptionName "System.ArgumentException" `
-                           -ExceptionMessage $message `
-                           -ErrorId 'PSGalleryNotFound' `
-                           -CallerPSCmdlet $PSCmdlet `
-                           -ErrorCategory InvalidArgument `
-                           -ExceptionObject $Repository
+                    -ExceptionMessage $message `
+                    -ErrorId 'PSGalleryNotFound' `
+                    -CallerPSCmdlet $PSCmdlet `
+                    -ErrorCategory InvalidArgument `
+                    -ExceptionObject $Repository
                 return
             }
         }
-        else
-        {
+        else {
             $ev = $null
             $repo = Get-PSRepository -Name $Repository -ErrorVariable ev
             # Checking for the $repo object as well as terminating errors are not captured into ev on downlevel PowerShell versions.
-            if($ev -or (-not $repo)) { return }
+            if ($ev -or (-not $repo)) { return }
         }
 
         $DestinationLocation = $null
 
-        if(Get-Member -InputObject $repo -Name $script:ScriptPublishLocation)
-        {
+        if (Get-Member -InputObject $repo -Name $script:ScriptPublishLocation) {
             $DestinationLocation = $repo.ScriptPublishLocation
         }
 
-        if(-not $DestinationLocation -or
-           (-not (Microsoft.PowerShell.Management\Test-Path -Path $DestinationLocation) -and
-           -not (Test-WebUri -uri $DestinationLocation)))
-
+        if (-not $DestinationLocation -or
+            (-not (Microsoft.PowerShell.Management\Test-Path -Path $DestinationLocation) -and
+                -not (Test-WebUri -uri $DestinationLocation)))
         {
             $message = $LocalizedData.PSRepositoryScriptPublishLocationIsMissing -f ($Repository, $Repository)
             ThrowError -ExceptionName "System.ArgumentException" `
-                       -ExceptionMessage $message `
-                       -ErrorId "PSRepositoryScriptPublishLocationIsMissing" `
-                       -CallerPSCmdlet $PSCmdlet `
-                       -ErrorCategory InvalidArgument `
-                       -ExceptionObject $Repository
+                -ExceptionMessage $message `
+                -ErrorId "PSRepositoryScriptPublishLocationIsMissing" `
+                -CallerPSCmdlet $PSCmdlet `
+                -ErrorCategory InvalidArgument `
+                -ExceptionObject $Repository
         }
 
         $message = $LocalizedData.PublishLocation -f ($DestinationLocation)
         Write-Verbose -Message $message
 
-        if(-not $NuGetApiKey.Trim())
-        {
-            if(Microsoft.PowerShell.Management\Test-Path -Path $DestinationLocation)
-            {
+        if (-not $NuGetApiKey.Trim()) {
+            if (Microsoft.PowerShell.Management\Test-Path -Path $DestinationLocation) {
                 $NuGetApiKey = "$(Get-Random)"
             }
-            else
-            {
+            else {
                 $message = $LocalizedData.NuGetApiKeyIsRequiredForNuGetBasedGalleryService -f ($Repository, $DestinationLocation)
                 ThrowError -ExceptionName "System.ArgumentException" `
-                           -ExceptionMessage $message `
-                           -ErrorId "NuGetApiKeyIsRequiredForNuGetBasedGalleryService" `
-                           -CallerPSCmdlet $PSCmdlet `
-                           -ErrorCategory InvalidArgument
+                    -ExceptionMessage $message `
+                    -ErrorId "NuGetApiKeyIsRequiredForNuGetBasedGalleryService" `
+                    -CallerPSCmdlet $PSCmdlet `
+                    -ErrorCategory InvalidArgument
             }
         }
 
         $providerName = Get-ProviderName -PSCustomObject $repo
-        if($providerName -ne $script:NuGetProviderName)
-        {
+        if ($providerName -ne $script:NuGetProviderName) {
             $message = $LocalizedData.PublishScriptSupportsOnlyNuGetBasedPublishLocations -f ($DestinationLocation, $Repository, $Repository)
             ThrowError -ExceptionName "System.ArgumentException" `
-                       -ExceptionMessage $message `
-                       -ErrorId "PublishScriptSupportsOnlyNuGetBasedPublishLocations" `
-                       -CallerPSCmdlet $PSCmdlet `
-                       -ErrorCategory InvalidArgument `
-                       -ExceptionObject $Repository
+                -ExceptionMessage $message `
+                -ErrorId "PublishScriptSupportsOnlyNuGetBasedPublishLocations" `
+                -CallerPSCmdlet $PSCmdlet `
+                -ErrorCategory InvalidArgument `
+                -ExceptionObject $Repository
         }
 
-        if($Path)
-        {
+        if ($Path) {
             $PSScriptInfo = Test-ScriptFileInfo -Path $scriptFilePath
         }
-        else
-        {
+        else {
             $PSScriptInfo = Test-ScriptFileInfo -LiteralPath $scriptFilePath
         }
 
-        if(-not $PSScriptInfo)
-        {
+        if (-not $PSScriptInfo) {
             # Test-ScriptFileInfo throws the actual error
             return
         }
@@ -193,8 +171,7 @@ function Publish-Script
         $scriptName = $PSScriptInfo.Name
 
         $result = ValidateAndGet-VersionPrereleaseStrings -Version $PSScriptInfo.Version -CallerPSCmdlet $PSCmdlet
-        if (-not $result)
-        {
+        if (-not $result) {
             # ValidateAndGet-VersionPrereleaseStrings throws the error.
             # returning to avoid further execution when different values are specified for -ErrorAction parameter
             return
@@ -208,61 +185,54 @@ function Publish-Script
             Microsoft.PowerShell.Management\Join-Path -ChildPath $scriptName
 
         $null = Microsoft.PowerShell.Management\New-Item -Path $tempScriptPath -ItemType Directory -Force -ErrorAction SilentlyContinue -WarningAction SilentlyContinue -Confirm:$false -WhatIf:$false
-        if($Path)
-        {
+        if ($Path) {
             Microsoft.PowerShell.Management\Copy-Item -Path $scriptFilePath -Destination $tempScriptPath -Force -Recurse -Confirm:$false -WhatIf:$false
         }
-        else
-        {
+        else {
             Microsoft.PowerShell.Management\Copy-Item -LiteralPath $scriptFilePath -Destination $tempScriptPath -Force -Recurse -Confirm:$false -WhatIf:$false
         }
 
-        try
-        {
+        try {
             $FindParameters = @{
-                Name = $scriptName
-                Repository = $Repository
-                Tag = 'PSModule'
+                Name            = $scriptName
+                Repository      = $Repository
+                Tag             = 'PSModule'
                 AllowPrerelease = $true
-                Verbose = $VerbosePreference
-                ErrorAction = 'SilentlyContinue'
-                WarningAction = 'SilentlyContinue'
-                Debug = $DebugPreference
+                Verbose         = $VerbosePreference
+                ErrorAction     = 'SilentlyContinue'
+                WarningAction   = 'SilentlyContinue'
+                Debug           = $DebugPreference
             }
 
-            if($Credential)
-            {
+            if ($Credential) {
                 $FindParameters[$script:Credential] = $Credential
             }
 
             # Check if the specified script name is already used for a module on the specified repository
             # Use Find-Module to check if that name is already used as module name
             $modulePSGetItemInfo = Find-Module @FindParameters |
-                                        Microsoft.PowerShell.Core\Where-Object {$_.Name -eq $scriptName} |
-                                            Microsoft.PowerShell.Utility\Select-Object -Last 1 -ErrorAction Ignore
-            if($modulePSGetItemInfo)
-            {
+                Microsoft.PowerShell.Core\Where-Object {$_.Name -eq $scriptName} |
+                Microsoft.PowerShell.Utility\Select-Object -Last 1 -ErrorAction Ignore
+            if ($modulePSGetItemInfo) {
                 $message = $LocalizedData.SpecifiedNameIsAlearyUsed -f ($scriptName, $Repository, 'Find-Module')
                 ThrowError -ExceptionName "System.InvalidOperationException" `
-                           -ExceptionMessage $message `
-                           -ErrorId "SpecifiedNameIsAlearyUsed" `
-                           -CallerPSCmdlet $PSCmdlet `
-                           -ErrorCategory InvalidOperation `
-                           -ExceptionObject $scriptName
+                    -ExceptionMessage $message `
+                    -ErrorId "SpecifiedNameIsAlearyUsed" `
+                    -CallerPSCmdlet $PSCmdlet `
+                    -ErrorCategory InvalidOperation `
+                    -ExceptionObject $scriptName
             }
 
             $null = $FindParameters.Remove('Tag')
 
             $currentPSGetItemInfo = $null
             $currentPSGetItemInfo = Find-Script @FindParameters |
-                                        Microsoft.PowerShell.Core\Where-Object {$_.Name -eq $scriptName} |
-                                            Microsoft.PowerShell.Utility\Select-Object -Last 1 -ErrorAction Ignore
+                Microsoft.PowerShell.Core\Where-Object {$_.Name -eq $scriptName} |
+                Microsoft.PowerShell.Utility\Select-Object -Last 1 -ErrorAction Ignore
 
-            if($currentPSGetItemInfo)
-            {
+            if ($currentPSGetItemInfo) {
                 $result = ValidateAndGet-VersionPrereleaseStrings -Version $currentPSGetItemInfo.Version -CallerPSCmdlet $PSCmdlet
-                if (-not $result)
-                {
+                if (-not $result) {
                     # ValidateAndGet-VersionPrereleaseStrings throws the error.
                     # returning to avoid further execution when different values are specified for -ErrorAction parameter
                     return
@@ -271,58 +241,53 @@ function Publish-Script
                 $galleryScriptPrerelease = $result["Prerelease"]
                 $galleryScriptFullVersion = $result["FullVersion"]
 
-                if($galleryScriptFullVersion -eq $scriptFullVersion)
-                {
+                if ($galleryScriptFullVersion -eq $scriptFullVersion) {
                     $message = $LocalizedData.ScriptVersionIsAlreadyAvailableInTheGallery -f ($scriptName,
-                                                                                              $scriptFullVersion,
-                                                                                              $galleryScriptFullVersion,
-                                                                                              $currentPSGetItemInfo.RepositorySourceLocation)
+                        $scriptFullVersion,
+                        $galleryScriptFullVersion,
+                        $currentPSGetItemInfo.RepositorySourceLocation)
                     ThrowError -ExceptionName "System.InvalidOperationException" `
-                               -ExceptionMessage $message `
-                               -ErrorId 'ScriptVersionIsAlreadyAvailableInTheGallery' `
-                               -CallerPSCmdlet $PSCmdlet `
-                               -ErrorCategory InvalidOperation
+                        -ExceptionMessage $message `
+                        -ErrorId 'ScriptVersionIsAlreadyAvailableInTheGallery' `
+                        -CallerPSCmdlet $PSCmdlet `
+                        -ErrorCategory InvalidOperation
                 }
 
-                if ($galleryScriptVersion -eq $scriptVersion -and -not $Force)
-                {
+                if ($galleryScriptVersion -eq $scriptVersion -and -not $Force) {
                     # Prerelease strings will not both be null, otherwise would have terminated already above
 
-                    if (-not $Force -and (-not $galleryScriptPrerelease -and $scriptPrerelease))
-                    {
+                    if (-not $Force -and (-not $galleryScriptPrerelease -and $scriptPrerelease)) {
                         # User is trying to publish a new Prerelease version AFTER publishing the stable version.
                         $message = $LocalizedData.ScriptPrereleaseStringShouldBeGreaterThanGalleryPrereleaseString -f ($scriptName,
-                                                                                                                       $scriptVersion,
-                                                                                                                       $scriptPrerelease,
-                                                                                                                       $galleryScriptPrerelease,
-                                                                                                                       $currentPSGetItemInfo.RepositorySourceLocation)
+                            $scriptVersion,
+                            $scriptPrerelease,
+                            $galleryScriptPrerelease,
+                            $currentPSGetItemInfo.RepositorySourceLocation)
                         ThrowError -ExceptionName "System.InvalidOperationException" `
-                                -ExceptionMessage $message `
-                                -ErrorId "ScriptPrereleaseStringShouldBeGreaterThanGalleryPrereleaseString" `
-                                -CallerPSCmdlet $PSCmdlet `
-                                -ErrorCategory InvalidOperation
+                            -ExceptionMessage $message `
+                            -ErrorId "ScriptPrereleaseStringShouldBeGreaterThanGalleryPrereleaseString" `
+                            -CallerPSCmdlet $PSCmdlet `
+                            -ErrorCategory InvalidOperation
                     }
 
                     # elseif ($galleryScriptPrerelease -and -not $scriptPrerelease) --> allow publish
                     # User is attempting to publish a stable version after publishing a prerelease version (allowed).
 
-                    elseif($galleryScriptPrerelease -and $scriptPrerelease)
-                    {
+                    elseif ($galleryScriptPrerelease -and $scriptPrerelease) {
                         # if ($galleryScriptPrerelease -eq $scriptPrerelease) --> not reachable, would have terminated already above.
 
-                        if (-not $Force -and ($galleryScriptPrerelease -gt $scriptPrerelease))
-                        {
+                        if (-not $Force -and ($galleryScriptPrerelease -gt $scriptPrerelease)) {
                             # User is trying to publish a lower prerelease version.
                             $message = $LocalizedData.ScriptPrereleaseStringShouldBeGreaterThanGalleryPrereleaseString -f ($scriptName,
-                                                                                                                           $scriptVersion,
-                                                                                                                           $scriptPrerelease,
-                                                                                                                           $galleryScriptPrerelease,
-                                                                                                                           $currentPSGetItemInfo.RepositorySourceLocation)
+                                $scriptVersion,
+                                $scriptPrerelease,
+                                $galleryScriptPrerelease,
+                                $currentPSGetItemInfo.RepositorySourceLocation)
                             ThrowError -ExceptionName "System.InvalidOperationException" `
-                                    -ExceptionMessage $message `
-                                    -ErrorId "ScriptPrereleaseStringShouldBeGreaterThanGalleryPrereleaseString" `
-                                    -CallerPSCmdlet $PSCmdlet `
-                                    -ErrorCategory InvalidOperation
+                                -ExceptionMessage $message `
+                                -ErrorId "ScriptPrereleaseStringShouldBeGreaterThanGalleryPrereleaseString" `
+                                -CallerPSCmdlet $PSCmdlet `
+                                -ErrorCategory InvalidOperation
                         }
 
                         # elseif ($galleryScriptPrerelease -lt $scriptPrerelease) --> allow publish
@@ -330,19 +295,18 @@ function Publish-Script
                     }
                 }
                 elseif (-not $Force -and (Compare-PrereleaseVersions -FirstItemVersion $scriptVersion `
-                                                                     -FirstItemPrerelease $scriptPrerelease `
-                                                                     -SecondItemVersion $galleryScriptVersion `
-                                                                     -SecondItemPrerelease $galleryScriptPrerelease))
-                {
+                            -FirstItemPrerelease $scriptPrerelease `
+                            -SecondItemVersion $galleryScriptVersion `
+                            -SecondItemPrerelease $galleryScriptPrerelease)) {
                     $message = $LocalizedData.ScriptVersionShouldBeGreaterThanGalleryVersion -f ($scriptName,
-                                                                                                 $scriptVersion,
-                                                                                                 $galleryScriptVersion,
-                                                                                                 $currentPSGetItemInfo.RepositorySourceLocation)
+                        $scriptVersion,
+                        $galleryScriptVersion,
+                        $currentPSGetItemInfo.RepositorySourceLocation)
                     ThrowError -ExceptionName "System.InvalidOperationException" `
-                            -ExceptionMessage $message `
-                            -ErrorId "ScriptVersionShouldBeGreaterThanGalleryVersion" `
-                            -CallerPSCmdlet $PSCmdlet `
-                            -ErrorCategory InvalidOperation
+                        -ExceptionMessage $message `
+                        -ErrorId "ScriptVersionShouldBeGreaterThanGalleryVersion" `
+                        -CallerPSCmdlet $PSCmdlet `
+                        -ErrorCategory InvalidOperation
                 }
 
                 # else ($galleryScriptVersion -lt $scriptVersion) --> allow publish
@@ -350,28 +314,25 @@ function Publish-Script
             }
 
             $shouldProcessMessage = $LocalizedData.PublishScriptwhatIfMessage -f ($PSScriptInfo.Version, $scriptName)
-            if($Force -or $PSCmdlet.ShouldProcess($shouldProcessMessage, "Publish-Script"))
-            {
+            if ($Force -or $PSCmdlet.ShouldProcess($shouldProcessMessage, "Publish-Script")) {
                 $PublishPSArtifactUtility_Params = @{
-                    PSScriptInfo=$PSScriptInfo
-                    NugetApiKey=$NuGetApiKey
-                    Destination=$DestinationLocation
-                    Repository=$Repository
-                    NugetPackageRoot=$tempScriptPath
-                    Verbose=$VerbosePreference
-                    WarningAction=$WarningPreference
-                    ErrorAction=$ErrorActionPreference
-                    Debug=$DebugPreference
+                    PSScriptInfo     = $PSScriptInfo
+                    NugetApiKey      = $NuGetApiKey
+                    Destination      = $DestinationLocation
+                    Repository       = $Repository
+                    NugetPackageRoot = $tempScriptPath
+                    Verbose          = $VerbosePreference
+                    WarningAction    = $WarningPreference
+                    ErrorAction      = $ErrorActionPreference
+                    Debug            = $DebugPreference
                 }
-                if ($PSBoundParameters.ContainsKey('Credential'))
-                {
-                    $PublishPSArtifactUtility_Params.Add('Credential',$Credential)
+                if ($PSBoundParameters.ContainsKey('Credential')) {
+                    $PublishPSArtifactUtility_Params.Add('Credential', $Credential)
                 }
                 Publish-PSArtifactUtility @PublishPSArtifactUtility_Params
             }
         }
-        finally
-        {
+        finally {
             Microsoft.PowerShell.Management\Remove-Item $tempScriptPath -Force -Recurse -ErrorAction Ignore -WarningAction SilentlyContinue -Confirm:$false -WhatIf:$false
         }
     }

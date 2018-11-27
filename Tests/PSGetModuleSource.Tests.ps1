@@ -18,7 +18,7 @@
 function SuiteSetup {
     Import-Module "$PSScriptRoot\PSGetTestUtils.psm1" -WarningAction SilentlyContinue
     Import-Module "$PSScriptRoot\Asserts.psm1" -WarningAction SilentlyContinue
-    
+
     $script:ProgramFilesModulesPath = Get-AllUsersModulesPath
     $script:MyDocumentsModulesPath = Get-CurrentUserModulesPath
     $script:PSGetLocalAppDataPath = Get-PSGetLocalAppDataPath
@@ -84,7 +84,7 @@ function SuiteCleanup {
     RemoveItem $script:TempModulesPath
 }
 
-Describe PowerShell.PSGet.ModuleSourceTests -Tags 'BVT','InnerLoop' {
+Describe PowerShell.PSGet.ModuleSourceTests -Tags 'BVT', 'InnerLoop' {
 
     BeforeAll {
         SuiteSetup
@@ -103,11 +103,11 @@ Describe PowerShell.PSGet.ModuleSourceTests -Tags 'BVT','InnerLoop' {
     #>
     It RegisterAngGetModuleSource {
 
-        $Name='MyTestModSourceForRegisterAngGet'
-        $Location='https://www.nuget.org/api/v2/'
+        $Name = 'MyTestModSourceForRegisterAngGet'
+        $Location = 'https://www.nuget.org/api/v2/'
 
         Register-PSRepository -Default -ErrorAction SilentlyContinue
-        
+
         try {
             Register-PSRepository -Name $Name -SourceLocation $Location
             $moduleSource = Get-PSRepository -Name $Name
@@ -137,10 +137,9 @@ Describe PowerShell.PSGet.ModuleSourceTests -Tags 'BVT','InnerLoop' {
     #>
     It RegisterSMBShareRepository {
 
-        $Name='MyTestModSource'
-        $Location=$script:TempModulesPath
-        try
-        {
+        $Name = 'MyTestModSource'
+        $Location = $script:TempModulesPath
+        try {
             Register-PSRepository -Name $Name -SourceLocation $Location -PublishLocation $Location
             $repo = Get-PSRepository -Name $Name
 
@@ -148,8 +147,7 @@ Describe PowerShell.PSGet.ModuleSourceTests -Tags 'BVT','InnerLoop' {
             AssertEquals $repo.SourceLocation $Location "The SourceLocation is not same as the registered SourceLocation. Actual: $($repo.SourceLocation), Expected: $Location"
             AssertEquals $repo.PublishLocation $Location "The PublishLocation is not same as the registered PublishLocation. Actual: $($repo.PublishLocation), Expected: $Location"
         }
-        finally
-        {
+        finally {
             Get-PSRepository -Name $Name | Unregister-PSRepository
         }
     }
@@ -163,10 +161,9 @@ Describe PowerShell.PSGet.ModuleSourceTests -Tags 'BVT','InnerLoop' {
     #>
     It SetPSRepositoryWithSMBSharePath {
 
-        $Name='MyTestModSource'
-        $Location=$script:TempModulesPath
-        try
-        {
+        $Name = 'MyTestModSource'
+        $Location = $script:TempModulesPath
+        try {
             Register-PSRepository -Name $Name -SourceLocation $Location
             Set-PSRepository -Name $Name -SourceLocation $Location -PublishLocation $Location
             $repo = Get-PSRepository -Name $Name
@@ -175,8 +172,7 @@ Describe PowerShell.PSGet.ModuleSourceTests -Tags 'BVT','InnerLoop' {
             AssertEquals $repo.SourceLocation $Location "The SourceLocation is not same as the registered SourceLocation. Actual: $($repo.SourceLocation), Expected: $Location"
             AssertEquals $repo.PublishLocation $Location "The PublishLocation is not same as the registered PublishLocation. Actual: $($repo.PublishLocation), Expected: $Location"
         }
-        finally
-        {
+        finally {
             Get-PSRepository -Name $Name | Unregister-PSRepository
         }
     }
@@ -190,8 +186,8 @@ Describe PowerShell.PSGet.ModuleSourceTests -Tags 'BVT','InnerLoop' {
     #>
     It UnregisterModuleSource {
 
-        $Name='MyTestModSource'
-        $Location='https://www.nuget.org/api/v2/'
+        $Name = 'MyTestModSource'
+        $Location = 'https://www.nuget.org/api/v2/'
 
         Register-PSRepository -Name $Name -SourceLocation $Location
         Unregister-PSRepository -Name $Name
@@ -199,191 +195,9 @@ Describe PowerShell.PSGet.ModuleSourceTests -Tags 'BVT','InnerLoop' {
         $expectedFullyQualifiedErrorId = 'SourceNotFound,Microsoft.PowerShell.PackageManagement.Cmdlets.GetPackageSource'
 
         AssertFullyQualifiedErrorIdEquals -scriptblock {Get-PSRepository -Name $Name} `
-                                          -expectedFullyQualifiedErrorId $expectedFullyQualifiedErrorId
-    }
-
-    <#
-    Purpose:  Test Check-PSGalleryApiAvailability and Get-PSGalleryApiAvailability cmdlet for Stage 1 of PSGallery V2/V3 Transition.
-
-    Action:  Check-PSGalleryApiAvailability -PSGalleryV2ApiUri $Uri200Ok -PSGalleryV3ApiUri $Uri404NotFound
-             Get-PSGalleryApiAvailability -Repository PSGallery
-
-    Expected Result:  Should show and do nothing.
-    #>
-    It CheckGetPSGalleryApiAvailabilityStage1 {
-        
-        $result = & $script:PowerShellGetModuleInfo Check-PSGalleryApiAvailability -PSGalleryV2ApiUri $script:Uri200Ok -PSGalleryV3ApiUri $script:Uri404NotFound
-        AssertNull $result "Check-PSGalleryApiAvailability Stage 1 should not return anything."
-
-        $err = $null
-        try
-        {
-            $result = & $script:PowerShellGetModuleInfo Get-PSGalleryApiAvailability -Repository "PSGallery" -WarningVariable w
-        }
-        catch
-        {
-            $err = $_
-        }
-
-        AssertNull $result "Get-PSGalleryApiAvailability Stage 1 should not return anything."
-        AssertEquals 0 $w.Count "Get-PSGalleryApiAvailability Stage 1 should not write a warning."
-        AssertNull $err "Get-PSGalleryApiAvailability Stage 1 should not throw an error message."
-    }
-
-    <#
-    Purpose:  Test Check-PSGalleryApiAvailability and Get-PSGalleryApiAvailability cmdlet for Stage 2 of PSGallery V2/V3 Transition.
-
-    Action:  Check-PSGalleryApiAvailability -PSGalleryV2ApiUri $Uri200Ok -PSGalleryV3ApiUri $Uri200Ok
-             Get-PSGalleryApiAvailability -Repository PSGallery
-
-    Expected Result:  Should display a warning.
-    #>
-    It CheckGetPSGalleryApiAvailabilityStage2 {
-      
-        try {      
-            $result = & $script:PowerShellGetModuleInfo Check-PSGalleryApiAvailability -PSGalleryV2ApiUri $script:Uri200Ok -PSGalleryV3ApiUri $script:Uri200Ok
-            AssertNull $result "Check-PSGalleryApiAvailability Stage 2 should not return anything."
-
-            $err = $null
-            try
-            {
-                $result = & $script:PowerShellGetModuleInfo Get-PSGalleryApiAvailability -Repository "PSGallery" -WarningVariable w -WarningAction SilentlyContinue
-            }
-            catch
-            {
-                $err = $_
-            }
-
-            AssertNull $result "Get-PSGalleryApiAvailability Stage 2 should not return anything."
-            AssertNotEquals 0 $w.Count "Get-PSGalleryApiAvailability Stage 2 should write a warning."
-            #AssertEqualsCaseInsensitive $script:LocalizedData.PSGalleryApiV2Deprecated $w[0].Message "Get-PSGalleryApiAvailability Stage 2 wrote the wrong warning message."
-            AssertNull $err "Get-PSGalleryApiAvailability Stage 2 should not throw an error message."
-        }
-        finally {
-            # Set API availability for v2 back to true (no warnings or errors thrown)
-            $result = & $script:PowerShellGetModuleInfo Check-PSGalleryApiAvailability -PSGalleryV2ApiUri $script:Uri200Ok -PSGalleryV3ApiUri $script:URI404NotFound
-        }
-    }
-
-    <#
-    Purpose:  Test Check-PSGalleryApiAvailability and Get-PSGalleryApiAvailability cmdlet for Stage 3 of PSGallery V2/V3 Transition.
-
-    Action:  Check-PSGalleryApiAvailability -PSGalleryV2ApiUri $Uri404NotFound -PSGalleryV3ApiUri $Uri200Ok
-             Get-PSGalleryApiAvailability -Repository PSGallery
-
-    Expected Result:  Should throw an error.
-    #>
-    It CheckGetPSGalleryApiAvailabilityStage3 {
-        try {
-            $result = & $script:PowerShellGetModuleInfo Check-PSGalleryApiAvailability -PSGalleryV2ApiUri $script:Uri404NotFound -PSGalleryV3ApiUri $script:Uri200Ok
-            AssertNull $result "Check-PSGalleryApiAvailability Stage 3 should not return anything."
-
-            $err = $null
-            try
-            {
-                $result = & $script:PowerShellGetModuleInfo Get-PSGalleryApiAvailability -Repository "PSGallery" -WarningVariable w
-            }
-            catch
-            {
-                $err = $_
-            }
-
-            AssertNull $result "Get-PSGalleryApiAvailability Stage 3 should not return anything."
-            AssertEquals 0 $w.Count "Get-PSGalleryApiAvailability Stage 3 should not write a warning."
-            AssertNotNull $err "Get-PSGalleryApiAvailability Stage 3 should throw an error message."
-            AssertEqualsCaseInsensitive "PSGalleryApiV2Discontinued,Get-PSGalleryApiAvailability" $err.FullyQualifiedErrorId "Get-PSGalleryApiAvailability Stage 3 threw a different error: $err"
-        }
-        finally {            
-            # Set API availability for v2 back to true (no warnings or errors thrown)
-            $result = & $script:PowerShellGetModuleInfo Check-PSGalleryApiAvailability -PSGalleryV2ApiUri $script:Uri200Ok -PSGalleryV3ApiUri $script:URI404NotFound
-        }
-    }
-
-    <#
-    Purpose:  Test Check-PSGalleryApiAvailability and Get-PSGalleryApiAvailability cmdlet when no API is available.  
-                This indicates that the site is down.
-
-    Action:  Check-PSGalleryApiAvailability -PSGalleryV2ApiUri $Uri404NotFound -PSGalleryV3ApiUri $Uri404NotFound
-             Get-PSGalleryApiAvailability -Repository PSGallery
-
-    Expected Result:  Should throw an error.
-    #>
-    It CheckGetPSGalleryUnavailable {
-        try {
-            $result = & $script:PowerShellGetModuleInfo Check-PSGalleryApiAvailability -PSGalleryV2ApiUri $script:Uri404NotFound -PSGalleryV3ApiUri $script:Uri404NotFound
-            AssertNull $result "Check-PSGalleryApiAvailability should not return anything."
-
-            $err = $null
-            try
-            {
-                $result = & $script:PowerShellGetModuleInfo Get-PSGalleryApiAvailability -Repository "PSGallery" -WarningVariable w
-            }
-            catch
-            {
-                $err = $_
-            }
-
-            AssertNull $result "Get-PSGalleryApiAvailability should not return anything."
-            AssertEquals 0 $w.Count "Get-PSGalleryApiAvailability should not write a warning."
-            AssertNotNull $err "Get-PSGalleryApiAvailability Stage 3 should throw an error message."
-            AssertEqualsCaseInsensitive "PowerShellGalleryUnavailable,Get-PSGalleryApiAvailability" $err.FullyQualifiedErrorId "Get-PSGalleryApiAvailability Stage 3 threw a different error: $err"
-        }
-        finally {            
-            # Set API availability for v2 back to true (no warnings or errors thrown)
-            $result = & $script:PowerShellGetModuleInfo Check-PSGalleryApiAvailability -PSGalleryV2ApiUri $script:Uri200Ok -PSGalleryV3ApiUri $script:URI404NotFound
-        }
-    }
-    
-    <#
-    Purpose:  Test Get-PSGalleryApiAvailability cmdlet when no repository specified.
-
-    Action:   Get-PSGalleryApiAvailability
-
-    Expected Result:  Should show and do nothing.
-    #>
-    It GetPSGalleryApiAvailabilityNoRepositorySpecified {
-        
-        $err = $null
-        try
-        {
-            $result = & $script:PowerShellGetModuleInfo Get-PSGalleryApiAvailability -WarningVariable w
-        }
-        catch
-        {
-            $err = $_
-        }
-
-        AssertNull $result "Get-PSGalleryApiAvailability should not return anything."
-        AssertEquals 0 $w.Count "Get-PSGalleryApiAvailability should not write a warning."
-        AssertNull $err "Get-PSGalleryApiAvailability should not throw an error message."
-    }
-
-
-    <#
-    Purpose:  Test Get-PSGalleryApiAvailability cmdlet when no repository specified.
-
-    Action:   Get-PSGalleryApiAvailability
-
-    Expected Result:  Should show and do nothing.
-    #>
-    It GetPSGalleryApiAvailabilityDifferentRepositorySpecified {
-        
-        $err = $null
-        try
-        {
-            $result = & $script:PowerShellGetModuleInfo Get-PSGalleryApiAvailability -Repository "MSPSGallery" -WarningVariable w
-        }
-        catch
-        {
-            $err = $_
-        }
-
-        AssertNull $result "Get-PSGalleryApiAvailability should not return anything."
-        AssertEquals 0 $w.Count "Get-PSGalleryApiAvailability should not write a warning."
-        AssertNull $err "Get-PSGalleryApiAvailability should not throw an error message."
+            -expectedFullyQualifiedErrorId $expectedFullyQualifiedErrorId
     }
 }
-
 Describe PowerShell.PSGet.ModuleSourceTests.P1 -Tags 'P1','OuterLoop' {
 
     BeforeAll {
@@ -591,7 +405,7 @@ Describe PowerShell.PSGet.ModuleSourceTests.P1 -Tags 'P1','OuterLoop' {
         AssertFullyQualifiedErrorIdEquals -scriptblock {Register-PSRepository -Name myNuGetSource1 -SourceLocation myget.org/F/powershellgetdemo} `
                                           -expectedFullyQualifiedErrorId $expectedFullyQualifiedErrorId
     }
-    
+
     <#
     Purpose: Validate Register-PSRepository functionality with wildcard in source name
 
@@ -697,7 +511,7 @@ Describe PowerShell.PSGet.ModuleSourceTests.P1 -Tags 'P1','OuterLoop' {
                                           -expectedFullyQualifiedErrorId $expectedFullyQualifiedErrorId
     }
 
-    It RegisterPSRepositoryShouldFailWithPSModuleAsPMProviderName {        
+    It RegisterPSRepositoryShouldFailWithPSModuleAsPMProviderName {
         AssertFullyQualifiedErrorIdEquals -scriptblock {Register-PSRepository -Name Foo -SourceLocation $script:TempPath -PackageManagementProvider PowerShellGet} `
                                           -expectedFullyQualifiedErrorId "InvalidPackageManagementProviderValue,Register-PSRepository"
     }
@@ -707,7 +521,7 @@ Describe PowerShell.PSGet.ModuleSourceTests.P1 -Tags 'P1','OuterLoop' {
                                           -expectedFullyQualifiedErrorId "InvalidPackageManagementProviderValue,Set-PSRepository"
     }
 
-    It RegisterPackageSourceShouldFailWithPSModuleAsPMProviderName {        
+    It RegisterPackageSourceShouldFailWithPSModuleAsPMProviderName {
         AssertFullyQualifiedErrorIdEquals -scriptblock {Register-PackageSource -ProviderName PowerShellGet -Name Foo -Location $script:TempPath -PackageManagementProvider PowerShellGet} `
                                           -expectedFullyQualifiedErrorId "InvalidPackageManagementProviderValue,Add-PackageSource,Microsoft.PowerShell.PackageManagement.Cmdlets.RegisterPackageSource"
     }
@@ -715,7 +529,7 @@ Describe PowerShell.PSGet.ModuleSourceTests.P1 -Tags 'P1','OuterLoop' {
 
 Describe PowerShell.PSGet.FindModule.ModuleSourceTests.P1 -Tags 'P1','OuterLoop' {
 
-    # Not executing these tests on MacOS as 
+    # Not executing these tests on MacOS as
     # the total execution time is exceeding allowed 50 min in TravisCI daily builds.
     if($IsMacOS) {
         return
@@ -789,7 +603,7 @@ Describe PowerShell.PSGet.FindModule.ModuleSourceTests.P1 -Tags 'P1','OuterLoop'
 
 Describe PowerShell.PSGet.InstallModule.ModuleSourceTests.P1 -Tags 'P1','OuterLoop' {
 
-    # Not executing these tests on MacOS as 
+    # Not executing these tests on MacOS as
     # the total execution time is exceeding allowed 50 min in TravisCI daily builds.
     if($IsMacOS) {
         return

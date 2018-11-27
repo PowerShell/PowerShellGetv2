@@ -1,29 +1,28 @@
-function Find-Script
-{
+function Find-Script {
     <#
     .ExternalHelp PSModule-help.xml
     #>
-    [CmdletBinding(HelpUri='https://go.microsoft.com/fwlink/?LinkId=619785')]
+    [CmdletBinding(HelpUri = 'https://go.microsoft.com/fwlink/?LinkId=619785')]
     [outputtype("PSCustomObject[]")]
     Param
     (
-        [Parameter(ValueFromPipelineByPropertyName=$true,
-                   Position=0)]
+        [Parameter(ValueFromPipelineByPropertyName = $true,
+            Position = 0)]
         [ValidateNotNullOrEmpty()]
         [string[]]
         $Name,
 
-        [Parameter(ValueFromPipelineByPropertyName=$true)]
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
         [ValidateNotNull()]
         [string]
         $MinimumVersion,
 
-        [Parameter(ValueFromPipelineByPropertyName=$true)]
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
         [ValidateNotNull()]
         [string]
         $MaximumVersion,
 
-        [Parameter(ValueFromPipelineByPropertyName=$true)]
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
         [ValidateNotNull()]
         [string]
         $RequiredVersion,
@@ -48,7 +47,7 @@ function Find-Script
 
         [Parameter()]
         [ValidateNotNull()]
-        [ValidateSet('Function','Workflow')]
+        [ValidateSet('Function', 'Workflow')]
         [string[]]
         $Includes,
 
@@ -57,12 +56,12 @@ function Find-Script
         [string[]]
         $Command,
 
-        [Parameter(ValueFromPipelineByPropertyName=$true)]
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
         [ValidateNotNullOrEmpty()]
         [Uri]
         $Proxy,
 
-        [Parameter(ValueFromPipelineByPropertyName=$true)]
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
         [PSCredential]
         $ProxyCredential,
 
@@ -71,7 +70,7 @@ function Find-Script
         [string[]]
         $Repository,
 
-        [Parameter(ValueFromPipelineByPropertyName=$true)]
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
         [PSCredential]
         $Credential,
 
@@ -80,25 +79,20 @@ function Find-Script
         $AllowPrerelease
     )
 
-    Begin
-    {
-        Get-PSGalleryApiAvailability -Repository $Repository
-
+    Begin {
         Install-NuGetClientBinaries -CallerPSCmdlet $PSCmdlet -Proxy $Proxy -ProxyCredential $ProxyCredential
     }
 
-    Process
-    {
+    Process {
         $ValidationResult = Validate-VersionParameters -CallerPSCmdlet $PSCmdlet `
-                                                       -Name $Name `
-                                                       -MinimumVersion $MinimumVersion `
-                                                       -MaximumVersion $MaximumVersion `
-                                                       -RequiredVersion $RequiredVersion `
-                                                       -AllVersions:$AllVersions `
-                                                       -AllowPrerelease:$AllowPrerelease
+            -Name $Name `
+            -MinimumVersion $MinimumVersion `
+            -MaximumVersion $MaximumVersion `
+            -RequiredVersion $RequiredVersion `
+            -AllVersions:$AllVersions `
+            -AllowPrerelease:$AllowPrerelease
 
-        if(-not $ValidationResult)
-        {
+        if (-not $ValidationResult) {
             # Validate-VersionParameters throws the error.
             # returning to avoid further execution when different values are specified for -ErrorAction parameter
             return
@@ -106,38 +100,34 @@ function Find-Script
 
         $PSBoundParameters['Provider'] = $script:PSModuleProviderName
         $PSBoundParameters[$script:PSArtifactType] = $script:PSArtifactTypeScript
-        if($AllowPrerelease) {
+        if ($AllowPrerelease) {
             $PSBoundParameters[$script:AllowPrereleaseVersions] = $true
         }
         $null = $PSBoundParameters.Remove("AllowPrerelease")
 
-        if($PSBoundParameters.ContainsKey("Repository"))
-        {
+        if ($PSBoundParameters.ContainsKey("Repository")) {
             $PSBoundParameters["Source"] = $Repository
             $null = $PSBoundParameters.Remove("Repository")
 
             $ev = $null
             $repositories = Get-PSRepository -Name $Repository -ErrorVariable ev -verbose:$false
-            if($ev) { return }
+            if ($ev) { return }
 
             $RepositoriesWithoutScriptSourceLocation = $false
-            foreach($repo in $repositories)
-            {
-                if(-not $repo.ScriptSourceLocation)
-                {
+            foreach ($repo in $repositories) {
+                if (-not $repo.ScriptSourceLocation) {
                     $message = $LocalizedData.ScriptSourceLocationIsMissing -f ($repo.Name)
                     Write-Error -Message $message `
-                                -ErrorId 'ScriptSourceLocationIsMissing' `
-                                -Category InvalidArgument `
-                                -TargetObject $repo.Name `
-                                -Exception 'System.ArgumentException'
+                        -ErrorId 'ScriptSourceLocationIsMissing' `
+                        -Category InvalidArgument `
+                        -TargetObject $repo.Name `
+                        -Exception 'System.ArgumentException'
 
                     $RepositoriesWithoutScriptSourceLocation = $true
                 }
             }
 
-            if($RepositoriesWithoutScriptSourceLocation)
-            {
+            if ($RepositoriesWithoutScriptSourceLocation) {
                 return
             }
         }
@@ -148,52 +138,45 @@ function Find-Script
 
         # No Telemetry must be performed if PSGallery is not in the supplied list of Repositories
         $isRepositoryNullOrPSGallerySpecified = $false
-        if ($Repository -and ($Repository -Contains $Script:PSGalleryModuleSource))
-        {
+        if ($Repository -and ($Repository -Contains $Script:PSGalleryModuleSource)) {
             $isRepositoryNullOrPSGallerySpecified = $true
         }
-        elseif(-not $Repository)
-        {
+        elseif (-not $Repository) {
             $psgalleryRepo = Get-PSRepository -Name $Script:PSGalleryModuleSource `
-                                              -ErrorAction SilentlyContinue `
-                                              -WarningAction SilentlyContinue
+                -ErrorAction SilentlyContinue `
+                -WarningAction SilentlyContinue
             # And check for IsDefault?
-            if($psgalleryRepo)
-            {
+            if ($psgalleryRepo) {
                 $isRepositoryNullOrPSGallerySpecified = $true
             }
         }
 
         PackageManagement\Find-Package @PSBoundParameters | Microsoft.PowerShell.Core\ForEach-Object {
-                $psgetItemInfo = New-PSGetItemInfo -SoftwareIdentity $_ -Type $script:PSArtifactTypeScript
+            $psgetItemInfo = New-PSGetItemInfo -SoftwareIdentity $_ -Type $script:PSArtifactTypeScript
 
-                if ($AllVersions -and -not $AllowPrerelease)
-                {
-                    # If AllVersions is specified but not AllowPrerelease, we should only return stable release versions.
-                    # PackageManagement returns ALL versions (including prerelease) when AllVersions is specified, regardless of the value of AllowPrerelease.
-                    # Filtering results returned from PackageManagement based on flags.
-                    if ($psgetItemInfo.AdditionalMetadata -and $psgetItemInfo.AdditionalMetadata.IsPrerelease -eq $false)
-                    {
-                        $psgetItemInfo
-                    }
-                }
-                else {
+            if ($AllVersions -and -not $AllowPrerelease) {
+                # If AllVersions is specified but not AllowPrerelease, we should only return stable release versions.
+                # PackageManagement returns ALL versions (including prerelease) when AllVersions is specified, regardless of the value of AllowPrerelease.
+                # Filtering results returned from PackageManagement based on flags.
+                if ($psgetItemInfo.AdditionalMetadata -and $psgetItemInfo.AdditionalMetadata.IsPrerelease -eq $false) {
                     $psgetItemInfo
                 }
-
-                if ($psgetItemInfo -and
-                    $isRepositoryNullOrPSGallerySpecified -and
-                    $script:TelemetryEnabled -and
-                    ($psgetItemInfo.Repository -eq $Script:PSGalleryModuleSource))
-                {
-                    $scriptsFoundInPSGallery += $psgetItemInfo.Name
-                }
             }
+            else {
+                $psgetItemInfo
+            }
+
+            if ($psgetItemInfo -and
+                $isRepositoryNullOrPSGallerySpecified -and
+                $script:TelemetryEnabled -and
+                ($psgetItemInfo.Repository -eq $Script:PSGalleryModuleSource)) {
+                $scriptsFoundInPSGallery += $psgetItemInfo.Name
+            }
+        }
 
         # Perform Telemetry if Repository is not supplied or Repository contains PSGallery
         # We are only interested in finding artifacts not in PSGallery
-        if ($isRepositoryNullOrPSGallerySpecified)
-        {
+        if ($isRepositoryNullOrPSGallerySpecified) {
             Log-ArtifactNotFoundInPSGallery -SearchedName $Name -FoundName $scriptsFoundInPSGallery -operationName PSGET_FIND_SCRIPT
         }
     }

@@ -84,7 +84,7 @@ function SuiteCleanup {
     RemoveItem $script:TempModulesPath
 }
 
-Describe PowerShell.PSGet.ModuleSourceTests -Tags 'BVT','InnerLoop' {
+Describe PowerShell.PSGet.ModuleSourceTests -Tags 'BVT', 'InnerLoop' {
 
     BeforeAll {
         SuiteSetup
@@ -103,8 +103,8 @@ Describe PowerShell.PSGet.ModuleSourceTests -Tags 'BVT','InnerLoop' {
     #>
     It RegisterAngGetModuleSource {
 
-        $Name='MyTestModSourceForRegisterAngGet'
-        $Location='https://www.nuget.org/api/v2/'
+        $Name = 'MyTestModSourceForRegisterAngGet'
+        $Location = 'https://www.nuget.org/api/v2/'
 
         Register-PSRepository -Default -ErrorAction SilentlyContinue
 
@@ -137,10 +137,9 @@ Describe PowerShell.PSGet.ModuleSourceTests -Tags 'BVT','InnerLoop' {
     #>
     It RegisterSMBShareRepository {
 
-        $Name='MyTestModSource'
-        $Location=$script:TempModulesPath
-        try
-        {
+        $Name = 'MyTestModSource'
+        $Location = $script:TempModulesPath
+        try {
             Register-PSRepository -Name $Name -SourceLocation $Location -PublishLocation $Location
             $repo = Get-PSRepository -Name $Name
 
@@ -148,8 +147,7 @@ Describe PowerShell.PSGet.ModuleSourceTests -Tags 'BVT','InnerLoop' {
             AssertEquals $repo.SourceLocation $Location "The SourceLocation is not same as the registered SourceLocation. Actual: $($repo.SourceLocation), Expected: $Location"
             AssertEquals $repo.PublishLocation $Location "The PublishLocation is not same as the registered PublishLocation. Actual: $($repo.PublishLocation), Expected: $Location"
         }
-        finally
-        {
+        finally {
             Get-PSRepository -Name $Name | Unregister-PSRepository
         }
     }
@@ -163,10 +161,9 @@ Describe PowerShell.PSGet.ModuleSourceTests -Tags 'BVT','InnerLoop' {
     #>
     It SetPSRepositoryWithSMBSharePath {
 
-        $Name='MyTestModSource'
-        $Location=$script:TempModulesPath
-        try
-        {
+        $Name = 'MyTestModSource'
+        $Location = $script:TempModulesPath
+        try {
             Register-PSRepository -Name $Name -SourceLocation $Location
             Set-PSRepository -Name $Name -SourceLocation $Location -PublishLocation $Location
             $repo = Get-PSRepository -Name $Name
@@ -175,8 +172,7 @@ Describe PowerShell.PSGet.ModuleSourceTests -Tags 'BVT','InnerLoop' {
             AssertEquals $repo.SourceLocation $Location "The SourceLocation is not same as the registered SourceLocation. Actual: $($repo.SourceLocation), Expected: $Location"
             AssertEquals $repo.PublishLocation $Location "The PublishLocation is not same as the registered PublishLocation. Actual: $($repo.PublishLocation), Expected: $Location"
         }
-        finally
-        {
+        finally {
             Get-PSRepository -Name $Name | Unregister-PSRepository
         }
     }
@@ -190,8 +186,8 @@ Describe PowerShell.PSGet.ModuleSourceTests -Tags 'BVT','InnerLoop' {
     #>
     It UnregisterModuleSource {
 
-        $Name='MyTestModSource'
-        $Location='https://www.nuget.org/api/v2/'
+        $Name = 'MyTestModSource'
+        $Location = 'https://www.nuget.org/api/v2/'
 
         Register-PSRepository -Name $Name -SourceLocation $Location
         Unregister-PSRepository -Name $Name
@@ -199,9 +195,9 @@ Describe PowerShell.PSGet.ModuleSourceTests -Tags 'BVT','InnerLoop' {
         $expectedFullyQualifiedErrorId = 'SourceNotFound,Microsoft.PowerShell.PackageManagement.Cmdlets.GetPackageSource'
 
         AssertFullyQualifiedErrorIdEquals -scriptblock {Get-PSRepository -Name $Name} `
-                                          -expectedFullyQualifiedErrorId $expectedFullyQualifiedErrorId
+            -expectedFullyQualifiedErrorId $expectedFullyQualifiedErrorId
     }
-
+}
 Describe PowerShell.PSGet.ModuleSourceTests.P1 -Tags 'P1','OuterLoop' {
 
     BeforeAll {

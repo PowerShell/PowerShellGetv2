@@ -20,7 +20,6 @@ $script:FullyQualifiedModuleName = [Microsoft.PowerShell.Commands.ModuleSpecific
 }
 
 $script:HelpInstallationPath = Join-Path -Path $script:PowerShellGetModuleInfo.ModuleBase -ChildPath 'en-US'
-$script:SaveHelpPath = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "PSGetHelp_$(Get-Random)"
 
 function GetFiles {
     param (
@@ -37,14 +36,6 @@ function GetFiles {
 }
 
 Describe 'Validate PowerShellGet module help' -tags 'P1', 'OuterLoop' {
-    BeforeAll {
-        $null = New-Item -Path $script:SaveHelpPath -ItemType Directory -Force        
-    }
-
-    AfterAll {
-        Remove-Item -Path $script:SaveHelpPath -Force -Recurse
-    }
-
     It 'Validate Update-Help for the PowerShellGet module' {
         $UpdateHelp_Params = @{
             Force = $true
@@ -72,18 +63,21 @@ Describe 'Validate PowerShellGet module help' -tags 'P1', 'OuterLoop' {
         $FindModuleCommandHelp.Examples | Should Not BeNullOrEmpty
     }
 
+    $helpPath = Join-Path -Path $TestDrive -ChildPath PSGetHelp
+    New-Item -Path $helpPath -ItemType Directory
+
     It 'Validate Save-Help for the PowerShellGet module' {        
         if($PSVersionTable.PSVersion -gt '4.0.0') {        
-            Save-Help -FullyQualifiedModule $script:FullyQualifiedModuleName -Force -UICulture en-US -DestinationPath $script:SaveHelpPath
+            Save-Help -FullyQualifiedModule $script:FullyQualifiedModuleName -Force -UICulture en-US -DestinationPath $helpPath
         }
         else {
-            Save-Help -Module PowerShellGet -Force -UICulture en-US -DestinationPath $script:SaveHelpPath
+            Save-Help -Module PowerShellGet -Force -UICulture en-US -DestinationPath $helpPath
         }
 
-        $compressedFile = GetFiles -Include "*$script:HelpContentExtension" -Path $script:SaveHelpPath | ForEach-Object {Split-Path -Path $_ -Leaf}
+        $compressedFile = GetFiles -Include "*$script:HelpContentExtension" -Path $helpPath | ForEach-Object { Split-Path -Path $_ -Leaf }
         $compressedFile | Should Be $script:ExpectedCompressedFile
-    
-        $helpFilesSaved = GetFiles -Include "*HelpInfo.xml" -Path $script:SaveHelpPath | ForEach-Object {Split-Path -Path $_ -Leaf}
+
+        $helpFilesSaved = GetFiles -Include "*HelpInfo.xml" -Path $helpPath | ForEach-Object { Split-Path -Path $_ -Leaf }
         $helpFilesSaved | Should Be $script:ExpectedHelpInfoFile
     }
 }

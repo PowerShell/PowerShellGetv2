@@ -1,4 +1,8 @@
 # Changelog
+## 2.0.4
+Bug Fix
+* Remove PSGallery availability checks (#374)
+
 ## 2.0.3
 Bug fixes and Improvements
 * Fix CommandAlreadyAvailable error for PackageManagement module (#333)

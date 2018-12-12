@@ -1,6 +1,6 @@
 @{
 RootModule = 'PSModule.psm1'
-ModuleVersion = '2.0.3'
+ModuleVersion = '2.0.4'
 GUID = '1d73a601-4a6c-43c5-ba3f-619b18bbb404'
 Author = 'Microsoft Corporation'
 CompanyName = 'Microsoft Corporation'
@@ -54,6 +54,11 @@ PrivateData = @{
         ProjectUri = 'https://go.microsoft.com/fwlink/?LinkId=828955'
         LicenseUri = 'https://go.microsoft.com/fwlink/?LinkId=829061'
         ReleaseNotes = @'
+## 2.0.4
+
+Bug Fix
+* Remove PSGallery availability checks (#374)
+
 ## 2.0.3
 
 Bug fixes and Improvements

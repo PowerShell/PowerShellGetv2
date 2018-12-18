@@ -188,23 +188,18 @@ function New-ScriptFileInfo {
             return
         }
 
-        $PSScriptInfoString = Get-PSScriptInfoString @params
-
         $requiresStrings = Get-RequiresString -RequiredModules $RequiredModules
+
+        $PSScriptInfoString = Get-PSScriptInfoString @params
 
         $ScriptCommentHelpInfoString = Get-ScriptCommentHelpInfoString -Description $Description -newscriptnfo
 
-        $ScriptMetadataString = $PSScriptInfoString
+        $ScriptMetadataString = $requiresStrings
         $ScriptMetadataString += "`r`n"
-
-        if ("$requiresStrings".Trim()) {
-            $ScriptMetadataString += "`r`n"
-            $ScriptMetadataString += $requiresStrings -join "`r`n"
-            $ScriptMetadataString += "`r`n"
-        }
-
+        $ScriptMetadataString += $PSScriptInfoString.TrimEnd('#>')
         $ScriptMetadataString += "`r`n"
         $ScriptMetadataString += $ScriptCommentHelpInfoString
+        $ScriptMetadataString += "`r`n"
         $ScriptMetadataString += "Param()`r`n`r`n"
 
         $tempScriptFilePath = Microsoft.PowerShell.Management\Join-Path -Path $script:TempPath -ChildPath "$(Get-Random).ps1"

@@ -50,7 +50,7 @@ function Get-ScriptCommentHelpInfoString {
 
     Process {
         If ($newscriptnfo) {
-            $ScriptCommentHelpInfoString = "`r`n`r`n.DESCRIPTION `r`n $Description `r`n`r`n"
+            $ScriptCommentHelpInfoString = ".DESCRIPTION `r`n $Description `r`n`r`n"
         }
         else {
             $ScriptCommentHelpInfoString = "<# `r`n`r`n.DESCRIPTION `r`n $Description `r`n`r`n"
@@ -108,13 +108,7 @@ function Get-ScriptCommentHelpInfoString {
             $ScriptCommentHelpInfoString += ".FUNCTIONALITY `r`n$($Functionality -join "`r`n") `r`n`r`n"
         }
 
-        If ($newscriptnfo) {
-            $ScriptCommentHelpInfoString += "`r`n"
-        }
-        else {
-            $ScriptCommentHelpInfoString += "#> `r`n"
-        }
-
+        $ScriptCommentHelpInfoString += "#> `r`n"
         return $ScriptCommentHelpInfoString
     }
 }

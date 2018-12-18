@@ -1,9 +1,8 @@
-function Get-ScriptCommentHelpInfoString
-{
-    [CmdletBinding(PositionalBinding=$false)]
+function Get-ScriptCommentHelpInfoString {
+    [CmdletBinding(PositionalBinding = $false)]
     Param
     (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Description,
@@ -42,79 +41,79 @@ function Get-ScriptCommentHelpInfoString
 
         [Parameter()]
         [string]
-        $Functionality
+        $Functionality,
+
+        [Parameter()]
+        [Switch]
+        $newscriptnfo
     )
 
-    Process
-    {
-        $ScriptCommentHelpInfoString = "<# `r`n`r`n.DESCRIPTION `r`n $Description `r`n`r`n"
+    Process {
+        If ($newscriptnfo) {
+            $ScriptCommentHelpInfoString = "`r`n`r`n.DESCRIPTION `r`n $Description `r`n`r`n"
+        }
+        else {
+            $ScriptCommentHelpInfoString = "<# `r`n`r`n.DESCRIPTION `r`n $Description `r`n`r`n"
+        }
 
-        if("$Synopsis".Trim())
-        {
+        if ("$Synopsis".Trim()) {
             $ScriptCommentHelpInfoString += ".SYNOPSIS `r`n$Synopsis `r`n`r`n"
         }
 
-        if("$Example".Trim())
-        {
+        if ("$Example".Trim()) {
             $Example | ForEach-Object {
-                           if($_)
-                           {
-                               $ScriptCommentHelpInfoString += ".EXAMPLE `r`n$_ `r`n`r`n"
-                           }
-                       }
+                if ($_) {
+                    $ScriptCommentHelpInfoString += ".EXAMPLE `r`n$_ `r`n`r`n"
+                }
+            }
         }
 
-        if("$Inputs".Trim())
-        {
+        if ("$Inputs".Trim()) {
             $Inputs |  ForEach-Object {
-                           if($_)
-                           {
-                               $ScriptCommentHelpInfoString += ".INPUTS `r`n$_ `r`n`r`n"
-                           }
-                       }
+                if ($_) {
+                    $ScriptCommentHelpInfoString += ".INPUTS `r`n$_ `r`n`r`n"
+                }
+            }
         }
 
-        if("$Outputs".Trim())
-        {
+        if ("$Outputs".Trim()) {
             $Outputs |  ForEach-Object {
-                           if($_)
-                           {
-                               $ScriptCommentHelpInfoString += ".OUTPUTS `r`n$_ `r`n`r`n"
-                           }
-                       }
+                if ($_) {
+                    $ScriptCommentHelpInfoString += ".OUTPUTS `r`n$_ `r`n`r`n"
+                }
+            }
         }
 
-        if("$Notes".Trim())
-        {
+        if ("$Notes".Trim()) {
             $ScriptCommentHelpInfoString += ".NOTES `r`n$($Notes -join "`r`n") `r`n`r`n"
         }
 
-        if("$Link".Trim())
-        {
+        if ("$Link".Trim()) {
             $Link |  ForEach-Object {
-                         if($_)
-                         {
-                              $ScriptCommentHelpInfoString += ".LINK `r`n$_ `r`n`r`n"
-                         }
-                     }
+                if ($_) {
+                    $ScriptCommentHelpInfoString += ".LINK `r`n$_ `r`n`r`n"
+                }
+            }
         }
 
-        if("$Component".Trim())
-        {
+        if ("$Component".Trim()) {
             $ScriptCommentHelpInfoString += ".COMPONENT `r`n$($Component -join "`r`n") `r`n`r`n"
         }
 
-        if("$Role".Trim())
-        {
+        if ("$Role".Trim()) {
             $ScriptCommentHelpInfoString += ".ROLE `r`n$($Role -join "`r`n") `r`n`r`n"
         }
 
-        if("$Functionality".Trim())
-        {
+        if ("$Functionality".Trim()) {
             $ScriptCommentHelpInfoString += ".FUNCTIONALITY `r`n$($Functionality -join "`r`n") `r`n`r`n"
         }
 
-        $ScriptCommentHelpInfoString += "#> `r`n"
+        If ($newscriptnfo) {
+            $ScriptCommentHelpInfoString += "`r`n"
+        }
+        else {
+            $ScriptCommentHelpInfoString += "#> `r`n"
+        }
 
         return $ScriptCommentHelpInfoString
     }

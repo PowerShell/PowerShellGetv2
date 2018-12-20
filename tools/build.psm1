@@ -103,9 +103,6 @@ function Install-PackageManagement {
         
         $FindModule_params = @{
             Name = $OneGetModuleName
-            # Temporarily add RequiredVersion param until Package Management version greater than version 1.2.3 is released
-            # Due to minor bug in Package Management causing PSGet test failures
-            RequiredVersion = '1.2.2'
         }
         if ($PSVersionTable.PSVersion -eq '5.1.14394.1000') {
             # Adding -MaximumVersion 1.1.7.0 as AppVeyor VM with WMF 5 is not installed with latest root CA certificates
@@ -122,9 +119,7 @@ function Install-PackageManagement {
         $null = Microsoft.PowerShell.Management\New-Item -Path $TempModulePath -Force -ItemType Directory
         $OneGetModuleName = 'PackageManagement'
         try {
-            # Temporarily add version flag until Package Management version greater than version 1.2.3 is released
-            # Due to minor bug in Package Management causing PSGet test failures
-            & $NugetExeFilePath install $OneGetModuleName -source https://www.powershellgallery.com/api/v2 -outputDirectory $TempModulePath -verbosity detailed -version 1.2.2
+            & $NugetExeFilePath install $OneGetModuleName -source https://www.powershellgallery.com/api/v2 -outputDirectory $TempModulePath -verbosity detailed
             $OneGetWithVersion = Microsoft.PowerShell.Management\Get-ChildItem -Path $TempModulePath -Directory
             $OneGetVersion = ($OneGetWithVersion.Name.Split('.', 2))[1]
 

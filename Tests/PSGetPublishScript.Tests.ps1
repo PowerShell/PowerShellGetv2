@@ -1080,7 +1080,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
         finally {
             Install-NuGetBinaries
         }
-    } -Skip:$($PSEdition -eq 'Core')
+    } -Skip:$($PSEdition -eq 'Core' -or $PSVersionTable.Version -lt '5.0.0')
 
     # Purpose: Validate that Publish-Script prompts to install NuGet.exe if NuGet.exe file is not found
     #
@@ -1138,7 +1138,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
         finally {
             Install-NuGetBinaries
         }
-    } -Skip:$($PSEdition -eq 'Core')
+    } -Skip:$($PSEdition -eq 'Core' -or $PSVersionTable.Version -lt '5.0.0')
 
     # Purpose: Validate that Publish-Module prompts to upgrade NuGet.exe if local NuGet.exe file is less than minimum required version
     #
@@ -1204,7 +1204,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
         finally {
             Install-NuGetBinaries
         }
-    } -Skip:$($PSEdition -eq 'Core')
+    } -Skip:$($PSEdition -eq 'Core' -or $PSVersionTable.Version -lt '5.0.0')
 
     # Purpose: Validate that Publish-Script prompts to install NuGet.exe if file not found
     #
@@ -1262,7 +1262,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
         finally {
             Install-NuGetBinaries
         }
-    } -Skip:$($PSEdition -eq 'Core')
+    } -Skip:$($PSEdition -eq 'Core' -or $PSVersionTable.Version -lt '5.0.0')
 }
 
 Describe PowerShell.PSGet.PublishScriptTests.P1 -Tags 'P1','OuterLoop' {
@@ -1309,6 +1309,7 @@ Describe PowerShell.PSGet.PublishScriptTests.P1 -Tags 'P1','OuterLoop' {
     It PublishScriptToWebbasedGalleryWithoutNuGetApiKey {
         try {
             Register-PSRepository -Name '_TempTestRepo_' -SourceLocation 'https://www.poshtestgallery.com'
+
 
             AssertFullyQualifiedErrorIdEquals -scriptblock {Publish-Script -Path $script:PublishScriptFilePath -Repository '_TempTestRepo_'} `
                                               -expectedFullyQualifiedErrorId 'NuGetApiKeyIsRequiredForNuGetBasedGalleryService,Publish-Script'

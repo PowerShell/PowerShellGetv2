@@ -102,7 +102,7 @@ cd path/to/PowerShellGet
 
 * Import the module
 ```powershell
-Import-Module /path/to/PowerShellGet/PowerShellGet
+Import-Module src/PowerShellGet
 ```
 
 
@@ -119,7 +119,7 @@ Import-Module "$ClonePath\tools\build.psm1"
 Install-Dependencies
 
 # Option 1: Execute the following, replacing $ClonePath, when testing PowerShellGet module changes under $ClonePath.
-# $env:PSModulePath = "$ClonePath;$env:PSModulePath"
+# $env:PSModulePath = "$ClonePath\src;$env:PSModulePath"
 
 # Option 2: Execute the following commands to run tests with the merged PSModule.psm1
 <#

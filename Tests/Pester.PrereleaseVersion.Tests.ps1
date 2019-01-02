@@ -4,7 +4,7 @@ function RegisterTestRepository {
     # Register test repository
     $testRepoRegistered = Get-PSRepository -Name $TestRepositoryName -ErrorAction SilentlyContinue
     if (-not $testRepoRegistered) {
-        Register-PSRepository -Name $TestRepositoryName -SourceLocation $TestRepositorySource -InstallationPolicy Trusted  
+        Register-PSRepository -Name $TestRepositoryName -SourceLocation $TestRepositorySource -InstallationPolicy Trusted
         
         $testRepoRegistered = Get-PSRepository -Name $TestRepositoryName
 

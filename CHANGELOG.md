@@ -1,4 +1,20 @@
 # Changelog
+## 2.0.4
+Bug Fix
+* Remove PSGallery availability checks (#374)
+
+## 2.0.3
+Bug fixes and Improvements
+* Fix CommandAlreadyAvailable error for PackageManagement module (#333)
+* Remove trailing whitespace when value is not provided for Get-PSScriptInfoString (#337) (Thanks @thomasrayner)
+* Expanded aliases for improved readability (#338) (Thanks @lazywinadmin)
+* Improvements for Catalog tests (#343)
+* Fix Update-ScriptInfoFile to preserve PrivateData (#346) (Thanks @tnieto88)
+* Install modules with many commands faster (#351)
+
+New Features
+* Tab completion for -Repository parameter (#339) and for Publish-Module -Name (#359) (Thanks @matt9ucci)
+
 ## 2.0.1
 Bug fixes
 - Resolved Publish-Module doesn't report error but fails to publish module (#316)

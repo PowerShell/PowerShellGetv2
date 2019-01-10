@@ -121,7 +121,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         #Copy module to $script:ProgramFilesModulesPath
         Copy-Item $script:PublishModuleBase $script:ProgramFilesModulesPath -Recurse -Force
 
-        Publish-Module -Name $script:PublishModuleName -ReleaseNotes "$script:PublishModuleName release notes" -Tags PSGet -LicenseUri "https://$script:PublishModuleName.com/license" -ProjectUri "https://$script:PublishModuleName.com" -WarningAction SilentlyContinue        
+        Publish-Module -Name $script:PublishModuleName -ReleaseNotes "$script:PublishModuleName release notes" -Tags PSGet -LicenseUri "https://$script:PublishModuleName.com/license" -ProjectUri "https://$script:PublishModuleName.com" -WarningAction SilentlyContinue
 
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $version
         # This version can be 1.0 or 1.0.0, depending on the version of NuGet.exe or dotnet command.
@@ -201,6 +201,27 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         Assert ($psgetItemInfo.Name -eq $script:PublishModuleName) "Publish-Module should publish a module with valid module path, $($psgetItemInfo.Name)"
     }
 
+    # Purpose: Check that files with hidden attributes (like .git dirs) are not published
+    #
+    # Action: Publish-Module -Path <ModulePath> -NuGetApiKey <ApiKey>
+    #
+    # Expected Result: published module should not contain these files
+    #
+    It "PublishModuleLeavesOutHiddenFiles" {
+        $version = "1.0"
+        New-ModuleManifest -Path (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
+        New-Item -Type Directory -Path $script:PublishModuleBase -Name ".git"
+        New-Item -Type File -Path $script:PublishModuleBase\.git\dummy
+        New-Item -Type File -Path $script:PublishModuleBase -Name "normal"
+        $hiddenDir = Get-Item $script:PublishModuleBase\.git
+        $hiddenDir.Attributes = "hidden"
+        Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -ReleaseNotes "$script:PublishModuleName release notes" -Tags PSGet -LicenseUri "https://$script:PublishModuleName.com/license" -ProjectUri "https://$script:PublishModuleName.com" -WarningAction SilentlyContinue
+        New-Item -type directory -path $script:PublishModuleBase -Name Saved
+        Save-Module $script:PublishModuleName -RequiredVersion $version -Path $script:PublishModuleBase\saved
+        Assert ((Test-Path $script:PublishModuleBase\saved\$script:PublishModuleName\1.0.0\.git) -eq $false) ".git dir shouldn't be included"
+        Assert ((Test-Path $script:PublishModuleBase\saved\$script:PublishModuleName\1.0.0\normal) -eq $true) "normal file should be included"
+    }
+
     # Purpose: Publish a module with -Path
     #
     # Action: Publish-Module -Path <ModulePath> -NuGetApiKey <ApiKey>
@@ -273,11 +294,11 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         $moduleBaseWithoutVersion = $script:PublishModuleBase
 
         $moduleBase = Join-Path -Path $script:PublishModuleBase -ChildPath $version1
-        $null = New-Item -ItemType Directory -Path $moduleBase -Force        
+        $null = New-Item -ItemType Directory -Path $moduleBase -Force
         New-ModuleManifest -Path (Join-Path -Path $moduleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version1 -Description "$script:PublishModuleName module"
 
         $moduleBase = Join-Path -Path $script:PublishModuleBase -ChildPath $version2
-        $null = New-Item -ItemType Directory -Path $moduleBase -Force        
+        $null = New-Item -ItemType Directory -Path $moduleBase -Force
         New-ModuleManifest -Path (Join-Path -Path $moduleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version2 -Description "$script:PublishModuleName module"
 
         AssertFullyQualifiedErrorIdEquals -scriptblock {Publish-Module -Path $moduleBaseWithoutVersion -WarningAction SilentlyContinue}`
@@ -923,7 +944,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
        $ProjectUri = 'https://contoso.com/'
        $IconUri = 'https://contoso.com/icon'
        $ReleaseNotes = 'Test module for external module dependecies'
-       New-ModuleManifest -Path (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version -Description "$script:PublishModuleName module" 
+       New-ModuleManifest -Path (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version -Description "$script:PublishModuleName module"
        #Copy module to $script:ProgramFilesModulesPath
        Copy-Item $script:PublishModuleBase $script:ProgramFilesModulesPath -Recurse -Force
 
@@ -941,7 +962,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
 
     # Purpose: Test Publish-Module cmdlet gives warnings if Cmdlets/Functions/DscResourcesToExport has "*" in manifest
     #
-    # Action: Publish-Module 
+    # Action: Publish-Module
     #
     # Expected Result: Publish operation should succeed but throw warnings
     #
@@ -959,17 +980,17 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
             using System;
             using System.Management.Automation;
             namespace PSGetTestModule
-            {  
+            {
                [Cmdlet("Test","PSGetTestCmdlet")]
                 public class PSGetTestCmdlet : PSCmdlet
-                {  
+                {
                     [Parameter]
                     public int a {
                         get;
                         set;
-                    }  
+                    }
                     protected override void ProcessRecord()
-                    {  
+                    {
                         String s = "Value is :" + a;
                         WriteObject(s);
                     }
@@ -1205,7 +1226,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
 
     # Purpose: Validate that Publish-Module prompts to upgrade NuGet.exe if local NuGet.exe file is less than minimum required version
     #
-    # Action: Publish-Module 
+    # Action: Publish-Module
     #
     # Expected Result: Publish operation should fail, NuGet.exe should not upgrade to latest version
     #
@@ -1372,7 +1393,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
         Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -Force -WarningAction SilentlyContinue
 
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $version
-        Assert ($psgetItemInfo.Name -eq $script:PublishModuleName) "Publish-Module should publish a module with lower version, $($psgetItemInfo.Name)"        
+        Assert ($psgetItemInfo.Name -eq $script:PublishModuleName) "Publish-Module should publish a module with lower version, $($psgetItemInfo.Name)"
     }
 
     It "PublishModuleWithoutForceAndLowerVersion" {
@@ -1553,7 +1574,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
     #
     It "PublishInvalidModule" {
         $tempmodulebase = Join-Path (Join-Path $script:TempPath "$(Get-Random)") "InvalidModule"
-        $null = New-Item $tempmodulebase -Force -ItemType Directory        
+        $null = New-Item $tempmodulebase -Force -ItemType Directory
 
         try
         {
@@ -1779,7 +1800,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
                 $null = New-Item -Path $DepModuleBase -ItemType Directory -Force
                 New-ModuleManifest -Path (Join-Path $DepModuleBase "$_.psd1") `
                                    -ModuleVersion '1.0' `
-                                   -Description "$_ module"        
+                                   -Description "$_ module"
             }
 
 
@@ -1809,7 +1830,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
                         }
                     }
                 }
-"@ 
+"@
 
             ($psd1Text -replace '__VERSION__',$version) | Out-File -FilePath (Join-Path -Path $ModuleBase -ChildPath "$ModuleName.psd1") -Force
 
@@ -1870,20 +1891,20 @@ Describe PowerShell.PSGet.PublishModuleTests.P2 -Tags 'P2','OuterLoop' {
         $RequiredModules1 = @('RequiredModule1',
                               @{ModuleName = 'RequiredModule2'; ModuleVersion = '1.5'; })
 
-        $RequiredModules2 = @('RequiredModule1', 
+        $RequiredModules2 = @('RequiredModule1',
                               @{ModuleName = 'RequiredModule2'; ModuleVersion = '2.0'; })
 
-        $NestedRequiredModules1 = @('NestedRequiredModule1', 
+        $NestedRequiredModules1 = @('NestedRequiredModule1',
                                     @{ModuleName = 'NestedRequiredModule2'; ModuleVersion = '1.5'; })
 
-        $NestedRequiredModules2 = @('NestedRequiredModule1', 
+        $NestedRequiredModules2 = @('NestedRequiredModule1',
                                     @{ModuleName = 'NestedRequiredModule2'; ModuleVersion = '2.0'; })
 
         if($PSVersionTable.PSVersion -ge '5.0.0')
         {
             $DepencyModuleNames += @("RequiredModule3",
                                      "RequiredModule4",
-                                     "RequiredModule5"<#, 
+                                     "RequiredModule5"<#,
                                      "NestedRequiredModule3",
                                      "NestedRequiredModule4",
                                      "NestedRequiredModule5"#>
@@ -1991,7 +2012,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P2 -Tags 'P2','OuterLoop' {
                 $null = New-Item -Path $DepModuleBase -ItemType Directory -Force
                 New-ModuleManifest -Path (Join-Path $DepModuleBase "$_.psd1") `
                                    -ModuleVersion '1.0.0' `
-                                   -Description "$_ module"        
+                                   -Description "$_ module"
             }
 
             $psd1Text = @"
@@ -2020,7 +2041,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P2 -Tags 'P2','OuterLoop' {
                         }
                     }
                 }
-"@ 
+"@
 
             ($psd1Text -replace '__VERSION__',$version) | Out-File -FilePath (Join-Path -Path $ModuleBase -ChildPath "$ModuleName.psd1") -Force
 

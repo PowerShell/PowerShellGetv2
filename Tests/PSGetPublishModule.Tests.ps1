@@ -218,8 +218,9 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -ReleaseNotes "$script:PublishModuleName release notes" -Tags PSGet -LicenseUri "https://$script:PublishModuleName.com/license" -ProjectUri "https://$script:PublishModuleName.com" -WarningAction SilentlyContinue
         New-Item -type directory -path $script:PublishModuleBase -Name Saved
         Save-Module $script:PublishModuleName -RequiredVersion $version -Path $script:PublishModuleBase\saved
-        Assert ((Test-Path $script:PublishModuleBase\saved\$script:PublishModuleName\1.0.0\.git) -eq $false) ".git dir shouldn't be included"
-        Assert ((Test-Path $script:PublishModuleBase\saved\$script:PublishModuleName\1.0.0\normal) -eq $true) "normal file should be included"
+        $contents = (dir -rec -force $script:PublishModuleBase | Out-String)
+        Assert ((Test-Path $script:PublishModuleBase\saved\$script:PublishModuleName\1.0.0\.git) -eq $false) ".git dir shouldn't be included ($contents)"
+        Assert ((Test-Path $script:PublishModuleBase\saved\$script:PublishModuleName\1.0.0\normal) -eq $true) "normal file should be included ($contents)"
     }
 
     # Purpose: Publish a module with -Path

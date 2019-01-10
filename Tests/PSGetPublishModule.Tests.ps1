@@ -213,7 +213,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         New-Item -Type Directory -Path $script:PublishModuleBase -Name ".git"
         New-Item -Type File -Path $script:PublishModuleBase\.git\dummy
         New-Item -Type File -Path $script:PublishModuleBase -Name "normal"
-        $hiddenDir = Get-Item $script:PublishModuleBase\.git
+        $hiddenDir = Get-Item $script:PublishModuleBase\.git -force
         $hiddenDir.Attributes = "hidden"
         Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -ReleaseNotes "$script:PublishModuleName release notes" -Tags PSGet -LicenseUri "https://$script:PublishModuleName.com/license" -ProjectUri "https://$script:PublishModuleName.com" -WarningAction SilentlyContinue
         New-Item -type directory -path $script:PublishModuleBase -Name Saved

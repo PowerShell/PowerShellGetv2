@@ -922,7 +922,7 @@ function Update-ModuleManifest
 
             #Verify the new module manifest is valid
             $testModuleInfo = Microsoft.PowerShell.Core\Test-ModuleManifest -Path $tempPath `
-                                                                        -Verbose:$VerbosePreference `
+                                                                        -Verbose:$VerbosePreference ` -ErrorAction Stop
         }
         #Catch the exceptions from Test-ModuleManifest
         catch

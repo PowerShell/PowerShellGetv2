@@ -686,6 +686,25 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
                                           -expectedFullyQualifiedErrorId "InvalidPackageManagementProviders,Update-ModuleManifest"
     } 
 
+    # Purpose: Validate Update-ModuleManifest will throw errors when an invalid RootModule is provided
+    #
+    # Action:
+    #      Update-ModuleManifest -Path [Path] -RootModule [InvalidRootModule]
+    #
+    # Expected Result: Update-ModuleManifest should throw errors about the invalid RootModule
+    #
+    It UpdateModuleManifestWithInvalidRootModule {
+
+        New-ModuleManifest -path $script:testManifestPath
+
+        $InvalidRootModule = "\/"
+        AssertFullyQualifiedErrorIdEquals -scriptblock {Update-ModuleManifest -Path $script:testManifestPath -RootModule $InvalidRootModule} `
+                                          -expectedFullyQualifiedErrorId "UpdateManifestFileFail,Update-ModuleManifest"
+
+        $newModuleInfo = Test-ModuleManifest -Path $script:testManifestPath
+        Assert ($newModuleInfo.RootModule -contains $InvalidRootModule -eq $False) 'Module Manifest should not contain an invalid root module'
+    }`
+    -Skip:$($PSVersionTable.PSVersion -lt '5.1.0')
 
     # Purpose: Validate Update-ModuleManifest will throw errors if the original manifest fail the Test-ModuleManifest
     #

@@ -214,13 +214,13 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         New-Item -Type File -Path $script:PublishModuleBase\.git\dummy
         New-Item -Type File -Path $script:PublishModuleBase -Name "normal"
         $hiddenDir = Get-Item $script:PublishModuleBase\.git -force
-        $hiddenDir.Attributes = "hidden" qq
+        $hiddenDir.Attributes = "hidden"
         Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -ReleaseNotes "$script:PublishModuleName release notes" -Tags PSGet -LicenseUri "https://$script:PublishModuleName.com/license" -ProjectUri "https://$script:PublishModuleName.com" -WarningAction SilentlyContinue
         New-Item -type directory -path $script:PublishModuleBase -Name saved
         Save-Module $script:PublishModuleName -RequiredVersion $version -Path $script:PublishModuleBase\saved
         $contents = (dir -rec -force $script:PublishModuleBase | Out-String)
-        Assert ((Test-Path $script:PublishModuleBase\saved\$script:PublishModuleName\.git) -eq $false) ".git dir shouldn't be included ($contents)"
-        Assert ((Test-Path $script:PublishModuleBase\saved\$script:PublishModuleName\normal) -eq $true) "normal file should be included ($contents)"
+        Assert ((Test-Path $script:PublishModuleBase\saved\$script:PublishModuleName\1.0.0\.git) -eq $false) ".git dir shouldn't be included ($contents)"
+        Assert ((Test-Path $script:PublishModuleBase\saved\$script:PublishModuleName\1.0.0\normal) -eq $true) "normal file should be included ($contents)"
     }
 
     # Purpose: Publish a module with -Path

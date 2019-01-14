@@ -208,6 +208,8 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: published module should not contain these files
     #
     It "PublishModuleLeavesOutHiddenFiles" {
+
+        # create module dir containing a hidden dir with a normal file inside, and a normal file
         $version = "1.0"
         New-ModuleManifest -Path (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
         New-Item -Type Directory -Path $script:PublishModuleBase -Name ".git"
@@ -215,14 +217,19 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         New-Item -Type File -Path $script:PublishModuleBase -Name "normal"
         $hiddenDir = Get-Item $script:PublishModuleBase\.git -force
         $hiddenDir.Attributes = "hidden"
+
+        # publish it, then save the published one and inspect it
         Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -ReleaseNotes "$script:PublishModuleName release notes" -Tags PSGet -LicenseUri "https://$script:PublishModuleName.com/license" -ProjectUri "https://$script:PublishModuleName.com" -WarningAction SilentlyContinue
         New-Item -type directory -path $script:PublishModuleBase -Name saved
         Save-Module $script:PublishModuleName -RequiredVersion $version -Path $script:PublishModuleBase\saved
+
+        # it should contain the normal file, but not the hidden dir
         $contents = (dir -rec -force $script:PublishModuleBase | Out-String)
         $basedir = "$script:PublishModuleBase\saved\$script:PublishModuleName"
         if($PSVersionTable.PSVersion -gt '5.0.0') {
             $basedir = join-path $basedir "1.0.0"
         }
+
         Assert ((Test-Path $basedir\.git) -eq $false) ".git dir shouldn't be included ($contents)"
         Assert ((Test-Path $basedir\normal) -eq $true) "normal file should be included ($contents)"
     }

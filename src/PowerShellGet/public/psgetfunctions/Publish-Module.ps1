@@ -365,7 +365,18 @@ function Publish-Module {
         }
 
         $null = Microsoft.PowerShell.Management\New-Item -Path $tempModulePathForFormatVersion -ItemType Directory -Force -ErrorAction SilentlyContinue -WarningAction SilentlyContinue -Confirm:$false -WhatIf:$false
-        Microsoft.PowerShell.Management\Copy-Item -Path "$Path\*" -Destination $tempModulePathForFormatVersion -Force -Recurse -Confirm:$false -WhatIf:$false
+
+        # Copy-Item -Recurse -Force includes hidden items like .git directories, which we don't want
+        # This finds all the items without force (leaving out hidden files and dirs) then copies them
+        Microsoft.PowerShell.Management\Get-ChildItem $Path -recurse |
+            Microsoft.PowerShell.Management\Copy-Item -Force -Confirm:$false -WhatIf:$false -Destination {
+                if ($_.PSIsContainer) {
+                    Join-Path $tempModulePathForFormatVersion $_.Parent.FullName.substring($path.length)
+                }
+                else {
+                    join-path $tempModulePathForFormatVersion $_.FullName.Substring($path.Length)
+                }
+        }
 
         try {
             $manifestPath = Join-PathUtility -Path $tempModulePathForFormatVersion -ChildPath "$moduleName.psd1" -PathType File

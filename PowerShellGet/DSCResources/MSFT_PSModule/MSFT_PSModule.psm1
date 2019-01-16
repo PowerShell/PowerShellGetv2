@@ -112,7 +112,7 @@ function Get-TargetResource
 
     if ($ensure -eq 'Absent')
     {
-        return @{
+        $returnValue = @{
             Ensure = $ensure
             Name   = $Name
         }
@@ -135,7 +135,7 @@ function Get-TargetResource
 
         $installationPolicy = Get-InstallationPolicy -RepositoryName $repositoryName -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
 
-        return @{
+        $returnValue = @{
             Ensure             = $ensure
             Name               = $Name
             Repository         = $repositoryName
@@ -148,6 +148,7 @@ function Get-TargetResource
             InstallationPolicy = if ($installationPolicy) {"Trusted"}else {"Untrusted"}
         }
     }
+    return $returnValue
 }
 
 function Test-TargetResource
@@ -481,6 +482,7 @@ Function Get-RightModule
         Specifies the name of the module source repository where the module can be found.
     #>
 
+    [CmdletBinding()]
     param
     (
         [parameter(Mandatory = $true)]
@@ -593,7 +595,6 @@ Function Get-RightModule
             }
         }
     } # foreach
-
     return $returnVal
 }
 
@@ -607,6 +608,7 @@ Function Get-ModuleRepositoryName
         Specifies the name of the PowerShell module.
     #>
 
+    [CmdletBinding()]
     param
     (
         [parameter(Mandatory = $true)]
@@ -617,9 +619,7 @@ Function Get-ModuleRepositoryName
 
     # RepositorySourceLocation property is supported in PS V5 only. To work with the earlier PS version, we need to do a different way.
     # PSGetModuleInfo.xml exists for any PS modules downloaded through PSModule provider.
-
     $psGetModuleInfoFileName = "PSGetModuleInfo.xml"
-
     $psGetModuleInfoPath = Microsoft.PowerShell.Management\Join-Path -Path $Module.ModuleBase -ChildPath $psGetModuleInfoFileName
 
     Write-Verbose -Message ($localizedData.FoundModulePath -f $($psGetModuleInfoPath))

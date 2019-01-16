@@ -28,7 +28,8 @@ Function ExtractArguments
     .PARAMETER ArgumentNames
         Specifies a list of arguments you want to extract.
     #>
-
+    
+    [CmdletBinding()]
     param
     (
         [parameter(Mandatory = $true)]
@@ -52,7 +53,6 @@ Function ExtractArguments
             $returnValue.Add($arg, $FunctionBoundParameters[$arg])
         }
     }
-
     return $returnValue
 }
 
@@ -75,6 +75,7 @@ Function ThrowError
         Specifies the error category, e.g., InvalidArgument defined in System.Management.Automation.
     #>
 
+    [CmdletBinding()]
     param
     (
         [parameter(Mandatory = $true)]
@@ -274,6 +275,7 @@ Function Get-InstallationPolicy
         Provides the repository Name.
     #>
 
+    [CmdletBinding()]
     param
     (
         [parameter(Mandatory = $true)]

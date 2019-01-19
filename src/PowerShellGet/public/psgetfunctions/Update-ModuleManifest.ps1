@@ -941,6 +941,9 @@ function Update-ModuleManifest
 
         $newContent = Microsoft.PowerShell.Management\Get-Content -Path $tempPath
 
+        #Remove the PSGet_ prepended to the original manifest name due to the temp file name
+        $newContent[1] = $newContent[1] -replace "'PSGet_", "'"
+
         try
         {
             #Ask for confirmation of the new manifest before replacing the original one

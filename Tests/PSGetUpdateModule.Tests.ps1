@@ -77,6 +77,48 @@ function SuiteCleanup {
     }
 }
 
+Describe UpdateModuleFromAlternateRepo -Tags 'BVT' {
+    BeforeAll {
+        SuiteSetup
+    }
+
+    AfterAll {
+        SuiteCleanup
+    }
+
+    AfterEach {
+        PSGetTestUtils\Uninstall-Module ContosoServer
+        PSGetTestUtils\Uninstall-Module ContosoClient
+    }
+
+    It "Check situation" {
+        $withSlash = "https://www.poshtestgallery.com/api/v2/"
+        $noSlash = "https://www.poshtestgallery.com/api/v2"
+        Write-Host (Get-PSRepository | Out-String)
+        (Get-PSRepository PSGallery).SourceLocation | Should Be $withSlash
+
+        Install-Module ContosoServer -RequiredVersion 1.0
+        (Get-InstalledModule ContosoServer).RepositorySourceLocation | Should Be $withSlash
+        Write-Host (Get-InstalledModule ContosoServer -AllVersions | Format-List | Out-String)
+
+        # now update where PSGallery Source Location is
+        Set-PSGallerySourceLocation -Location $noSlash
+        Write-Host (Get-PSRepository | Out-String)
+        (Get-PSRepository PSGallery).SourceLocation | Should Be $noSlash
+
+        # reload powershellget to force-update cached repository info
+        Import-Module PowerShellGet -Force
+
+        # now try and update module isntalled using other SourceLocation
+        Update-Module ContosoServer -RequiredVersion 2.0 -ErrorAction Stop
+        Write-Host (Get-InstalledModule ContosoServer -AllVersions | Format-List | Out-String)
+        (Get-InstalledModule ContosoServer).RepositorySourceLocation | Should Be $noSlash
+
+        (Get-InstalledModule ContosoServer).Version | Should Be 2.0
+
+    }
+}
+
 Describe PowerShell.PSGet.UpdateModuleTests -Tags 'BVT','InnerLoop' {
 
     BeforeAll {
@@ -350,7 +392,7 @@ Describe PowerShell.PSGet.UpdateModuleTests -Tags 'BVT','InnerLoop' {
 }
 
 Describe PowerShell.PSGet.UpdateModuleTests.P1 -Tags 'P1','OuterLoop' {
-    # Not executing these tests on MacOS as 
+    # Not executing these tests on MacOS as
     # the total execution time is exceeding allowed 50 min in TravisCI daily builds.
     if($IsMacOS) {
         return
@@ -376,13 +418,13 @@ Describe PowerShell.PSGet.UpdateModuleTests.P1 -Tags 'P1','OuterLoop' {
     # Expected Result: both modules should be refreshed
     #
     It "UpdateMultipleModulesWithWildcard" {
-        
+
         Install-Module ContosoClient -RequiredVersion 1.0
-        
+
         $contosoClientDetails = Get-InstalledModule -Name ContosoClient
 
         Install-Module ContosoServer -RequiredVersion 1.0
-        
+
         $MyError = $null
         $DateTimeBeforeUpdate = Get-Date
 
@@ -391,7 +433,7 @@ Describe PowerShell.PSGet.UpdateModuleTests.P1 -Tags 'P1','OuterLoop' {
         Assert ($MyError.Count -eq 0) "There should not be any error when updating multiple modules with wildcard in name, $MyError"
         $res = Get-InstalledModule -Name ContosoServer -MinimumVersion "1.1"
         Assert ($res -and ($res.Name -eq "ContosoServer") -and ($res.Version -gt [Version]"1.0")) "Update-Module should update when wildcard specified in name"
-        
+
         $res = Get-InstalledModule -Name ContosoClient -MinimumVersion "1.1"
         Assert ($res -and ($res.Name -eq "ContosoClient") -and ($res.Version -gt [Version]"1.0")) "Update-Module should update when wildcard specified in name"
 
@@ -457,7 +499,7 @@ Describe PowerShell.PSGet.UpdateModuleTests.P1 -Tags 'P1','OuterLoop' {
 
 Describe PowerShell.PSGet.UpdateModuleTests.P2 -Tags 'P2','OuterLoop' {
 
-    # Not executing these tests on MacOS as 
+    # Not executing these tests on MacOS as
     # the total execution time is exceeding allowed 50 min in TravisCI daily builds.
     if($IsMacOS) {
         return

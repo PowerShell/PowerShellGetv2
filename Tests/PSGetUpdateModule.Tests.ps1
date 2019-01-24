@@ -113,7 +113,6 @@ Describe UpdateModuleFromAlternateRepo -Tags 'BVT' {
         Update-Module ContosoServer -RequiredVersion 2.0 -ErrorAction Stop
         #Write-Host (Get-InstalledModule ContosoServer -AllVersions | Format-List | Out-String)
         (Get-InstalledModule ContosoServer).RepositorySourceLocation | Should Be $noSlash
-
         (Get-InstalledModule ContosoServer).Version | Should Be 2.0
     }
 
@@ -142,7 +141,6 @@ Describe UpdateModuleFromAlternateRepo -Tags 'BVT' {
         Update-Module ContosoServer -RequiredVersion 2.0 -ErrorAction Stop
         #Write-Host (Get-InstalledModule ContosoServer -AllVersions | Format-List | Out-String)
         (Get-InstalledModule ContosoServer).RepositorySourceLocation | Should Be $withSlash
-
         (Get-InstalledModule ContosoServer).Version | Should Be 2.0
     }
 }

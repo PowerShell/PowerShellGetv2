@@ -10,23 +10,29 @@
 # THE SOFTWARE.
 #
 
-Import-LocalizedData -BindingVariable LocalizedData -filename MSFT_PSModule.strings.psd1
-$script:localizedData = Get-LocalizedData `
-    -ResourceName 'MSFT_PSModule' `
-    -ResourcePath (Split-Path -Parent $Script:MyInvocation.MyCommand.Path)
+$resourceModuleRoot = Split-Path -Path (Split-Path -Path $PSScriptRoot -Parent) -Parent
 
-Import-Module -Name "$PSScriptRoot\..\PowerShellGetHelper.psm1"
+# Import localization helper functions.
+$helperName = 'PowerShellGet.LocalizationHelper'
+$dscResourcesFolderFilePath = Join-Path -Path $resourceModuleRoot -ChildPath "Modules\$helperName\$helperName.psm1"
+Import-Module -Name $dscResourcesFolderFilePath
+
+$script:localizedData = Get-LocalizedData -ResourceName 'MSFT_PSModule' -ScriptRoot $PSScriptRoot
+
+# Import resource helper functions.
+$helperName = 'PowerShellGet.ResourceHelper'
+$dscResourcesFolderFilePath = Join-Path -Path $resourceModuleRoot -ChildPath "Modules\$helperName\$helperName.psm1"
+Import-Module -Name $dscResourcesFolderFilePath
 
 # DSC Resource for the $CurrentProviderName.
 $CurrentProviderName = "PowerShellGet"
 
 # Return the current state of the resource.
-function Get-TargetResource
-{
+function Get-TargetResource {
     <#
     .SYNOPSIS
         This DSC resource provides a mechanism to download PowerShell modules from the PowerShell
-        Gallery and install it on your computer. 
+        Gallery and install it on your computer.
 
         Get-TargetResource returns the current state of the resource.
 
@@ -77,13 +83,13 @@ function Get-TargetResource
         [System.String]
         $MinimumVersion,
 
-        [Switch]
+        [System.Boolean]
         $Force,
-        
-        [Switch]
+
+        [System.Boolean]
         $AllowClobber,
 
-        [Switch]
+        [System.Boolean]
         $SkipPublisherCheck
     )
 
@@ -97,35 +103,29 @@ function Get-TargetResource
     $modules = Get-RightModule @extractedArguments -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
 
     # If the module is found, the count > 0
-    if ($modules.count -gt 0) 
-    {
+    if ($modules.count -gt 0) {
         $ensure = 'Present'
 
         Write-Verbose -Message ($localizedData.ModuleFound -f $($Name))
     }
-    else
-    {
+    else {
         Write-Verbose -Message ($localizedData.ModuleNotFound -f $($Name))
     }
 
     Write-Debug -Message "Ensure of $($Name) module is $($ensure)"
 
-    if ($ensure -eq 'Absent')
-    {
+    if ($ensure -eq 'Absent') {
         $returnValue = @{
             Ensure = $ensure
             Name   = $Name
         }
     }
-    else
-    {
+    else {
         # Find a module with the latest version and return its properties.
         $latestModule = $modules[0]
 
-        foreach ($module in $modules)
-        {
-            if ($module.Version -gt $latestModule.Version)
-            {
+        foreach ($module in $modules) {
+            if ($module.Version -gt $latestModule.Version) {
                 $latestModule = $module
             }
         }
@@ -144,19 +144,18 @@ function Get-TargetResource
             ModuleBase         = $latestModule.ModuleBase
             ModuleType         = $latestModule.ModuleType
             Author             = $latestModule.Author
-            InstalledVersion   = $latestModule.Version 
+            InstalledVersion   = $latestModule.Version
             InstallationPolicy = if ($installationPolicy) {"Trusted"}else {"Untrusted"}
         }
     }
     return $returnValue
 }
 
-function Test-TargetResource
-{
+function Test-TargetResource {
     <#
     .SYNOPSIS
         This DSC resource provides a mechanism to download PowerShell modules from the PowerShell
-        Gallery and install it on your computer. 
+        Gallery and install it on your computer.
 
         Test-TargetResource validates whether the resource is currently in the desired state.
 
@@ -182,7 +181,7 @@ function Test-TargetResource
         Provides the minimum version of the module you want to install or uninstall.
 
     .PARAMETER Force
-        Forces the installation of modules. If a module of the same name and version already exists on the computer, 
+        Forces the installation of modules. If a module of the same name and version already exists on the computer,
         this parameter overwrites the existing module with one of the same name that was found by the command.
 
     .PARAMETER AllowClobber
@@ -221,13 +220,13 @@ function Test-TargetResource
         [System.String]
         $MinimumVersion,
 
-        [Switch]
+        [System.Boolean]
         $Force,
 
-        [Switch]
+        [System.Boolean]
         $AllowClobber,
 
-        [Switch]
+        [System.Boolean]
         $SkipPublisherCheck
     )
 
@@ -239,24 +238,21 @@ function Test-TargetResource
     $status = Get-TargetResource @extractedArguments
 
     # The ensure returned from Get-TargetResource is not equal to the desired $Ensure.
-    if ($status.Ensure -ieq $Ensure)
-    {
+    if ($status.Ensure -ieq $Ensure) {
         Write-Verbose -Message ($localizedData.InDesiredState -f $Name)
         return $true
     }
-    else
-    {
+    else {
         Write-Verbose -Message ($localizedData.NotInDesiredState -f $Name)
         return $false
     }
 }
 
-function Set-TargetResource
-{
+function Set-TargetResource {
     <#
     .SYNOPSIS
         This DSC resource provides a mechanism to download PowerShell modules from the PowerShell
-        Gallery and install it on your computer. 
+        Gallery and install it on your computer.
 
         Set-TargetResource sets the resource to the desired state. "Make it so".
 
@@ -320,29 +316,27 @@ function Set-TargetResource
         [System.String]
         $MinimumVersion,
 
-        [Switch]
+        [System.Boolean]
         $Force,
-        
-        [Switch]
+
+        [System.Boolean]
         $AllowClobber,
-        
-        [Switch]
+
+        [System.Boolean]
         $SkipPublisherCheck
     )
 
     # Validate the repository argument
-    if ($PSBoundParameters.ContainsKey("Repository"))
-    {
+    if ($PSBoundParameters.ContainsKey("Repository")) {
         ValidateArgument -Argument $Repository -Type "PackageSource" -ProviderName $CurrentProviderName -Verbose
     }
 
-    if ($Ensure -ieq "Present")
-    {
+    if ($Ensure -ieq "Present") {
         # Version check
         $extractedArguments = ExtractArguments -FunctionBoundParameters $PSBoundParameters `
             -ArgumentNames ("MinimumVersion", "MaximumVersion", "RequiredVersion")
 
-        ValidateVersionArgument @extractedArguments 
+        ValidateVersionArgument @extractedArguments
 
         $extractedArguments = ExtractArguments -FunctionBoundParameters $PSBoundParameters `
             -ArgumentNames ("Name", "Repository", "MinimumVersion", "MaximumVersion", "RequiredVersion")
@@ -351,8 +345,7 @@ function Set-TargetResource
 
         $modules = Find-Module @extractedArguments -ErrorVariable ev
 
-        if (-not $modules) 
-        {
+        if (-not $modules) {
             ThrowError -ExceptionName "System.InvalidOperationException" `
                 -ExceptionMessage ($localizedData.ModuleNotFoundInRepository -f $Name, $ev.Exception) `
                 -ErrorId "ModuleNotFoundInRepository" `
@@ -362,32 +355,28 @@ function Set-TargetResource
         $trusted = $null
         $moduleFound = $null
 
-        foreach ($m in $modules)
-        {
+        foreach ($m in $modules) {
             # Check for the installation policy.
             $trusted = Get-InstallationPolicy -RepositoryName $m.Repository -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
 
             # Stop the loop if found a trusted repository.
-            if ($trusted)
-            {
-                $moduleFound = $m 
+            if ($trusted) {
+                $moduleFound = $m
                 break;
             }
         }
 
         # The respository is trusted, so we install it.
-        if ($trusted)
-        {
+        if ($trusted) {
             Write-Verbose -Message ($localizedData.StartInstallModule -f $Name, $moduleFound.Version.toString(), $moduleFound.Repository)
 
             # Extract the installation options.
             $extractedSwitches = ExtractArguments -FunctionBoundParameters $PSBoundParameters -ArgumentNames ("Force", "AllowClobber", "SkipPublisherCheck")
 
-            $moduleFound |  Install-Module -ErrorVariable ev
+            $moduleFound |  Install-Module @extractedSwitches -ErrorVariable ev
         }
         # The repository is untrusted but user's installation policy is trusted, so we install it with a warning.
-        elseif ($InstallationPolicy -ieq 'Trusted')
-        {
+        elseif ($InstallationPolicy -ieq 'Trusted') {
             Write-Warning -Message ($localizedData.InstallationPolicyWarning -f $Name, $modules[0].Repository, $InstallationPolicy)
 
             # Extract installation options (Force implied by InstallationPolicy).
@@ -397,29 +386,25 @@ function Set-TargetResource
             $modules[0] |  Install-Module @extractedSwitches -Force -ErrorVariable ev
         }
         # Both user and repository is untrusted
-        else
-        {
+        else {
             ThrowError  -ExceptionName "System.InvalidOperationException" `
                 -ExceptionMessage ($localizedData.InstallationPolicyFailed -f $InstallationPolicy, "Untrusted") `
                 -ErrorId "InstallationPolicyFailed" `
                 -ErrorCategory InvalidOperation
         }
 
-        if ($ev)
-        {
+        if ($ev) {
             ThrowError  -ExceptionName "System.InvalidOperationException" `
                 -ExceptionMessage ($localizedData.FailtoInstall -f $Name, $ev.Exception) `
                 -ErrorId "FailtoInstall" `
                 -ErrorCategory InvalidOperation
         }
-        else
-        {
+        else {
             Write-Verbose -Message ($localizedData.InstalledSuccess -f $($Name))
         }
     }
     # Ensure=Absent
-    else
-    {
+    else {
 
         $extractedArguments = ExtractArguments -FunctionBoundParameters $PSBoundParameters `
             -ArgumentNames ("Name", "Repository", "MinimumVersion", "MaximumVersion", "RequiredVersion")
@@ -427,41 +412,36 @@ function Set-TargetResource
         # Get the module with the right version and repository properties.
         $modules = Get-RightModule @extractedArguments -ErrorVariable ev
 
-        if ((-not $modules) -or $ev) 
-        {
+        if ((-not $modules) -or $ev) {
             ThrowError  -ExceptionName "System.InvalidOperationException" `
                 -ExceptionMessage ($localizedData.ModuleWithRightPropertyNotFound -f $Name, $ev.Exception) `
                 -ErrorId "ModuleWithRightPropertyNotFound" `
                 -ErrorCategory InvalidOperation
         }
 
-        foreach ($module in $modules)
-        {
+        foreach ($module in $modules) {
             # Get the path where the module is installed.
             $path = $module.ModuleBase
 
-            Write-Verbose -Message ($localizedData.StartUnInstallModule -f $($Name))  
+            Write-Verbose -Message ($localizedData.StartUnInstallModule -f $($Name))
 
             # There is no Uninstall-Module cmdlet exists, so we will remove the ModuleBase folder as an uninstall operation.
             Microsoft.PowerShell.Management\Remove-Item -Path $path -Force -Recurse -ErrorVariable ev
 
-            if ($ev)
-            {
+            if ($ev) {
                 ThrowError  -ExceptionName "System.InvalidOperationException" `
                     -ExceptionMessage ($localizedData.FailtoUninstall -f $module.Name, $ev.Exception) `
                     -ErrorId "FailtoUninstall" `
                     -ErrorCategory InvalidOperation
             }
-            else
-            {
+            else {
                 Write-Verbose -Message ($localizedData.UnInstalledSuccess -f $($module.Name))
             }
         } # foreach
     } # Ensure=Absent
 }
 
-Function Get-RightModule
-{
+Function Get-RightModule {
     <#
     .SYNOPSIS
         This is a helper function. It returns the modules that meet the specified versions and the repository requirements.
@@ -507,8 +487,7 @@ Function Get-RightModule
 
     $modules = Microsoft.PowerShell.Core\Get-Module -Name $Name -ListAvailable -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
 
-    if (-not $modules)
-    {
+    if (-not $modules) {
         return $null
     }
 
@@ -519,77 +498,63 @@ Function Get-RightModule
         -ArgumentNames ("MaximumVersion", "MinimumVersion", "RequiredVersion")
     $returnVal = @()
 
-    foreach ($m in $modules)
-    {
+    foreach ($m in $modules) {
         $versionMatch = $false
         $installedVersion = $m.Version
 
         # Case 1 - a user provides none of RequiredVersion, MinimumVersion, MaximumVersion
-        if ($extractedArguments.Count -eq 0)
-        {
+        if ($extractedArguments.Count -eq 0) {
             $versionMatch = $true
         }
 
-        # Case 2 - a user provides RequiredVersion 
-        elseif ($extractedArguments.ContainsKey("RequiredVersion"))
-        {
+        # Case 2 - a user provides RequiredVersion
+        elseif ($extractedArguments.ContainsKey("RequiredVersion")) {
             # Check if it matches with the installedversion
             $versionMatch = ($installedVersion -eq [System.Version]$RequiredVersion)
         }
-        else
-        {
-            
-            # Case 3 - a user provides MinimumVersion 
-            if ($extractedArguments.ContainsKey("MinimumVersion"))
-            {
+        else {
+
+            # Case 3 - a user provides MinimumVersion
+            if ($extractedArguments.ContainsKey("MinimumVersion")) {
                 $versionMatch = ($installedVersion -ge [System.Version]$extractedArguments['MinimumVersion'])
             }
-            
+
             # Case 4 - a user provides MaximumVersion
-            if ($extractedArguments.ContainsKey("MaximumVersion"))
-            {
+            if ($extractedArguments.ContainsKey("MaximumVersion")) {
                 $isLessThanMax = ($installedVersion -le [System.Version]$extractedArguments['MaximumVersion'])
 
-                if ($extractedArguments.ContainsKey("MinimumVersion"))
-                {
+                if ($extractedArguments.ContainsKey("MinimumVersion")) {
                     $versionMatch = $versionMatch -and $isLessThanMax
                 }
-                else
-                {
+                else {
                     $versionMatch = $isLessThanMax
                 }
             }
-            
+
             # Case 5 - Both MinimumVersion and MaximumVersion are provided. It's covered by the above.
             # Do not return $false yet to allow the foreach to continue
-            if (-not $versionMatch)
-            {
+            if (-not $versionMatch) {
                 Write-Verbose -Message ($localizedData.VersionMismatch -f $($Name), $($installedVersion))
                 $versionMatch = $false
             }
         }
 
         # Case 6 - Version matches but need to check if the module is from the right repository.
-        if ($versionMatch) 
-        {
+        if ($versionMatch) {
             # a user does not provide Repository, we are good
-            if (-not $PSBoundParameters.ContainsKey("Repository"))
-            {
+            if (-not $PSBoundParameters.ContainsKey("Repository")) {
                 Write-Verbose -Message ($localizedData.ModuleFound -f "$($Name) $($installedVersion)")
                 $returnVal += $m
             }
-            else
-            {
+            else {
                 # Check if the Repository matches
                 $sourceName = Get-ModuleRepositoryName -Module $m
 
-                if ($Repository -ieq $sourceName)
-                {
+                if ($Repository -ieq $sourceName) {
                     Write-Verbose -Message ($localizedData.ModuleFound -f "$($Name) $($installedVersion)")
                     $returnVal += $m
                 }
-                else
-                {
+                else {
                     Write-Verbose -Message ($localizedData.RepositoryMismatch -f $($Name), $($sourceName))
                 }
             }
@@ -598,8 +563,7 @@ Function Get-RightModule
     return $returnVal
 }
 
-Function Get-ModuleRepositoryName
-{
+Function Get-ModuleRepositoryName {
     <#
     .SYNOPSIS
         This is a helper function that returns the module's repository name.
@@ -624,8 +588,7 @@ Function Get-ModuleRepositoryName
 
     Write-Verbose -Message ($localizedData.FoundModulePath -f $($psGetModuleInfoPath))
 
-    if (Microsoft.PowerShell.Management\Test-path -Path $psGetModuleInfoPath)
-    {
+    if (Microsoft.PowerShell.Management\Test-path -Path $psGetModuleInfoPath) {
         $psGetModuleInfo = Microsoft.PowerShell.Utility\Import-Clixml -Path $psGetModuleInfoPath
 
         return $psGetModuleInfo.Repository

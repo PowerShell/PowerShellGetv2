@@ -1,4 +1,34 @@
 # Changelog
+
+## Unreleased
+
+* Update the AppVeyor CI test pipeline with a new job to run tests for
+  the DSC resources, primarily for the resource `PSModule`.
+  The new job uses the test framework used for the DSC Resource Kit,
+  the [DscResource.Tests](https://github.com/PowerShell/DscResource.Tests) repository.
+* Update .gitignore to ignore the [DscResource.Tests](https://github.com/PowerShell/DscResource.Tests)
+  test framework. When running unit test locally it is cloned into the
+  local repository folder.
+* Added module PowerShellGet.LocalizationHelper containing localization
+  helper functions for DSC resources, and unit tests for the helper
+  functions.
+* Moved helper functions for the DSC resource `PSModule` to the module
+  PowerShellGet.ResourceHelper. Added improved localization support, and
+  code formatting against workspace VS Code settings.
+* Changes to PSModule.
+  * Added improved localization support.
+  * Changed type on the parameters that had `[Switch]` to correctly use
+    `Systen.Boolean` to match the schema.mof.
+  * Code formatting against workspace VS Code settings.
+  * Added unit tests.
+  * Added integration tests
+  * It is now possible to install a module and passing in `AllowClobber`
+    when the modules package source is trusted (it already worked in
+    other scenarios).
+* Changed the AppVeyor CI build pipeline so it added the DSC resource
+  `PSModule` and dependent helper modules (the `Modules` folder) to the
+  AppVeyor artifact.
+
 ## 2.0.4
 Bug Fix
 * Remove PSGallery availability checks (#374)

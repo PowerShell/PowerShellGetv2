@@ -152,7 +152,7 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
     # Action:
     #      Update-ModuleManifest -Path [Path] 
     #
-    # Expected Result: The updated manifest should have the same DefaultCommandPreifx as before, 
+    # Expected Result: The updated manifest should have the same DefaultCommandPrefix as before, 
     # CmdletsToExport, FunctionsToExport, AliasesToExport, DSCResourcesToExport should not have prefixes affixed
     #                   
     It UpdateModuleManifestWithDefaultCommandPrefix {
@@ -197,6 +197,22 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         }
     }
 
+    # Purpose: Update a module manifest with an empty array of commandlets and functions to export
+    #
+    # Action: Update-ModuleManifest -Path [path] -CmdletsToExport "" -functions ""
+    #
+    # Expected Result: The updated module manifest should have no commandlets or functions to export
+    #
+    It "UpdateModuleManifestWithEmptyFunctionsAndCmdletsToExport" {
+        New-ModuleManifest  -Path $script:testManifestPath -Confirm:$false -CmdletsToExport "commandlet1","commandlet2" `
+                            -FunctionsToExport "function1","function2" -AliasesToExport "alias1","alias2"
+        Update-ModuleManifest -Path $script:testManifestPath -CmdletsToExport "" -FunctionsToExport "" -AliasesToExport ""
+        $updatedModuleInfo = Test-ModuleManifest -Path $script:testManifestPath
+
+        AssertEquals $updatedModuleInfo.FunctionsToExport.Count 0 "FunctionsToExport count should be 0"
+        AssertEquals $updatedModuleInfo.CmdletsToExport.Count 0 "CmdletsToExport count should be 0"
+        AssertEquals $updatedModuleInfo.AliasesToExport.Count 0 "AliasesToExport count should be 0"
+    }
 
 
     # Purpose: Update a module manifest with same parameters

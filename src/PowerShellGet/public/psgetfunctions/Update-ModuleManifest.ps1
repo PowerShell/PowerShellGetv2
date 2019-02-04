@@ -124,12 +124,10 @@ function Update-ModuleManifest
         $ModuleList,
 
         [Parameter()]
-        [ValidateNotNullOrEmpty()]
         [string[]]
         $FunctionsToExport,
 
         [Parameter()]
-        [ValidateNotNullOrEmpty()]
         [string[]]
         $AliasesToExport,
 
@@ -139,7 +137,6 @@ function Update-ModuleManifest
         $VariablesToExport,
 
         [Parameter()]
-        [ValidateNotNullOrEmpty()]
         [string[]]
         $CmdletsToExport,
 
@@ -497,7 +494,7 @@ function Update-ModuleManifest
         $params.Add("ModuleList",$ModuleManifestHashtable.ModuleList)
     }
 
-    if($FunctionsToExport)
+    if($FunctionsToExport -or $FunctionsToExport -is [array])
     {
         $params.Add("FunctionsToExport",$FunctionsToExport)
     }
@@ -523,7 +520,7 @@ function Update-ModuleManifest
         }
     }
 
-    if($AliasesToExport)
+    if($AliasesToExport -or $AliasesToExport -is [array])
     {
         $params.Add("AliasesToExport",$AliasesToExport)
     }
@@ -568,7 +565,7 @@ function Update-ModuleManifest
         }
     }
 
-    if($CmdletsToExport)
+    if($CmdletsToExport -or $CmdletsToExport -is [array])
     {
         $params.Add("CmdletsToExport", $CmdletsToExport)
     }

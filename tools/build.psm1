@@ -7,7 +7,7 @@ $script:IsCoreCLR = $PSVersionTable.ContainsKey('PSEdition') -and $PSVersionTabl
 $script:ProjectRoot = Split-Path -Path $PSScriptRoot -Parent
 $script:ModuleRoot = Join-Path -Path $ProjectRoot -ChildPath "src\PowerShellGet"
 $script:ModuleFile = Join-Path -Path $ModuleRoot -ChildPath "PSModule.psm1"
-$script:DscModuleRoot = Join-Path -Path $ProjectRoot -ChildPath "PowerShellGet"
+$script:DscModuleRoot = Join-Path -Path $ProjectRoot -ChildPath "DSC"
 $script:ArtifactRoot = Join-Path -Path $ProjectRoot -ChildPath "dist"
 
 
@@ -453,7 +453,7 @@ function Set-AppVeyorLocationDscResourceModuleBuildFolder {
     param()
 
     $script:originalBuildFolder = $env:APPVEYOR_BUILD_FOLDER
-    $env:APPVEYOR_BUILD_FOLDER = Join-Path -Path $env:APPVEYOR_BUILD_FOLDER -ChildPath 'PowerShellGet'
+    $env:APPVEYOR_BUILD_FOLDER = Join-Path -Path $env:APPVEYOR_BUILD_FOLDER -ChildPath 'DSC'
     Set-Location -Path $env:APPVEYOR_BUILD_FOLDER
 }
 

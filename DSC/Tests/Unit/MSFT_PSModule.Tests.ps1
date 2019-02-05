@@ -1,5 +1,6 @@
 #region HEADER
-$script:DSCModuleName = 'PowerShellGet'
+# This must be same name as the root folder, and module manifest.
+$script:DSCModuleName = 'DSC'
 $script:DSCResourceName = 'MSFT_PSModule'
 
 # Unit Test Template Version: 1.2.4

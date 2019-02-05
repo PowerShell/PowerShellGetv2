@@ -63,7 +63,7 @@ for:
       - TestCategory: DSC
 
   install:
-    - git clone https://github.com/PowerShell/DscResource.Tests %APPVEYOR_BUILD_FOLDER%\PowerShellGet\DscResource.Tests
+    - git clone https://github.com/PowerShell/DscResource.Tests %APPVEYOR_BUILD_FOLDER%\DSC\DscResource.Tests
     - ps: |
         Import-Module .\tools\build.psm1
         Invoke-DscPowerShellGetAppVeyorInstallTask

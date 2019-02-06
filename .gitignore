@@ -272,4 +272,4 @@ FakesAssemblies/
 
 # Ignore DscResource.Tests repository when it is cloned
 # when running DSC resource unit tests locally.
-PowerShellGet/DscResource.Tests
+DSC/DscResource.Tests

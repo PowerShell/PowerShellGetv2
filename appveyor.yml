@@ -4,6 +4,9 @@ environment:
   matrix:
   - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
     PowerShellEdition: Desktop
+    TestCategory: DSC
+  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+    PowerShellEdition: Desktop
   - APPVEYOR_BUILD_WORKER_IMAGE: WMF 5
     PowerShellEdition: Desktop
   - APPVEYOR_BUILD_WORKER_IMAGE: WMF 4
@@ -52,6 +55,22 @@ test_script:
     - ps: |
         Invoke-PowerShellGetTest
 
+for:
+# Only run for jobs where TestCategory is 'DSC'.
+-
+  matrix:
+    only:
+      - TestCategory: DSC
+
+  install:
+    - git clone https://github.com/PowerShell/DscResource.Tests %APPVEYOR_BUILD_FOLDER%\DSC\DscResource.Tests
+    - ps: |
+        Import-Module .\tools\build.psm1
+        Invoke-DscPowerShellGetAppVeyorInstallTask
+
+
+  test_script:
+    - ps: Invoke-DscPowerShellGetAppVeyorTestTask
 
 # Upload the project along with TestResults as a zip archive
 on_finish:

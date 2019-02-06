@@ -9,15 +9,21 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 #
-# Helper functions for PackageManagement DSC Resouces
+
+<#
+    Helper functions for PowerShellGet DSC Resources.
+#>
+
+# Import localization helper functions.
+$helperName = 'PowerShellGet.LocalizationHelper'
+$resourceModuleRoot = Split-Path -Path (Split-Path -Path $PSScriptRoot -Parent) -Parent
+$dscResourcesFolderFilePath = Join-Path -Path $resourceModuleRoot -ChildPath "Modules\$helperName\$helperName.psm1"
+Import-Module -Name $dscResourcesFolderFilePath
 
 # Import Localization Strings
-$script:localizedData = Get-LocalizedData `
-    -ResourceName 'PowerShellGet' `
-    -ResourcePath (Split-Path -Parent $Script:MyInvocation.MyCommand.Path)
+$script:localizedData = Get-LocalizedData -ResourceName 'PowerShellGet.ResourceHelper' -ScriptRoot $PSScriptRoot
 
-Function ExtractArguments
-{
+Function ExtractArguments {
     <#
     .SYNOPSIS
         This is a helper function that extract the parameters from a given table.
@@ -28,7 +34,7 @@ Function ExtractArguments
     .PARAMETER ArgumentNames
         Specifies a list of arguments you want to extract.
     #>
-    
+
     [CmdletBinding()]
     param
     (
@@ -45,10 +51,8 @@ Function ExtractArguments
 
     $returnValue = @{}
 
-    foreach ($arg in $ArgumentNames)
-    {
-        if ($FunctionBoundParameters.ContainsKey($arg))
-        {
+    foreach ($arg in $ArgumentNames) {
+        if ($FunctionBoundParameters.ContainsKey($arg)) {
             # Found an argument we are looking for, so we add it to return collection.
             $returnValue.Add($arg, $FunctionBoundParameters[$arg])
         }
@@ -56,11 +60,10 @@ Function ExtractArguments
     return $returnValue
 }
 
-Function ThrowError
-{
+Function ThrowError {
     <#
     .SYNOPSIS
-        This is a helper function that throws an error. 
+        This is a helper function that throws an error.
 
     .PARAMETER ExceptionName
         Specifies the type of errors, e.g. System.ArgumentException.
@@ -87,7 +90,7 @@ Function ThrowError
         [ValidateNotNullOrEmpty()]
         [System.String]
         $ExceptionMessage,
-        
+
         [parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [System.String]
@@ -107,8 +110,7 @@ Function ThrowError
     throw $errorRecord
 }
 
-Function ValidateArgument
-{
+Function ValidateArgument {
     <#
     .SYNOPSIS
         This is a helper function that validates the arguments.
@@ -141,63 +143,53 @@ Function ValidateArgument
 
     Write-Verbose -Message ($localizedData.CallingFunction -f $($MyInvocation.mycommand))
 
-    switch ($Type)
-    {
-        "SourceUri"
-        {
+    switch ($Type) {
+        "SourceUri" {
             # Checks whether given URI represents specific scheme
             # Most common schemes: file, http, https, ftp
             $scheme = @('http', 'https', 'file', 'ftp')
- 
-            $newUri = $Argument -as [System.URI]  
+
+            $newUri = $Argument -as [System.URI]
             $returnValue = ($newUri -and $newUri.AbsoluteURI -and ($scheme -icontains $newuri.Scheme))
 
-            if ($returnValue -eq $false)
-            {
+            if ($returnValue -eq $false) {
                 ThrowError  -ExceptionName "System.ArgumentException" `
                     -ExceptionMessage ($LocalizedData.InValidUri -f $Argument)`
                     -ErrorId "InValidUri" `
                     -ErrorCategory InvalidArgument
             }
         }
-        "DestinationPath"
-        {
+        "DestinationPath" {
             $returnValue = Test-Path -Path $Argument
 
-            if ($returnValue -eq $false)
-            {
+            if ($returnValue -eq $false) {
                 ThrowError  -ExceptionName "System.ArgumentException" `
                     -ExceptionMessage ($LocalizedData.PathDoesNotExist -f $Argument)`
                     -ErrorId "PathDoesNotExist" `
                     -ErrorCategory InvalidArgument
             }
         }
-        "PackageSource"
-        {
+        "PackageSource" {
             # Argument can be either the package source Name or source Uri.
-            
+
             # Check if the source is a Uri.
             $uri = $Argument -as [System.URI]
 
-            if ($uri -and $uri.AbsoluteURI)
-            {
+            if ($uri -and $uri.AbsoluteURI) {
                 # Check if it's a valid Uri.
                 ValidateArgument -Argument $Argument -Type "SourceUri" -ProviderName $ProviderName
             }
-            else
-            {
+            else {
                 # Check if it's a registered package source name.
                 $source = PackageManagement\Get-PackageSource -Name $Argument -ProviderName $ProviderName -verbose -ErrorVariable ev
 
-                if ((-not $source) -or $ev) 
-                {
+                if ((-not $source) -or $ev) {
                     # We do not need to throw error here as Get-PackageSource does already.
                     Write-Verbose -Message ($LocalizedData.SourceNotFound -f $source)
                 }
             }
         }
-        default
-        {
+        default {
             ThrowError  -ExceptionName "System.ArgumentException" `
                 -ExceptionMessage ($LocalizedData.UnexpectedArgument -f $Type)`
                 -ErrorId "UnexpectedArgument" `
@@ -206,11 +198,10 @@ Function ValidateArgument
     }
 }
 
-Function ValidateVersionArgument
-{
+Function ValidateVersionArgument {
     <#
     .SYNOPSIS
-        This is a helper function that does the version validation. 
+        This is a helper function that does the version validation.
 
     .PARAMETER RequiredVersion
         Provides the required version.
@@ -225,13 +216,13 @@ Function ValidateVersionArgument
     [CmdletBinding()]
     param
     (
-        [System.String] 
+        [System.String]
         $RequiredVersion,
 
-        [System.String] 
+        [System.String]
         $MinimumVersion,
 
-        [System.String] 
+        [System.String]
         $MaximumVersion
     )
 
@@ -240,14 +231,12 @@ Function ValidateVersionArgument
     $isValid = $false
 
     # Case 1: No further check required if a user provides either none or one of these: minimumVersion, maximumVersion, and requiredVersion.
-    if ($PSBoundParameters.Count -le 1)
-    {
+    if ($PSBoundParameters.Count -le 1) {
         return $true
     }
 
     # Case 2: #If no RequiredVersion is provided.
-    if (-not $PSBoundParameters.ContainsKey('RequiredVersion'))
-    {
+    if (-not $PSBoundParameters.ContainsKey('RequiredVersion')) {
         # If no RequiredVersion, both MinimumVersion and MaximumVersion are provided. Otherwise fall into the Case #1.
         $isValid = $PSBoundParameters['MinimumVersion'] -le $PSBoundParameters['MaximumVersion']
     }
@@ -256,8 +245,7 @@ Function ValidateVersionArgument
     #        In this case  MinimumVersion and/or MaximumVersion also are provided. Otherwise fall in to Case #1.
     #        This is an invalid case. When RequiredVersion is provided, others are not allowed. so $isValid is false, which is already set in the init.
 
-    if ($isValid -eq $false)
-    {        
+    if ($isValid -eq $false) {
         ThrowError  -ExceptionName "System.ArgumentException" `
             -ExceptionMessage ($LocalizedData.VersionError)`
             -ErrorId "VersionError" `
@@ -265,11 +253,10 @@ Function ValidateVersionArgument
     }
 }
 
-Function Get-InstallationPolicy
-{
+Function Get-InstallationPolicy {
     <#
     .SYNOPSIS
-        This is a helper function that retrives the InstallationPolicy from the given repository. 
+        This is a helper function that retrives the InstallationPolicy from the given repository.
 
     .PARAMETER RepositoryName
         Provides the repository Name.
@@ -287,8 +274,7 @@ Function Get-InstallationPolicy
 
     $repositoryobj = PackageManagement\Get-PackageSource -Name $RepositoryName -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
 
-    if ($repositoryobj)
-    {
+    if ($repositoryobj) {
         return $repositoryobj.IsTrusted
     }
 }

@@ -155,7 +155,7 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
     #
     It UpdateModuleManifestWithNoAdditionalParameters3 {
 
-        New-ModuleManifest -Path $script:testManifestPath -ModuleVersion '1.0' -FunctionsToExport 'function1' -NestedModules 'module1' -AliasesToExport 'alias1'
+        New-ModuleManifest -Path $script:testManifestPath -ModuleVersion '1.0' -FunctionsToExport 'function1' -NestedModules 'Microsoft.PowerShell.Management' -AliasesToExport 'alias1'
         Update-ModuleManifest -Path $script:testManifestPath
 
         Import-LocalizedData -BindingVariable ModuleManifestHashTable `

@@ -165,7 +165,7 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
                      -WarningAction SilentlyContinue
 
         AssertEquals $ModuleManifestHashTable.FunctionsToExport 'function1' "FunctionsToExport should be 'function1'"
-        AssertEquals $ModuleManifestHashTable.NestedModules 'module1' "NestedModules should be 'module1'"
+        AssertEquals $ModuleManifestHashTable.NestedModules 'Microsoft.PowerShell.Management' "NestedModules should be 'module1'"
         AssertEquals $ModuleManifestHashTable.AliasesToExport 'alias1' "AliasesToExport should be 'alias1'"
     } 
 

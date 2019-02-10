@@ -270,13 +270,9 @@ function Update-ModuleManifest
     {
         $params.Add("NestedModules",$NestedModules)
     }
-    elseif($moduleInfo.NestedModules)
+    elseif($ModuleManifestHashTable -and $ModuleManifestHashTable.ContainsKey("NestedModules"))
     {
-        #Get the original module info from ManifestHashTab
-        if($ModuleManifestHashTable -and $ModuleManifestHashTable.ContainsKey("NestedModules"))
-        {
-            $params.Add("NestedModules",$ModuleManifestHashtable.NestedModules)
-        }
+        $params.Add("NestedModules",$ModuleManifestHashtable.NestedModules)
     }
 
     #Guid is read-only property
@@ -519,6 +515,10 @@ function Update-ModuleManifest
             $params.Add("FunctionsToExport",($moduleInfo.ExportedFunctions.Keys -split ' '))
         }
     }
+    elseif ($ModuleManifestHashTable -and $ModuleManifestHashTable.ContainsKey("FunctionsToExport"))
+    {
+        $params.Add("FunctionsToExport", $ModuleManifestHashTable['FunctionsToExport'])
+    }
 
     if($AliasesToExport -or $AliasesToExport -is [array])
     {
@@ -544,6 +544,10 @@ function Update-ModuleManifest
         {
             $params.Add("AliasesToExport",($moduleInfo.ExportedAliases.Keys -split ' '))
         }
+    }
+    elseif ($ModuleManifestHashTable -and $ModuleManifestHashTable.ContainsKey("AliasesToExport"))
+    {
+        $params.Add("AliasesToExport", $ModuleManifestHashTable['AliasesToExport'])
     }
 
     if($VariablesToExport)
@@ -585,7 +589,7 @@ function Update-ModuleManifest
                 ForEach-Object { $parts = $_ -split '-', 2; $parts[-1] = $parts[-1] -replace "^$($moduleInfo.Prefix)"; $parts -join '-' }
             $params.Add("CmdletsToExport", $originalCmdlets)
         }
-        else 
+        else
         {
             $params.Add("CmdletsToExport",($moduleInfo.ExportedCmdlets.Keys -split ' '))
         }

@@ -17,7 +17,7 @@ Describe "$script:helperModuleName Unit Tests" {
     }
 
     InModuleScope $script:helperModuleName {
-        Describe 'ExtractArguments' {
+        Describe 'New-SplatParameterHashTable' {
             Context 'When specific parameters should be returned' {
                 It 'Should return a hashtable with the correct values' {
                     $mockPSBoundParameters = @{
@@ -27,7 +27,7 @@ Describe "$script:helperModuleName Unit Tests" {
                         Property4 = '4'
                     }
 
-                    $extractArgumentsResult = ExtractArguments `
+                    $extractArgumentsResult = New-SplatParameterHashTable `
                         -FunctionBoundParameters $mockPSBoundParameters `
                         -ArgumentNames @('Property2', 'Property3')
 
@@ -46,7 +46,7 @@ Describe "$script:helperModuleName Unit Tests" {
                         Property1 = '1'
                     }
 
-                    $extractArgumentsResult = ExtractArguments `
+                    $extractArgumentsResult = New-SplatParameterHashTable `
                         -FunctionBoundParameters $mockPSBoundParameters `
                         -ArgumentNames @('Property2', 'Property3')
 
@@ -60,7 +60,7 @@ Describe "$script:helperModuleName Unit Tests" {
                     $mockPSBoundParameters = @{
                     }
 
-                    $extractArgumentsResult = ExtractArguments `
+                    $extractArgumentsResult = New-SplatParameterHashTable `
                         -FunctionBoundParameters $mockPSBoundParameters `
                         -ArgumentNames @('Property2', 'Property3')
 
@@ -70,101 +70,85 @@ Describe "$script:helperModuleName Unit Tests" {
             }
         }
 
-        Describe 'ThrowError' {
-            It 'Should throw the correct error' {
-                {
-                    $mockedErrorMessage = 'mocked error'
-                    $mockErrorId = 'MockedError'
-                    $mockExceptionName = 'InvalidOperationException'
-
-                    ThrowError `
-                        -ExceptionName $mockExceptionName `
-                        -ExceptionMessage $mockedErrorMessage `
-                        -ErrorId $mockErrorId `
-                        -ErrorCategory 'InvalidOperation'
-                } | Should -Throw $mockedErrorMessage
-            }
-        }
-
-        Describe 'ValidateArgument' {
+        Describe 'Test-ParameterValue' {
             BeforeAll {
                 $mockProviderName = 'PowerShellGet'
             }
 
-            Context 'When passing a correct uri as ''Argument'' and type is ''SourceUri''' {
+            Context 'When passing a correct uri as ''Value'' and type is ''SourceUri''' {
                 It 'Should not throw an error' {
                     {
-                        ValidateArgument `
-                            -Argument 'https://mocked.uri' `
+                        Test-ParameterValue `
+                            -Value 'https://mocked.uri' `
                             -Type 'SourceUri' `
                             -ProviderName $mockProviderName
                     } | Should -Not -Throw
                 }
             }
 
-            Context 'When passing an invalid uri as ''Argument'' and type is ''SourceUri''' {
+            Context 'When passing an invalid uri as ''Value'' and type is ''SourceUri''' {
                 It 'Should throw the correct error' {
-                    $mockArgument = 'mocked.uri'
+                    $mockParameterName = 'mocked.uri'
 
                     {
-                        ValidateArgument `
-                            -Argument $mockArgument `
+                        Test-ParameterValue `
+                            -Value $mockParameterName `
                             -Type 'SourceUri' `
                             -ProviderName $mockProviderName
-                    } | Should -Throw ($LocalizedData.InValidUri -f $mockArgument)
+                    } | Should -Throw ($LocalizedData.InValidUri -f $mockParameterName)
                 }
             }
 
-            Context 'When passing a correct path as ''Argument'' and type is ''DestinationPath''' {
+            Context 'When passing a correct path as ''Value'' and type is ''DestinationPath''' {
                 It 'Should not throw an error' {
                     {
-                        ValidateArgument `
-                            -Argument 'TestDrive:\' `
+                        Test-ParameterValue `
+                            -Value 'TestDrive:\' `
                             -Type 'DestinationPath' `
                             -ProviderName $mockProviderName
                     } | Should -Not -Throw
                 }
             }
 
-            Context 'When passing an invalid path as ''Argument'' and type is ''DestinationPath''' {
+            Context 'When passing an invalid path as ''Value'' and type is ''DestinationPath''' {
                 It 'Should throw the correct error' {
-                    $mockArgument = 'TestDrive:\NonExistentPath'
+                    $mockParameterName = 'TestDrive:\NonExistentPath'
 
                     {
-                        ValidateArgument `
-                            -Argument $mockArgument `
+                        Test-ParameterValue `
+                            -Value $mockParameterName `
                             -Type 'DestinationPath' `
                             -ProviderName $mockProviderName
-                    } | Should -Throw ($LocalizedData.PathDoesNotExist -f $mockArgument)
+                    } | Should -Throw ($LocalizedData.PathDoesNotExist -f $mockParameterName)
                 }
             }
 
-            Context 'When passing a correct uri as ''Argument'' and type is ''PackageSource''' {
+            Context 'When passing a correct uri as ''Value'' and type is ''PackageSource''' {
                 It 'Should not throw an error' {
                     {
-                        ValidateArgument `
-                            -Argument 'https://mocked.uri' `
+                        Test-ParameterValue `
+                            -Value 'https://mocked.uri' `
                             -Type 'PackageSource' `
                             -ProviderName $mockProviderName
                     } | Should -Not -Throw
                 }
             }
 
-            Context 'When passing an correct package source as ''Argument'' and type is ''PackageSource''' {
+            Context 'When passing an correct package source as ''Value'' and type is ''PackageSource''' {
                 BeforeAll {
-                    $mockArgument = 'PSGallery'
+                    $mockParameterName = 'PSGallery'
 
                     Mock -CommandName Get-PackageSource -MockWith {
                         return New-Object -TypeName Object |
-                            Add-Member -Name 'Name' -MemberType NoteProperty -Value $mockArgument -PassThru |
+                            Add-Member -Name 'Name' -MemberType NoteProperty -Value $mockParameterName -PassThru |
                             Add-Member -Name 'ProviderName' -MemberType NoteProperty -Value $mockProviderName -PassThru -Force
                     }
                 }
 
                 It 'Should not throw an error' {
                     {
-                        ValidateArgument `
-                            -Argument $mockArgument `
+                        Test-ParameterValue `
+                            -Value $mockParameterName `
                             -Type 'PackageSource' `
                             -ProviderName $mockProviderName
                     } | Should -Not -Throw
@@ -175,15 +159,15 @@ Describe "$script:helperModuleName Unit Tests" {
 
             Context 'When passing type is ''PackageSource'' and passing a package source that does not exist' {
                 BeforeAll {
-                    $mockArgument = 'PSGallery'
+                    $mockParameterName = 'PSGallery'
 
                     Mock -CommandName Get-PackageSource
                 }
 
                 It 'Should not throw an error' {
                     {
-                        ValidateArgument `
-                            -Argument $mockArgument `
+                        Test-ParameterValue `
+                            -Value $mockParameterName `
                             -Type 'PackageSource' `
                             -ProviderName $mockProviderName
                     } | Should -Not -Throw
@@ -199,8 +183,8 @@ Describe "$script:helperModuleName Unit Tests" {
 
                 It 'Should throw the correct error' {
                     {
-                        ValidateArgument `
-                            -Argument 'AnyArgument' `
+                        Test-ParameterValue `
+                            -Value 'AnyArgument' `
                             -Type $mockType `
                             -ProviderName $mockProviderName
                     } | Should -Throw ($LocalizedData.UnexpectedArgument -f $mockType)
@@ -208,23 +192,23 @@ Describe "$script:helperModuleName Unit Tests" {
             }
         }
 
-        Describe 'ValidateVersionArgument' {
+        Describe 'Test-VersionParameter' {
             Context 'When not passing in any parameters (using default values)' {
                 It 'Should return true' {
-                    ValidateVersionArgument | Should -BeTrue
+                    Test-VersionParameter | Should -BeTrue
                 }
             }
 
             Context 'When only ''RequiredVersion'' are passed' {
                 It 'Should return true' {
-                    ValidateVersionArgument -RequiredVersion '3.0.0.0' | Should -BeTrue
+                    Test-VersionParameter -RequiredVersion '3.0.0.0' | Should -BeTrue
                 }
             }
 
             Context 'When ''MinimumVersion'' has a lower version than ''MaximumVersion''' {
                 It 'Should throw the correct error' {
                     {
-                        ValidateVersionArgument `
+                        Test-VersionParameter `
                             -MinimumVersion '2.0.0.0' `
                             -MaximumVersion '1.0.0.0'
                     } | Should -Throw $LocalizedData.VersionError
@@ -234,7 +218,7 @@ Describe "$script:helperModuleName Unit Tests" {
             Context 'When ''MinimumVersion'' has a lower version than ''MaximumVersion''' {
                 It 'Should throw the correct error' {
                     {
-                        ValidateVersionArgument `
+                        Test-VersionParameter `
                             -MinimumVersion '2.0.0.0' `
                             -MaximumVersion '1.0.0.0'
                     } | Should -Throw $LocalizedData.VersionError
@@ -244,7 +228,7 @@ Describe "$script:helperModuleName Unit Tests" {
             Context 'When ''RequiredVersion'', ''MinimumVersion'', and ''MaximumVersion'' are passed' {
                 It 'Should throw the correct error' {
                     {
-                        ValidateVersionArgument `
+                        Test-VersionParameter `
                             -RequiredVersion '3.0.0.0' `
                             -MinimumVersion '2.0.0.0' `
                             -MaximumVersion '1.0.0.0'

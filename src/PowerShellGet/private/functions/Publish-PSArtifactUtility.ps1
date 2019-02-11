@@ -471,7 +471,7 @@ $CsprojContent = @"
             Microsoft.PowerShell.Management\Remove-Item $NuspecPath -Force -ErrorAction SilentlyContinue -WarningAction SilentlyContinue -Confirm:$false -WhatIf:$false
         }
 
-        Microsoft.PowerShell.Management\Set-Content -Value $nuspec -Path $NuspecPath -Force -Confirm:$false -WhatIf:$false
+        Microsoft.PowerShell.Management\Set-Content -Value $nuspec -Path $NuspecPath -Force -Confirm:$false -WhatIf:$false -Encoding UTF8
 
         # Create .nupkg file
         if($script:DotnetCommandPath) {
@@ -553,7 +553,7 @@ $CsprojContent = @"
 
         if(Test-Path -Path $tempErrorFile -PathType Leaf) {
             $errorMsg = Microsoft.PowerShell.Management\Get-Content -Path $tempErrorFile -Raw
-            
+
             if($errorMsg) {
                 Write-Verbose -Message $errorMsg
             }

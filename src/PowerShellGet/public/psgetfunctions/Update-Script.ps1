@@ -70,6 +70,10 @@ function Update-Script {
             return
         }
 
+        if(-not $Name) {
+            $Name = @('*')
+        }
+
         if ($Name) {
             foreach ($scriptName in $Name) {
                 $availableScriptPaths = Get-AvailableScriptFilePath -Name $scriptName -Verbose:$false
@@ -87,8 +91,12 @@ function Update-Script {
                     # Check if this script got installed with PowerShellGet and user has required permissions
                     if ($installedScriptFilePath) {
                         if (-not (Test-RunningAsElevated) -and $installedScriptFilePath.StartsWith($script:ProgramFilesScriptsPath, [System.StringComparison]::OrdinalIgnoreCase)) {
-                            if (-not (Test-WildcardPattern -Name $scriptName)) {
-                                $message = $LocalizedData.AdminPrivilegesRequiredForScriptUpdate -f ($scriptName, $installedScriptFilePath)
+                            $matchedScriptName = Split-Path -Leaf $scriptFilePath
+                            $message = $LocalizedData.AdminPrivilegesRequiredForScriptUpdate -f ($matchedScriptName, $installedScriptFilePath)
+                            if (Test-WildcardPattern -Name $scriptName) {
+                                Write-Warning -Message $message
+                            }
+                            else {
                                 Write-Error -Message $message -ErrorId "AdminPrivilegesAreRequiredForUpdate" -Category InvalidOperation -TargetObject $scriptName
                             }
                             continue
@@ -104,19 +112,6 @@ function Update-Script {
                         continue
                     }
                 }
-            }
-        }
-        else {
-            $isRunningAsElevated = Test-RunningAsElevated
-            $installedScriptFilePaths = Get-InstalledScriptFilePath
-
-            if ($isRunningAsElevated) {
-                $scriptFilePathsToUpdate = $installedScriptFilePaths
-            }
-            else {
-                # Update the scripts installed under
-                $scriptFilePathsToUpdate = $installedScriptFilePaths | Microsoft.PowerShell.Core\Where-Object {
-                    $_.StartsWith($script:MyDocumentsScriptsPath, [System.StringComparison]::OrdinalIgnoreCase)}
             }
         }
 

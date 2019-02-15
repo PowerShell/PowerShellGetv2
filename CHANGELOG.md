@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Made the list entries in the CHANGELOG.md to use dash `-` throughout to
+  be consequent (before there was a mix of dashes and asterisk).
 - Update the AppVeyor CI test pipeline with a new job to run tests for
   the DSC resources, primarily for the resource `PSModule`.
   The new job uses the test framework used for the DSC Resource Kit,
@@ -15,6 +17,11 @@
 - Moved helper functions for the DSC resource `PSModule` to the module
   PowerShellGet.ResourceHelper. Added improved localization support, and
   code formatting against workspace VS Code settings.
+  - Cleaned up the code against the [DscResources style guideline](https://github.com/PowerShell/DscResources/blob/master/StyleGuidelines.md).
+  - Renamed helper functions in the PowerShellGet.ResourceHelper module
+    to use Verb-Noun.
+  - Refactored the error handling logic to use the localization helper
+    functions, and also so that the error handling could be tested.
 - Changes to PSModule.
   - Added improved localization support.
   - Changed type on the parameters that had `[Switch]` to correctly use
@@ -25,9 +32,32 @@
   - It is now possible to install a module and passing in `AllowClobber`
     when the modules package source is trusted (it already worked in
     other scenarios).
+  - Rephrased some of the localization strings.
+  - Cleaned up the code against the [DscResources style guideline](https://github.com/PowerShell/DscResources/blob/master/StyleGuidelines.md).
+    Suppressed some of the Script Analyzer rules that are not complaint
+    with the the Visual Studio Code workspace settings in this repository.
+  - Refactored the error handling logic to use the localization helper
+    functions, and also so that the error handling could be tested.
+  - Refactored the Get-TargetResource to return the correct hash table
+    when the current state is absent.
+  - Added new examples.
 - Changed the AppVeyor CI build pipeline so it added the DSC resource
   `PSModule` and dependent helper modules (the `Modules` folder) to the
   AppVeyor artifact.
+- Added the `.MetaTestOptIn.json` file to opt-in for a lot of common test
+  in the DscResource.Tests test framework that tests the DSC resources.
+- The examples under the folder `DSC/Examples` will be [published to PowerShell Gallery](https://github.com/PowerShell/DscResource.Tests#publish-examples-to-powershell-gallery)
+  so that they show up in the gallery part of Azure State Configuration.
+  The examples are published under the account 'dscresourcekit' which is
+  owned by the PowerShell DSC Team (DSC Resource Kit).
+  - In the folder `DSC/Examples` a `.gitattributes` was added to make sure
+    the examples is always checkout out using CRLF. There is an issue
+    using `Test-ScriptFileInfo` when files is checkout out using only LF
+    which is the default in AppVeyor.
+  - In the file `appveyor.yml` the PowerShell Gallery API key was added
+    for the account 'dscresourcekit', which can only be decrypted using
+    the PowerShell AppVeyor account.
+
 
 ## 2.0.4
 

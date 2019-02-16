@@ -404,7 +404,7 @@ try {
                         }
                     }
 
-                    It 'Should return the same values as passed as parameters' {
+                    It 'Should return the state as $true' {
                         $testTargetResourceResult = Test-TargetResource -Name $mockModuleName
                         $testTargetResourceResult | Should -Be $true
 
@@ -430,7 +430,7 @@ try {
                         }
                     }
 
-                    It 'Should return the same values as passed as parameters' {
+                    It 'Should return the state as $true' {
                         $testTargetResourceResult = Test-TargetResource -Ensure 'Absent' -Name $mockModuleName
                         $testTargetResourceResult | Should -Be $true
 
@@ -458,7 +458,7 @@ try {
                         }
                     }
 
-                    It 'Should return the same values as passed as parameters' {
+                    It 'Should return the state as $false' {
                         $testTargetResourceResult = Test-TargetResource -Name $mockModuleName
                         $testTargetResourceResult | Should -Be $false
 
@@ -484,7 +484,7 @@ try {
                         }
                     }
 
-                    It 'Should return the same values as passed as parameters' {
+                    It 'Should return the state as $false' {
                         $testTargetResourceResult = Test-TargetResource -Ensure 'Absent' -Name $mockModuleName
                         $testTargetResourceResult | Should -Be $false
 

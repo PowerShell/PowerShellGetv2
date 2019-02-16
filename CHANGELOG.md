@@ -5,7 +5,7 @@
 - Made the list entries in the CHANGELOG.md to use dash `-` throughout to
   be consequent (before there was a mix of dashes and asterisk).
 - Update the AppVeyor CI test pipeline with a new job to run tests for
-  the DSC resources, primarily for the resource `PSModule`.
+  the DSC resources.
   The new job uses the test framework used for the DSC Resource Kit,
   the [DscResource.Tests](https://github.com/PowerShell/DscResource.Tests) repository.
 - Update .gitignore to ignore the [DscResource.Tests](https://github.com/PowerShell/DscResource.Tests)
@@ -41,9 +41,9 @@
   - Refactored the Get-TargetResource to return the correct hash table
     when the current state is absent.
   - Added new examples.
-- Changed the AppVeyor CI build pipeline so it added the DSC resource
-  `PSModule` and dependent helper modules (the `Modules` folder) to the
-  AppVeyor artifact.
+- Changed the AppVeyor CI build pipeline so it adds the DSC resources
+  and dependent helper modules (the `Modules` folder) to the AppVeyor
+  artifact.
 - Added the `.MetaTestOptIn.json` file to opt-in for a lot of common test
   in the DscResource.Tests test framework that tests the DSC resources.
 - The examples under the folder `DSC/Examples` will be [published to PowerShell Gallery](https://github.com/PowerShell/DscResource.Tests#publish-examples-to-powershell-gallery)
@@ -57,7 +57,7 @@
   - In the file `appveyor.yml` the PowerShell Gallery API key was added
     for the account 'dscresourcekit', which can only be decrypted using
     the PowerShell AppVeyor account.
-
+- Added DSC resource PSRepository.
 
 ## 2.0.4
 

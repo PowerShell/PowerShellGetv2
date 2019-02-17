@@ -32,47 +32,22 @@ else
 
 <#
     .SYNOPSIS
-        Changes the package source 'PSGallery' to not trusted.
+        Changes the repository (package source) 'PSGallery' to not trusted.
 
     .NOTES
-        Since the module is installed by SYSTEM as default, the package
-        source 'PSGallery' must be trusted for SYSTEM for some of the
-        tests.
+        Since the module is installed by SYSTEM as default this is done in
+        case the PSGallery is already trusted for SYSTEM.
 #>
 Configuration MSFT_PSModule_SetPackageSourceAsNotTrusted_Config
 {
-    Import-DscResource -ModuleName PSDscResources
+    Import-DscResource -ModuleName 'PowerShellGet'
 
     node $AllNodes.NodeName
     {
-        Script 'TrustPackageSourcePSGallery'
+        PSRepository 'Integration_Test'
         {
-            SetScript  = {
-                Write-Verbose -Message 'Setting package source ''PSGallery'' as trusted'
-                Set-PackageSource -Name 'PSGallery' -Trusted:$false
-            }
-
-            TestScript = {
-                Write-Verbose -Message 'Test if the package source ''PSGallery'' is trusted.'
-
-                <#
-                    This takes the string of the $GetScript parameter and creates
-                    a new script block (during runtime in the resource) and then
-                    runs that script block.
-                #>
-                $getScriptResult = & ([ScriptBlock]::Create($GetScript))
-
-                return $getScriptResult.Result -eq $false
-            }
-
-            GetScript  = {
-                Write-Verbose -Message 'Return the current state of package source ''PSGallery''.'
-                $trusted = (Get-PackageSource -Name 'PSGallery').IsTrusted
-
-                return @{
-                    Result = $trusted
-                }
-            }
+            Name               = 'PSGallery'
+            InstallationPolicy = 'Untrusted'
         }
     }
 }
@@ -118,7 +93,7 @@ Configuration MSFT_PSModule_UninstallModule1_Config
 
 <#
     .SYNOPSIS
-        Changes the package source 'PSGallery' to trusted.
+        Changes the repository (package source) 'PSGallery' to trusted.
 
     .NOTES
         Since the module is installed by SYSTEM as default, the package
@@ -127,38 +102,14 @@ Configuration MSFT_PSModule_UninstallModule1_Config
 #>
 Configuration MSFT_PSModule_SetPackageSourceAsTrusted_Config
 {
-    Import-DscResource -ModuleName PSDscResources
+    Import-DscResource -ModuleName 'PowerShellGet'
 
     node $AllNodes.NodeName
     {
-        Script 'TrustPackageSourcePSGallery'
+        PSRepository 'Integration_Test'
         {
-            SetScript  = {
-                Write-Verbose -Message 'Setting package source ''PSGallery'' as trusted'
-                Set-PackageSource -Name 'PSGallery' -Trusted
-            }
-
-            TestScript = {
-                Write-Verbose -Message 'Test if the package source ''PSGallery'' is trusted.'
-
-                <#
-                    This takes the string of the $GetScript parameter and creates
-                    a new script block (during runtime in the resource) and then
-                    runs that script block.
-                #>
-                $getScriptResult = & ([ScriptBlock]::Create($GetScript))
-
-                return $getScriptResult.Result -eq $true
-            }
-
-            GetScript  = {
-                Write-Verbose -Message 'Return the current state of package source ''PSGallery''.'
-                $trusted = (Get-PackageSource -Name 'PSGallery').IsTrusted
-
-                return @{
-                    Result = $trusted
-                }
-            }
+            Name               = 'PSGallery'
+            InstallationPolicy = 'Trusted'
         }
     }
 }

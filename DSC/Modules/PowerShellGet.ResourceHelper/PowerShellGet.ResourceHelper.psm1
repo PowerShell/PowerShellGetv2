@@ -23,31 +23,31 @@ Import-Module -Name $dscResourcesFolderFilePath
 # Import Localization Strings
 $script:localizedData = Get-LocalizedData -ResourceName 'PowerShellGet.ResourceHelper' -ScriptRoot $PSScriptRoot
 
-Function ExtractArguments {
-    <#
+<#
     .SYNOPSIS
         This is a helper function that extract the parameters from a given table.
 
     .PARAMETER FunctionBoundParameters
-        Specifies the hashtable containing a set of parameters to be extracted.
+        Specifies the hash table containing a set of parameters to be extracted.
 
     .PARAMETER ArgumentNames
         Specifies a list of arguments you want to extract.
-    #>
-
+#>
+function New-SplatParameterHashTable {
     [CmdletBinding()]
+    [OutputType([System.Collections.Hashtable])]
     param
     (
-        [parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true)]
         [System.Collections.Hashtable]
         $FunctionBoundParameters,
 
-        [parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true)]
         [System.String[]]
         $ArgumentNames
     )
 
-    Write-Verbose -Message ($localizedData.CallingFunction -f $($MyInvocation.mycommand))
+    Write-Verbose -Message ($script:localizedData.CallingFunction -f $($MyInvocation.MyCommand))
 
     $returnValue = @{}
 
@@ -57,149 +57,101 @@ Function ExtractArguments {
             $returnValue.Add($arg, $FunctionBoundParameters[$arg])
         }
     }
+
     return $returnValue
 }
 
-Function ThrowError {
-    <#
+<#
     .SYNOPSIS
-        This is a helper function that throws an error.
+        This is a helper function that validate that a value is correct and used correctly.
 
-    .PARAMETER ExceptionName
-        Specifies the type of errors, e.g. System.ArgumentException.
-
-    .PARAMETER ExceptionMessage
-        Specifies the exception message.
-
-    .PARAMETER ErrorId
-        Specifies an identifier of the error.
-
-    .PARAMETER ErrorCategory
-        Specifies the error category, e.g., InvalidArgument defined in System.Management.Automation.
-    #>
-
-    [CmdletBinding()]
-    param
-    (
-        [parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [System.String]
-        $ExceptionName,
-
-        [parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [System.String]
-        $ExceptionMessage,
-
-        [parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [System.String]
-        $ErrorId,
-
-        [parameter(Mandatory = $true)]
-        [ValidateNotNull()]
-        [System.Management.Automation.ErrorCategory]
-        $ErrorCategory
-    )
-
-    Write-Verbose -Message ($localizedData.CallingFunction -f $($MyInvocation.mycommand))
-
-    $exception = New-Object -TypeName $ExceptionName -ArgumentList $ExceptionMessage;
-    $errorRecord = New-Object -TypeName System.Management.Automation.ErrorRecord -ArgumentList ($exception, $ErrorId, $ErrorCategory, $null)
-
-    throw $errorRecord
-}
-
-Function ValidateArgument {
-    <#
-    .SYNOPSIS
-        This is a helper function that validates the arguments.
-
-    .PARAMETER Argument
-        Specifies the argument to be validated.
+    .PARAMETER Value
+        Specifies the value to be validated.
 
     .PARAMETER Type
         Specifies the type of argument.
-    #>
 
+    .PARAMETER Type
+        Specifies the name of the provider.
+
+    .OUTPUTS
+        None. Throws an error if the test fails.
+#>
+function Test-ParameterValue {
     [CmdletBinding()]
     param
     (
-        [parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [System.String]
-        $Argument,
+        $Value,
 
-        [parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [System.String]
         $Type,
 
-        [parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [System.String]
         $ProviderName
     )
 
-    Write-Verbose -Message ($localizedData.CallingFunction -f $($MyInvocation.mycommand))
+    Write-Verbose -Message ($script:localizedData.CallingFunction -f $($MyInvocation.MyCommand))
 
     switch ($Type) {
-        "SourceUri" {
+        'SourceUri' {
             # Checks whether given URI represents specific scheme
             # Most common schemes: file, http, https, ftp
             $scheme = @('http', 'https', 'file', 'ftp')
 
-            $newUri = $Argument -as [System.URI]
-            $returnValue = ($newUri -and $newUri.AbsoluteURI -and ($scheme -icontains $newuri.Scheme))
+            $newUri = $Value -as [System.URI]
+            $returnValue = ($newUri -and $newUri.AbsoluteURI -and ($scheme -icontains $newUri.Scheme))
 
             if ($returnValue -eq $false) {
-                ThrowError  -ExceptionName "System.ArgumentException" `
-                    -ExceptionMessage ($LocalizedData.InValidUri -f $Argument)`
-                    -ErrorId "InValidUri" `
-                    -ErrorCategory InvalidArgument
+                $errorMessage = $script:localizedData.InValidUri -f $Value
+                New-InvalidArgumentException -ArgumentName $Type -Message $errorMessage
             }
         }
-        "DestinationPath" {
-            $returnValue = Test-Path -Path $Argument
+
+        'DestinationPath' {
+            $returnValue = Test-Path -Path $Value
 
             if ($returnValue -eq $false) {
-                ThrowError  -ExceptionName "System.ArgumentException" `
-                    -ExceptionMessage ($LocalizedData.PathDoesNotExist -f $Argument)`
-                    -ErrorId "PathDoesNotExist" `
-                    -ErrorCategory InvalidArgument
+                $errorMessage = $script:localizedData.PathDoesNotExist -f $Value
+                New-InvalidArgumentException -ArgumentName $Type -Message $errorMessage
             }
         }
-        "PackageSource" {
-            # Argument can be either the package source Name or source Uri.
+
+        'PackageSource' {
+            # Value can be either the package source Name or source Uri.
 
             # Check if the source is a Uri.
-            $uri = $Argument -as [System.URI]
+            $uri = $Value -as [System.URI]
 
             if ($uri -and $uri.AbsoluteURI) {
                 # Check if it's a valid Uri.
-                ValidateArgument -Argument $Argument -Type "SourceUri" -ProviderName $ProviderName
+                Test-ParameterValue -Value $Value -Type 'SourceUri' -ProviderName $ProviderName
             }
             else {
                 # Check if it's a registered package source name.
-                $source = PackageManagement\Get-PackageSource -Name $Argument -ProviderName $ProviderName -verbose -ErrorVariable ev
+                $source = PackageManagement\Get-PackageSource -Name $Value -ProviderName $ProviderName -ErrorVariable ev
 
                 if ((-not $source) -or $ev) {
                     # We do not need to throw error here as Get-PackageSource does already.
-                    Write-Verbose -Message ($LocalizedData.SourceNotFound -f $source)
+                    Write-Verbose -Message ($script:localizedData.SourceNotFound -f $source)
                 }
             }
         }
+
         default {
-            ThrowError  -ExceptionName "System.ArgumentException" `
-                -ExceptionMessage ($LocalizedData.UnexpectedArgument -f $Type)`
-                -ErrorId "UnexpectedArgument" `
-                -ErrorCategory InvalidArgument
+            $errorMessage = $script:localizedData.UnexpectedArgument -f $Type
+            New-InvalidArgumentException -ArgumentName $Type -Message $errorMessage
         }
     }
 }
 
-Function ValidateVersionArgument {
-    <#
+<#
     .SYNOPSIS
         This is a helper function that does the version validation.
 
@@ -211,22 +163,25 @@ Function ValidateVersionArgument {
 
     .PARAMETER MinimumVersion
         Provides the minimum version.
-    #>
-
+#>
+function Test-VersionParameter {
     [CmdletBinding()]
     param
     (
+        [Parameter()]
         [System.String]
         $RequiredVersion,
 
+        [Parameter()]
         [System.String]
         $MinimumVersion,
 
+        [Parameter()]
         [System.String]
         $MaximumVersion
     )
 
-    Write-Verbose -Message ($localizedData.CallingFunction -f $($MyInvocation.mycommand))
+    Write-Verbose -Message ($localizedData.CallingFunction -f $($MyInvocation.MyCommand))
 
     $isValid = $false
 
@@ -246,35 +201,34 @@ Function ValidateVersionArgument {
     #        This is an invalid case. When RequiredVersion is provided, others are not allowed. so $isValid is false, which is already set in the init.
 
     if ($isValid -eq $false) {
-        ThrowError  -ExceptionName "System.ArgumentException" `
-            -ExceptionMessage ($LocalizedData.VersionError)`
-            -ErrorId "VersionError" `
-            -ErrorCategory InvalidArgument
+        $errorMessage = $script:localizedData.VersionError
+        New-InvalidArgumentException `
+            -ArgumentName 'RequiredVersion, MinimumVersion or MaximumVersion' `
+            -Message $errorMessage
     }
 }
 
-Function Get-InstallationPolicy {
-    <#
+<#
     .SYNOPSIS
-        This is a helper function that retrives the InstallationPolicy from the given repository.
+        This is a helper function that retrieves the InstallationPolicy from the given repository.
 
     .PARAMETER RepositoryName
         Provides the repository Name.
-    #>
-
+#>
+function Get-InstallationPolicy {
     [CmdletBinding()]
     param
     (
-        [parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [System.String] $RepositoryName
     )
 
-    Write-Verbose -Message ($LocalizedData.CallingFunction -f $($MyInvocation.mycommand))
+    Write-Verbose -Message ($LocalizedData.CallingFunction -f $($MyInvocation.MyCommand))
 
-    $repositoryobj = PackageManagement\Get-PackageSource -Name $RepositoryName -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
+    $repositoryObject = PackageManagement\Get-PackageSource -Name $RepositoryName -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
 
-    if ($repositoryobj) {
-        return $repositoryobj.IsTrusted
+    if ($repositoryObject) {
+        return $repositoryObject.IsTrusted
     }
 }

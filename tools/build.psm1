@@ -476,6 +476,24 @@ function Set-AppVeyorLocationOriginalBuildFolder {
 
 <#
     .SYNOPSIS
+        This function removes any present PowerShellGet modules in $env:PSModulePath's.
+
+    .NOTES
+        Used by other helper functions when testing DSC resources in AppVeyor.
+#>
+function Remove-ModulePowerShellGet {
+    [CmdletBinding()]
+    param()
+
+    Remove-Module -Name PowerShellGet -Force
+    Get-Module -Name PowerShellGet -ListAvailable | ForEach-Object {
+        Remove-Item -Path (Split-Path -Path $_.Path -Parent) -Recurse -Force
+    }
+}
+
+
+<#
+    .SYNOPSIS
         This function runs all the necessary install steps to prepare the
         environment for testing of DSC resources.
 
@@ -494,10 +512,7 @@ function Invoke-DscPowerShellGetAppVeyorInstallTask {
         Invoke-AppveyorInstallTask
 
         # Remove any present PowerShellGet modules so DSC integration tests don't see multiple modules.
-        Remove-Module -Name PowerShellGet -Force
-        Get-Module -Name PowerShellGet -ListAvailable | ForEach-Object {
-            Remove-Item -Path (Split-Path -Path $_.Path -Parent) -Recurse -Force
-        }
+        Remove-ModulePowerShellGet
     }
     catch {
         throw $_
@@ -534,6 +549,49 @@ function Invoke-DscPowerShellGetAppVeyorTestTask {
     try {
         Import-Module -Name "$env:APPVEYOR_BUILD_FOLDER\DscResource.Tests\AppVeyor.psm1"
         Invoke-AppveyorTestScriptTask -CodeCoverage -ExcludeTag @()
+    }
+    catch {
+        throw $_
+    }
+    finally {
+        Set-AppVeyorLocationOriginalBuildFolder
+    }
+}
+
+<#
+    .SYNOPSIS
+        This function starts the deploy step for the DSC resources. The
+        deploy step only publishes the examples to the PowerShell Gallery
+        so they show up in the gallery part of Azure State Configuration.
+
+    .NOTES
+        Publishes using the account 'dscresourcekit' which is owned by
+        PowerShell DSC Team (DSC Resource Kit).
+        Only runs on the master branch.
+#>
+function Invoke-DscPowerShellGetAppVeyorDeployTask {
+    [CmdletBinding()]
+    param()
+
+    <#
+        Removes any present PowerShellGet modules so deployment
+        don't see multiple modules.
+    #>
+    Remove-ModulePowerShellGet
+
+    <#
+        Removes the source folder so when the deploy step copies
+        the module folder it only see the resource in the 'dist'
+        folder created by the AppVeyor install task.
+    #>
+    Remove-Item -Path (Join-Path -Path $env:APPVEYOR_BUILD_FOLDER -ChildPath 'src') -Recurse -Force
+
+    # Temporary change the build folder during testing of the DSC resources.
+    Set-AppVeyorLocationDscResourceModuleBuildFolder
+
+    try {
+        Import-Module -Name "$env:APPVEYOR_BUILD_FOLDER\DscResource.Tests\AppVeyor.psm1"
+        Invoke-AppVeyorDeployTask -OptIn @('PublishExample') -ModuleRootPath (Split-Path -Path $env:APPVEYOR_BUILD_FOLDER -Parent)
     }
     catch {
         throw $_

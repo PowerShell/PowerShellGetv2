@@ -95,6 +95,7 @@ ConvertFrom-StringData @'
         ModuleNotFound=Module '{0}' was not found.
         NoMatchFound=No match was found for the specified search criteria and module names '{0}'.
         NoMatchFoundForScriptName=No match was found for the specified search criteria and script names '{0}'.
+        MatchInvalidType=The name '{0}' is a {1} not a {2}.
         FailedToCreateCompressedModule=Failed to generate the compressed file for module '{0}'.
         FailedToPublish=Failed to publish module '{0}': '{1}'.
         PublishedSuccessfully=Successfully published module '{0}' to the module publish location '{1}'. Please allow few minutes for '{2}' to show up in the search results.

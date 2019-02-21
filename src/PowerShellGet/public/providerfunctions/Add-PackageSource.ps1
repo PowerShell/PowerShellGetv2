@@ -519,8 +519,7 @@ function Add-PackageSource
     }
     elseif($Options.ContainsKey($script:ScriptSourceLocation))
     {
-        # ScriptSourceLocation and SourceLocation cannot be same for they are URLs
-        # Both should be equal in case of SMB Share or Local directory paths
+        # ScriptSourceLocation and SourceLocation should be equal for SMB Share or Local directory paths
         if(Microsoft.PowerShell.Management\Test-Path -Path $ScriptSourceLocation)
         {
             if($ScriptSourceLocation -ne $LocationString)
@@ -529,26 +528,6 @@ function Add-PackageSource
                 ThrowError -ExceptionName "System.InvalidOperationException" `
                             -ExceptionMessage $message `
                             -ErrorId "SourceLocationPathsForModulesAndScriptsShouldBeEqual" `
-                            -CallerPSCmdlet $PSCmdlet `
-                            -ErrorCategory InvalidOperation `
-                            -ExceptionObject $Location
-            }
-        }
-        else
-        {
-            if($ScriptSourceLocation -eq $LocationString -and
-               -not ($LocationString.EndsWith('/nuget/v2', [System.StringComparison]::OrdinalIgnoreCase)) -and
-               -not ($LocationString.EndsWith('/nuget/v2/', [System.StringComparison]::OrdinalIgnoreCase)) -and
-               -not ($LocationString.EndsWith('/nuget', [System.StringComparison]::OrdinalIgnoreCase)) -and
-               -not ($LocationString.EndsWith('/nuget/', [System.StringComparison]::OrdinalIgnoreCase)) -and
-               -not ($LocationString.EndsWith('index.json', [System.StringComparison]::OrdinalIgnoreCase)) -and
-               -not ($LocationString.EndsWith('index.json/', [System.StringComparison]::OrdinalIgnoreCase))
-              )
-            {
-                $message = $LocalizedData.SourceLocationUrisForModulesAndScriptsShouldBeDifferent -f ($LocationString, $ScriptSourceLocation)
-                ThrowError -ExceptionName "System.InvalidOperationException" `
-                            -ExceptionMessage $message `
-                            -ErrorId "SourceLocationUrisForModulesAndScriptsShouldBeDifferent" `
                             -CallerPSCmdlet $PSCmdlet `
                             -ErrorCategory InvalidOperation `
                             -ExceptionObject $Location

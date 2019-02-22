@@ -97,7 +97,7 @@ try {
             return $mockGalleryModule
         }
 
-        Describe 'MSFT_PSModule\Get-TargetResource' -Tag 'Get' {
+        Describe 'MSFT_PSModule\Get-TargetResource' -Tag 'Get','BVT' {
             Context 'When the system is in the desired state' {
                 Context 'When the configuration is present' {
                     Context 'When the module is trusted' {
@@ -254,7 +254,7 @@ try {
             }
         }
 
-        Describe 'MSFT_PSModule\Set-TargetResource' -Tag 'Set' {
+        Describe 'MSFT_PSModule\Set-TargetResource' -Tag 'Set','BVT' {
             Context 'When the system is not in the desired state' {
                 Context 'When the configuration should be present' {
                     BeforeAll {
@@ -384,7 +384,7 @@ try {
             }
         }
 
-        Describe 'MSFT_PSModule\Test-TargetResource' -Tag 'Test' {
+        Describe 'MSFT_PSModule\Test-TargetResource' -Tag 'Test','BVT' {
             Context 'When the system is in the desired state' {
                 Context 'When the configuration is present' {
                     BeforeEach {

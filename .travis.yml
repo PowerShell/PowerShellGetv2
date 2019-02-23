@@ -36,4 +36,4 @@ install:
 
 script:
   - echo "TRAVIS_EVENT_TYPE value $TRAVIS_EVENT_TYPE"
-  - /usr/bin/bash ./tools/travis.sh
+  - bash ./tools/travis.sh

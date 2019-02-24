@@ -505,17 +505,22 @@ Describe PowerShell.PSGet.UpdateScriptTests -Tags 'BVT','InnerLoop' {
     #
     # Action: Install a script with AllUsers scope then update it
     #
-    # Expected Result: updated script should be under AllUsers windows powershell scripts folder
+    # Expected Result: updated script should be under AllUsers windows powershell scripts folder for an admin on Windows Powershell, currentuser otherwise
     #
     It "UpdateScriptUnderAllUsersScope" {
         $scriptName = 'Fabrikam-ServerScript'
+        $shouldBeInAllUsers = ($PSEdition -eq 'Desktop')
         Install-Script $scriptName -Scope AllUsers -RequiredVersion 1.0
         Update-Script $scriptName
 
         $res = Get-InstalledScript $scriptName
 
-        Assert (($res.Name -eq $scriptName) -and ($res.Version -gt [Version]"1.0")) "Update-Script should update the script installed to current user scope, $res"
-        AssertEquals $res.InstalledLocation $script:ProgramFilesScriptsPath "Update-Script should update the script installed to current user scope, updated script base: $($res.InstalledLocation)"
+        Assert (($res.Name -eq $scriptName) -and ($res.Version -gt [Version]"1.0")) "Update-Script should update the script, $res"
+        if ($shouldBeInAllUsers) {
+            AssertEquals $res.InstalledLocation $script:ProgramFilesScriptsPath "Update-Script should put update in all users scope, but updated script base: $($res.InstalledLocation)"
+        } else {
+            AssertEquals $res.InstalledLocation $script:MyDocumentsScriptsPath "Update-Script should put update in current user scope, updated script base: $($res.InstalledLocation)"
+        }
     }
 }
 

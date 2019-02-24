@@ -6,10 +6,14 @@ function Get-InstallationScope()
 {
     [CmdletBinding()]
     param(
-        [string]$PreviousInstallLocation
+        [Parameter(Mandatory=$true)]
+        [string]$PreviousInstallLocation,
+
+        [Parameter(Mandatory=$true)]
+        [string]$CurrentUserPath
     )
 
-    if ( -not $PreviousInstallLocation.ToString().StartsWith($script:MyDocumentsModulesPath, [System.StringComparison]::OrdinalIgnoreCase) -and
+    if ( -not $PreviousInstallLocation.ToString().StartsWith($currentUserPath, [System.StringComparison]::OrdinalIgnoreCase) -and
          -not $script:IsCoreCLR -and
          (Test-RunningAsElevated)) {
         $Scope = "AllUsers"

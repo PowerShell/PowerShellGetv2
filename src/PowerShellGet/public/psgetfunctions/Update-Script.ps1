@@ -163,7 +163,7 @@ function Update-Script {
             }
             $null = $PSBoundParameters.Remove("AllowPrerelease")
 
-            $PSBoundParameters["Scope"] = Get-InstallationScope -PreviousInstallLocation $scriptFilePath
+            $PSBoundParameters["Scope"] = Get-InstallationScope -PreviousInstallLocation $scriptFilePath -CurrentUserPath $script:MyDocumentsScriptsPath
             $sid = PackageManagement\Install-Package @PSBoundParameters
         }
     }

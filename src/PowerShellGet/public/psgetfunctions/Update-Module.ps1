@@ -135,7 +135,7 @@ function Update-Module {
             $PSBoundParameters["PackageManagementProvider"] = $providerName
             $PSBoundParameters["InstallUpdate"] = $true
 
-            $PSBoundParameters["Scope"] = Get-InstallationScope -PreviousInstallLocation $psgetItemInfo.InstalledLocation
+            $PSBoundParameters["Scope"] = Get-InstallationScope -PreviousInstallLocation $psgetItemInfo.InstalledLocation -CurrentUserPath $script:MyDocumentsModulesPath
 
             $sid = PackageManagement\Install-Package @PSBoundParameters
         }

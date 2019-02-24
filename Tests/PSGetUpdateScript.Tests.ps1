@@ -507,7 +507,7 @@ Describe PowerShell.PSGet.UpdateScriptTests -Tags 'BVT','InnerLoop' {
     #
     It "UpdateScriptUnderAllUsersScope" {
         $scriptName = 'Fabrikam-ServerScript'
-        $shouldBeInAllUsers = ($PSEdition -eq 'Desktop')
+        $shouldBeInAllUsers = ($PSVersionTable.PSVersion -lt "5.0" -or $PSEdition -eq 'Desktop') # when running these tests we always need to be an admin
         Install-Script $scriptName -Scope AllUsers -RequiredVersion 1.0
         Update-Script $scriptName
 

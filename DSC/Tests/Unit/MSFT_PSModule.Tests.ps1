@@ -97,7 +97,7 @@ try {
             return $mockGalleryModule
         }
 
-        Describe 'MSFT_PSModule\Get-TargetResource' -Tag 'Get' {
+        Describe 'MSFT_PSModule\Get-TargetResource' -Tag 'Get','BVT' {
             Context 'When the system is in the desired state' {
                 Context 'When the configuration is present' {
                     Context 'When the module is trusted' {
@@ -221,6 +221,7 @@ try {
                     It 'Should return the same values as passed as parameters' {
                         $getTargetResourceResult = Get-TargetResource -Name $mockModuleName
                         $getTargetResourceResult.Name | Should -Be $mockModuleName
+                        $getTargetResourceResult.Repository | Should -Be $mockRepositoryName
 
                         Assert-MockCalled -CommandName Get-RightModule -Exactly -Times 1 -Scope It
                         Assert-MockCalled -CommandName Get-ModuleRepositoryName -Exactly -Times 0 -Scope It
@@ -231,7 +232,6 @@ try {
                         $getTargetResourceResult = Get-TargetResource -Name $mockModuleName
 
                         $getTargetResourceResult.Ensure | Should -Be 'Absent'
-                        $getTargetResourceResult.Repository | Should -BeNullOrEmpty
                         $getTargetResourceResult.Description | Should -BeNullOrEmpty
                         $getTargetResourceResult.Guid | Should -BeNullOrEmpty
                         $getTargetResourceResult.ModuleBase | Should -BeNullOrEmpty
@@ -239,6 +239,12 @@ try {
                         $getTargetResourceResult.Author | Should -BeNullOrEmpty
                         $getTargetResourceResult.InstalledVersion | Should -BeNullOrEmpty
                         $getTargetResourceResult.InstallationPolicy | Should -BeNullOrEmpty
+                        $getTargetResourceResult.RequiredVersion | Should -BeNullOrEmpty
+                        $getTargetResourceResult.MinimumVersion | Should -BeNullOrEmpty
+                        $getTargetResourceResult.MaximumVersion | Should -BeNullOrEmpty
+                        $getTargetResourceResult.Force | Should -Be $false
+                        $getTargetResourceResult.AllowClobber | Should -Be $false
+                        $getTargetResourceResult.SkipPublisherCheck | Should -Be $false
 
                         Assert-MockCalled -CommandName Get-RightModule -Exactly -Times 1 -Scope It
                         Assert-MockCalled -CommandName Get-ModuleRepositoryName -Exactly -Times 0 -Scope It
@@ -248,7 +254,7 @@ try {
             }
         }
 
-        Describe 'MSFT_PSModule\Set-TargetResource' -Tag 'Set' {
+        Describe 'MSFT_PSModule\Set-TargetResource' -Tag 'Set','BVT' {
             Context 'When the system is not in the desired state' {
                 Context 'When the configuration should be present' {
                     BeforeAll {
@@ -291,7 +297,7 @@ try {
                     Context 'When the Repository is ''PSGallery''' {
                         BeforeAll {
                             Mock -CommandName Get-InstallationPolicy -MockWith $mockGetInstallationPolicy_Trusted
-                            Mock -CommandName ValidateArgument
+                            Mock -CommandName Test-ParameterValue
                         }
 
                         It 'Should call the Install-Module with the correct parameters' {
@@ -321,12 +327,14 @@ try {
 
                     Context 'When the module name cannot be found' {
                         BeforeAll {
-                            Mock -CommandName Find-Module
+                            Mock -CommandName Find-Module -MockWith {
+                                throw 'Mocked error'
+                            }
                         }
 
                         It 'Should throw the correct error' {
                             { Set-TargetResource -Name $mockModuleName } |
-                                Should -Throw ($localizedData.ModuleNotFoundInRepository -f $mockModuleName, '')
+                                Should -Throw ($localizedData.ModuleNotFoundInRepository -f $mockModuleName)
                         }
                     }
                 }
@@ -355,14 +363,28 @@ try {
 
                         It 'Should throw the correct error' {
                             { Set-TargetResource -Name $mockModuleName -Ensure 'Absent' } |
-                                Should -Throw ($localizedData.ModuleWithRightPropertyNotFound -f $mockModuleName, '')
+                                Should -Throw ($localizedData.ModuleWithRightPropertyNotFound -f $mockModuleName)
+                        }
+                    }
+
+                    Context 'When a module cannot be removed' {
+                        BeforeAll {
+                            Mock -CommandName Get-RightModule -MockWith $mockGetRightModule_SingleModule
+                            Mock -CommandName Remove-Item -MockWith {
+                                throw 'Mock fail to remove module error'
+                            }
+                        }
+
+                        It 'Should throw the correct error' {
+                            { Set-TargetResource -Name $mockModuleName -Ensure 'Absent' } |
+                                Should -Throw ($localizedData.FailToUninstall -f $mockModuleName)
                         }
                     }
                 }
             }
         }
 
-        Describe 'MSFT_PSModule\Test-TargetResource' -Tag 'Test' {
+        Describe 'MSFT_PSModule\Test-TargetResource' -Tag 'Test','BVT' {
             Context 'When the system is in the desired state' {
                 Context 'When the configuration is present' {
                     BeforeEach {
@@ -382,7 +404,7 @@ try {
                         }
                     }
 
-                    It 'Should return the same values as passed as parameters' {
+                    It 'Should return the state as $true' {
                         $testTargetResourceResult = Test-TargetResource -Name $mockModuleName
                         $testTargetResourceResult | Should -Be $true
 
@@ -408,7 +430,7 @@ try {
                         }
                     }
 
-                    It 'Should return the same values as passed as parameters' {
+                    It 'Should return the state as $true' {
                         $testTargetResourceResult = Test-TargetResource -Ensure 'Absent' -Name $mockModuleName
                         $testTargetResourceResult | Should -Be $true
 
@@ -436,7 +458,7 @@ try {
                         }
                     }
 
-                    It 'Should return the same values as passed as parameters' {
+                    It 'Should return the state as $false' {
                         $testTargetResourceResult = Test-TargetResource -Name $mockModuleName
                         $testTargetResourceResult | Should -Be $false
 
@@ -462,7 +484,7 @@ try {
                         }
                     }
 
-                    It 'Should return the same values as passed as parameters' {
+                    It 'Should return the state as $false' {
                         $testTargetResourceResult = Test-TargetResource -Ensure 'Absent' -Name $mockModuleName
                         $testTargetResourceResult | Should -Be $false
 

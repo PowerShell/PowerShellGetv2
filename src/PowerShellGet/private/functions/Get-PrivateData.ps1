@@ -201,7 +201,7 @@ function Get-PrivateData
         # Prerelease string of this module
         $PrereleaseLine
 
-        # Flag to indicate whether the module requires explicit user acceptance for install/update
+        # Flag to indicate whether the module requires explicit user acceptance for install/update/save
         $RequireLicenseAcceptanceLine
 
         # External dependent modules of this module

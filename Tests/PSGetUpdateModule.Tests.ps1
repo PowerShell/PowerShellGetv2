@@ -716,7 +716,6 @@ Update-Module -Name ContosoServer
         ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
         ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
         ($env:APPVEYOR_TEST_PASS -eq 'True') -or
-        ($PSEdition -eq 'Core') -or
         ($PSVersionTable.PSVersion -lt '4.0.0')
     )
 

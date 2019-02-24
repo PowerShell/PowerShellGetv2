@@ -398,7 +398,7 @@ Describe PowerShell.PSGet.UpdateScriptTests -Tags 'BVT','InnerLoop' {
     It "AdminPrivilegesAreNotRequiredForUpdatingAllUsersScript" {
         Install-Script -Name Fabrikam-ServerScript -RequiredVersion 1.0 -Scope AllUsers
         $content = Invoke-WithoutAdminPrivileges (@'
-        Import-Module "{0}\PowerShellGet.psd1" -Force
+        Import-Module "{0}\PowerShellGet.psd1" -Force -Passthru | select ModuleBase
         Update-Script -Name Fabrikam-ServerScript
 '@ -f (Get-Module PowerShellGet).ModuleBase)
 
@@ -407,12 +407,10 @@ Describe PowerShell.PSGet.UpdateScriptTests -Tags 'BVT','InnerLoop' {
      } `
     -Skip:$(
         $whoamiValue = (whoami)
-
         ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
         ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
         ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
         ($env:APPVEYOR_TEST_PASS -eq 'True') -or
-        ($PSEdition -eq 'Core') -or
         ($PSVersionTable.PSVersion -lt '4.0.0')
     )
 

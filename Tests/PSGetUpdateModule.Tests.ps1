@@ -648,22 +648,17 @@ Describe PowerShell.PSGet.UpdateModuleTests.P2 -Tags 'P2','OuterLoop' {
     #
     # Action: Install a module as admin and try to update it as non-admin user
     #
-    # Expected Result: should fail with an error
+    # Expected Result: should successfully save module to currentuser scope
     #
-    It "AdminPrivilegesAreRequiredForUpdatingAllUsersModule" {
+    It "AdminPrivilegesAreNotRequiredForUpdatingAllUsersModule" {
         Install-Module -Name ContosoServer -RequiredVersion 1.0
-        $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
-        Start-Process "$PSHOME\PowerShell.exe" -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
-                                                              $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
-                                                              Update-Module -Name ContosoServer' `
-                                               -Credential $script:credential `
-                                               -Wait `
-                                               -WorkingDirectory $PSHOME `
-                                               -RedirectStandardOutput $NonAdminConsoleOutput
-        waitFor {Test-Path $NonAdminConsoleOutput} -timeoutInMilliseconds $script:assertTimeOutms -exceptionMessage "Install-Module on non-admin console failed to complete"
-        $content = Get-Content $NonAdminConsoleOutput
-        Assert ($content -match "AdminPrivilegesAreRequiredForUpdate") "update-module should fail when non-admin user is trying to update a module installed to alluser scope, $content"
-        RemoveItem $NonAdminConsoleOutput
+        $content = Invoke-WithoutAdminPrivileges (@'
+Import-Module "{0}\PowerShellGet.psd1" -Force
+Update-Module -Name ContosoServer
+'@ -f (Get-Module PowerShellGet).ModuleBase)
+
+        $updatedModule = Get-InstalledModule ContosoServer
+        Assert ($updatedModule.Version -gt 1.0) "Module wasn't updated"
     } `
     -Skip:$(
         $whoamiValue = (whoami)

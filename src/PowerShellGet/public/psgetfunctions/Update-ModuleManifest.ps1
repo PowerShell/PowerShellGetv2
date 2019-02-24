@@ -124,12 +124,10 @@ function Update-ModuleManifest
         $ModuleList,
 
         [Parameter()]
-        [ValidateNotNullOrEmpty()]
         [string[]]
         $FunctionsToExport,
 
         [Parameter()]
-        [ValidateNotNullOrEmpty()]
         [string[]]
         $AliasesToExport,
 
@@ -139,7 +137,6 @@ function Update-ModuleManifest
         $VariablesToExport,
 
         [Parameter()]
-        [ValidateNotNullOrEmpty()]
         [string[]]
         $CmdletsToExport,
 
@@ -273,13 +270,9 @@ function Update-ModuleManifest
     {
         $params.Add("NestedModules",$NestedModules)
     }
-    elseif($moduleInfo.NestedModules)
+    elseif($ModuleManifestHashTable -and $ModuleManifestHashTable.ContainsKey("NestedModules"))
     {
-        #Get the original module info from ManifestHashTab
-        if($ModuleManifestHashTable -and $ModuleManifestHashTable.ContainsKey("NestedModules"))
-        {
-            $params.Add("NestedModules",$ModuleManifestHashtable.NestedModules)
-        }
+        $params.Add("NestedModules",$ModuleManifestHashtable.NestedModules)
     }
 
     #Guid is read-only property
@@ -497,7 +490,7 @@ function Update-ModuleManifest
         $params.Add("ModuleList",$ModuleManifestHashtable.ModuleList)
     }
 
-    if($FunctionsToExport)
+    if($FunctionsToExport -or $FunctionsToExport -is [array])
     {
         $params.Add("FunctionsToExport",$FunctionsToExport)
     }
@@ -522,8 +515,12 @@ function Update-ModuleManifest
             $params.Add("FunctionsToExport",($moduleInfo.ExportedFunctions.Keys -split ' '))
         }
     }
+    elseif ($ModuleManifestHashTable -and $ModuleManifestHashTable.ContainsKey("FunctionsToExport"))
+    {
+        $params.Add("FunctionsToExport", $ModuleManifestHashTable['FunctionsToExport'])
+    }
 
-    if($AliasesToExport)
+    if($AliasesToExport -or $AliasesToExport -is [array])
     {
         $params.Add("AliasesToExport",$AliasesToExport)
     }
@@ -548,6 +545,10 @@ function Update-ModuleManifest
             $params.Add("AliasesToExport",($moduleInfo.ExportedAliases.Keys -split ' '))
         }
     }
+    elseif ($ModuleManifestHashTable -and $ModuleManifestHashTable.ContainsKey("AliasesToExport"))
+    {
+        $params.Add("AliasesToExport", $ModuleManifestHashTable['AliasesToExport'])
+    }
 
     if($VariablesToExport)
     {
@@ -568,7 +569,7 @@ function Update-ModuleManifest
         }
     }
 
-    if($CmdletsToExport)
+    if($CmdletsToExport -or $CmdletsToExport -is [array])
     {
         $params.Add("CmdletsToExport", $CmdletsToExport)
     }
@@ -588,7 +589,7 @@ function Update-ModuleManifest
                 ForEach-Object { $parts = $_ -split '-', 2; $parts[-1] = $parts[-1] -replace "^$($moduleInfo.Prefix)"; $parts -join '-' }
             $params.Add("CmdletsToExport", $originalCmdlets)
         }
-        else 
+        else
         {
             $params.Add("CmdletsToExport",($moduleInfo.ExportedCmdlets.Keys -split ' '))
         }
@@ -940,6 +941,9 @@ function Update-ModuleManifest
 
 
         $newContent = Microsoft.PowerShell.Management\Get-Content -Path $tempPath
+
+        #Remove the PSGet_ prepended to the original manifest name due to the temp file name
+        $newContent[1] = $newContent[1] -replace "'PSGet_", "'"
 
         try
         {

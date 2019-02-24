@@ -62,7 +62,7 @@ function Resolve-Location
 
         Write-Debug -Message "Ping-Endpoint: location=$Location, statuscode=$statusCode, resolvedLocation=$resolvedLocation"
 
-        if((($statusCode -eq 200) -or ($statusCode -eq 401)) -and $resolvedLocation)
+        if((($statusCode -eq 200) -or ($statusCode -eq 401) -or ($statusCode -eq 407)) -and $resolvedLocation)
         {
             return $resolvedLocation
         }

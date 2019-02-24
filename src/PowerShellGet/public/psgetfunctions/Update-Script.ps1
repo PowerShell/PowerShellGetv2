@@ -85,23 +85,11 @@ function Update-Script {
                 }
 
                 foreach ($scriptFilePath in $availableScriptPaths) {
+                    # Check if this script got installed with PowerShellGet
                     $installedScriptFilePath = Get-InstalledScriptFilePath -Name ([System.IO.Path]::GetFileNameWithoutExtension($scriptFilePath)) |
                         Microsoft.PowerShell.Core\Where-Object {$_ -eq $scriptFilePath }
 
-                    # Check if this script got installed with PowerShellGet and user has required permissions
                     if ($installedScriptFilePath) {
-                        if (-not (Test-RunningAsElevated) -and $installedScriptFilePath.StartsWith($script:ProgramFilesScriptsPath, [System.StringComparison]::OrdinalIgnoreCase)) {
-                            $matchedScriptName = Split-Path -Leaf $scriptFilePath
-                            $message = $LocalizedData.AdminPrivilegesRequiredForScriptUpdate -f ($matchedScriptName, $installedScriptFilePath)
-                            if (Test-WildcardPattern -Name $scriptName) {
-                                Write-Warning -Message $message
-                            }
-                            else {
-                                Write-Error -Message $message -ErrorId "AdminPrivilegesAreRequiredForUpdate" -Category InvalidOperation -TargetObject $scriptName
-                            }
-                            continue
-                        }
-
                         $scriptFilePathsToUpdate += $installedScriptFilePath
                     }
                     else {
@@ -126,12 +114,10 @@ function Update-Script {
             $installedScriptInfoFileName = "$($scriptName)_$script:InstalledScriptInfoFileName"
 
             if ($scriptFilePath.ToString().StartsWith($script:MyDocumentsScriptsPath, [System.StringComparison]::OrdinalIgnoreCase)) {
-                $PSBoundParameters["Scope"] = "CurrentUser"
                 $installedScriptInfoFilePath = Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsInstalledScriptInfosPath `
                     -ChildPath $installedScriptInfoFileName
             }
             elseif ($scriptFilePath.ToString().StartsWith($script:ProgramFilesScriptsPath, [System.StringComparison]::OrdinalIgnoreCase)) {
-                $PSBoundParameters["Scope"] = "AllUsers"
                 $installedScriptInfoFilePath = Microsoft.PowerShell.Management\Join-Path -Path $script:ProgramFilesInstalledScriptInfosPath `
                     -ChildPath $installedScriptInfoFileName
 
@@ -177,6 +163,7 @@ function Update-Script {
             }
             $null = $PSBoundParameters.Remove("AllowPrerelease")
 
+            $PSBoundParameters["Scope"] = Get-InstallationScope -PreviousInstallLocation $scriptFilePath
             $sid = PackageManagement\Install-Package @PSBoundParameters
         }
     }

@@ -105,22 +105,8 @@ function Update-Module {
             }
 
             $installedPackages |
-                Microsoft.PowerShell.Core\ForEach-Object {New-PSGetItemInfo -SoftwareIdentity $_ -Type $script:PSArtifactTypeModule} |
-                Microsoft.PowerShell.Core\ForEach-Object {
-                if (-not (Test-RunningAsElevated) -and $_.InstalledLocation.StartsWith($script:programFilesModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) {
-                    $message = $LocalizedData.AdminPrivilegesRequiredForUpdate -f ($_.Name, $_.InstalledLocation)
-                    if ((Test-WildcardPattern -Name $moduleName)) {
-                        # if user passed a wildcard, just warn about non-updatable modules
-                        Write-Warning -Message $message
-                    }
-                    else {
-                        Write-Error -Message $message -ErrorId "AdminPrivilegesAreRequiredForUpdate" -Category InvalidOperation -TargetObject $moduleName
-                    }
-                    continue
-                }
-
-                $PSGetItemInfos += $_
-            }
+                Microsoft.PowerShell.Core\ForEach-Object { New-PSGetItemInfo -SoftwareIdentity $_ -Type $script:PSArtifactTypeModule} |
+                Microsoft.PowerShell.Core\ForEach-Object { $PSGetItemInfos += $_ }
         }
 
         $PSBoundParameters["Provider"] = $script:PSModuleProviderName
@@ -149,12 +135,7 @@ function Update-Module {
             $PSBoundParameters["PackageManagementProvider"] = $providerName
             $PSBoundParameters["InstallUpdate"] = $true
 
-            if ($psgetItemInfo.InstalledLocation.ToString().StartsWith($script:MyDocumentsModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) {
-                $PSBoundParameters["Scope"] = "CurrentUser"
-            }
-            else {
-                $PSBoundParameters['Scope'] = 'AllUsers'
-            }
+            $PSBoundParameters["Scope"] = Get-InstallationScope -PreviousInstallLocation $psgetItemInfo.InstalledLocation
 
             $sid = PackageManagement\Install-Package @PSBoundParameters
         }

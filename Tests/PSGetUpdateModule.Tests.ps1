@@ -40,15 +40,6 @@ function SuiteSetup {
     PSGetTestUtils\Uninstall-Module ContosoServer
     PSGetTestUtils\Uninstall-Module ContosoClient
 
-    if($PSEdition -ne 'Core')
-    {
-        $script:userName = "PSGetUser"
-        $password = "Password1"
-        $null = net user $script:userName $password /add
-        $secstr = ConvertTo-SecureString $password -AsPlainText -Force
-        $script:credential = new-object -typename System.Management.Automation.PSCredential -argumentlist $script:userName, $secstr
-    }
-    $script:assertTimeOutms = 20000
 }
 
 function SuiteCleanup {
@@ -63,18 +54,6 @@ function SuiteCleanup {
 
     # Import the PowerShellGet provider to reload the repositories.
     $null = Import-PackageProvider -Name PowerShellGet -Force
-
-    if($PSEdition -ne 'Core')
-    {
-        # Delete the user
-        net user $script:UserName /delete | Out-Null
-        # Delete the user profile
-        $userProfile = (Get-WmiObject -Class Win32_UserProfile | Where-Object {$_.LocalPath -match $script:UserName})
-        if($userProfile)
-        {
-            RemoveItem $userProfile.LocalPath
-        }
-    }
 }
 
 Describe UpdateModuleFromAlternateRepo -Tags 'BVT' {
@@ -402,7 +381,9 @@ Describe PowerShell.PSGet.UpdateModuleTests -Tags 'BVT','InnerLoop' {
     It "UpdateAllModules" {
         Install-Module ContosoClient -RequiredVersion 1.0
         Install-Module ContosoServer -RequiredVersion 1.0
-        Update-Module
+        Update-Module -ErrorVariable err -ErrorAction SilentlyContinue
+        #if we have other modules not from test repo they will error, keep the noise down but complain about real problems
+        $err | ? { $_.FullyQualifiedErrorId -notmatch "SourceNotFound" } | % { Write-Error $_ }
 
         if(Test-ModuleSxSVersionSupport)
         {

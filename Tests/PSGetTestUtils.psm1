@@ -1624,7 +1624,8 @@ function Invoke-WithoutAdminPrivileges
     $bytes = [System.Text.Encoding]::Unicode.GetBytes($wrappedCommandLine)
     $encodedCommand = [Convert]::ToBase64String($bytes)
 
-    Start-Process "runas.exe" -ArgumentList ("/trustlevel:0x20000", "`"powershell -encodedcommand $encodedcommand`"") -Wait
+    $processName = (get-process -Id $pid).ProcessName
+    Start-Process "runas.exe" -ArgumentList ("/trustlevel:0x20000", "`"$processName -encodedcommand $encodedcommand`"") -Wait
     Get-Content $tempFile
     $errors = Get-Content $errFile
     if($errors) {

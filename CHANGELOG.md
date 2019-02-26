@@ -1,63 +1,25 @@
 # Changelog
 
-## Unreleased
+## 2.1.0
 
-- Made the list entries in the CHANGELOG.md to use dash `-` throughout to
-  be consequent (before there was a mix of dashes and asterisk).
-- Update the AppVeyor CI test pipeline with a new job to run tests for
-  the DSC resources.
-  The new job uses the test framework used for the DSC Resource Kit,
-  the [DscResource.Tests](https://github.com/PowerShell/DscResource.Tests) repository.
-- Update .gitignore to ignore the [DscResource.Tests](https://github.com/PowerShell/DscResource.Tests)
-  test framework. When running unit test locally it is cloned into the
-  local repository folder.
-- Added module PowerShellGet.LocalizationHelper containing localization
-  helper functions for DSC resources, and unit tests for the helper
-  functions.
-- Moved helper functions for the DSC resource `PSModule` to the module
-  PowerShellGet.ResourceHelper. Added improved localization support, and
-  code formatting against workspace VS Code settings.
-  - Cleaned up the code against the [DscResources style guideline](https://github.com/PowerShell/DscResources/blob/master/StyleGuidelines.md).
-  - Renamed helper functions in the PowerShellGet.ResourceHelper module
-    to use Verb-Noun.
-  - Refactored the error handling logic to use the localization helper
-    functions, and also so that the error handling could be tested.
-- Changes to PSModule.
-  - Added improved localization support.
-  - Changed type on the parameters that had `[Switch]` to correctly use
-    `Systen.Boolean` to match the schema.mof.
-  - Code formatting against workspace VS Code settings.
-  - Added unit tests.
-  - Added integration tests
-  - It is now possible to install a module and passing in `AllowClobber`
-    when the modules package source is trusted (it already worked in
-    other scenarios).
-  - Rephrased some of the localization strings.
-  - Cleaned up the code against the [DscResources style guideline](https://github.com/PowerShell/DscResources/blob/master/StyleGuidelines.md).
-    Suppressed some of the Script Analyzer rules that are not complaint
-    with the the Visual Studio Code workspace settings in this repository.
-  - Refactored the error handling logic to use the localization helper
-    functions, and also so that the error handling could be tested.
-  - Refactored the Get-TargetResource to return the correct hash table
-    when the current state is absent.
-  - Added new examples.
-- Changed the AppVeyor CI build pipeline so it adds the DSC resources
-  and dependent helper modules (the `Modules` folder) to the AppVeyor
-  artifact.
-- Added the `.MetaTestOptIn.json` file to opt-in for a lot of common test
-  in the DscResource.Tests test framework that tests the DSC resources.
-- The examples under the folder `DSC/Examples` will be [published to PowerShell Gallery](https://github.com/PowerShell/DscResource.Tests#publish-examples-to-powershell-gallery)
-  so that they show up in the gallery part of Azure State Configuration.
-  The examples are published under the account 'dscresourcekit' which is
-  owned by the PowerShell DSC Team (DSC Resource Kit).
-  - In the folder `DSC/Examples` a `.gitattributes` was added to make sure
-    the examples is always checkout out using CRLF. There is an issue
-    using `Test-ScriptFileInfo` when files is checkout out using only LF
-    which is the default in AppVeyor.
-  - In the file `appveyor.yml` the PowerShell Gallery API key was added
-    for the account 'dscresourcekit', which can only be decrypted using
-    the PowerShell AppVeyor account.
-- Added DSC resource PSRepository.
+Breaking Change
+
+- Default installation scope for Update-Module and Update-Script has changed to match Install-Module and Install-Script. For Windows PowerShell (version 5.1 or below), the default scope is AllUsers when running in an elevated session, and CurrentUser at all other times.
+  For PowerShell version 6.0.0 and above, the default installation scope is always CurrentUser. (#421)
+
+Bug Fixes
+
+- Update-ModuleManifest no longer clears FunctionsToExport, AliasesToExport, nor NestModules (#415 & #425) (Thanks @pougetat and @tnieto88!)
+- Update-Module no longer changes repository URL (#407)
+- Update-ModuleManifest no longer preprends 'PSGet_' to module name (#403) (Thanks @ThePoShWolf)
+- Update-ModuleManifest now throws error and fails to update when provided invalid entries (#398) (Thanks @pougetat!)
+- Ignore files no longer being included when uploading modules (#396)
+
+New Features
+
+- New DSC resource, PSRepository (#426) (Thanks @johlju!)
+- Piping of PS respositories (#420)
+- utf8 support for .nuspec (#419)
 
 ## 2.0.4
 

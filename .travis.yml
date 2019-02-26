@@ -1,4 +1,3 @@
-
 language: csharp
 dotnet: 2.0.2
 mono: none
@@ -37,14 +36,4 @@ install:
 
 script:
   - echo "TRAVIS_EVENT_TYPE value $TRAVIS_EVENT_TYPE"
-  - ./tools/travis.sh
-
-
-
-
-
-
-
-
-
-
+  - bash ./tools/travis.sh

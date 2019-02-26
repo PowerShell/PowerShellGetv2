@@ -81,51 +81,33 @@ function Update-Module {
 
         $PSGetItemInfos = @()
 
-        if ($Name) {
-            foreach ($moduleName in $Name) {
-                $GetPackageParameters['Name'] = $moduleName
-                $installedPackages = PackageManagement\Get-Package @GetPackageParameters
-
-                if (-not $installedPackages -and -not (Test-WildcardPattern -Name $moduleName)) {
-                    $availableModules = Get-Module -ListAvailable $moduleName -Verbose:$false | Microsoft.PowerShell.Utility\Select-Object -Unique -ErrorAction Ignore
-
-                    if (-not $availableModules) {
-                        $message = $LocalizedData.ModuleNotInstalledOnThisMachine -f ($moduleName)
-                        Write-Error -Message $message -ErrorId 'ModuleNotInstalledOnThisMachine' -Category InvalidOperation -TargetObject $moduleName
-                    }
-                    else {
-                        $message = $LocalizedData.ModuleNotInstalledUsingPowerShellGet -f ($moduleName)
-                        Write-Error -Message $message -ErrorId 'ModuleNotInstalledUsingInstallModuleCmdlet' -Category InvalidOperation -TargetObject $moduleName
-                    }
-
-                    continue
-                }
-
-                $installedPackages |
-                    Microsoft.PowerShell.Core\ForEach-Object {New-PSGetItemInfo -SoftwareIdentity $_ -Type $script:PSArtifactTypeModule} |
-                    Microsoft.PowerShell.Core\ForEach-Object {
-                    if (-not (Test-RunningAsElevated) -and $_.InstalledLocation.StartsWith($script:programFilesModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) {
-                        if (-not (Test-WildcardPattern -Name $moduleName)) {
-                            $message = $LocalizedData.AdminPrivilegesRequiredForUpdate -f ($_.Name, $_.InstalledLocation)
-                            Write-Error -Message $message -ErrorId "AdminPrivilegesAreRequiredForUpdate" -Category InvalidOperation -TargetObject $moduleName
-                        }
-                        continue
-                    }
-
-                    $PSGetItemInfos += $_
-                }
-            }
-        }
-        else {
-
-            $PSGetItemInfos = PackageManagement\Get-Package @GetPackageParameters |
-                Microsoft.PowerShell.Core\ForEach-Object {New-PSGetItemInfo -SoftwareIdentity $_ -Type $script:PSArtifactTypeModule} |
-                Microsoft.PowerShell.Core\Where-Object {
-                (Test-RunningAsElevated) -or
-                $_.InstalledLocation.StartsWith($script:MyDocumentsModulesPath, [System.StringComparison]::OrdinalIgnoreCase)
-            }
+        if (-not $Name) {
+            $Name = @('*')
         }
 
+        foreach ($moduleName in $Name) {
+            $GetPackageParameters['Name'] = $moduleName
+            $installedPackages = PackageManagement\Get-Package @GetPackageParameters
+
+            if (-not $installedPackages -and -not (Test-WildcardPattern -Name $moduleName)) {
+                $availableModules = Get-Module -ListAvailable $moduleName -Verbose:$false | Microsoft.PowerShell.Utility\Select-Object -Unique -ErrorAction Ignore
+
+                if (-not $availableModules) {
+                    $message = $LocalizedData.ModuleNotInstalledOnThisMachine -f ($moduleName)
+                    Write-Error -Message $message -ErrorId 'ModuleNotInstalledOnThisMachine' -Category InvalidOperation -TargetObject $moduleName
+                }
+                else {
+                    $message = $LocalizedData.ModuleNotInstalledUsingPowerShellGet -f ($moduleName)
+                    Write-Error -Message $message -ErrorId 'ModuleNotInstalledUsingInstallModuleCmdlet' -Category InvalidOperation -TargetObject $moduleName
+                }
+
+                continue
+            }
+
+            $installedPackages |
+                Microsoft.PowerShell.Core\ForEach-Object { New-PSGetItemInfo -SoftwareIdentity $_ -Type $script:PSArtifactTypeModule} |
+                Microsoft.PowerShell.Core\ForEach-Object { $PSGetItemInfos += $_ }
+        }
 
         $PSBoundParameters["Provider"] = $script:PSModuleProviderName
         $PSBoundParameters[$script:PSArtifactType] = $script:PSArtifactTypeModule
@@ -153,12 +135,7 @@ function Update-Module {
             $PSBoundParameters["PackageManagementProvider"] = $providerName
             $PSBoundParameters["InstallUpdate"] = $true
 
-            if ($psgetItemInfo.InstalledLocation.ToString().StartsWith($script:MyDocumentsModulesPath, [System.StringComparison]::OrdinalIgnoreCase)) {
-                $PSBoundParameters["Scope"] = "CurrentUser"
-            }
-            else {
-                $PSBoundParameters['Scope'] = 'AllUsers'
-            }
+            $PSBoundParameters["Scope"] = Get-InstallationScope -PreviousInstallLocation $psgetItemInfo.InstalledLocation -CurrentUserPath $script:MyDocumentsModulesPath
 
             $sid = PackageManagement\Install-Package @PSBoundParameters
         }

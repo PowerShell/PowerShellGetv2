@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<!-- Config files for Azure DevOps code-signing pipeline. -->
+<SignConfigXML>
+  <!-- AnyCPU Release sign job -->
+  <job platform="AnyCPU" configuration="Release" dest="__OUTPATHROOT__\signed" jobname="PowerShellGet" approvers="vigarg;gstolt">
+    <file src="__INPATHROOT__\artifacts\PowerShellGet.psd1" signType="AuthenticodeFormer" dest="__OUTPATHROOT__\PowerShellGet.psd1" />
+    <file src="__INPATHROOT__\artifacts\PSGet.Format.ps1xml" signType="AuthenticodeFormer" dest="__OUTPATHROOT__\PSGet.Format.ps1xml" />
+    <file src="__INPATHROOT__\artifacts\PSGet.Resource.psd1" signType="AuthenticodeFormer" dest="__OUTPATHROOT__\PSGet.Resource.psd1" />
+    <file src="__INPATHROOT__\artifacts\PSModule.psm1" signType="AuthenticodeFormer" dest="__OUTPATHROOT__\PSModule.psm1" />
+  </job>
+</SignConfigXML>

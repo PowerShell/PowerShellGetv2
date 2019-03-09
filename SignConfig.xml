@@ -8,5 +8,9 @@
     <file src="__INPATHROOT__\artifacts\PSGet.Format.ps1xml" signType="AuthenticodeFormer" dest="__OUTPATHROOT__\PSGet.Format.ps1xml" />
     <file src="__INPATHROOT__\artifacts\PSGet.Resource.psd1" signType="AuthenticodeFormer" dest="__OUTPATHROOT__\PSGet.Resource.psd1" />
     <file src="__INPATHROOT__\artifacts\PSModule.psm1" signType="AuthenticodeFormer" dest="__OUTPATHROOT__\PSModule.psm1" />
+    <file src="__INPATHROOT__\artifacts\MSFT_PSModule.psm1" signType="AuthenticodeFormer" dest="__OUTPATHROOT__\MSFT_PSModule.psm1" />
+    <file src="__INPATHROOT__\artifacts\MSFT_PSRepository.psm1" signType="AuthenticodeFormer" dest="__OUTPATHROOT__\MSFT_PSRepository.psm1" />
+    <file src="__INPATHROOT__\artifacts\PowerShellGet.LocalizationHelper.psm1" signType="AuthenticodeFormer" dest="__OUTPATHROOT__\PowerShellGet.LocalizationHelper.psm1" />
+    <file src="__INPATHROOT__\artifacts\PowerShellGet.ResourceHelper.psm1" signType="AuthenticodeFormer" dest="__OUTPATHROOT__\PowerShellGet.ResourceHelper.psm1" />
   </job>
 </SignConfigXML>

@@ -27,6 +27,7 @@ function SuiteSetup {
     $script:PSGetLocalAppDataPath = Get-PSGetLocalAppDataPath
     $script:TempPath = Get-TempPath
     $script:CurrentPSGetFormatVersion = "1.0"
+    $script:OutdatedNuGetExeVersion = [System.Version]"2.8.60717.93"
 
     #Bootstrap NuGet binaries
     Install-NuGetBinaries
@@ -90,10 +91,18 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
 
     BeforeEach {
         Set-Content (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psm1") -Value "function Get-$script:PublishModuleName { Get-Date }"
+
+        $version = "1.0"
+        $script:PublishModuleBase = Join-Path $script:TempModulesPath $script:PublishModuleName
+        New-ModuleManifest -Path (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
+
+        # Copy module to $script:ProgramFilesModulesPath
+        Copy-Item $script:PublishModuleBase $script:ProgramFilesModulesPath -Recurse -Force
     }
 
     AfterEach {
         RemoveItem "$script:PSGalleryRepoPath\*"
+        RemoveItem "$script:ProgramFilesModulesPath\$script:PublishModuleName\*"
         RemoveItem "$script:ProgramFilesModulesPath\$script:PublishModuleName"
         RemoveItem "$script:PublishModuleBase\*"
     }
@@ -112,7 +121,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         #Copy module to $script:ProgramFilesModulesPath
         Copy-Item $script:PublishModuleBase $script:ProgramFilesModulesPath -Recurse -Force
 
-        Publish-Module -Name $script:PublishModuleName -ReleaseNotes "$script:PublishModuleName release notes" -Tags PSGet -LicenseUri "https://$script:PublishModuleName.com/license" -ProjectUri "https://$script:PublishModuleName.com" -WarningAction SilentlyContinue        
+        Publish-Module -Name $script:PublishModuleName -ReleaseNotes "$script:PublishModuleName release notes" -Tags PSGet -LicenseUri "https://$script:PublishModuleName.com/license" -ProjectUri "https://$script:PublishModuleName.com" -WarningAction SilentlyContinue
 
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $version
         # This version can be 1.0 or 1.0.0, depending on the version of NuGet.exe or dotnet command.
@@ -129,6 +138,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         $version = "2.0.0.0"
         $semanticVersion = '2.0.0'
         RemoveItem "$script:PublishModuleBase\*"
+        RemoveItem "$script:ProgramFilesModulesPath\$script:PublishModuleName\*"
 
         $moduleBaseWithVersion = (Join-Path -Path $script:PublishModuleBase -ChildPath "$version")
         $null = New-Item -Path $moduleBaseWithVersion -ItemType Directory -Force
@@ -191,6 +201,39 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         Assert ($psgetItemInfo.Name -eq $script:PublishModuleName) "Publish-Module should publish a module with valid module path, $($psgetItemInfo.Name)"
     }
 
+    # Purpose: Check that files with hidden attributes (like .git dirs) are not published
+    #
+    # Action: Publish-Module -Path <ModulePath> -NuGetApiKey <ApiKey>
+    #
+    # Expected Result: published module should not contain these files
+    #
+    It "PublishModuleLeavesOutHiddenFiles" {
+
+        # create module dir containing a hidden dir with a normal file inside, and a normal file
+        $version = "1.0"
+        New-ModuleManifest -Path (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
+        New-Item -Type Directory -Path $script:PublishModuleBase -Name ".git"
+        New-Item -Type File -Path $script:PublishModuleBase\.git\dummy
+        New-Item -Type File -Path $script:PublishModuleBase -Name "normal"
+        $hiddenDir = Get-Item $script:PublishModuleBase\.git -force
+        $hiddenDir.Attributes = "hidden"
+
+        # publish it, then save the published one and inspect it
+        Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -ReleaseNotes "$script:PublishModuleName release notes" -Tags PSGet -LicenseUri "https://$script:PublishModuleName.com/license" -ProjectUri "https://$script:PublishModuleName.com" -WarningAction SilentlyContinue
+        New-Item -type directory -path $script:PublishModuleBase -Name saved
+        Save-Module $script:PublishModuleName -RequiredVersion $version -Path $script:PublishModuleBase\saved
+
+        # it should contain the normal file, but not the hidden dir
+        $contents = (dir -rec -force $script:PublishModuleBase | Out-String)
+        $basedir = "$script:PublishModuleBase\saved\$script:PublishModuleName"
+        if($PSVersionTable.PSVersion -gt '5.0.0') {
+            $basedir = join-path $basedir "1.0.0"
+        }
+
+        Assert ((Test-Path $basedir\.git) -eq $false) ".git dir shouldn't be included ($contents)"
+        Assert ((Test-Path $basedir\normal) -eq $true) "normal file should be included ($contents)"
+    }
+
     # Purpose: Publish a module with -Path
     #
     # Action: Publish-Module -Path <ModulePath> -NuGetApiKey <ApiKey>
@@ -206,7 +249,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
             $moduleBase = (Join-Path -Path $script:PublishModuleBase -ChildPath "$version")
             $null = New-Item -ItemType Directory -Path $moduleBase -Force
         }
-        
+
         New-ModuleManifest -Path (Join-Path -Path $moduleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version -Description "$script:PublishModuleName module"
         $currentLocation = Get-Location
         try
@@ -242,7 +285,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         }
 
         $null = New-Item -ItemType Directory -Path $moduleBase -Force
-        
+
         New-ModuleManifest -Path (Join-Path -Path $moduleBase -ChildPath "$Name.psd1") -ModuleVersion $version -Description "$Name module"
 
         Publish-Module -Path $moduleBaseWithoutVersion -NuGetApiKey $script:ApiKey -WarningAction SilentlyContinue
@@ -263,11 +306,11 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         $moduleBaseWithoutVersion = $script:PublishModuleBase
 
         $moduleBase = Join-Path -Path $script:PublishModuleBase -ChildPath $version1
-        $null = New-Item -ItemType Directory -Path $moduleBase -Force        
+        $null = New-Item -ItemType Directory -Path $moduleBase -Force
         New-ModuleManifest -Path (Join-Path -Path $moduleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version1 -Description "$script:PublishModuleName module"
 
         $moduleBase = Join-Path -Path $script:PublishModuleBase -ChildPath $version2
-        $null = New-Item -ItemType Directory -Path $moduleBase -Force        
+        $null = New-Item -ItemType Directory -Path $moduleBase -Force
         New-ModuleManifest -Path (Join-Path -Path $moduleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version2 -Description "$script:PublishModuleName module"
 
         AssertFullyQualifiedErrorIdEquals -scriptblock {Publish-Module -Path $moduleBaseWithoutVersion -WarningAction SilentlyContinue}`
@@ -480,7 +523,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     #
     It "PublishModuleWithNonExistingNestedModule" {
         New-ModuleManifest -Path (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion '1.0' -Description "$script:PublishModuleName module" -NestedModules "NonExistingNestedModule"
-                
+
         AssertFullyQualifiedErrorIdEquals -scriptblock {Publish-Module -Path $script:PublishModuleBase -WarningAction SilentlyContinue}`
                                           -expectedFullyQualifiedErrorId 'UnableToResolveModuleDependency,Publish-PSArtifactUtility'
     }
@@ -507,7 +550,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     AliasesToExport = '*'
     FileList2 = @()
     }
-'@  
+'@
         AssertFullyQualifiedErrorIdEquals -scriptblock {Publish-Module -Path $script:PublishModuleBase -WarningAction SilentlyContinue}`
                                           -expectedFullyQualifiedErrorId 'Modules_InvalidManifestMember,Microsoft.PowerShell.Commands.TestModuleManifestCommand'
     }
@@ -530,9 +573,9 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     VariablesToExport = '*'
     AliasesToExport = '*'
 }
-'@  
+'@
         if($PSVersionTable.PSVersion -ge '5.1.0')
-        {        
+        {
             Publish-Module -Path $script:PublishModuleBase -WarningAction SilentlyContinue
             $res = Find-Module -Name $script:PublishModuleName
             AssertEquals $res.Name $script:PublishModuleName "Module should be published with PSEdition variable"
@@ -562,7 +605,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     VariablesToExport = '*'
     AliasesToExport = '*'
 }
-'@  
+'@
         Publish-Module -Path $script:PublishModuleBase -WarningAction SilentlyContinue
         $res = Find-Module -Name $script:PublishModuleName
         AssertEquals $res.Name $script:PublishModuleName "Module should be published with PSScriptRoot variable"
@@ -587,7 +630,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     AliasesToExport = '*'
     FileList = "$InvalidVariable\TestFile.psm1"
 }
-'@  
+'@
         AssertFullyQualifiedErrorIdEquals -scriptblock {Publish-Module -Path $script:PublishModuleBase -WarningAction SilentlyContinue}`
                                           -expectedFullyQualifiedErrorId 'Modules_InvalidManifest,Microsoft.PowerShell.Commands.TestModuleManifestCommand'
 
@@ -612,7 +655,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     AliasesToExport = '*'
     FileList = "$InvalidVariable\TestFile.psm1"
 }
-'@  
+'@
         function Get-ManifestHashTableCaller
         {
             [CmdletBinding()]
@@ -666,7 +709,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         AssertEqualsCaseInsensitive $psgetItemInfo.CopyRight $CopyRight "CopyRight should be same as the published one"
         Assert       ($psgetItemInfo.Tags -contains $($Tags[0])) "Tags ($($psgetItemInfo.Tags)) should contain the published one ($($Tags[0]))"
         Assert       ($psgetItemInfo.Tags -contains $($Tags[1])) "Tags ($($psgetItemInfo.Tags)) should contain the published one ($($Tags[1]))"
-        AssertEqualsCaseInsensitive $psgetItemInfo.LicenseUri $LicenseUri "LicenseUri should be same as the published one"        
+        AssertEqualsCaseInsensitive $psgetItemInfo.LicenseUri $LicenseUri "LicenseUri should be same as the published one"
     }
 
     # Purpose: Test Publish-Module cmdlet gets the PSData properties from the module manifest file
@@ -913,13 +956,13 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
        $ProjectUri = 'https://contoso.com/'
        $IconUri = 'https://contoso.com/icon'
        $ReleaseNotes = 'Test module for external module dependecies'
-       New-ModuleManifest -Path (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version -Description "$script:PublishModuleName module" 
+       New-ModuleManifest -Path (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version -Description "$script:PublishModuleName module"
        #Copy module to $script:ProgramFilesModulesPath
        Copy-Item $script:PublishModuleBase $script:ProgramFilesModulesPath -Recurse -Force
 
        Publish-Module -Name $script:PublishModuleName -NuGetApiKey $script:ApiKey -Tags $Tags -LicenseUri $LicenseUri -IconUri $IconUri  `
                       -ProjectUri $ProjectUri -ReleaseNotes $ReleaseNotes -WarningAction SilentlyContinue -WarningVariable wa
-           
+
        AssertEquals $wa.Count 5 "There should be one warning message"
        Assert ("$wa".Contains("ReleaseNotes")) "Warning messages should include 'ReleaseNotes is now supported'"
        Assert ("$wa".Contains("LicenseUri")) "Warning messages should include 'LicenseUri is now supported'"
@@ -928,10 +971,10 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
        Assert ("$wa".Contains("Tags")) "Warning messages should include 'Tags are now supported'"
     } `
     -Skip:$($PSCulture -ne 'en-US')
-     
+
     # Purpose: Test Publish-Module cmdlet gives warnings if Cmdlets/Functions/DscResourcesToExport has "*" in manifest
     #
-    # Action: Publish-Module 
+    # Action: Publish-Module
     #
     # Expected Result: Publish operation should succeed but throw warnings
     #
@@ -939,34 +982,34 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         $ModuleName = "DscTestModule"
         $TempModulesPath = Join-Path $script:TempPath "$(Get-Random)"
         $null = New-Item -Path $TempModulesPath -ItemType Directory -Force
-    
+
         $TestModuleSourcePath = Join-Path -Path $PSScriptRoot -ChildPath TestModules | Join-Path -ChildPath $ModuleName
         Copy-Item -Path $TestModuleSourcePath -Destination $TempModulesPath -Recurse -Force
         $ModuleBase = Join-Path -Path $TempModulesPath -ChildPath $ModuleName
 
-        # Create binary module   
-        $content = @"  
-            using System;  
-            using System.Management.Automation;  
-            namespace PSGetTestModule  
-            {  
-               [Cmdlet("Test","PSGetTestCmdlet")]  
-                public class PSGetTestCmdlet : PSCmdlet  
-                {  
-                    [Parameter]  
-                    public int a {   
-                        get;  
-                        set;  
-                    }  
-                    protected override void ProcessRecord()  
-                    {  
-                        String s = "Value is :" + a;  
-                        WriteObject(s);  
-                    }  
-                }  
-            }  
+        # Create binary module
+        $content = @"
+            using System;
+            using System.Management.Automation;
+            namespace PSGetTestModule
+            {
+               [Cmdlet("Test","PSGetTestCmdlet")]
+                public class PSGetTestCmdlet : PSCmdlet
+                {
+                    [Parameter]
+                    public int a {
+                        get;
+                        set;
+                    }
+                    protected override void ProcessRecord()
+                    {
+                        String s = "Value is :" + a;
+                        WriteObject(s);
+                    }
+                }
+            }
 
-"@  
+"@
 
         $binaryDllName = "psgettestbinary_$(Get-Random).dll"
         $testBinaryPath = Join-Path -Path $ModuleBase -ChildPath $binaryDllName
@@ -997,7 +1040,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
                            -NestedModules "$ModuleName.psm1",$binaryDllName `
                            -Description 'Temp Description KeyWord1 Keyword2 Keyword3' `
         }
-          
+
         $null = Publish-Module -Path $ModuleBase `
                            -NuGetApiKey $script:ApiKey `
                            -ReleaseNotes "$ModuleName release notes" `
@@ -1014,7 +1057,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         }
 
         Assert ("$wa".Contains("exported functions")) "Warning messages should include 'exported functions'"
-        
+
         if($PSVersionTable.PSVersion -ge '5.0.0')
         {
             Assert ("$wa".Contains("exported DscResources")) "Warning messages should include 'exported DscResources'"
@@ -1027,6 +1070,294 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         Assert ($itemInfo.Includes.RoleCapability -contains 'Lev2Maintenance') "Publish-Module was not able to populate the RoleCapability Names: $($itemInfo.Includes.RoleCapability)"
     } `
     -Skip:$($PSCulture -ne 'en-US')
+
+    # Purpose: Validate Publish-Module is bootstrapping NuGet.exe when run with -Force
+    #
+    # Action: Publish-Module -Force
+    #
+    # Expected Result: Publish operation should succeed, NuGet.exe should upgrade
+    #
+    It PublishModuleWithBootstrappedNugetExe {
+        try {
+            $script:NuGetExeName = 'NuGet.exe'
+            $script:PSGetProgramDataPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramData -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
+            $script:ProgramDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $script:NuGetExeName
+
+            Install-NuGet28
+            # Re-import PowerShellGet module
+            $script:psgetModuleInfo = Import-Module PowerShellGet -Global -Force -Passthru
+            Import-LocalizedData  script:LocalizedData -filename PSGet.Resource.psd1 -BaseDirectory $script:psgetModuleInfo.ModuleBase
+
+            # Install-OutdatedNugetExe saves NuGet.exe in $script:ProgramDataExePath
+            $oldNuGetExeVersion = [System.Version](Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion
+            AssertEquals $oldNuGetExeVersion $script:OutdatedNuGetExeVersion "Outdated NuGet.exe version is $oldNuGetExeVersion when it should have been $script:OutdatedNuGetExeVersion."
+            $err = $null
+
+            try {
+                $result = Publish-Module -Name $script:PublishModuleName -Force -WarningAction SilentlyContinue
+            }
+            catch {
+                $err = $_
+            }
+
+            AssertNull $err "$err"
+            AssertNull $result "$result"
+            Assert (test-path $script:ProgramDataExePath) "NuGet.exe did not install properly.  The file could not be found under path $script:PSGetProgramDataPath."
+
+            $currentNuGetExeVersion = [System.Version](Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion
+            Assert ($currentNuGetExeVersion -gt $oldNuGetExeVersion) "Current NuGet.exe version is $currentNuGetExeVersion when it should have been greater than version $oldNuGetExeVersion."
+
+            $module = find-module $script:PublishModuleName -RequiredVersion $version
+            AssertEquals $module.Name $script:PublishModuleName "Module did not successfully publish. Module name was $($module.Name) when it should have been $script:PublishModuleName."
+        }
+        finally {
+            Install-NuGetBinaries
+        }
+    } -Skip:$($PSEdition -eq 'Core')
+
+    # Purpose: Validate that Publish-Module to prompts to upgrade NuGet.exe if local NuGet.exe file is less than minimum required version
+    #
+    # Action: Publish-Module
+    #
+    # Expected Result: Publish operation should succeed, NuGet.exe should upgrade to latest version
+    #
+    It PublishModuleUpgradeNugetExeAndYesToPrompt {
+        try {
+            $script:NuGetExeName = 'NuGet.exe'
+            $script:PSGetProgramDataPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramData -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
+            $script:ProgramDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $script:NuGetExeName
+
+            Install-NuGet28
+            # Re-import PowerShellGet module
+            $script:psgetModuleInfo = Import-Module PowerShellGet -Global -Force -Passthru
+            Import-LocalizedData  script:LocalizedData -filename PSGet.Resource.psd1 -BaseDirectory $script:psgetModuleInfo.ModuleBase
+
+            # Install-OutdatedNugetExe saves NuGet.exe in $script:ProgramDataExePath
+            $oldNuGetExeVersion = [System.Version](Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion
+            AssertEquals $oldNuGetExeVersion $script:OutdatedNuGetExeVersion "Outdated NuGet.exe version is $oldNuGetExeVersion when it should have been $script:OutdatedNuGetExeVersion."
+
+            $outputPath = $script:TempPath
+            $guid = [system.guid]::newguid().tostring()
+            $outputFilePath = Join-Path $outputPath "$guid"
+            $runspace = CreateRunSpace $outputFilePath 1
+
+            # 0 is mapped to YES in prompt
+            $Global:proxy.UI.ChoiceToMake = 0
+            $content = $null
+            $err = $null
+
+            try {
+                $result = ExecuteCommand $runspace "Publish-Module -Name $script:PublishModuleName"
+            }
+            catch {
+                $err = $_
+            }
+            finally {
+                $fileName = "PromptForChoice-0.txt"
+                $path = join-path $outputFilePath $fileName
+                if (Test-Path $path) {
+                    $content = get-content $path
+                }
+
+                CloseRunSpace $runspace
+                RemoveItem $outputFilePath
+            }
+
+            AssertNull $result "$result"
+            Assert ($content -and ($content -match 'upgrade')) "Publish module confirm prompt is not working, $content."
+            Assert (test-path $script:ProgramDataExePath) "NuGet.exe did not install properly.  The file could not be found under path $script:PSGetProgramDataPath."
+
+            $currentNuGetExeVersion = [System.Version](Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion
+            Assert ($currentNuGetExeVersion -gt $oldNuGetExeVersion) "Current NuGet.exe version is $currentNuGetExeVersion when it should have been greater than version $oldNuGetExeVersion."
+
+            $module = find-module $script:PublishModuleName -RequiredVersion $version
+            AssertEquals $module.Name $script:PublishModuleName "Module did not successfully publish. Module name was $($module.Name) when it should have been $script:PublishModuleName."
+        }
+        finally {
+            Install-NuGetBinaries
+        }
+    } -Skip:$($PSEdition -eq 'Core')
+
+    # Purpose: Validate that Publish-Module prompts to install NuGet.exe if NuGet.exe file is not found
+    #
+    # Action: Publish-Module
+    #
+    # Expected Result: Publish operation should succeed, NuGet.exe should install latest version
+    #
+    It PublishModuleInstallNugetExeAndYesToPrompt {
+        try {
+            $script:NuGetExeName = 'NuGet.exe'
+            $script:PSGetProgramDataPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramData -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
+            $script:ProgramDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $script:NuGetExeName
+
+            Remove-NuGetExe
+            # Re-import PowerShellGet module
+            $script:psgetModuleInfo = Import-Module PowerShellGet -Global -Force -Passthru
+            Import-LocalizedData  script:LocalizedData -filename PSGet.Resource.psd1 -BaseDirectory $script:psgetModuleInfo.ModuleBase
+            Assert ((test-path $script:ProgramDataExePath) -eq $false) "NuGet.exe did not install properly uninstall."
+
+            $outputPath = $script:TempPath
+            $guid = [system.guid]::newguid().tostring()
+            $outputFilePath = Join-Path $outputPath "$guid"
+            $runspace = CreateRunSpace $outputFilePath 1
+
+            # 0 is mapped to YES in prompt
+            $Global:proxy.UI.ChoiceToMake = 0
+            $content = $null
+            $err = $null
+
+            try {
+                $result = ExecuteCommand $runspace "Publish-Module -Name $script:PublishModuleName"
+            }
+            catch {
+                $err = $_
+            }
+            finally {
+                $fileName = "PromptForChoice-0.txt"
+                $path = join-path $outputFilePath $fileName
+                if (Test-Path $path) {
+                    $content = get-content $path
+                }
+
+                CloseRunSpace $runspace
+                RemoveItem $outputFilePath
+            }
+
+            AssertNull $err "$err"
+            AssertNull $result "$result"
+            Assert ($content -and ($content -match 'install')) "Publish module confirm prompt is not working, $content."
+            Assert (test-path $script:ProgramDataExePath) "NuGet.exe did not install properly.  The file could not be found under path $script:PSGetProgramDataPath."
+
+            $module = find-module $script:PublishModuleName -RequiredVersion $version
+            AssertEquals $module.Name $script:PublishModuleName "Module did not successfully publish. Module name was $($module.Name) when it should have been $script:PublishModuleName."
+        }
+        finally {
+            Install-NuGetBinaries
+        }
+    } -Skip:$($PSEdition -eq 'Core')
+
+    # Purpose: Validate that Publish-Module prompts to upgrade NuGet.exe if local NuGet.exe file is less than minimum required version
+    #
+    # Action: Publish-Module
+    #
+    # Expected Result: Publish operation should fail, NuGet.exe should not upgrade to latest version
+    #
+    It PublishModuleUpgradeNugetExeAndNoToPrompt {
+        try {
+            RemoveItem "$script:ProgramFilesModulesPath\$script:PublishModuleName\*"
+            RemoveItem "$script:ProgramFilesModulesPath\$script:PublishModuleName"
+
+            $script:NuGetExeName = 'NuGet.exe'
+            $script:PSGetProgramDataPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramData -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
+            $script:ProgramDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $script:NuGetExeName
+
+            Install-NuGet28
+            # Re-import PowerShellGet module
+            $script:psgetModuleInfo = Import-Module PowerShellGet -Global -Force -Passthru
+            Import-LocalizedData  script:LocalizedData -filename PSGet.Resource.psd1 -BaseDirectory $script:psgetModuleInfo.ModuleBase
+
+            # Install-OutdatedNugetExe saves NuGet.exe in $script:ProgramDataExePath
+            $oldNuGetExeVersion = [System.Version](Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion
+            AssertEquals $oldNuGetExeVersion $script:OutdatedNuGetExeVersion "Outdated NuGet.exe version is $oldNuGetExeVersion when it should have been $script:OutdatedNuGetExeVersion."
+
+            $outputPath = $script:TempPath
+            $guid = [system.guid]::newguid().tostring()
+            $outputFilePath = Join-Path $outputPath "$guid"
+            $runspace = CreateRunSpace $outputFilePath 1
+
+            # 1 is mapped to NO in prompt
+            $Global:proxy.UI.ChoiceToMake = 1
+            $content = $null
+            $err = $null
+
+            try {
+                $result = ExecuteCommand $runspace "Publish-Module -Name $script:PublishModuleName"
+            }
+            catch {
+                $err = $_
+            }
+            finally {
+                $fileName = "PromptForChoice-0.txt"
+                $path = join-path $outputFilePath $fileName
+                if (Test-Path $path) {
+                    $content = get-content $path
+                }
+                CloseRunSpace $runspace
+                RemoveItem $outputFilePath
+            }
+
+            AssertNotNull $err "$err"
+            AssertNull $result "$result"
+            Assert ($content -and ($content -match 'upgrade')) "Publish module confirm prompt is not working, $content."
+            Assert (test-path $script:ProgramDataExePath) "NuGet.exe did not install properly.  The file could not be found under path $script:PSGetProgramDataPath."
+
+            $currentNuGetExeVersion = [System.Version](Get-Command $script:ProgramDataExePath).FileVersionInfo.FileVersion
+            AssertEquals $currentNuGetExeVersion $script:OutdatedNuGetExeVersion "Current version of NuGet.exe is $currentNuGetExeVersion when it should have been $script:OutdatedNuGetExeVersion."
+
+            $module = find-module $script:PublishModuleName -RequiredVersion $version -ErrorAction SilentlyContinue
+            AssertNull ($module) "Module published when it should not have."
+        }
+        finally {
+            Install-NuGetBinaries
+        }
+    } -Skip:$($PSEdition -eq 'Core')
+
+    # Purpose: Validate that Publish-Module prompts to install NuGet.exe if file not found
+    #
+    # Action: Publish-Module
+    #
+    # Expected Result: Publish operation should fail, NuGet.exe should not install
+    #
+    It PublishModuleInstallNugetExeAndNoToPrompt {
+        try {
+            $script:NuGetExeName = 'NuGet.exe'
+            $script:PSGetProgramDataPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramData -ChildPath 'Microsoft\Windows\PowerShell\PowerShellGet\'
+            $script:ProgramDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetProgramDataPath -ChildPath $script:NuGetExeName
+
+            Remove-NuGetExe
+            # Re-import PowerShellGet module
+            $script:psgetModuleInfo = Import-Module PowerShellGet -Global -Force -Passthru
+            Import-LocalizedData  script:LocalizedData -filename PSGet.Resource.psd1 -BaseDirectory $script:psgetModuleInfo.ModuleBase
+            Assert ((test-path $script:ProgramDataExePath) -eq $false) "NuGet.exe did not install properly uninstall."
+
+            $outputPath = $script:TempPath
+            $guid = [system.guid]::newguid().tostring()
+            $outputFilePath = Join-Path $outputPath "$guid"
+            $runspace = CreateRunSpace $outputFilePath 1
+
+            # 1 is mapped to NO in prompt
+            $Global:proxy.UI.ChoiceToMake = 1
+            $content = $null
+            $err = $null
+
+            try {
+                $result = ExecuteCommand $runspace "Publish-Module -Name $script:PublishModuleName"
+            }
+            catch {
+                $err = $_
+            }
+            finally {
+                $fileName = "PromptForChoice-0.txt"
+                $path = join-path $outputFilePath $fileName
+                if (Test-Path $path) {
+                    $content = get-content $path
+                }
+                CloseRunSpace $runspace
+                RemoveItem $outputFilePath
+            }
+
+            AssertNotNull $err "$err"
+            AssertNull $result "$result"
+            Assert ($content -and ($content -match 'install')) "Publish module confirm prompt is not working, $content."
+            Assert ((Test-Path $script:ProgramDataExePath) -eq $false) "NuGet.exe installed when it should not have."
+
+            $module = find-module $script:PublishModuleName -RequiredVersion $version -ErrorAction SilentlyContinue
+            AssertNull ($module) "Module published when it should not have."
+        }
+        finally {
+            Install-NuGetBinaries
+        }
+    } -Skip:$($PSEdition -eq 'Core')
 }
 
 Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
@@ -1064,7 +1395,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
         $version = '2.0'
         $ManifestFilePath = Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1"
         New-ModuleManifest -Path $ManifestFilePath -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
-        
+
         Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -WarningAction SilentlyContinue
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $version
         Assert ($psgetItemInfo.Name -eq $script:PublishModuleName) "Publish-Module should publish a module with valid module path, $($psgetItemInfo.Name)"
@@ -1074,14 +1405,14 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
         Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -Force -WarningAction SilentlyContinue
 
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $version
-        Assert ($psgetItemInfo.Name -eq $script:PublishModuleName) "Publish-Module should publish a module with lower version, $($psgetItemInfo.Name)"        
+        Assert ($psgetItemInfo.Name -eq $script:PublishModuleName) "Publish-Module should publish a module with lower version, $($psgetItemInfo.Name)"
     }
 
     It "PublishModuleWithoutForceAndLowerVersion" {
         $version = '2.0'
         $ManifestFilePath = Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1"
         New-ModuleManifest -Path $ManifestFilePath -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
-        
+
         Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -WarningAction SilentlyContinue
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $version
         Assert ($psgetItemInfo.Name -eq $script:PublishModuleName) "Publish-Module should publish a module with valid module path, $($psgetItemInfo.Name)"
@@ -1132,38 +1463,38 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
             $guid = [system.guid]::newguid().tostring()
             $outputFilePath = Join-Path $outputPath "$guid"
             $runspace = CreateRunSpace $outputFilePath 1
-        	
+
             # 1 is mapped to No in prompt
             $Global:proxy.UI.ChoiceToMake = 1
             $content = $null
-        	
+
             $version = "1.0"
             New-ModuleManifest -Path (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
-	
+
             # Copy module to $script:ProgramFilesModulesPath
             Copy-Item $script:PublishModuleBase $script:ProgramFilesModulesPath -Recurse -Force
             $err = $null
-	
+
             try {
                 $result = ExecuteCommand $runspace "Publish-Module -Name $script:PublishModuleName"
             }
             catch {
                 $err = $_
             }
-            finally {                        
+            finally {
                 $fileName = "PromptForChoice-0.txt"
                 $path = join-path $outputFilePath $fileName
                 if (Test-Path $path) {
                     $content = get-content $path
                 }
-        
+
                 CloseRunSpace $runspace
                 RemoveItem $outputFilePath
             }
-	
+
             Assert ($err -and $err.Exception.Message.Contains('NuGet.exe')) "Prompt for installing nuget binaries is not working, $err"
             Assert ($content -and $content.Contains('NuGet.exe')) "Prompt for installing nuget binaries is not working, $content"
-	
+
             AssertFullyQualifiedErrorIdEquals -Scriptblock {Find-Module $script:PublishModuleName -RequiredVersion $version}`
                 -ExpectedFullyQualifiedErrorId 'NoMatchFoundForCriteria,Microsoft.PowerShell.PackageManagement.Cmdlets.FindPackage'
         }
@@ -1172,7 +1503,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
         }
     } `
     -Skip:$(($PSCulture -ne 'en-US') -or ($PSEdition -eq 'Core') -or ($env:APPVEYOR_TEST_PASS -eq 'True') -or ([System.Environment]::OSVersion.Version -lt "6.2.9200.0"))
-	
+
     It "PublishModuleWithoutNugetExeAndYesToPrompt" {
         try {
             # Delete nuget.exe to test the prompt for installing nuget binaries.
@@ -1182,14 +1513,14 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
             $guid = [system.guid]::newguid().tostring()
             $outputFilePath = Join-Path $outputPath "$guid"
             $runspace = CreateRunSpace $outputFilePath 1
-	
+
             # 0 is mapped to YES in prompt
             $Global:proxy.UI.ChoiceToMake = 0
             $content = $null
-	
-            $version = "1.0"
+
+            $version = "1.0.0"
             New-ModuleManifest -Path (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
-	
+
             # Copy module to $script:ProgramFilesModulesPath
             Copy-Item $script:PublishModuleBase $script:ProgramFilesModulesPath -Recurse -Force
             try {
@@ -1201,11 +1532,11 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
                 if (Test-Path $path) {
                     $content = get-content $path
                 }
-	
+
                 CloseRunSpace $runspace
                 RemoveItem $outputFilePath
             }
-	
+
             Assert ($content -and $content.Contains('NuGet.exe')) "Prompt for installing nuget binaries is not working, $content"
             $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $version
             Assert (($psgetItemInfo.Name -eq $script:PublishModuleName) -and (($psgetItemInfo.Version.ToString() -eq $version))) "Publish-Module should publish a module with valid module name, $($psgetItemInfo.Name)"
@@ -1235,7 +1566,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
     #
     It PublishModuleToWebbasedGalleryWithoutNuGetApiKey {
         try {
-            Register-PSRepository -Name '_TempTestRepo_' -SourceLocation 'https://dtlgalleryint.cloudapp.net'
+            Register-PSRepository -Name '_TempTestRepo_' -SourceLocation 'https://www.poshtestgallery.com'
 
             $version = "1.0"
             New-ModuleManifest -Path (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1") -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
@@ -1255,7 +1586,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
     #
     It "PublishInvalidModule" {
         $tempmodulebase = Join-Path (Join-Path $script:TempPath "$(Get-Random)") "InvalidModule"
-        $null = New-Item $tempmodulebase -Force -ItemType Directory        
+        $null = New-Item $tempmodulebase -Force -ItemType Directory
 
         try
         {
@@ -1440,7 +1771,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
         AssertFullyQualifiedErrorIdEquals -scriptblock {$psgetItemInfo | Install-Module} `
                                             -expectedFullyQualifiedErrorId "NotSupportedPowerShellGetFormatVersion,Install-Module"
     }
-    
+
     # Purpose: Validate Publish-Module cmdlet without ExternalModuleDependencies in the PSData Section for the externally managed module dependencies
     #
     # Action:
@@ -1474,14 +1805,14 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
             $ModuleBase = Join-Path $script:TempModulesPath $ModuleName
             $null = New-Item -Path $ModuleBase -ItemType Directory -Force
             $version = "1.0"
-        
+
             # Module dependencies should be available under PSModulePath other Test-ModuleManifest will fail.
-            $RequiredModuleDep, $NestedModuleDep, $ExternalRequiredModuleDep, $ExternalNestedModuleDep | %{
+            $RequiredModuleDep, $NestedModuleDep, $ExternalRequiredModuleDep, $ExternalNestedModuleDep | Foreach-Object {
                 $DepModuleBase = Join-Path $script:ProgramFilesModulesPath $_
                 $null = New-Item -Path $DepModuleBase -ItemType Directory -Force
                 New-ModuleManifest -Path (Join-Path $DepModuleBase "$_.psd1") `
                                    -ModuleVersion '1.0' `
-                                   -Description "$_ module"        
+                                   -Description "$_ module"
             }
 
 
@@ -1511,7 +1842,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
                         }
                     }
                 }
-"@ 
+"@
 
             ($psd1Text -replace '__VERSION__',$version) | Out-File -FilePath (Join-Path -Path $ModuleBase -ChildPath "$ModuleName.psd1") -Force
 
@@ -1520,7 +1851,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {
         }
         finally
         {
-            $ModuleName, $RequiredModuleDep, $NestedModuleDep, $ExternalRequiredModuleDep, $ExternalNestedModuleDep | % { PSGetTestUtils\Uninstall-Module -Name $_ }
+            $ModuleName, $RequiredModuleDep, $NestedModuleDep, $ExternalRequiredModuleDep, $ExternalNestedModuleDep | Foreach-Object { PSGetTestUtils\Uninstall-Module -Name $_ }
         }
     }
 }
@@ -1572,20 +1903,20 @@ Describe PowerShell.PSGet.PublishModuleTests.P2 -Tags 'P2','OuterLoop' {
         $RequiredModules1 = @('RequiredModule1',
                               @{ModuleName = 'RequiredModule2'; ModuleVersion = '1.5'; })
 
-        $RequiredModules2 = @('RequiredModule1', 
+        $RequiredModules2 = @('RequiredModule1',
                               @{ModuleName = 'RequiredModule2'; ModuleVersion = '2.0'; })
 
-        $NestedRequiredModules1 = @('NestedRequiredModule1', 
+        $NestedRequiredModules1 = @('NestedRequiredModule1',
                                     @{ModuleName = 'NestedRequiredModule2'; ModuleVersion = '1.5'; })
 
-        $NestedRequiredModules2 = @('NestedRequiredModule1', 
+        $NestedRequiredModules2 = @('NestedRequiredModule1',
                                     @{ModuleName = 'NestedRequiredModule2'; ModuleVersion = '2.0'; })
 
         if($PSVersionTable.PSVersion -ge '5.0.0')
         {
             $DepencyModuleNames += @("RequiredModule3",
                                      "RequiredModule4",
-                                     "RequiredModule5"<#, 
+                                     "RequiredModule5"<#,
                                      "NestedRequiredModule3",
                                      "NestedRequiredModule4",
                                      "NestedRequiredModule5"#>
@@ -1674,26 +2005,26 @@ Describe PowerShell.PSGet.PublishModuleTests.P2 -Tags 'P2','OuterLoop' {
             CreateAndPublishTestModule -ModuleName $RequiredModuleDep `
                                        -NuGetApiKey $script:ApiKey `
                                        -Repository $repoName `
-                                       -Versions 1.0
+                                       -Versions 1.0.0
 
             # Publish dependencies to be specified as RequiredModules
             CreateAndPublishTestModule -ModuleName $NestedModuleDep `
                                        -NuGetApiKey $script:ApiKey `
                                        -Repository $repoName `
-                                       -Versions 1.0
+                                       -Versions 1.0.0
 
             # Create and Publish 1.0 version of a module with external dependencies in NestedModules and RequiredModules in module manifest
             $ModuleBase = Join-Path $script:TempModulesPath $ModuleName
             $null = New-Item -Path $ModuleBase -ItemType Directory -Force
-            $version = "1.0"
-        
+            $version = "1.0.0"
+
             # Module dependencies should be available under PSModulePath other Test-ModuleManifest will fail.
-            $RequiredModuleDep, $NestedModuleDep, $ExternalRequiredModuleDep, $ExternalNestedModuleDep | %{
+            $RequiredModuleDep, $NestedModuleDep, $ExternalRequiredModuleDep, $ExternalNestedModuleDep | Foreach-Object {
                 $DepModuleBase = Join-Path $script:ProgramFilesModulesPath $_
                 $null = New-Item -Path $DepModuleBase -ItemType Directory -Force
                 New-ModuleManifest -Path (Join-Path $DepModuleBase "$_.psd1") `
-                                   -ModuleVersion '1.0' `
-                                   -Description "$_ module"        
+                                   -ModuleVersion '1.0.0' `
+                                   -Description "$_ module"
             }
 
             $psd1Text = @"
@@ -1722,7 +2053,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P2 -Tags 'P2','OuterLoop' {
                         }
                     }
                 }
-"@ 
+"@
 
             ($psd1Text -replace '__VERSION__',$version) | Out-File -FilePath (Join-Path -Path $ModuleBase -ChildPath "$ModuleName.psd1") -Force
 
@@ -1732,7 +2063,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P2 -Tags 'P2','OuterLoop' {
             AssertEquals $res1.Name $ModuleName "Find-Module didn't find the exact module which has dependencies, $res1"
 
             # Create and Publish 2.0 version of a module with external dependencies in NestedModules and RequiredModules in module manifest
-            $version = '2.0'
+            $version = '2.0.0'
             ($psd1Text -replace '__VERSION__',$version) | Out-File -FilePath (Join-Path -Path $ModuleBase -ChildPath "$ModuleName.psd1") -Force
             Publish-Module -Path $ModuleBase -Repository $repoName -NuGetApiKey $script:ApiKey
 
@@ -1741,13 +2072,13 @@ Describe PowerShell.PSGet.PublishModuleTests.P2 -Tags 'P2','OuterLoop' {
         }
         finally
         {
-            $ModuleName, $RequiredModuleDep, $NestedModuleDep | % { PSGetTestUtils\Uninstall-Module -Name $_ }
+            $ModuleName, $RequiredModuleDep, $NestedModuleDep | Foreach-Object { PSGetTestUtils\Uninstall-Module -Name $_ }
         }
-        
+
         try
         {
             # No warning during Install and Update as externally managed modules are already installed.
-            $version = '1.0'
+            $version = '1.0.0'
             $wa = $null
             Install-Module -Name $ModuleName -RequiredVersion $version -Repository $repoName -WarningVariable wa -WarningAction SilentlyContinue
             AssertEquals $wa.Count 0 "No warning messages are expected when installing a module whose external dependencies are pre-installed. $wa"
@@ -1756,7 +2087,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P2 -Tags 'P2','OuterLoop' {
             Assert ($module1 -and ($module1.Name -eq $ModuleName)) "$ModuleName is not installed properly when it's external dependencies are pre-installed. $module1"
 
             $wa = $null
-            $version = '2.0'
+            $version = '2.0.0'
             Update-Module -Name $ModuleName -RequiredVersion $version -WarningVariable wa -WarningAction SilentlyContinue
             AssertEquals $wa.Count 0 "No warning messages are expected when updating a module whose external dependencies are pre-installed. $wa"
 
@@ -1765,7 +2096,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P2 -Tags 'P2','OuterLoop' {
         }
         finally
         {
-            $ModuleName, $RequiredModuleDep, $NestedModuleDep, $ExternalRequiredModuleDep, $ExternalNestedModuleDep | % { PSGetTestUtils\Uninstall-Module -Name $_ }
+            $ModuleName, $RequiredModuleDep, $NestedModuleDep, $ExternalRequiredModuleDep, $ExternalNestedModuleDep | Foreach-Object { PSGetTestUtils\Uninstall-Module -Name $_ }
         }
 
         # WarningVariable value doesnt get the warning messages on PS 3.0 and 4.0, known issue.
@@ -1774,7 +2105,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P2 -Tags 'P2','OuterLoop' {
             try
             {
                 # Waring cases during install and update when externally managed modules are not preinstalled.
-                $version = '1.0'
+                $version = '1.0.0'
                 Install-Module -Name $ModuleName -RequiredVersion $version -Repository $repoName -WarningVariable wa -WarningAction SilentlyContinue
                 Assert ($wa.Count -ge 2) "Two warning messages are expected (Actual count: $($wa.Count)) when installing a module whose external dependencies are not preinstalled. $wa"
                 Assert ("$wa".Contains($ExternalRequiredModuleDep)) "Warning message for $ExternalRequiredModuleDep is not returned, $wa"
@@ -1784,7 +2115,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P2 -Tags 'P2','OuterLoop' {
                 Assert ($module1 -and ($module1.Name -eq $ModuleName)) "$ModuleName is not installed properly when it's external dependencies are not pre-installed. $module1"
 
                 $wa = $null
-                $version = '2.0'
+                $version = '2.0.0'
                 Update-Module -Name $ModuleName -RequiredVersion $version -WarningVariable wa -WarningAction SilentlyContinue
                 Assert ($wa.Count -ge 2) "Two warning messages are expected (Actual count: $($wa.Count)) when updating a module whose external dependencies are not preinstalled. $wa"
                 Assert ("$wa".Contains($ExternalRequiredModuleDep)) "During update module, warning message for $ExternalRequiredModuleDep is not returned, $wa"
@@ -1795,7 +2126,7 @@ Describe PowerShell.PSGet.PublishModuleTests.P2 -Tags 'P2','OuterLoop' {
             }
             finally
             {
-                $ModuleName, $RequiredModuleDep, $NestedModuleDep, $ExternalRequiredModuleDep, $ExternalNestedModuleDep | % { PSGetTestUtils\Uninstall-Module -Name $_ }
+                $ModuleName, $RequiredModuleDep, $NestedModuleDep, $ExternalRequiredModuleDep, $ExternalNestedModuleDep | Foreach-Object { PSGetTestUtils\Uninstall-Module -Name $_ }
             }
         }
     }

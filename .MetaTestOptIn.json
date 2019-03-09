@@ -1,0 +1,11 @@
+[
+    "Common Tests - Validate Module Files",
+    "Common Tests - Validate Script Files",
+    "Common Tests - Validate Example Files",
+    "Common Tests - Validate Example Files To Be Published",
+    "Common Tests - Required Script Analyzer Rules",
+    "Common Tests - New Error-Level Script Analyzer Rules",
+    "Common Tests - Custom Script Analyzer Rules",
+    "Common Tests - Validate Markdown Links",
+    "Common Tests - Relative Path Length"
+]

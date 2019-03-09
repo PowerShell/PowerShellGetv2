@@ -4,8 +4,8 @@ function RegisterTestRepository {
     # Register test repository
     $testRepoRegistered = Get-PSRepository -Name $TestRepositoryName -ErrorAction SilentlyContinue
     if (-not $testRepoRegistered) {
-        Register-PSRepository -Name $TestRepositoryName -SourceLocation $TestRepositorySource -InstallationPolicy Trusted  
-        
+        Register-PSRepository -Name $TestRepositoryName -SourceLocation $TestRepositorySource -InstallationPolicy Trusted
+
         $testRepoRegistered = Get-PSRepository -Name $TestRepositoryName
 
         if (-not $testRepoRegistered)
@@ -37,7 +37,7 @@ $script:AddedCurrentUserInstallPath = Set-PATHVariableForScriptsInstallLocation 
 $script:ProgramFilesModulesPath = Get-AllUsersModulesPath
 $script:MyDocumentsModulesPath = Get-CurrentUserModulesPath
 $null = New-Item -Path $script:MyDocumentsModulesPath -ItemType Directory -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
-$script:ProgramFilesScriptsPath = Get-AllUsersScriptsPath 
+$script:ProgramFilesScriptsPath = Get-AllUsersScriptsPath
 $script:MyDocumentsScriptsPath = Get-CurrentUserScriptsPath
 $script:PSGetLocalAppDataPath = Get-PSGetLocalAppDataPath
 
@@ -45,7 +45,7 @@ $script:TempPath = Get-TempPath
 
 # Register test repository
 $TestRepositoryName = "GalleryRolling"
-$TestRepositorySource = "https://dtlgalleryint.cloudapp.net/api/v2/"
+$TestRepositorySource = "https://www.poshtestgallery.com/api/v2/"
 RegisterTestRepository
 
 # Test Items
@@ -116,7 +116,7 @@ Describe "--- Update-ModuleManifest ---" -Tags 'Module','BVT','InnerLoop' {
         $TypesToProcess = "types","typesTwo"
         $FormatsToPorcess = "formats","formatsTwo"
         $RequiredAssemblies = "system.management.automation"
-        $ModuleList = 'Microsoft.PowerShell.Management', 
+        $ModuleList = 'Microsoft.PowerShell.Management',
                'Microsoft.PowerShell.Utility'
         $FunctionsToExport = "function1","function2"
         $AliasesToExport = "alias1","alias2"
@@ -162,19 +162,19 @@ Describe "--- Update-ModuleManifest ---" -Tags 'Module','BVT','InnerLoop' {
 
         if(($PSVersionTable.PSVersion -ge '3.0.0') -or ($PSVersionTable.Version -le '4.0.0'))
         {
-            New-ModuleManifest  -path $script:testManifestPath -Confirm:$false 
+            New-ModuleManifest  -path $script:testManifestPath -Confirm:$false
             Update-ModuleManifest @ParamsV3 -Confirm:$false
         }
         elseif($PSVersionTable.PSVersion -ge '5.0.0')
         {
-            New-ModuleManifest  -path $script:testManifestPath -Confirm:$false 
+            New-ModuleManifest  -path $script:testManifestPath -Confirm:$false
             Update-ModuleManifest @ParamsV5 -Confirm:$false
         }
         $newModuleInfo = Test-ModuleManifest -Path $script:testManifestPath
 
 
 
-        $newModuleInfo.Guid | Should Be $Guid 
+        $newModuleInfo.Guid | Should Be $Guid
         $newModuleInfo.Author | Should Be $Author
         $newModuleInfo.CompanyName | Should Be $CompanyName
         $newModuleInfo.CopyRight | Should Be $CopyRight
@@ -200,21 +200,21 @@ Describe "--- Update-ModuleManifest ---" -Tags 'Module','BVT','InnerLoop' {
         {
             ($newModuleInfo.Tags -contains $Tags[0]) | Should Be "True"
             ($newModuleInfo.Tags -contains $Tags[1]) | Should Be "True"
-            $newModuleInfo.ProjectUri | Should Be $ProjectUri 
+            $newModuleInfo.ProjectUri | Should Be $ProjectUri
             $newModuleInfo.LicenseUri | Should Be $LicenseUri
-            $newModuleInfo.IconUri | Should Be $IconUri 
-            $newModuleInfo.ReleaseNotes | Should Be $ReleaseNotes 
+            $newModuleInfo.IconUri | Should Be $IconUri
+            $newModuleInfo.ReleaseNotes | Should Be $ReleaseNotes
             $newModuleInfo.PrivateData.PSData.Prerelease | Should Be $Prerelease
         }
-       
+
         $newModuleInfo.HelpInfoUri | Should Be $HelpInfoURI
         ($newModuleInfo.PrivateData.PSData.ExternalModuleDependencies -contains $ExternalModuleDependencies[0]) | Should Be "True"
         ($newModuleInfo.PrivateData.PSData.ExternalModuleDependencies -contains $ExternalModuleDependencies[1]) | Should Be "True"
     } `
-    -Skip:$($IsWindows -eq $False) 
+    -Skip:$($IsWindows -eq $False)
 
     It UpdateModuleManifestWithInvalidPrereleaseString {
-        $Prerelease = "alpha+001" 
+        $Prerelease = "alpha+001"
         $Version = "3.2.1"
 
         $expectedErrorMessage = $LocalizedData.InvalidCharactersInPrereleaseString -f $Prerelease
@@ -226,10 +226,10 @@ Describe "--- Update-ModuleManifest ---" -Tags 'Module','BVT','InnerLoop' {
         }
 
         $ScriptBlock | Should -Throw $expectedErrorMessage -ErrorId $expectedFullyQualifiedErrorId
-    } 
+    }
 
     It UpdateModuleManifestWithInvalidPrereleaseString2 {
-        $Prerelease = "alpha-beta.01" 
+        $Prerelease = "alpha-beta.01"
         $Version = "3.2.1"
 
         $expectedErrorMessage = $LocalizedData.InvalidCharactersInPrereleaseString -f $Prerelease
@@ -241,10 +241,10 @@ Describe "--- Update-ModuleManifest ---" -Tags 'Module','BVT','InnerLoop' {
         }
 
         $ScriptBlock | Should -Throw $expectedErrorMessage -ErrorId $expectedFullyQualifiedErrorId
-    } 
+    }
 
     It UpdateModuleManifestWithInvalidPrereleaseString3 {
-        $Prerelease = "alpha.1" 
+        $Prerelease = "alpha.1"
         $Version = "3.2.1"
 
         $expectedErrorMessage = $LocalizedData.InvalidCharactersInPrereleaseString -f $Prerelease
@@ -256,10 +256,10 @@ Describe "--- Update-ModuleManifest ---" -Tags 'Module','BVT','InnerLoop' {
         }
 
         $ScriptBlock | Should -Throw $expectedErrorMessage -ErrorId $expectedFullyQualifiedErrorId
-    } 
+    }
 
     It UpdateModuleManifestWithInvalidPrereleaseString4 {
-        $Prerelease = "error.0.0.0.1" 
+        $Prerelease = "error.0.0.0.1"
         $Version = "3.2.1"
 
         $expectedErrorMessage = $LocalizedData.InvalidCharactersInPrereleaseString -f $Prerelease
@@ -271,10 +271,10 @@ Describe "--- Update-ModuleManifest ---" -Tags 'Module','BVT','InnerLoop' {
         }
 
         $ScriptBlock | Should -Throw $expectedErrorMessage -ErrorId $expectedFullyQualifiedErrorId
-    } 
+    }
 
     It UpdateModuleManifestWithPrereleaseStringAndShortModuleVersion {
-        $Prerelease = "alpha001" 
+        $Prerelease = "alpha001"
         $Version = "3.2"
 
         $expectedErrorMessage = $LocalizedData.IncorrectVersionPartsCountForPrereleaseStringUsage -f $Version
@@ -286,10 +286,10 @@ Describe "--- Update-ModuleManifest ---" -Tags 'Module','BVT','InnerLoop' {
         }
 
         $ScriptBlock | Should -Throw $expectedErrorMessage -ErrorId $expectedFullyQualifiedErrorId
-    } 
-    
+    }
+
     It UpdateModuleManifestWithPrereleaseStringAndLongModuleVersion {
-        $Prerelease = "alpha001" 
+        $Prerelease = "alpha001"
         $Version = "3.2.1.1"
 
         $expectedErrorMessage = $LocalizedData.IncorrectVersionPartsCountForPrereleaseStringUsage -f $Version
@@ -301,26 +301,26 @@ Describe "--- Update-ModuleManifest ---" -Tags 'Module','BVT','InnerLoop' {
         }
 
         $ScriptBlock | Should -Throw $expectedErrorMessage -ErrorId $expectedFullyQualifiedErrorId
-    } 
+    }
 
     It UpdateModuleManifestWithValidPrereleaseAndModuleVersion {
-        $Prerelease = "alpha001" 
+        $Prerelease = "alpha001"
         $Version = "3.2.1"
 
-        New-ModuleManifest -path $script:testManifestPath 
+        New-ModuleManifest -path $script:testManifestPath
         Update-ModuleManifest -Path $script:testManifestPath -Prerelease $Prerelease -ModuleVersion $Version -Confirm:$false
 
         $newModuleInfo = Test-ModuleManifest -Path $script:testManifestPath
 
         $newModuleInfo.Version | Should -Match $Version
         $newModuleInfo.PrivateData.PSData.Prerelease | Should -Match $Prerelease
-    } 
+    }
 
     It UpdateModuleManifestWithValidPrereleaseAndModuleVersion2 {
-        $Prerelease = "gamma001" 
+        $Prerelease = "gamma001"
         $Version = "3.2.1"
 
-        New-ModuleManifest -path $script:testManifestPath 
+        New-ModuleManifest -path $script:testManifestPath
         Update-ModuleManifest -Path $script:testManifestPath -Prerelease "-$Prerelease" -ModuleVersion $Version -Confirm:$false
 
         $newModuleInfo = Test-ModuleManifest -Path $script:testManifestPath
@@ -331,19 +331,19 @@ Describe "--- Update-ModuleManifest ---" -Tags 'Module','BVT','InnerLoop' {
 }
 
 Describe "--- Publish-Module ---" -Tags 'Module','P1','OuterLoop' {
-    # Not executing these tests on MacOS as 
+    # Not executing these tests on MacOS as
     # the total execution time is exceeding allowed 50 min in TravisCI daily builds.
     if($IsMacOS) {
         return
     }
-    
+
     BeforeAll {
 
         # Create file-based repository from scratch
         $script:PSGalleryRepoPath = Join-Path -Path $script:TempPath -ChildPath 'PSGalleryRepo'
         RemoveItem $script:PSGalleryRepoPath
         $null = New-Item -Path $script:PSGalleryRepoPath -ItemType Directory -Force
-    
+
         # Backup existing repositories config file
         $script:moduleSourcesFilePath= Join-Path $script:PSGetLocalAppDataPath "PSRepositories.xml"
         $script:moduleSourcesBackupFilePath = Join-Path $script:PSGetLocalAppDataPath "PSRepositories.xml_$(get-random)_backup"
@@ -351,16 +351,16 @@ Describe "--- Publish-Module ---" -Tags 'Module','P1','OuterLoop' {
         {
             Rename-Item $script:moduleSourcesFilePath $script:moduleSourcesBackupFilePath -Force
         }
-    
+
         # Set file-based repo as default PSGallery repo
         Set-PSGallerySourceLocation -Location $script:PSGalleryRepoPath -PublishLocation $script:PSGalleryRepoPath
-    
+
         $modSource = Get-PSRepository -Name "PSGallery"
         $modSource.SourceLocation | Should Be $script:PSGalleryRepoPath
-        $modSource.PublishLocation | Should Be $script:PSGalleryRepoPath 
-    
+        $modSource.PublishLocation | Should Be $script:PSGalleryRepoPath
+
         $script:ApiKey="TestPSGalleryApiKey"
-    
+
         # Create temp module to be published
         $script:TempModulesPath = Join-Path -Path $script:TempPath -ChildPath "PSGet_$(Get-Random)"
         $null = New-Item -Path $script:TempModulesPath -ItemType Directory -Force
@@ -379,10 +379,10 @@ Describe "--- Publish-Module ---" -Tags 'Module','P1','OuterLoop' {
         {
             RemoveItem $script:moduleSourcesFilePath
         }
-    
+
         # Import the PowerShellGet provider to reload the repositories.
         $null = Import-PackageProvider -Name PowerShellGet -Force
-    
+
         RemoveItem $script:PSGalleryRepoPath
         RemoveItem $script:TempModulesPath
     }
@@ -397,11 +397,11 @@ Describe "--- Publish-Module ---" -Tags 'Module','P1','OuterLoop' {
         RemoveItem "$script:PublishModuleBase\*"
     }
 
-    
+
     It "PublishModuleSameVersionHigherPrerelease" {
         $version = "1.0.0"
         $prerelease = "-alpha001"
-        
+
         New-ModuleManifest -Path $script:PublishModuleNamePSD1FilePath -ModuleVersion $version -Description "$script:PublishModuleName module" -NestedModules "$script:PublishModuleName.psm1"
         Update-ModuleManifest -Path $script:PublishModuleNamePSD1FilePath -Prerelease $prerelease
 
@@ -409,7 +409,7 @@ Describe "--- Publish-Module ---" -Tags 'Module','P1','OuterLoop' {
         Copy-Item $script:PublishModuleBase $script:ProgramFilesModulesPath -Recurse -Force
 
         Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -ReleaseNotes "$script:PublishModuleName release notes" -Tags PSGet -LicenseUri "http://$script:PublishModuleName.com/license" -ProjectUri "http://$script:PublishModuleName.com" -WarningAction SilentlyContinue
-        
+
         $psgetItemInfo = Find-Module -Name $script:PublishModuleName -RequiredVersion $($version + $prerelease) -AllowPrerelease
         $psgetItemInfo.Name | Should Be $script:PublishModuleName
         $psgetItemInfo.Version | Should Match $($version + $prerelease)
@@ -424,12 +424,12 @@ Describe "--- Publish-Module ---" -Tags 'Module','P1','OuterLoop' {
 
         #Copy module to $script:ProgramFilesModulesPath
         Copy-Item $script:PublishModuleBase $script:ProgramFilesModulesPath -Recurse -Force
-        
+
         $scriptBlock = {
             Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -ReleaseNotes "$script:PublishModuleName release notes" -Tags PSGet -LicenseUri "http://$script:PublishModuleName.com/license" -ProjectUri "http://$script:PublishModuleName.com" -WarningAction SilentlyContinue
         }
         $scriptBlock | Should Not Throw
-        
+
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $($version + $prerelease) -AllowPrerelease
         $psgetItemInfo.Name | Should Be $script:PublishModuleName
         $psgetItemInfo.Version | Should Match $($version + $prerelease)
@@ -467,7 +467,7 @@ Describe "--- Publish-Module ---" -Tags 'Module','P1','OuterLoop' {
         $psgetItemInfo.AdditionalMetadata | Should Not Be $null
         $psgetItemInfo.AdditionalMetadata.IsPrerelease | Should Match "true"
     }
-    
+
     It "PublishModuleWithoutForceSameVersionLowerPrerelease" {
         $version = "1.0.0"
         $prerelease = "-beta002"
@@ -486,7 +486,7 @@ Describe "--- Publish-Module ---" -Tags 'Module','P1','OuterLoop' {
         # Publish lower prerelease version
         $prerelease2 = "-alpha001"
         Update-ModuleManifest -Path $script:PublishModuleNamePSD1FilePath -Prerelease $prerelease2
-        
+
         $scriptBlock = {
             Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey
         }
@@ -518,7 +518,7 @@ Describe "--- Publish-Module ---" -Tags 'Module','P1','OuterLoop' {
         $expectedFullyQualifiedErrorId = "ModuleVersionIsAlreadyAvailableInTheGallery,Publish-Module"
         $scriptBlock | Should -Throw $expectedErrorMessage -ErrorId $expectedFullyQualifiedErrorId
     }
-    
+
     It "PublishModuleSameVersionNoPrerelease" {
         $version = "1.0.0"
         $prerelease = "-alpha001"
@@ -555,7 +555,7 @@ Describe "--- Publish-Module ---" -Tags 'Module','P1','OuterLoop' {
 
         New-ModuleManifest -Path $script:PublishModuleNamePSD1FilePath -ModuleVersion $version -Description "$script:PublishModuleName module"  -NestedModules "$script:PublishModuleName.psm1"
         Update-ModuleManifest -Path $script:PublishModuleNamePSD1FilePath
-        
+
         Publish-Module -Path $script:PublishModuleBase -NuGetApiKey $script:ApiKey -WarningAction SilentlyContinue
 
         $psgetItemInfo = Find-Module $script:PublishModuleName -RequiredVersion $version -AllowPrerelease
@@ -606,7 +606,7 @@ Describe "--- Publish-Module ---" -Tags 'Module','P1','OuterLoop' {
     }
 
     It "PublishModuleWithInvalidPrereleaseString" {
-        
+
         # Create manifest without using Update-ModuleManifest, it will throw validation error.
         $invalidPrereleaseModuleManifestContent = @"
 @{
@@ -819,7 +819,7 @@ Describe "--- Publish-Module ---" -Tags 'Module','P1','OuterLoop' {
         $expectedFullyQualifiedErrorId = "IncorrectVersionPartsCountForPrereleaseStringUsage,Publish-Module"
         $scriptBlock | Should -Throw $expectedErrorMessage -ErrorId $expectedFullyQualifiedErrorId
     }
-    
+
     It "PublishModuleWithPrereleaseStringAndLongVersion" {
 
         # Create manifest without using Update-ModuleManifest, it will throw validation error.
@@ -910,7 +910,7 @@ Describe "--- Publish-Module ---" -Tags 'Module','P1','OuterLoop' {
     }
 
     It "PublishModuleWithEmptyPrereleaseFieldShouldSucceed" {
-        
+
         # Create manifest without using Update-ModuleManifest
         $validPrereleaseModuleManifestContent = @"
 @{
@@ -976,7 +976,7 @@ Describe "--- Find-Module ---" -Tags 'Module','P1','OuterLoop' {
         $psgetModuleInfo.AdditionalMetadata.IsPrerelease | Should Match "true"
         $psgetModuleInfo.Version | Should Match '-'
     }
-    
+
     It FindModuleAllowPrereleaseAllVersions {
         $results = Find-Module -Name $PrereleaseTestModule -Repository $TestRepositoryName -AllowPrerelease -AllVersions
 
@@ -984,7 +984,7 @@ Describe "--- Find-Module ---" -Tags 'Module','P1','OuterLoop' {
         $results | Where-Object { ($_.AdditionalMetadata.IsPrerelease -eq $true) -and ($_.Version -match '-') } | Measure-Object | ForEach-Object { $_.Count } | Should BeGreaterThan 0
         $results | Where-Object { ($_.AdditionalMetadata.IsPrerelease -eq $false) -and ($_.Version -notmatch '-') } | Measure-Object | ForEach-Object { $_.Count } | Should BeGreaterThan 0
     }
-    
+
     It FindModuleAllVersionsShouldReturnOnlyStableVersions {
         $results = Find-Module -Name $PrereleaseTestModule -Repository $TestRepositoryName -AllVersions
 
@@ -1036,7 +1036,7 @@ Describe "--- Find-DscResource ---" -Tags 'Module','BVT','InnerLoop' {
         $psgetCommandInfo.PSGetModuleInfo.AdditionalMetadata.IsPrerelease | Should Match "true"
         $psgetCommandInfo.PSGetModuleInfo.Version | Should Match '-'
     }
-    
+
     It FindDscResourceAllowPrereleaseAllVersions {
         $results = Find-DscResource -Name $DscResourceInPrereleaseTestModule -Repository $TestRepositoryName -AllowPrerelease -AllVersions -ModuleName $DscTestModule
 
@@ -1044,7 +1044,7 @@ Describe "--- Find-DscResource ---" -Tags 'Module','BVT','InnerLoop' {
         $results | Where-Object { ($_.PSGetModuleInfo.AdditionalMetadata.IsPrerelease -eq $true) -and ($_.PSGetModuleInfo.Version -match '-') } | Measure-Object | ForEach-Object { $_.Count } | Should BeGreaterThan 0
         $results | Where-Object { ($_.PSGetModuleInfo.AdditionalMetadata.IsPrerelease -eq $false) -and ($_.PSGetModuleInfo.Version -notmatch '-') } | Measure-Object | ForEach-Object { $_.Count } | Should BeGreaterThan 0
     }
-     
+
     It FindDscResourceAllVersionsShouldReturnOnlyStableVersions {
         $results = Find-DscResource -Name $DscResourceInPrereleaseTestModule -Repository $TestRepositoryName -AllVersions -ModuleName $DscTestModule
 
@@ -1139,7 +1139,7 @@ Describe "--- Find-Command ---" -Tags 'Module','BVT','InnerLoop' {
 }
 
 Describe "--- Find-RoleCapability ---" -Tags 'Module','BVT','InnerLoop' {
-    
+
     It FindRoleCapabilityReturnsLatestStableVersion {
         $psgetCommandInfo = Find-RoleCapability -Name $RoleCapabilityInPrereleaseTestModule -Repository $TestRepositoryName
 
@@ -1161,7 +1161,7 @@ Describe "--- Find-RoleCapability ---" -Tags 'Module','BVT','InnerLoop' {
         $psgetCommandInfo.PSGetModuleInfo.AdditionalMetadata.IsPrerelease | Should Match "true"
         $psgetCommandInfo.PSGetModuleInfo.Version | Should Match '-'
     }
-    
+
     It FindRoleCapabilityAllowPrereleaseAllVersions {
         $results = Find-RoleCapability -Name $RoleCapabilityInPrereleaseTestModule -Repository $TestRepositoryName -AllowPrerelease -AllVersions -ModuleName $DscTestModule
 
@@ -1169,7 +1169,7 @@ Describe "--- Find-RoleCapability ---" -Tags 'Module','BVT','InnerLoop' {
         $results | Where-Object { ($_.PSGetModuleInfo.AdditionalMetadata.IsPrerelease -eq $true) -and ($_.PSGetModuleInfo.Version -match '-') } | Measure-Object | ForEach-Object { $_.Count } | Should BeGreaterThan 0
         $results | Where-Object { ($_.PSGetModuleInfo.AdditionalMetadata.IsPrerelease -eq $false) -and ($_.PSGetModuleInfo.Version -notmatch '-') } | Measure-Object | ForEach-Object { $_.Count } | Should BeGreaterThan 0
     }
-    
+
     It FindRoleCapabilityAllVersionsShouldReturnOnlyStableVersions {
         $results = Find-RoleCapability -Name $RoleCapabilityInPrereleaseTestModule -Repository $TestRepositoryName -AllVersions -ModuleName $DscTestModule
 
@@ -1201,7 +1201,7 @@ Describe "--- Find-RoleCapability ---" -Tags 'Module','BVT','InnerLoop' {
 }
 
 Describe "--- Install-Module ---" -Tags 'Module','P1','OuterLoop' {
-    
+
     BeforeAll {
         PSGetTestUtils\Uninstall-Module TestPackage
         PSGetTestUtils\Uninstall-Module DscTestModule
@@ -1213,9 +1213,9 @@ Describe "--- Install-Module ---" -Tags 'Module','P1','OuterLoop' {
     }
 
 
-    # Piping tests 
+    # Piping tests
     #--------------
-    
+
     It "PipeFindToInstallModuleByNameAllowPrerelease" {
         Find-Module -Name $PrereleaseTestModule -AllowPrerelease -Repository $TestRepositoryName | Install-Module
         $res = Get-InstalledModule -Name $PrereleaseTestModule
@@ -1246,7 +1246,7 @@ Describe "--- Install-Module ---" -Tags 'Module','P1','OuterLoop' {
         }
         $script | Should Throw
     }
-    
+
     # Find-Command | Install-Module
     #--------------------------------
     It "PipeFindCommandToInstallModuleByNameAllowPrerelease" {
@@ -1345,10 +1345,10 @@ Describe "--- Install-Module ---" -Tags 'Module','P1','OuterLoop' {
         }
         $script | Should Throw
     }
-    
 
 
-    # Regular Install Tests 
+
+    # Regular Install Tests
     #-----------------------
 
     It "InstallPrereleaseModuleByName" {
@@ -1359,7 +1359,7 @@ Describe "--- Install-Module ---" -Tags 'Module','P1','OuterLoop' {
         $res.Name | Should Be $PrereleaseTestModule
         $res.Version | Should Be $PrereleaseModuleLatestPrereleaseVersion
     }
-    
+
     It "InstallSpecificPrereleaseModuleVersionByNameWithAllowPrerelease" {
         Install-Module -Name $PrereleaseTestModule -RequiredVersion $PrereleaseModuleMiddleVersion -AllowPrerelease -Repository $TestRepositoryName
         $res = Get-InstalledModule -Name $PrereleaseTestModule
@@ -1368,7 +1368,7 @@ Describe "--- Install-Module ---" -Tags 'Module','P1','OuterLoop' {
         $res.Name | Should Be $PrereleaseTestModule
         $res.Version | Should Be $PrereleaseModuleMiddleVersion
     }
-    
+
     It "InstallSpecificPrereleaseModuleVersionByNameWithoutAllowPrerelease" {
         $script = {
             Install-Module -Name $PrereleaseTestModule -RequiredVersion $PrereleaseModuleMiddleVersion -Repository $TestRepositoryName
@@ -1378,7 +1378,7 @@ Describe "--- Install-Module ---" -Tags 'Module','P1','OuterLoop' {
 }
 
 Describe "--- Save-Module ---" -Tags 'Module','BVT','InnerLoop' {
-    
+
     BeforeAll {
         PSGetTestUtils\Uninstall-Module TestPackage
         PSGetTestUtils\Uninstall-Module DscTestModule
@@ -1389,9 +1389,9 @@ Describe "--- Save-Module ---" -Tags 'Module','BVT','InnerLoop' {
         PSGetTestUtils\Uninstall-Module DscTestModule
     }
 
-    # Piping tests 
+    # Piping tests
     #--------------
-    
+
     It "PipeFindToSaveModuleByNameAllowPrerelease" {
         Find-Module -Name $PrereleaseTestModule -AllowPrerelease -Repository $TestRepositoryName | Save-Module -LiteralPath $script:MyDocumentsModulesPath
         $res = Get-InstalledModule -Name $PrereleaseTestModule
@@ -1522,9 +1522,9 @@ Describe "--- Save-Module ---" -Tags 'Module','BVT','InnerLoop' {
         $script | Should Throw
     }
 
-    # Regular Save Tests 
+    # Regular Save Tests
     #-----------------------
-    
+
     It "SavePrereleaseModuleByName" {
         Save-Module -Name $PrereleaseTestModule -AllowPrerelease -Repository $TestRepositoryName -LiteralPath $script:MyDocumentsModulesPath
         $res = Get-InstalledModule -Name $PrereleaseTestModule
@@ -1533,7 +1533,7 @@ Describe "--- Save-Module ---" -Tags 'Module','BVT','InnerLoop' {
         $res.Name | Should Be $PrereleaseTestModule
         $res.Version | Should Be $PrereleaseModuleLatestPrereleaseVersion
     }
-    
+
     It "SaveSpecificPrereleaseModuleVersionByNameWithAllowPrerelease" {
         Save-Module -Name $PrereleaseTestModule -RequiredVersion $PrereleaseModuleMiddleVersion -AllowPrerelease -Repository $TestRepositoryName -LiteralPath $script:MyDocumentsModulesPath
         $res = Get-InstalledModule -Name $PrereleaseTestModule
@@ -1544,7 +1544,7 @@ Describe "--- Save-Module ---" -Tags 'Module','BVT','InnerLoop' {
         $res.AdditionalMetadata | Should Not Be $null
         $res.AdditionalMetadata.IsPrerelease | Should Match "true"
     }
-    
+
     It "SaveSpecificPrereleaseModuleVersionByNameWithoutAllowPrerelease" {
         $script = {
             Save-Module -Name $PrereleaseTestModule -RequiredVersion $PrereleaseModuleMiddleVersion -Repository $TestRepositoryName -LiteralPath $script:MyDocumentsModulesPath
@@ -1554,7 +1554,7 @@ Describe "--- Save-Module ---" -Tags 'Module','BVT','InnerLoop' {
 }
 
 Describe "--- Update-Module ---" -Tags 'Module','BVT','InnerLoop' {
-    
+
     BeforeAll {
         PSGetTestUtils\Uninstall-Module TestPackage
     }
@@ -1609,7 +1609,7 @@ Describe "--- Update-Module ---" -Tags 'Module','BVT','InnerLoop' {
         $res.AdditionalMetadata.IsPrerelease | Should Match "false"
     }
 
-    # (In place update): prerelease to prerelease, same root version.  (ex. 2.0.0-beta500 --> 2.0.0-gamma300)    
+    # (In place update): prerelease to prerelease, same root version.  (ex. 2.0.0-beta500 --> 2.0.0-gamma300)
     It "UpdateModuleSameVersionPrereleaseToPrereleaseInPlaceUpdate" {
         Install-Module $PrereleaseTestModule -RequiredVersion $PrereleaseModuleMiddleVersion -AllowPrerelease -Repository $TestRepositoryName
         Update-Module  $PrereleaseTestModule -RequiredVersion "2.0.0-gamma300" -AllowPrerelease # Should update to latest prerelease version 2.0.0-gamma300
@@ -1656,7 +1656,7 @@ Describe "--- Update-Module ---" -Tags 'Module','BVT','InnerLoop' {
 }
 
 Describe "--- Uninstall-Module ---" -Tags 'Module','BVT','InnerLoop' {
-    
+
     BeforeAll {
         PSGetTestUtils\Uninstall-Module TestPackage
     }
@@ -1668,7 +1668,7 @@ Describe "--- Uninstall-Module ---" -Tags 'Module','BVT','InnerLoop' {
 
     It UninstallPrereleaseModuleOneVersion {
         $moduleName = "TestPackage"
-        
+
         PowerShellGet\Install-Module -Name $moduleName -RequiredVersion $PrereleaseModuleMiddleVersion -AllowPrerelease -Repository $TestRepositoryName -Force
         $mod = Get-InstalledModule -Name $moduleName
         $mod | Should Not Be $null
@@ -1687,7 +1687,7 @@ Describe "--- Uninstall-Module ---" -Tags 'Module','BVT','InnerLoop' {
         else
         {
             $mod.Name | Should Be $moduleName
-        }   
+        }
 
         PowerShellGet\Uninstall-Module -Name $moduleName
         $installedModules = Get-InstalledModule -Name $moduleName -AllVersions -ErrorAction SilentlyContinue
@@ -1725,7 +1725,7 @@ Describe "--- Uninstall-Module ---" -Tags 'Module','BVT','InnerLoop' {
         $mod2.Version | Should Match $PrereleaseModuleLatestPrereleaseVersion
         $mod2.AdditionalMetadata | Should Not Be $null
         $mod2.AdditionalMetadata.IsPrerelease | Should Match "true"
-        
+
         $modules2 = Get-InstalledModule -Name $moduleName -AllVersions
 
         if($PSVersionTable.PSVersion -gt '5.0.0')
@@ -1735,7 +1735,7 @@ Describe "--- Uninstall-Module ---" -Tags 'Module','BVT','InnerLoop' {
         else
         {
             $mod2.Name | Should Be $moduleName
-        }   
+        }
 
         PowerShellGet\Uninstall-Module -Name $moduleName -AllVersions
         $installedModules = Get-InstalledModule -Name $moduleName -AllVersions -ErrorAction SilentlyContinue
@@ -1745,7 +1745,7 @@ Describe "--- Uninstall-Module ---" -Tags 'Module','BVT','InnerLoop' {
 
     It UninstallPrereleaseModuleUsingRequiredVersion {
         $moduleName = "TestPackage"
-        
+
         PowerShellGet\Install-Module -Name $moduleName -RequiredVersion $PrereleaseModuleMiddleVersion -AllowPrerelease -Repository $TestRepositoryName -Force
         $mod = Get-InstalledModule -Name $moduleName
         $mod | Should Not Be $null
@@ -1764,7 +1764,7 @@ Describe "--- Uninstall-Module ---" -Tags 'Module','BVT','InnerLoop' {
         else
         {
             $mod.Name | Should Be $moduleName
-        }   
+        }
 
         PowerShellGet\Uninstall-Module -Name $moduleName -RequiredVersion $PrereleaseModuleMiddleVersion -AllowPrerelease
         $installedModules = Get-InstalledModule -Name $moduleName -AllVersions -ErrorAction SilentlyContinue
@@ -1774,7 +1774,7 @@ Describe "--- Uninstall-Module ---" -Tags 'Module','BVT','InnerLoop' {
 
     It GetInstalledModulePipeToUninstallModuleOneVersion {
         $moduleName = "TestPackage"
-        
+
         PowerShellGet\Install-Module -Name $moduleName -RequiredVersion $PrereleaseModuleMiddleVersion -AllowPrerelease -Repository $TestRepositoryName -Force
         $mod = Get-InstalledModule -Name $moduleName
         $mod | Should Not Be $null
@@ -1783,7 +1783,7 @@ Describe "--- Uninstall-Module ---" -Tags 'Module','BVT','InnerLoop' {
         $mod.Version | Should Match $PrereleaseModuleMiddleVersion
         $mod.AdditionalMetadata | Should Not Be $null
         $mod.AdditionalMetadata.IsPrerelease | Should Match "true"
-        
+
         $modules = Get-InstalledModule -Name $moduleName -AllVersions
 
         if($PSVersionTable.PSVersion -gt '5.0.0')
@@ -1793,10 +1793,10 @@ Describe "--- Uninstall-Module ---" -Tags 'Module','BVT','InnerLoop' {
         else
         {
             $mod.Name | Should Be $moduleName
-        }   
+        }
 
         Get-InstalledModule -Name $moduleName | Uninstall-Module
-        
+
         $installedModules = Get-InstalledModule -Name $moduleName -AllVersions -ErrorAction SilentlyContinue
 
         $installedModules | Should Be $null
@@ -1804,7 +1804,7 @@ Describe "--- Uninstall-Module ---" -Tags 'Module','BVT','InnerLoop' {
 
     It GetInstalledModulePipeToUninstallModuleMultipleVersions {
         $moduleName = "TestPackage"
-        
+
         PowerShellGet\Install-Module -Name $moduleName -RequiredVersion "1.0.0" -Repository $TestRepositoryName -Force
         $mod = Get-InstalledModule -Name $moduleName -RequiredVersion "1.0.0"
         $mod | Should Not Be $null
@@ -1831,7 +1831,7 @@ Describe "--- Uninstall-Module ---" -Tags 'Module','BVT','InnerLoop' {
         $mod2.Version | Should Match $PrereleaseModuleLatestPrereleaseVersion
         $mod2.AdditionalMetadata | Should Not Be $null
         $mod2.AdditionalMetadata.IsPrerelease | Should Match "true"
-        
+
         $modules2 = Get-InstalledModule -Name $moduleName -AllVersions
 
         if($PSVersionTable.PSVersion -gt '5.0.0')
@@ -1841,10 +1841,10 @@ Describe "--- Uninstall-Module ---" -Tags 'Module','BVT','InnerLoop' {
         else
         {
             $mod2.Name | Should Be $moduleName
-        }   
+        }
 
         Get-InstalledModule -Name $moduleName -AllVersions | Uninstall-Module
-        
+
         $installedModules = Get-InstalledModule -Name $moduleName -AllVersions -ErrorAction SilentlyContinue
 
         $installedModules | Should Be $null
@@ -1866,12 +1866,12 @@ Describe "--- New-ScriptFileInfo ---" -Tags 'Script','BVT','InnerLoop' {
 }
 
 Describe "--- Test-ScriptFileInfo ---" -Tags 'Script','BVT','InnerLoop' {
-    
+
     BeforeAll {
         # Create temp module to be published
         $script:TempScriptsPath="$env:LocalAppData\temp\PSGet_$(Get-Random)"
         $null = New-Item -Path $script:TempScriptsPath -ItemType Directory -Force
-    
+
         $script:PublishScriptName = 'Fabrikam-TestScript'
         $script:PublishScriptVersion = '1.0'
         $script:PublishScriptFilePath = Join-Path -Path $script:TempScriptsPath -ChildPath "$script:PublishScriptName.ps1"
@@ -1882,7 +1882,7 @@ Describe "--- Test-ScriptFileInfo ---" -Tags 'Script','BVT','InnerLoop' {
     }
 
     BeforeEach {
-        
+
         $null = New-ScriptFileInfo -Path $script:PublishScriptFilePath `
                                -Version $script:PublishScriptVersion `
                                -Author Manikyam.Bavandla@microsoft.com `
@@ -1899,7 +1899,7 @@ Describe "--- Test-ScriptFileInfo ---" -Tags 'Script','BVT','InnerLoop' {
                         Test-ScriptWorkflow"
     }
 
-    AfterEach {     
+    AfterEach {
         RemoveItem $script:PublishScriptFilePath
         RemoveItem "$script:TempScriptsPath\*.ps1"
     }
@@ -1915,15 +1915,15 @@ Describe "--- Test-ScriptFileInfo ---" -Tags 'Script','BVT','InnerLoop' {
         $scriptFilePath = Join-Path -Path $script:TempScriptsPath -ChildPath "Get-ProcessScript.ps1"
         Set-Content -Path $scriptFilePath -Value @"
 <#PSScriptInfo
-    .DESCRIPTION 
+    .DESCRIPTION
     Performs a collection of admin tasks (Update, Virus Scan, Clean-up, Repair & Defrag) that might speed-up a computers performance.
-    .VERSION 
+    .VERSION
     3.2.1-alpha+001
-    .GUID 
+    .GUID
     35eb535b-7e54-4412-a58b-8a0c588c0b30
-    .AUTHOR 
+    .AUTHOR
     Rebecca Roenitz @RebRo
-    .TAGS 
+    .TAGS
     ManualScriptInfo
     .RELEASENOTES
     Release notes for this script file.
@@ -1949,15 +1949,15 @@ Describe "--- Test-ScriptFileInfo ---" -Tags 'Script','BVT','InnerLoop' {
         $scriptFilePath = Join-Path -Path $script:TempScriptsPath -ChildPath "Get-ProcessScript.ps1"
         Set-Content -Path $scriptFilePath -Value @"
 <#PSScriptInfo
-    .DESCRIPTION 
+    .DESCRIPTION
     Performs a collection of admin tasks (Update, Virus Scan, Clean-up, Repair & Defrag) that might speed-up a computers performance.
-    .VERSION 
+    .VERSION
     3.2.1-alpha-beta.01
-    .GUID 
+    .GUID
     35eb535b-7e54-4412-a58b-8a0c588c0b30
-    .AUTHOR 
+    .AUTHOR
     Rebecca Roenitz @RebRo
-    .TAGS 
+    .TAGS
     ManualScriptInfo
     .RELEASENOTES
     Release notes for this script file.
@@ -1965,7 +1965,7 @@ Describe "--- Test-ScriptFileInfo ---" -Tags 'Script','BVT','InnerLoop' {
 "@
 
         $ScriptBlock = {
-            Test-ScriptFileInfo -Path $scriptFilePath 
+            Test-ScriptFileInfo -Path $scriptFilePath
         }
 
         $expectedErrorMessage = $LocalizedData.InvalidCharactersInPrereleaseString -f 'alpha-beta.01'
@@ -1983,15 +1983,15 @@ Describe "--- Test-ScriptFileInfo ---" -Tags 'Script','BVT','InnerLoop' {
         $scriptFilePath = Join-Path -Path $script:TempScriptsPath -ChildPath "Get-ProcessScript.ps1"
         Set-Content -Path $scriptFilePath -Value @"
 <#PSScriptInfo
-    .DESCRIPTION 
+    .DESCRIPTION
     Performs a collection of admin tasks (Update, Virus Scan, Clean-up, Repair & Defrag) that might speed-up a computers performance.
-    .VERSION 
+    .VERSION
     3.2.1-alpha.1
-    .GUID 
+    .GUID
     35eb535b-7e54-4412-a58b-8a0c588c0b30
-    .AUTHOR 
+    .AUTHOR
     Rebecca Roenitz @RebRo
-    .TAGS 
+    .TAGS
     ManualScriptInfo
     .RELEASENOTES
     Release notes for this script file.
@@ -2017,15 +2017,15 @@ Describe "--- Test-ScriptFileInfo ---" -Tags 'Script','BVT','InnerLoop' {
         $scriptFilePath = Join-Path -Path $script:TempScriptsPath -ChildPath "Get-ProcessScript.ps1"
         Set-Content -Path $scriptFilePath -Value @"
 <#PSScriptInfo
-    .DESCRIPTION 
+    .DESCRIPTION
     Performs a collection of admin tasks (Update, Virus Scan, Clean-up, Repair & Defrag) that might speed-up a computers performance.
-    .VERSION 
+    .VERSION
     3.2.1-error.0.0.0.1
-    .GUID 
+    .GUID
     35eb535b-7e54-4412-a58b-8a0c588c0b30
-    .AUTHOR 
+    .AUTHOR
     Rebecca Roenitz @RebRo
-    .TAGS 
+    .TAGS
     ManualScriptInfo
     .RELEASENOTES
     Release notes for this script file.
@@ -2051,15 +2051,15 @@ Describe "--- Test-ScriptFileInfo ---" -Tags 'Script','BVT','InnerLoop' {
         $scriptFilePath = Join-Path -Path $script:TempScriptsPath -ChildPath "Get-ProcessScript.ps1"
         Set-Content -Path $scriptFilePath -Value @"
 <#PSScriptInfo
-    .DESCRIPTION 
+    .DESCRIPTION
     Performs a collection of admin tasks (Update, Virus Scan, Clean-up, Repair & Defrag) that might speed-up a computers performance.
-    .VERSION 
+    .VERSION
     3.2-alpha001
-    .GUID 
+    .GUID
     35eb535b-7e54-4412-a58b-8a0c588c0b30
-    .AUTHOR 
+    .AUTHOR
     Rebecca Roenitz @RebRo
-    .TAGS 
+    .TAGS
     ManualScriptInfo
     .RELEASENOTES
     Release notes for this script file.
@@ -2074,7 +2074,7 @@ Describe "--- Test-ScriptFileInfo ---" -Tags 'Script','BVT','InnerLoop' {
         $expectedFullyQualifiedErrorId = "IncorrectVersionPartsCountForPrereleaseStringUsage,Test-ScriptFileInfo"
         $scriptBlock | Should -Throw $expectedErrorMessage -ErrorId $expectedFullyQualifiedErrorId
     }
-    
+
     # Purpose: Test a script file info with an Prerelease string when the version has too many parts.
     #
     # Action: Test-ScriptFileInfo [path] -Version 3.2.1.0.5-alpha001
@@ -2085,21 +2085,21 @@ Describe "--- Test-ScriptFileInfo ---" -Tags 'Script','BVT','InnerLoop' {
         $scriptFilePath = Join-Path -Path $script:TempScriptsPath -ChildPath "Get-ProcessScript.ps1"
         Set-Content -Path $scriptFilePath -Value @"
 <#PSScriptInfo
-    .DESCRIPTION 
+    .DESCRIPTION
     Performs a collection of admin tasks (Update, Virus Scan, Clean-up, Repair & Defrag) that might speed-up a computers performance.
-    .VERSION 
+    .VERSION
     3.2.1.1-alpha001
-    .GUID 
+    .GUID
     35eb535b-7e54-4412-a58b-8a0c588c0b30
-    .AUTHOR 
+    .AUTHOR
     Rebecca Roenitz @RebRo
-    .TAGS 
+    .TAGS
     ManualScriptInfo
     .RELEASENOTES
     Release notes for this script file.
 #>
 "@
-        
+
         $ScriptBlock = {
             Test-ScriptFileInfo -Path $scriptFilePath
         }
@@ -2119,28 +2119,28 @@ Describe "--- Test-ScriptFileInfo ---" -Tags 'Script','BVT','InnerLoop' {
         $scriptFilePath = Join-Path -Path $script:TempScriptsPath -ChildPath "Get-ProcessScript.ps1"
         Set-Content -Path $scriptFilePath -Value @"
 <#PSScriptInfo
-    .DESCRIPTION 
+    .DESCRIPTION
     Performs a collection of admin tasks (Update, Virus Scan, Clean-up, Repair & Defrag) that might speed-up a computers performance.
-    .VERSION 
+    .VERSION
     3.2.1-alpha001
-    .GUID 
+    .GUID
     35eb535b-7e54-4412-a58b-8a0c588c0b30
-    .AUTHOR 
+    .AUTHOR
     Rebecca Roenitz @RebRo
-    .TAGS 
+    .TAGS
     ManualScriptInfo
     .RELEASENOTES
     Release notes for this script file.
 #>
 "@
-        
+
         $testScriptInfo = Test-ScriptFileInfo -Path $scriptFilePath
         $testScriptInfo.Version | Should -Match "3.2.1-alpha001"
     }
 }
 
 Describe "--- Update-ScriptFileInfo ---" -Tags 'Script','BVT','InnerLoop' {
-    
+
     BeforeAll {
         Get-InstalledScript -Name Fabrikam-ServerScript -ErrorAction SilentlyContinue | Uninstall-Script -Force
     }
@@ -2150,7 +2150,7 @@ Describe "--- Update-ScriptFileInfo ---" -Tags 'Script','BVT','InnerLoop' {
         {
             Reset-PATHVariableForScriptsInstallLocation -Scope AllUsers
         }
-    
+
         if($script:AddedCurrentUserInstallPath)
         {
             Reset-PATHVariableForScriptsInstallLocation -Scope CurrentUser
@@ -2227,7 +2227,7 @@ Describe "--- Update-ScriptFileInfo ---" -Tags 'Script','BVT','InnerLoop' {
         $expectedFullyQualifiedErrorId = "IncorrectVersionPartsCountForPrereleaseStringUsage,Test-ScriptFileInfo"
         $scriptBlock | Should -Throw $expectedErrorMessage -ErrorId $expectedFullyQualifiedErrorId
     }
-    
+
     It "UpdateScriptFileWithPrereleaseStringAndLongVersion" {
         $Version = "3.2.1.1-alpha001"
 
@@ -2262,19 +2262,19 @@ Describe "--- Update-ScriptFileInfo ---" -Tags 'Script','BVT','InnerLoop' {
 }
 
 Describe "--- Publish-Script ---" -Tags 'Script','P1','OuterLoop' {
-    # Not executing these tests on Linux as 
+    # Not executing these tests on Linux as
     # the total execution time is exceeding allowed 50 min in TravisCI daily builds.
     if($IsLinux) {
         return
     }
-    
+
     BeforeAll {
 
         # Create file-based repository from scratch
         $script:PSGalleryRepoPath = Join-Path -Path $script:TempPath -ChildPath 'PSGallery Repo With Spaces'
         RemoveItem $script:PSGalleryRepoPath
         $null = New-Item -Path $script:PSGalleryRepoPath -ItemType Directory -Force
-    
+
         # Backup existing repositories config file
         $script:moduleSourcesFilePath= Join-Path $script:PSGetLocalAppDataPath "PSRepositories.xml"
         $script:moduleSourcesBackupFilePath = Join-Path $script:PSGetLocalAppDataPath "PSRepositories.xml_$(get-random)_backup"
@@ -2282,25 +2282,25 @@ Describe "--- Publish-Script ---" -Tags 'Script','P1','OuterLoop' {
         {
             Rename-Item $script:moduleSourcesFilePath $script:moduleSourcesBackupFilePath -Force
         }
-    
+
         # Set file-based repo as default PSGallery repo
         Set-PSGallerySourceLocation -Location $script:PSGalleryRepoPath `
                                     -PublishLocation $script:PSGalleryRepoPath `
                                     -ScriptSourceLocation $script:PSGalleryRepoPath `
                                     -ScriptPublishLocation $script:PSGalleryRepoPath
-    
+
         $modSource = Get-PSRepository -Name "PSGallery"
         $modSource.SourceLocation | Should Be $script:PSGalleryRepoPath
         $modSource.PublishLocation | Should Be $script:PSGalleryRepoPath
-    
+
         $script:ApiKey="TestPSGalleryApiKey"
-    
+
         # Create temp module to be published
         $script:TempScriptsPath = Join-Path -Path $script:TempPath -ChildPath "PSGet_$(Get-Random)"
         $null = New-Item -Path $script:TempScriptsPath -ItemType Directory -Force
         $script:TempScriptsLiteralPath = Join-Path -Path $script:TempScriptsPath -ChildPath 'Lite[ral]Path'
         $null = New-Item -Path $script:TempScriptsLiteralPath -ItemType Directory -Force
-    
+
         $script:PublishScriptName = 'Fabrikam-TestScript'
         $script:PublishScriptVersion = '1.0'
         $script:PublishScriptFilePath = Join-Path -Path $script:TempScriptsPath -ChildPath "$script:PublishScriptName.ps1"
@@ -2315,16 +2315,16 @@ Describe "--- Publish-Script ---" -Tags 'Script','P1','OuterLoop' {
         {
             RemoveItem $script:moduleSourcesFilePath
         }
-    
+
         # Import the PowerShellGet provider to reload the repositories.
         $null = Import-PackageProvider -Name PowerShellGet -Force
-    
+
         RemoveItem $script:PSGalleryRepoPath
         RemoveItem $script:TempScriptsPath
     }
 
     BeforeEach {
-        
+
         $null = New-ScriptFileInfo -Path $script:PublishScriptFilePath `
                                -Version $script:PublishScriptVersion `
                                -Author Manikyam.Bavandla@microsoft.com `
@@ -2342,13 +2342,13 @@ Describe "--- Publish-Script ---" -Tags 'Script','P1','OuterLoop' {
     }
 
     AfterEach {
-        RemoveItem "$script:PSGalleryRepoPath\*"        
+        RemoveItem "$script:PSGalleryRepoPath\*"
         RemoveItem $script:PublishScriptFilePath
     }
 
-    
+
     It "PublishScriptSameVersionHigherPrerelease" {
-        
+
         # Publish first version
         $version = "1.0.0-alpha001"
         Update-ScriptFileInfo -Path $script:PublishScriptFilePath -Version $version
@@ -2377,7 +2377,7 @@ Describe "--- Publish-Script ---" -Tags 'Script','P1','OuterLoop' {
     }
 
     It "PublishScriptSameVersionLowerPrereleaseWithForce" {
-        
+
         # Publish first version
         $version = "1.0.0-beta002"
         Update-ScriptFileInfo -Path $script:PublishScriptFilePath -Version $version
@@ -2406,9 +2406,9 @@ Describe "--- Publish-Script ---" -Tags 'Script','P1','OuterLoop' {
         $psgetItemInfo.AdditionalMetadata | Should Not Be $null
         $psgetItemInfo.AdditionalMetadata.IsPrerelease | Should Match "true"
     }
-    
+
     It "PublishScriptSameVersionLowerPrereleaseWithoutForce" {
-        
+
         # Publish first version
         $version = "1.0.0-beta002"
         Update-ScriptFileInfo -Path $script:PublishScriptFilePath -Version $version
@@ -2430,9 +2430,9 @@ Describe "--- Publish-Script ---" -Tags 'Script','P1','OuterLoop' {
         }
         $scriptBlock | Should -Throw -ErrorId "ScriptPrereleaseStringShouldBeGreaterThanGalleryPrereleaseString,Publish-Script"
     }
-    
+
     It "PublishScriptSameVersionSamePrerelease" {
-        
+
         # Publish first version
         $version = "1.0.0-alpha001"
         Update-ScriptFileInfo -Path $script:PublishScriptFilePath -Version $version
@@ -2454,7 +2454,7 @@ Describe "--- Publish-Script ---" -Tags 'Script','P1','OuterLoop' {
     }
 
     It "PublishScriptSameVersionNoPrerelease" {
-        
+
         # Publish first version
         $version = "1.0.0-alpha001"
         Update-ScriptFileInfo -Path $script:PublishScriptFilePath -Version $version
@@ -2484,7 +2484,7 @@ Describe "--- Publish-Script ---" -Tags 'Script','P1','OuterLoop' {
     }
 
     It "PublishScriptWithForceNewPrereleaseAfterStableVersion" {
-        
+
         # Publish stable version
         $version = "1.0.0"
         Update-ScriptFileInfo -Path $script:PublishScriptFilePath -Version $version
@@ -2511,9 +2511,9 @@ Describe "--- Publish-Script ---" -Tags 'Script','P1','OuterLoop' {
         $psgetItemInfo.AdditionalMetadata | Should Not Be $null
         $psgetItemInfo.AdditionalMetadata.IsPrerelease | Should Match "true"
     }
-    
+
     It "PublishScriptWithoutForceNewPrereleaseAfterStableVersion" {
-        
+
         # Publish stable version
         $version = "1.0.0"
         Update-ScriptFileInfo -Path $script:PublishScriptFilePath -Version $version
@@ -2539,15 +2539,15 @@ Describe "--- Publish-Script ---" -Tags 'Script','P1','OuterLoop' {
     It "PublishScriptWithInvalidPrereleaseString" {
         Set-Content -Path $script:PublishScriptFilePath -Value @"
 <#PSScriptInfo
-    .DESCRIPTION 
+    .DESCRIPTION
     Performs a collection of admin tasks (Update, Virus Scan, Clean-up, Repair & Defrag) that might speed-up a computers performance.
-    .VERSION 
+    .VERSION
     3.2.1-alpha+001
-    .GUID 
+    .GUID
     35eb535b-7e54-4412-a58b-8a0c588c0b30
-    .AUTHOR 
+    .AUTHOR
     Rebecca Roenitz @RebRo
-    .TAGS 
+    .TAGS
     ManualScriptInfo
     .RELEASENOTES
     Release notes for this script file.
@@ -2567,15 +2567,15 @@ Describe "--- Publish-Script ---" -Tags 'Script','P1','OuterLoop' {
     It "PublishScriptWithInvalidPrereleaseString2" {
         Set-Content -Path $script:PublishScriptFilePath -Value @"
 <#PSScriptInfo
-    .DESCRIPTION 
+    .DESCRIPTION
     Performs a collection of admin tasks (Update, Virus Scan, Clean-up, Repair & Defrag) that might speed-up a computers performance.
-    .VERSION 
+    .VERSION
     3.2.1-alpha-beta.01
-    .GUID 
+    .GUID
     35eb535b-7e54-4412-a58b-8a0c588c0b30
-    .AUTHOR 
+    .AUTHOR
     Rebecca Roenitz @RebRo
-    .TAGS 
+    .TAGS
     ManualScriptInfo
     .RELEASENOTES
     Release notes for this script file.
@@ -2586,7 +2586,7 @@ Describe "--- Publish-Script ---" -Tags 'Script','P1','OuterLoop' {
         $expectedFullyQualifiedErrorId = "InvalidCharactersInPrereleaseString,Test-ScriptFileInfo"
 
         $ScriptBlock = {
-            Publish-Script -Path $script:PublishScriptFilePath 
+            Publish-Script -Path $script:PublishScriptFilePath
         }
 
         $ScriptBlock | Should -Throw $expectedErrorMessage -ErrorId $expectedFullyQualifiedErrorId
@@ -2595,21 +2595,21 @@ Describe "--- Publish-Script ---" -Tags 'Script','P1','OuterLoop' {
     It "PublishScriptWithInvalidPrereleaseString3" {
         Set-Content -Path $script:PublishScriptFilePath -Value @"
 <#PSScriptInfo
-    .DESCRIPTION 
+    .DESCRIPTION
     Performs a collection of admin tasks (Update, Virus Scan, Clean-up, Repair & Defrag) that might speed-up a computers performance.
-    .VERSION 
+    .VERSION
     3.2.1-alpha.1
-    .GUID 
+    .GUID
     35eb535b-7e54-4412-a58b-8a0c588c0b30
-    .AUTHOR 
+    .AUTHOR
     Rebecca Roenitz @RebRo
-    .TAGS 
+    .TAGS
     ManualScriptInfo
     .RELEASENOTES
     Release notes for this script file.
 #>
 "@
-        
+
         $expectedErrorMessage = $LocalizedData.InvalidCharactersInPrereleaseString -f 'alpha.1'
         $expectedFullyQualifiedErrorId = "InvalidCharactersInPrereleaseString,Test-ScriptFileInfo"
 
@@ -2623,15 +2623,15 @@ Describe "--- Publish-Script ---" -Tags 'Script','P1','OuterLoop' {
     It "PublishScriptWithInvalidPrereleaseString4" {
         Set-Content -Path $script:PublishScriptFilePath -Value @"
 <#PSScriptInfo
-    .DESCRIPTION 
+    .DESCRIPTION
     Performs a collection of admin tasks (Update, Virus Scan, Clean-up, Repair & Defrag) that might speed-up a computers performance.
-    .VERSION 
+    .VERSION
     3.2.1-error.0.0.0.1
-    .GUID 
+    .GUID
     35eb535b-7e54-4412-a58b-8a0c588c0b30
-    .AUTHOR 
+    .AUTHOR
     Rebecca Roenitz @RebRo
-    .TAGS 
+    .TAGS
     ManualScriptInfo
     .RELEASENOTES
     Release notes for this script file.
@@ -2651,21 +2651,21 @@ Describe "--- Publish-Script ---" -Tags 'Script','P1','OuterLoop' {
     It "PublishScriptWithPrereleaseStringAndShortVersion" {
         Set-Content -Path $script:PublishScriptFilePath -Value @"
 <#PSScriptInfo
-    .DESCRIPTION 
+    .DESCRIPTION
     Performs a collection of admin tasks (Update, Virus Scan, Clean-up, Repair & Defrag) that might speed-up a computers performance.
-    .VERSION 
+    .VERSION
     3.2-alpha001
-    .GUID 
+    .GUID
     35eb535b-7e54-4412-a58b-8a0c588c0b30
-    .AUTHOR 
+    .AUTHOR
     Rebecca Roenitz @RebRo
-    .TAGS 
+    .TAGS
     ManualScriptInfo
     .RELEASENOTES
     Release notes for this script file.
 #>
 "@
-        
+
         $expectedErrorMessage = $LocalizedData.IncorrectVersionPartsCountForPrereleaseStringUsage -f '3.2'
         $expectedFullyQualifiedErrorId = "IncorrectVersionPartsCountForPrereleaseStringUsage,Test-ScriptFileInfo"
 
@@ -2675,25 +2675,25 @@ Describe "--- Publish-Script ---" -Tags 'Script','P1','OuterLoop' {
 
         $ScriptBlock | Should -Throw $expectedErrorMessage -ErrorId $expectedFullyQualifiedErrorId
     }
-    
+
     It "PublishScriptWithPrereleaseStringAndLongVersion" {
         Set-Content -Path $script:PublishScriptFilePath -Value @"
 <#PSScriptInfo
-    .DESCRIPTION 
+    .DESCRIPTION
     Performs a collection of admin tasks (Update, Virus Scan, Clean-up, Repair & Defrag) that might speed-up a computers performance.
-    .VERSION 
+    .VERSION
     3.2.1.1-alpha001
-    .GUID 
+    .GUID
     35eb535b-7e54-4412-a58b-8a0c588c0b30
-    .AUTHOR 
+    .AUTHOR
     Rebecca Roenitz @RebRo
-    .TAGS 
+    .TAGS
     ManualScriptInfo
     .RELEASENOTES
     Release notes for this script file.
 #>
 "@
-        
+
         $expectedErrorMessage = $LocalizedData.IncorrectVersionPartsCountForPrereleaseStringUsage -f '3.2.1.1'
         $expectedFullyQualifiedErrorId = "IncorrectVersionPartsCountForPrereleaseStringUsage,Test-ScriptFileInfo"
 
@@ -2707,15 +2707,15 @@ Describe "--- Publish-Script ---" -Tags 'Script','P1','OuterLoop' {
     It "PublishScriptWithValidPrereleaseAndVersion" {
         Set-Content -Path $script:PublishScriptFilePath -Value @"
 <#PSScriptInfo
-    .DESCRIPTION 
+    .DESCRIPTION
     Performs a collection of admin tasks (Update, Virus Scan, Clean-up, Repair & Defrag) that might speed-up a computers performance.
-    .VERSION 
+    .VERSION
     3.2.1-alpha001
-    .GUID 
+    .GUID
     35eb535b-7e54-4412-a58b-8a0c588c0b30
-    .AUTHOR 
+    .AUTHOR
     Rebecca Roenitz @RebRo
-    .TAGS 
+    .TAGS
     ManualScriptInfo
     .RELEASENOTES
     Release notes for this script file.
@@ -2732,7 +2732,7 @@ Describe "--- Publish-Script ---" -Tags 'Script','P1','OuterLoop' {
 }
 
 Describe "--- Find-Script ---" -Tags 'Script','P1','OuterLoop' {
-    
+
     # Find-Script Tests
     #-------------------
     It FindScriptReturnsLatestStableVersion {
@@ -2752,7 +2752,7 @@ Describe "--- Find-Script ---" -Tags 'Script','P1','OuterLoop' {
         $psgetScriptInfo.AdditionalMetadata.IsPrerelease | Should Match "true"
         $psgetScriptInfo.Version | Should Match '-'
     }
-    
+
     It FindScriptAllowPrereleaseAllVersions {
         $results = Find-Script -Name $PrereleaseTestScript -Repository $TestRepositoryName -AllowPrerelease -AllVersions
 
@@ -2760,7 +2760,7 @@ Describe "--- Find-Script ---" -Tags 'Script','P1','OuterLoop' {
         $results | Where-Object { ($_.AdditionalMetadata.IsPrerelease -eq $true) -and ($_.Version -match '-') } | Measure-Object | ForEach-Object { $_.Count } | Should BeGreaterThan 0
         $results | Where-Object { ($_.AdditionalMetadata.IsPrerelease -eq $false) -and ($_.Version -notmatch '-') } | Measure-Object | ForEach-Object { $_.Count } | Should BeGreaterThan 0
     }
-    
+
     It FindScriptAllVersionsShouldReturnOnlyStableVersions {
         $results = Find-Script -Name $PrereleaseTestScript -Repository $TestRepositoryName -AllVersions
 
@@ -2790,7 +2790,7 @@ Describe "--- Find-Script ---" -Tags 'Script','P1','OuterLoop' {
 }
 
 Describe "--- Install-Script ---" -Tags 'Script','P1','OuterLoop' {
-    
+
     BeforeAll {
         Get-InstalledScript -Name "TestScript" -ErrorAction SilentlyContinue | Uninstall-Script -Force
     }
@@ -2798,12 +2798,12 @@ Describe "--- Install-Script ---" -Tags 'Script','P1','OuterLoop' {
     AfterEach {
         PSGetTestUtils\RemoveItem -path $(Join-Path $script:ProgramFilesScriptsPath "TestScript.ps1")
         PSGetTestUtils\RemoveItem -path $(Join-Path $script:MyDocumentsScriptsPath "TestScript.ps1")
-    } 
+    }
 
 
-    # Piping tests 
+    # Piping tests
     #--------------
-    
+
     It "PipeFindToInstallScriptByNameAllowPrerelease" {
         Find-Script -Name $PrereleaseTestScript -AllowPrerelease -Repository $TestRepositoryName | Install-Script
         $res = Get-InstalledScript -Name $PrereleaseTestScript
@@ -2815,7 +2815,7 @@ Describe "--- Install-Script ---" -Tags 'Script','P1','OuterLoop' {
         $res.AdditionalMetadata | Should Not Be $null
         $res.AdditionalMetadata.IsPrerelease | Should Match "true"
     }
-    
+
     It "PipeFindToInstallScriptSpecificPrereleaseVersionByNameWithAllowPrerelease" {
         Find-Script -Name $PrereleaseTestScript -RequiredVersion $PrereleaseScriptMiddleVersion -AllowPrerelease -Repository $TestRepositoryName | Install-Script
         $res = Get-InstalledScript -Name $PrereleaseTestScript
@@ -2827,17 +2827,17 @@ Describe "--- Install-Script ---" -Tags 'Script','P1','OuterLoop' {
         $res.AdditionalMetadata | Should Not Be $null
         $res.AdditionalMetadata.IsPrerelease | Should Match "true"
     }
-    
+
     It "PipeFindToInstallScriptSpecificPrereleaseVersionByNameWithoutAllowPrerelease" {
         $script = {
             Find-Script -Name $PrereleaseTestScript -RequiredVersion $PrereleaseScriptMiddleVersion -Repository $TestRepositoryName | Install-Script
         }
         $script | Should Throw
     }
-    
-    # Regular Install Tests 
+
+    # Regular Install Tests
     #-----------------------
-    
+
     It "InstallPrereleaseScriptByName" {
         Install-Script -Name $PrereleaseTestScript -AllowPrerelease -Repository $TestRepositoryName
         $res = Get-InstalledScript -Name $PrereleaseTestScript
@@ -2846,7 +2846,7 @@ Describe "--- Install-Script ---" -Tags 'Script','P1','OuterLoop' {
         $res.Name | Should Be $PrereleaseTestScript
         $res.Version | Should Match $PrereleaseScriptLatestPrereleaseVersion
     }
-    
+
     It "InstallSpecificPrereleaseScriptVersionByNameWithAllowPrerelease" {
         Install-Script -Name $PrereleaseTestScript -RequiredVersion $PrereleaseScriptMiddleVersion -AllowPrerelease -Repository $TestRepositoryName
         $res = Get-InstalledScript -Name $PrereleaseTestScript
@@ -2855,7 +2855,7 @@ Describe "--- Install-Script ---" -Tags 'Script','P1','OuterLoop' {
         $res.Name | Should Be $PrereleaseTestScript
         $res.Version | Should Match $PrereleaseScriptMiddleVersion
     }
-    
+
     It "InstallSpecificPrereleaseScriptVersionByNameWithoutAllowPrerelease" {
         $script = {
             Install-Script -Name $PrereleaseTestScript -RequiredVersion $PrereleaseScriptMiddleVersion -Repository $TestRepositoryName
@@ -2874,9 +2874,9 @@ Describe "--- Save-Script ---" -Tags 'Script','BVT','InnerLoop' {
     AfterEach {
         PSGetTestUtils\RemoveItem -path $(Join-Path $script:ProgramFilesScriptsPath "TestScript.ps1")
         PSGetTestUtils\RemoveItem -path $(Join-Path $script:MyDocumentsScriptsPath "TestScript.ps1")
-    } 
+    }
 
-    # Piping tests 
+    # Piping tests
     #--------------
     It "PipeFindToSaveScriptByNameAllowPrerelease" {
         Find-Script -Name $PrereleaseTestScript -AllowPrerelease -Repository $TestRepositoryName | Save-Script -LiteralPath $script:MyDocumentsScriptsPath
@@ -2890,7 +2890,7 @@ Describe "--- Save-Script ---" -Tags 'Script','BVT','InnerLoop' {
 
         $savedVersion | Should Be $PrereleaseScriptLatestPrereleaseVersion
     }
-    
+
     It "PipeFindToSaveScriptSpecificPrereleaseVersionByNameWithAllowPrerelease" {
         Find-Script -Name $PrereleaseTestScript -RequiredVersion $PrereleaseScriptMiddleVersion -AllowPrerelease -Repository $TestRepositoryName | Save-Script -LiteralPath $script:MyDocumentsScriptsPath
 
@@ -2910,8 +2910,8 @@ Describe "--- Save-Script ---" -Tags 'Script','BVT','InnerLoop' {
         }
         $script | Should Throw
     }
-    
-    # Regular Save Tests 
+
+    # Regular Save Tests
     #-----------------------
     It "SavePrereleaseScriptByName" {
         Save-Script -Name $PrereleaseTestScript -AllowPrerelease -Repository $TestRepositoryName -LiteralPath $script:MyDocumentsScriptsPath
@@ -2925,10 +2925,10 @@ Describe "--- Save-Script ---" -Tags 'Script','BVT','InnerLoop' {
 
         $savedVersion | Should Be $PrereleaseScriptLatestPrereleaseVersion
     }
-    
+
     It "SaveSpecificPrereleaseScriptVersionByNameWithAllowPrerelease" {
         Save-Script -Name $PrereleaseTestScript -RequiredVersion $PrereleaseScriptMiddleVersion -AllowPrerelease -Repository $TestRepositoryName -LiteralPath $script:MyDocumentsScriptsPath
-        
+
         $scriptPath = Join-Path -Path $script:MyDocumentsScriptsPath -ChildPath $PrereleaseTestScript
 
         Test-Path -Path "$scriptPath.ps1" -PathType Leaf | Should Be $true
@@ -2938,7 +2938,7 @@ Describe "--- Save-Script ---" -Tags 'Script','BVT','InnerLoop' {
 
         $savedVersion | Should Be $PrereleaseScriptMiddleVersion
     }
-    
+
     It "SaveSpecificPrereleaseScriptVersionByNameWithoutAllowPrerelease" {
         $script = {
             Save-Script -Name $PrereleaseTestScript -RequiredVersion $PrereleaseScriptMiddleVersion -Repository $TestRepositoryName -LiteralPath $script:MyDocumentsScriptsPath
@@ -2948,7 +2948,7 @@ Describe "--- Save-Script ---" -Tags 'Script','BVT','InnerLoop' {
 }
 
 Describe "--- Update-Script ---" -Tags 'Script','BVT','InnerLoop' {
-    
+
     BeforeAll {
         PSGetTestUtils\RemoveItem -path $(Join-Path $script:ProgramFilesScriptsPath "TestScript.ps1")
         PSGetTestUtils\RemoveItem -path $(Join-Path $script:MyDocumentsScriptsPath "TestScript.ps1")
@@ -2957,7 +2957,7 @@ Describe "--- Update-Script ---" -Tags 'Script','BVT','InnerLoop' {
     AfterEach {
         PSGetTestUtils\RemoveItem -path $(Join-Path $script:ProgramFilesScriptsPath "TestScript.ps1")
         PSGetTestUtils\RemoveItem -path $(Join-Path $script:MyDocumentsScriptsPath "TestScript.ps1")
-    } 
+    }
 
     # Updated to latest release version by default: When release version is installed (ex. 1.0.0 --> 3.0.0)
     It "UpdateScriptFromReleaseToReleaseVersionByDefault" {
@@ -2988,7 +2988,7 @@ Describe "--- Update-Script ---" -Tags 'Script','BVT','InnerLoop' {
         $res.AdditionalMetadata | Should Not Be $null
         $res.AdditionalMetadata.IsPrerelease | Should Match "false"
     }
-    
+
     # (In place update): prerelease to release, same root version.  (ex. 2.0.0-alpha005 --> 3.0.0)
     It "UpdateScriptSameVersionPrereleaseToReleaseInPlaceUpdate" {
         Install-Script $PrereleaseTestScript -RequiredVersion $PrereleaseScriptMiddleVersion -AllowPrerelease -Repository $TestRepositoryName
@@ -3004,7 +3004,7 @@ Describe "--- Update-Script ---" -Tags 'Script','BVT','InnerLoop' {
         $res.AdditionalMetadata.IsPrerelease | Should Match "false"
     }
 
-    # (In place update): prerelease to prerelease, same root version.  (ex. 2.0.0-alpha005 --> 2.0.0-beta1234)    
+    # (In place update): prerelease to prerelease, same root version.  (ex. 2.0.0-alpha005 --> 2.0.0-beta1234)
     It "UpdateScriptSameVersionPrereleaseToPrereleaseInPlaceUpdate" {
         Install-Script $PrereleaseTestScript -RequiredVersion $PrereleaseScriptMiddleVersion -AllowPrerelease -Repository $TestRepositoryName
         Update-Script $PrereleaseTestScript -RequiredVersion "2.0.0-beta1234" -AllowPrerelease
@@ -3059,10 +3059,9 @@ Describe "--- Uninstall-Script ---" -Tags 'Script','BVT','InnerLoop' {
     AfterEach {
         PSGetTestUtils\RemoveItem -path $(Join-Path $script:ProgramFilesScriptsPath "TestScript.ps1")
         PSGetTestUtils\RemoveItem -path $(Join-Path $script:MyDocumentsScriptsPath "TestScript.ps1")
-    } 
+    }
 
     It UninstallPrereleaseScript {
-
         $scriptName = "TestScript"
 
         PowerShellGet\Install-Script -Name $scriptName -RequiredVersion "1.0.0" -Repository $TestRepositoryName
@@ -3091,7 +3090,7 @@ Describe "--- Uninstall-Script ---" -Tags 'Script','BVT','InnerLoop' {
         $mod2.Version | Should Match $PrereleaseScriptLatestPrereleaseVersion
         $mod2.AdditionalMetadata | Should Not Be $null
         $mod2.AdditionalMetadata.IsPrerelease | Should Match "true"
-        
+
         $scripts2 = PowerShellGet\Get-InstalledScript -Name $scriptName -AllowPrerelease
 
         if($PSVersionTable.PSVersion -gt '5.0.0')
@@ -3101,7 +3100,7 @@ Describe "--- Uninstall-Script ---" -Tags 'Script','BVT','InnerLoop' {
         else
         {
             $mod2.Name | Should Be $scriptName
-        }   
+        }
 
 
         PowerShellGet\Uninstall-Script -Name $scriptName

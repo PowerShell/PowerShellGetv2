@@ -5,30 +5,38 @@
 Import-Module "$PSScriptRoot\PSGetTestUtils.psm1" -WarningAction SilentlyContinue
 
 $RepositoryName = 'PSGallery'
-$SourceLocation = 'https://dtlgalleryint.cloudapp.net/api/v2/'
-$PublishLocation= 'https://dtlgalleryint.cloudapp.net/api/v2/package/'
-$ScriptSourceLocation= 'https://dtlgalleryint.cloudapp.net/api/v2/items/psscript/'
-$ScriptPublishLocation= 'https://dtlgalleryint.cloudapp.net/api/v2/package/'
+$SourceLocation = 'https://www.poshtestgallery.com/api/v2/'
+$PublishLocation = 'https://www.poshtestgallery.com/api/v2/package/'
+$ScriptSourceLocation = 'https://www.poshtestgallery.com/api/v2/items/psscript/'
+$ScriptPublishLocation = 'https://www.poshtestgallery.com/api/v2/package/'
 
-Describe 'Test Register-PSRepository and Register-PackageSource for PSGallery repository' -tags 'BVT','InnerLoop' {
+Describe 'Test Register-PSRepository and Register-PackageSource for PSGallery repository' -tags 'BVT', 'InnerLoop' {
 
-    BeforeAll {        
-	    Install-NuGetBinaries
+    BeforeAll {
+        Install-NuGetBinaries
     }
 
     AfterAll {
-        if(Get-PSRepository -Name $RepositoryName -ErrorAction SilentlyContinue)
-        {
+        if (Get-PSRepository -Name $RepositoryName -ErrorAction SilentlyContinue) {
             Set-PSRepository -Name $RepositoryName -InstallationPolicy Trusted
         }
-        else
-        {
+        else {
             Register-PSRepository -Default -InstallationPolicy Trusted
         }
     }
 
     BeforeEach {
         Unregister-PSRepository -Name $RepositoryName -ErrorAction SilentlyContinue
+    }
+
+    It 'Should pipe from Get-PSRepository to Set' {
+        Register-PSRepository -Default
+
+        Get-PSRepository $RepositoryName | Set-PSRepository -InstallationPolicy Trusted
+
+        $repo = Get-PSRepository $RepositoryName
+        $repo.Name | should be $RepositoryName
+        $repo.Trusted | should be $true
     }
 
     It 'Register-PSRepository -Default: Should work' {
@@ -57,14 +65,14 @@ Describe 'Test Register-PSRepository and Register-PackageSource for PSGallery re
         Register-PSRepository -Default -ErrorVariable ev -ErrorAction SilentlyContinue
         $ev[0].FullyQualifiedErrorId | Should be 'PackageSourceExists,Microsoft.PowerShell.PackageManagement.Cmdlets.RegisterPackageSource'
     } `
-    -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
+        -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
 
     It 'Register-PSRepository -Default:$false : Should not register' {
         Register-PSRepository -Default:$false
         Get-PSRepository PSGallery -ErrorVariable ev -ErrorAction SilentlyContinue
         $ev[0].FullyQualifiedErrorId | Should be 'SourceNotFound,Microsoft.PowerShell.PackageManagement.Cmdlets.GetPackageSource'
     } `
-    -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
+        -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
 
     It 'Register-PSRepository -Name PSGallery -SourceLocation $SourceLocation : Should fail' {
         { Register-PSRepository $RepositoryName $SourceLocation -ErrorVariable ev -ErrorAction SilentlyContinue } | Should Throw
@@ -100,51 +108,47 @@ Describe 'Test Register-PSRepository and Register-PackageSource for PSGallery re
         Register-PackageSource -ProviderName PowerShellGet -Name $RepositoryName -Location $SourceLocation -ErrorVariable ev -ErrorAction SilentlyContinue
         $ev[0].FullyQualifiedErrorId | Should be 'ParameterIsNotAllowedWithPSGallery,Add-PackageSource,Microsoft.PowerShell.PackageManagement.Cmdlets.RegisterPackageSource'
     } `
-    -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
-    
+        -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
+
     It 'Register-PackageSource -ProviderName PowerShellGet -Name PSGallery -PublishLocation $PublishLocation : Should fail' {
         Register-PackageSource -ProviderName PowerShellGet -Name $RepositoryName -PublishLocation $PublishLocation -ErrorVariable ev -ErrorAction SilentlyContinue
         $ev[0].FullyQualifiedErrorId | Should be 'ParameterIsNotAllowedWithPSGallery,Add-PackageSource,Microsoft.PowerShell.PackageManagement.Cmdlets.RegisterPackageSource'
     } `
-    -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
+        -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
 
     It 'Register-PackageSource -ProviderName PowerShellGet -Name PSGallery -ScriptPublishLocation $ScriptPublishLocation : should fail' {
         Register-PackageSource -ProviderName PowerShellGet -Name $RepositoryName -ScriptPublishLocation $ScriptPublishLocation -ErrorVariable ev -ErrorAction SilentlyContinue
         $ev[0].FullyQualifiedErrorId | Should be 'ParameterIsNotAllowedWithPSGallery,Add-PackageSource,Microsoft.PowerShell.PackageManagement.Cmdlets.RegisterPackageSource'
     } `
-    -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
+        -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
 
     It 'Register-PackageSource -ProviderName PowerShellGet -Name PSGallery -ScriptSourceLocation $ScriptSourceLocation : should fail' {
         Register-PackageSource -ProviderName PowerShellGet -Name PSGallery -ScriptSourceLocation $ScriptSourceLocation -ErrorVariable ev -ErrorAction SilentlyContinue
         $ev[0].FullyQualifiedErrorId | Should be 'ParameterIsNotAllowedWithPSGallery,Add-PackageSource,Microsoft.PowerShell.PackageManagement.Cmdlets.RegisterPackageSource'
     } `
-    -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
+        -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
 }
 
-Describe 'Test Set-PSRepository and Set-PackageSource for PSGallery repository' -tags 'BVT','InnerLoop' {
+Describe 'Test Set-PSRepository and Set-PackageSource for PSGallery repository' -tags 'BVT', 'InnerLoop' {
 
-    BeforeAll {        
-	    Install-NuGetBinaries
+    BeforeAll {
+        Install-NuGetBinaries
     }
 
     AfterAll {
-        if(Get-PSRepository -Name $RepositoryName -ErrorAction SilentlyContinue)
-        {
+        if (Get-PSRepository -Name $RepositoryName -ErrorAction SilentlyContinue) {
             Set-PSRepository -Name $RepositoryName -InstallationPolicy Trusted
         }
-        else
-        {
+        else {
             Register-PSRepository -Default -InstallationPolicy Trusted
         }
     }
 
     BeforeEach {
-        if(Get-PSRepository -Name $RepositoryName -ErrorAction SilentlyContinue)
-        {
+        if (Get-PSRepository -Name $RepositoryName -ErrorAction SilentlyContinue) {
             Set-PSRepository -Name $RepositoryName -InstallationPolicy Untrusted
         }
-        else
-        {
+        else {
             Register-PSRepository -Default -InstallationPolicy Untrusted
         }
     }
@@ -168,25 +172,25 @@ Describe 'Test Set-PSRepository and Set-PackageSource for PSGallery repository' 
         Set-PSRepository $RepositoryName $SourceLocation -ErrorVariable ev -ErrorAction SilentlyContinue
         $ev[0].FullyQualifiedErrorId | Should be 'ParameterIsNotAllowedWithPSGallery,Add-PackageSource,Microsoft.PowerShell.PackageManagement.Cmdlets.SetPackageSource'
     } `
-    -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
+        -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
 
     It 'Set-PSRepository -Name PSGallery -PublishLocation $PublishLocation : should fail' {
         Set-PSRepository $RepositoryName -PublishLocation $PublishLocation -ErrorVariable ev -ErrorAction SilentlyContinue
         $ev[0].FullyQualifiedErrorId | Should be 'ParameterIsNotAllowedWithPSGallery,Add-PackageSource,Microsoft.PowerShell.PackageManagement.Cmdlets.SetPackageSource'
     } `
-    -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
+        -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
 
     It 'Set-PSRepository -Name PSGallery -ScriptPublishLocation $ScriptPublishLocation : should fail' {
         Set-PSRepository $RepositoryName -ScriptPublishLocation $ScriptPublishLocation -ErrorVariable ev -ErrorAction SilentlyContinue
         $ev[0].FullyQualifiedErrorId | Should be 'ParameterIsNotAllowedWithPSGallery,Add-PackageSource,Microsoft.PowerShell.PackageManagement.Cmdlets.SetPackageSource'
     } `
-    -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
+        -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
 
     It 'Set-PSRepository -Name PSGallery -ScriptSourceLocation $ScriptSourceLocation : should fail' {
         Set-PSRepository -Name $RepositoryName -ScriptSourceLocation $ScriptSourceLocation -ErrorVariable ev -ErrorAction SilentlyContinue
         $ev[0].FullyQualifiedErrorId | Should be 'ParameterIsNotAllowedWithPSGallery,Add-PackageSource,Microsoft.PowerShell.PackageManagement.Cmdlets.SetPackageSource'
     } `
-    -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
+        -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
 
     It 'Set-PackageSource -ProviderName PowerShellGet -Name PSGallery : should work actually this is a no-op. Installation policy should not be changed' {
         Set-PackageSource -ProviderName PowerShellGet -Name $RepositoryName
@@ -206,23 +210,23 @@ Describe 'Test Set-PSRepository and Set-PackageSource for PSGallery repository' 
         Set-PackageSource -ProviderName PowerShellGet -Name $RepositoryName -NewLocation $SourceLocation -ErrorVariable ev -ErrorAction SilentlyContinue
         $ev[0].FullyQualifiedErrorId | Should be 'ParameterIsNotAllowedWithPSGallery,Add-PackageSource,Microsoft.PowerShell.PackageManagement.Cmdlets.SetPackageSource'
     } `
-    -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
+        -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
 
     It 'Set-PackageSource -ProviderName PowerShellGet -Name PSGallery -PublishLocation $PublishLocation : should fail' {
         Set-PackageSource -ProviderName PowerShellGet -Name $RepositoryName -PublishLocation $PublishLocation -ErrorVariable ev -ErrorAction SilentlyContinue
         $ev[0].FullyQualifiedErrorId | Should be 'ParameterIsNotAllowedWithPSGallery,Add-PackageSource,Microsoft.PowerShell.PackageManagement.Cmdlets.SetPackageSource'
     } `
-    -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
+        -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
 
     It 'Set-PackageSource -ProviderName PowerShellGet -Name PSGallery -ScriptPublishLocation $ScriptPublishLocation : should fail' {
         Set-PackageSource -ProviderName PowerShellGet -Name $RepositoryName -ScriptPublishLocation $ScriptPublishLocation -ErrorVariable ev -ErrorAction SilentlyContinue
         $ev[0].FullyQualifiedErrorId | Should be 'ParameterIsNotAllowedWithPSGallery,Add-PackageSource,Microsoft.PowerShell.PackageManagement.Cmdlets.SetPackageSource'
     } `
-    -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
+        -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
 
     It 'Set-PackageSource -ProviderName PowerShellGet -Name PSGallery -ScriptSourceLocation $ScriptSourceLocation : should fail' {
         Set-PackageSource -ProviderName PowerShellGet -Name $RepositoryName -ScriptSourceLocation $ScriptSourceLocation -ErrorVariable ev -ErrorAction SilentlyContinue
         $ev[0].FullyQualifiedErrorId | Should be 'ParameterIsNotAllowedWithPSGallery,Add-PackageSource,Microsoft.PowerShell.PackageManagement.Cmdlets.SetPackageSource'
     } `
-    -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
+        -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
 }

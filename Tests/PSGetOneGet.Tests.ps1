@@ -21,6 +21,7 @@ Describe PowerShell.PSGet.PackageManagementIntegrationTests -Tags 'P1','OuterLoo
         $script:MyDocumentsModulesPath = Get-CurrentUserModulesPath
         $script:BuiltInModuleSourceName = "PSGallery"
         $script:PSGetModuleProviderName = 'PowerShellGet'
+        $script:IsWindowsOS = (-not (Get-Variable -Name IsWindows -ErrorAction Ignore)) -or $IsWindows
 
         #Bootstrap NuGet binaries
         Install-NuGetBinaries
@@ -45,6 +46,15 @@ Describe PowerShell.PSGet.PackageManagementIntegrationTests -Tags 'P1','OuterLoo
         Register-PSRepository -Default -InstallationPolicy Trusted
 
         $script:TestModuleSourceName = "PSGetTestModuleSource"
+
+        if($script:IsWindowsOS)
+        {
+            $script:userName = "PSGetUser"
+            $password = "Password1"
+            $null = net user $script:userName $password /add
+            $secstr = ConvertTo-SecureString $password -AsPlainText -Force
+            $script:credential = new-object -typename System.Management.Automation.PSCredential -argumentlist $script:userName, $secstr
+        }
     }
 
     AfterAll {
@@ -59,6 +69,22 @@ Describe PowerShell.PSGet.PackageManagementIntegrationTests -Tags 'P1','OuterLoo
 
         # To reload the repositories
         $null = Import-PackageProvider -Name PowerShellGet -Force
+
+        if($script:IsWindowsOS)
+        {
+            # Delete the user
+            net user $script:UserName /delete | Out-Null
+            # Delete the user profile
+            # Run only if cmd is available
+            if(Get-Command -Name Get-WmiObject -ErrorAction SilentlyContinue)
+            {
+                $userProfile = (Get-WmiObject -Class Win32_UserProfile | Where-Object {$_.LocalPath -match $script:UserName})
+                if($userProfile)
+                {
+                    RemoveItem $userProfile.LocalPath
+                }
+            }
+        }
     }
 
     AfterEach {
@@ -283,4 +309,88 @@ Describe PowerShell.PSGet.PackageManagementIntegrationTests -Tags 'P1','OuterLoo
         # hence the count is same after the update.
         AssertEquals $packages1.count $packages2.count "package count should be same before and after updating a package, before: $($packages1.count), after: $($packages2.count)"
     }
+
+    # Purpose: Install a package with all users scope parameter for non-admin user
+    #
+    # Action: Try to install a package with all users scope in a non-admin console
+    #
+    # Expected Result: It should fail with an error
+    #
+    It "InstallPackageWithAllUsersScopeParameterForNonAdminUser" {
+        $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
+
+        $psProcess = "PowerShell.exe"
+        if ($script:IsCoreCLR)
+        {
+            $psProcess = "pwsh.exe"
+        }
+
+        Start-Process $psProcess -ArgumentList '-command if(-not (Get-PSRepository -Name PoshTest -ErrorAction SilentlyContinue)) {
+                                                                Register-PSRepository -Name PoshTest -SourceLocation https://www.poshtestgallery.com/api/v2/ -InstallationPolicy Trusted
+                                                              }
+                                                              Install-Package -Name ContosoServer -scope AllUsers -Source PoshTest -ErrorVariable ev -ErrorAction SilentlyContinue;
+                                                              Write-Host($ev)' `
+                                               -Credential $script:credential `
+                                               -Wait `
+                                               -RedirectStandardOutput $NonAdminConsoleOutput
+
+
+        waitFor {Test-Path $NonAdminConsoleOutput} -timeoutInMilliseconds $script:assertTimeOutms -exceptionMessage "Install-Package on non-admin console failed to complete"
+        $content = Get-Content $NonAdminConsoleOutput
+        RemoveItem $NonAdminConsoleOutput
+
+        AssertNotNull ($content) "Install-Package with AllUsers scope on non-admin user console should not succeed"
+        Assert ($content -match "Administrator rights are required to install") "Install-Package with AllUsers scope on non-admin user console should fail, $content"
+    } `
+    -Skip:$(
+        $whoamiValue = (whoami)
+
+        ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
+        ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
+        ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
+        ($PSVersionTable.PSVersion -lt '4.0.0') -or
+        # Temporarily disable tests for Core
+        ($script:IsCoreCLR)
+    )
+
+    # Purpose: Install a package with default scope parameter for non-admin user
+    #
+    # Action: Try to install a package with default (current user) scope in a non-admin console
+    #
+    # Expected Result: It should succeed and install only to current user
+    #
+    It "InstallPackageDefaultUserScopeParameterForNonAdminUser" {
+        $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
+
+        $psProcess = "PowerShell.exe"
+        if ($script:IsCoreCLR)
+        {
+            $psProcess = "pwsh.exe"
+        }
+
+        Start-Process $psProcess -ArgumentList '-command Install-Package -Name ContosoServer -Source PoshTest;
+                                                              Get-Package ContosoServer | Format-List Name, SwidTagText' `
+                                               -Credential $script:credential `
+                                               -Wait `
+                                               -WorkingDirectory $PSHOME `
+                                               -RedirectStandardOutput $NonAdminConsoleOutput
+
+        waitFor {Test-Path $NonAdminConsoleOutput} -timeoutInMilliseconds $script:assertTimeOutms -exceptionMessage "Install-Package on non-admin console failed to complete"
+        $content = Get-Content $NonAdminConsoleOutput
+        RemoveItem $NonAdminConsoleOutput
+
+        AssertNotNull ($content) "Install package with default current user scope on non-admin user console should succeed"
+        Assert ($content -match "ContosoServer") "Package did not install correctly"
+        Assert ($content -match "Documents") "Package did not install to the correct location"
+    } `
+    -Skip:$(
+        $whoamiValue = (whoami)
+
+        ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
+        ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
+        ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
+        ($PSVersionTable.PSVersion -lt '4.0.0') -or
+        # Temporarily disable tests for Core
+        ($script:IsCoreCLR)
+    )
 }

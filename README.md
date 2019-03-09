@@ -82,7 +82,7 @@ Module Dependencies
 Get PowerShellGet Module
 ========================
 
-Please refer to our [documentation](https://msdn.microsoft.com/en-us/powershell/gallery/psget/get_psget_module) for the up-to-date version on how to get the PowerShellGet Module.
+Please refer to our [documentation](https://aka.ms/installing-psget) for the up-to-date version on how to get the PowerShellGet Module.
 
 
 Get PowerShellGet Source
@@ -102,7 +102,7 @@ cd path/to/PowerShellGet
 
 * Import the module
 ```powershell
-Import-Module /path/to/PowerShellGet/PowerShellGet
+Import-Module src/PowerShellGet
 ```
 
 
@@ -118,6 +118,17 @@ Import-Module "$ClonePath\tools\build.psm1"
 
 Install-Dependencies
 
+# Option 1: Execute the following, replacing $ClonePath, when testing PowerShellGet module changes under $ClonePath.
+# $env:PSModulePath = "$ClonePath\src;$env:PSModulePath"
+
+# Option 2: Execute the following commands to run tests with the merged PSModule.psm1
+<#
+Update-ModuleManifestFunctions
+Publish-ModuleArtifacts
+Install-PublishedModule
+#>
+
+# Run tests
 Invoke-PowerShellGetTest
 ```
 

@@ -1,47 +1,48 @@
-<!--- Provide a general summary of the issue in the Title above -->
-
 <!--
-- Search the existing issues.
-- Fill out the following template
-- If it is a bug report, make sure you are able to repro it with latest PowerShellGet module from master branch.
+If this is a bug report, make sure you are able to reproduce it with the latest PowerShellGet module from master branch.
+- Search the [existing issues](https://github.com/PowerShell/PowerShellGet/issues?utf8=%E2%9C%93&q=is%3Aissue).
+- Fill out the following template:
+
+If it's not a bug, please remove the template and elaborate on the issue in your own words.
 -->
 
-## Expected Behavior
-<!--- If you're describing a bug, tell us what should happen -->
-<!--- If you're suggesting a change/improvement, tell us how it should work -->
+Steps to reproduce
+------------------
 
-## Current Behavior
-<!--- If describing a bug, tell us what happens instead of the expected behavior -->
-<!--- If suggesting a change/improvement, explain the difference from current behavior -->
+```powershell
 
-## Possible Solution
-<!--- Not obligatory, but suggest a fix/reason for the bug, -->
-<!--- or ideas how to implement the addition or change -->
+```
 
-## Steps to Reproduce (for bugs)
-<!--- Provide a link to a live example, or an unambiguous set of steps to -->
-<!--- reproduce this bug. Include code to reproduce, if relevant -->
-1.
-2.
-3.
-4.
+Expected behavior
+-----------------
 
-## Context
-<!--- How has this issue affected you? What are you trying to accomplish? -->
-<!--- Providing context helps us come up with a solution that is most useful in the real world -->
+```none
 
-## Your Environment
-<!--- Include at least the output from $PSVersionTable -->
+```
 
-```PowerShell
+Actual behavior
+---------------
 
+```none
+
+```
+
+Environment data
+----------------
+
+<!-- If relevant to your issue, please paste output from the following commands -->
+
+```powershell
 > $PSVersionTable
 
-> Get-Module
+```
 
+```powershell
 > Get-Module -ListAvailable PowerShellGet,PackageManagement
 
-> Get-PackageProvider
+```
 
+```powershell
 > Get-PackageProvider -ListAvailable
+
 ```

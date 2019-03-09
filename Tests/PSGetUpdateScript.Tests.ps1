@@ -18,8 +18,8 @@ function SuiteSetup {
     Import-Module "$PSScriptRoot\PSGetTestUtils.psm1" -WarningAction SilentlyContinue
     Import-Module "$PSScriptRoot\Asserts.psm1" -WarningAction SilentlyContinue
 
-    $script:ProgramFilesScriptsPath = Get-AllUsersScriptsPath 
-    $script:MyDocumentsScriptsPath = Get-CurrentUserScriptsPath 
+    $script:ProgramFilesScriptsPath = Get-AllUsersScriptsPath
+    $script:MyDocumentsScriptsPath = Get-CurrentUserScriptsPath
     $script:PSGetLocalAppDataPath = Get-PSGetLocalAppDataPath
     $script:TempPath = Get-TempPath
 
@@ -41,17 +41,6 @@ function SuiteSetup {
     Get-InstalledScript -Name Fabrikam-ServerScript -ErrorAction SilentlyContinue | Uninstall-Script -Force
     Get-InstalledScript -Name Fabrikam-ClientScript -ErrorAction SilentlyContinue | Uninstall-Script -Force
 
-    if($PSEdition -ne 'Core')
-    {
-        $script:userName = "PSGetUser"
-        $password = "Password1"
-        $null = net user $script:userName $password /add
-        $secstr = ConvertTo-SecureString $password -AsPlainText -Force
-        $script:credential = new-object -typename System.Management.Automation.PSCredential -argumentlist $script:userName, $secstr
-    }
-
-    $script:assertTimeOutms = 20000
-    
     # Create temp folder for saving the scripts
     $script:TempSavePath = Join-Path -Path $script:TempPath -ChildPath "PSGet_$(Get-Random)"
     $null = New-Item -Path $script:TempSavePath -ItemType Directory -Force
@@ -73,17 +62,6 @@ function SuiteCleanup {
     # Import the PowerShellGet provider to reload the repositories.
     $null = Import-PackageProvider -Name PowerShellGet -Force
 
-    if($PSEdition -ne 'Core')
-    {
-        # Delete the user
-        net user $script:UserName /delete | Out-Null
-        # Delete the user profile
-        $userProfile = (Get-WmiObject -Class Win32_UserProfile | Where-Object {$_.LocalPath -match $script:UserName})
-        if($userProfile)
-        {
-            RemoveItem $userProfile.LocalPath
-        }
-    }
     RemoveItem $script:TempSavePath
 
 
@@ -343,7 +321,7 @@ Describe PowerShell.PSGet.UpdateScriptTests -Tags 'BVT','InnerLoop' {
         $DateTimeBeforeUpdate = Get-Date
         Update-Script Fabrikam-* -Force -ErrorVariable MyError
         Assert ($MyError.Count -eq 0) "There should not be any error when updating multiple scripts with wildcard in name, $MyError"
-        
+
         $res = Get-InstalledScript -Name Fabrikam-ServerScript -MinimumVersion '1.1'
         Assert ($res -and ($res.Name -eq "Fabrikam-ServerScript") -and ($res.Version -gt [Version]"1.0")) "Update-Script should update when wildcard specified in name"
 
@@ -415,33 +393,25 @@ Describe PowerShell.PSGet.UpdateScriptTests -Tags 'BVT','InnerLoop' {
     #
     # Action: Install a script as admin and try to update it as non-admin user
     #
-    # Expected Result: should fail with an error
+    # Expected Result: should pass, installing the update in currentuser scope
     #
-    It "AdminPrivilegesAreRequiredForUpdatingAllUsersScript" {
+    It "AdminPrivilegesAreNotRequiredForUpdatingAllUsersScript" {
         Install-Script -Name Fabrikam-ServerScript -RequiredVersion 1.0 -Scope AllUsers
-        $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
-        Start-Process "$PSHOME\PowerShell.exe" -ArgumentList '$null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser;
-                                                              $null = Import-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force;
-                                                              Update-Script -Name Fabrikam-ServerScript' `
-                                               -Credential $script:credential `
-                                               -Wait `
-                                               -WorkingDirectory $PSHOME `
-                                               -RedirectStandardOutput $NonAdminConsoleOutput
+        $content = Invoke-WithoutAdminPrivileges (@'
+        Import-Module "{0}\PowerShellGet.psd1" -Force -Passthru | select ModuleBase
+        Update-Script -Name Fabrikam-ServerScript
+'@ -f (Get-Module PowerShellGet).ModuleBase)
 
-        waitFor {Test-Path $NonAdminConsoleOutput} -timeoutInMilliseconds $script:assertTimeOutms -exceptionMessage "Install-Script on non-admin console failed to complete"
-        $content = Get-Content $NonAdminConsoleOutput
-        Assert ($content -match 'AdminPrivilegesAreRequiredForUpdate') "Update-Script should fail when non-admin user is trying to update a script installed to allusers scope, $content"
-        RemoveItem $NonAdminConsoleOutput
-    } `
+        $updatedScript = Get-InstalledScript Fabrikam-ServerScript
+        Assert ($updatedScript.Version -gt 1.0) "Update-Script failed to updated script running as non-admin: $content"
+     } `
     -Skip:$(
         $whoamiValue = (whoami)
-
         ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
         ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
         ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
         ($env:APPVEYOR_TEST_PASS -eq 'True') -or
-        ($PSEdition -eq 'Core') -or
-        ($PSVersionTable.PSVersion -lt '4.0.0') 
+        ($PSVersionTable.PSVersion -lt '4.0.0')
     )
 
     # Purpose: UpdateScriptWithLowerReqVersionShouldNotUpdate
@@ -451,7 +421,7 @@ Describe PowerShell.PSGet.UpdateScriptTests -Tags 'BVT','InnerLoop' {
     # Expected Result: Script should not be downgraded to 1.0
     #
     It "UpdateScriptWithLowerReqVersionShouldNotUpdate" {
-        Install-Script Fabrikam-ServerScript
+        Install-Script Fabrikam-ServerScript -Force
         Update-Script Fabrikam-ServerScript -RequiredVersion 1.0
         $res = Get-InstalledScript Fabrikam-ServerScript
         Assert ($res.Name -eq "Fabrikam-ServerScript" -and $res.Version -gt [Version]"1.0")  "Update-Script should not downgrade the script version with -RequiredVersion, Name: $($res.Name), Version: $($res.Version)"
@@ -483,7 +453,8 @@ Describe PowerShell.PSGet.UpdateScriptTests -Tags 'BVT','InnerLoop' {
     It "UpdateAllScripts" {
         Install-Script Fabrikam-ClientScript -RequiredVersion 1.0
         Install-Script Fabrikam-ServerScript -RequiredVersion 1.0
-        Update-Script
+        Update-Script -ErrorAction SilentlyContinue -ErrorVariable err
+        $err | ? { $_.FullyQualifiedErrorId -notmatch "NoMatchFoundForCriteria"} | % { Write-Error $_ }
 
         $res = Get-InstalledScript -Name Fabrikam-ServerScript,Fabrikam-ClientScript
         Assert (($res.Count -eq 2) -and ($res[0].Version -gt [Version]"1.0") -and ($res[1].Version -gt [Version]"1.0")) "Multiple script should be updated"
@@ -498,11 +469,11 @@ Describe PowerShell.PSGet.UpdateScriptTests -Tags 'BVT','InnerLoop' {
     #
     It "UpdateMultipleScriptsWithForce" {
         Install-Script Fabrikam-ClientScript,Fabrikam-ServerScript
-        
-        $MyError = $null        
+
+        $MyError = $null
         Update-Script Fabrikam-ClientScript,Fabrikam-ServerScript -Force -ErrorVariable MyError
         Assert ($MyError.Count -eq 0) "There should not be any error from force update for multiple scripts, $MyError"
-        
+
         $res = Get-InstalledScript Fabrikam-ServerScript
         Assert (($res.Name -eq 'Fabrikam-ServerScript') -and ($res.Version -gt [Version]"1.0")) "Update-Script should update when multiple scripts are specified"
 
@@ -518,6 +489,7 @@ Describe PowerShell.PSGet.UpdateScriptTests -Tags 'BVT','InnerLoop' {
     #
     It "UpdateScriptUnderCurrentUserScope" {
         $scriptName = 'Fabrikam-ServerScript'
+
         Install-Script $scriptName -Scope CurrentUser -RequiredVersion 1.0
         Update-Script $scriptName
 
@@ -531,17 +503,22 @@ Describe PowerShell.PSGet.UpdateScriptTests -Tags 'BVT','InnerLoop' {
     #
     # Action: Install a script with AllUsers scope then update it
     #
-    # Expected Result: updated script should be under AllUsers windows powershell scripts folder
+    # Expected Result: updated script should be under AllUsers windows powershell scripts folder for an admin on Windows Powershell, currentuser otherwise
     #
     It "UpdateScriptUnderAllUsersScope" {
         $scriptName = 'Fabrikam-ServerScript'
+        $shouldBeInAllUsers = ($PSVersionTable.PSVersion -lt "5.0" -or $PSEdition -eq 'Desktop') # when running these tests we always need to be an admin
         Install-Script $scriptName -Scope AllUsers -RequiredVersion 1.0
         Update-Script $scriptName
 
         $res = Get-InstalledScript $scriptName
 
-        Assert (($res.Name -eq $scriptName) -and ($res.Version -gt [Version]"1.0")) "Update-Script should update the script installed to current user scope, $res"
-        AssertEquals $res.InstalledLocation $script:ProgramFilesScriptsPath "Update-Script should update the script installed to current user scope, updated script base: $($res.InstalledLocation)"
+        Assert (($res.Name -eq $scriptName) -and ($res.Version -gt [Version]"1.0")) "Update-Script should update the script, $res"
+        if ($shouldBeInAllUsers) {
+            AssertEquals $res.InstalledLocation $script:ProgramFilesScriptsPath "Update-Script should put update in all users scope, but updated script base: $($res.InstalledLocation)"
+        } else {
+            AssertEquals $res.InstalledLocation $script:MyDocumentsScriptsPath "Update-Script should put update in current user scope, updated script base: $($res.InstalledLocation)"
+        }
     }
 }
 
@@ -578,11 +555,11 @@ Describe PowerShell.PSGet.UpdateScriptTests.P1 -Tags 'P1','OuterLoop' {
             $DepencyNames = $res1.Dependencies.Name
             $res2 = Find-Script -Name $ScriptName -IncludeDependencies -MaximumVersion "1.0" -MinimumVersion "0.1"
             Assert ($res2.Count -ge ($DepencyNames.Count+1)) "Find-Script with -IncludeDependencies returned wrong results, $res2"
-            
+
             Install-Script -Name $ScriptName -MaximumVersion "1.0" -MinimumVersion "0.1"
             $ActualScriptDetails = Get-InstalledScript -Name $ScriptName -RequiredVersion $res1.Version
             AssertNotNull $ActualScriptDetails "$ScriptName script with dependencies is not installed properly"
-            
+
             $NamesToUninstall +=  $res2.Name
 
             $res2 | ForEach-Object {
@@ -595,7 +572,7 @@ Describe PowerShell.PSGet.UpdateScriptTests.P1 -Tags 'P1','OuterLoop' {
 
             # Find the latest available version
             $res3 = Find-Script -Name $ScriptName -IncludeDependencies
-            
+
             Update-Script -Name $ScriptName
 
             $NamesToUninstall +=  $res3.Name
@@ -616,5 +593,5 @@ Describe PowerShell.PSGet.UpdateScriptTests.P1 -Tags 'P1','OuterLoop' {
                                     PowerShellGet\Uninstall-Module $_ -Force -ErrorAction SilentlyContinue
                                 }
         }
-    }  -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')  
+    }  -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
 }

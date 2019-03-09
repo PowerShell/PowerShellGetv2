@@ -62,13 +62,14 @@ gen
 .profile.ps1
 
 #VS Code files
-.vscode
+#.vscode
 
 # OS X
 .DS_Store
 
 # TestsResults
 TestsResults*.xml
+/Tests/TestResultsCurrent.xml
 
 # Build results
 [Dd]ebug/
@@ -268,3 +269,7 @@ FakesAssemblies/
 *.xproj
 *.xproj.user
 *.suo
+
+# Ignore DscResource.Tests repository when it is cloned
+# when running DSC resource unit tests locally.
+DSC/DscResource.Tests

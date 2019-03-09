@@ -11,10 +11,9 @@ $script:NuGetExeName = 'NuGet.exe'
 $script:NuGetProvider = $null
 $script:NuGetProviderName = 'NuGet'
 $script:NuGetProviderVersion  = [Version]'2.8.5.201'
-$script:DotnetCommandPath = $null
-$script:DotnetCommandPath_Backup = $null
-$script:DotnetCommandPath_Renamed = $null
+$script:DotnetCommandPath = @()
 $script:EnvironmentVariableTarget = @{ Process = 0; User = 1; Machine = 2 }
+$script:EnvPATHValueBackup = $null
 
 $script:PowerShellGet = 'PowerShellGet'
 $script:IsInbox = $PSHOME.EndsWith('\WindowsPowerShell\v1.0', [System.StringComparison]::OrdinalIgnoreCase)
@@ -50,7 +49,7 @@ if($script:IsInbox)
     $script:MyDocumentsPSPath = if($script:MyDocumentsFolderPath)
                                 {
                                     Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsFolderPath -ChildPath "WindowsPowerShell"
-                                } 
+                                }
                                 else
                                 {
                                     Microsoft.PowerShell.Management\Join-Path -Path $env:USERPROFILE -ChildPath "Documents\WindowsPowerShell"
@@ -62,7 +61,7 @@ elseif($script:IsCoreCLR) {
         $script:MyDocumentsPSPath = if($script:MyDocumentsFolderPath)
         {
             Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsFolderPath -ChildPath 'PowerShell'
-        } 
+        }
         else
         {
             Microsoft.PowerShell.Management\Join-Path -Path $HOME -ChildPath "Documents\PowerShell"
@@ -92,8 +91,8 @@ $script:ProgramDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $sc
 $script:ApplocalDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetAppLocalPath -ChildPath $script:NuGetExeName
 $script:moduleSourcesFilePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetAppLocalPath -ChildPath 'PSRepositories.xml'
 
-# PowerShellGetFormatVersion will be incremented when we change the .nupkg format structure. 
-# PowerShellGetFormatVersion is in the form of Major.Minor.  
+# PowerShellGetFormatVersion will be incremented when we change the .nupkg format structure.
+# PowerShellGetFormatVersion is in the form of Major.Minor.
 # Minor is incremented for the backward compatible format change.
 # Major is incremented for the breaking change.
 $script:CurrentPSGetFormatVersion = "1.0"
@@ -152,9 +151,9 @@ function GetAndSet-PSGetTestGalleryDetails
         $psgetModule = Import-Module -Name PowerShellGet -PassThru -Scope Local
         $ResolvedLocalSource = & $psgetModule Resolve-Location -Location $SourceUri -LocationParameterName 'SourceLocation'
 
-        if($ResolvedLocalSource -and 
-           $PSVersionTable.PSVersion -ge '5.0.0' -and 
-           [System.Environment]::OSVersion.Version -ge "6.2.9200.0" -and 
+        if($ResolvedLocalSource -and
+           $PSVersionTable.PSVersion -ge '5.0.0' -and
+           [System.Environment]::OSVersion.Version -ge "6.2.9200.0" -and
            $PSCulture -eq 'en-US')
         {
             $SourceUri        = $SourceUri
@@ -164,9 +163,9 @@ function GetAndSet-PSGetTestGalleryDetails
         }
         else
         {
-            $SourceUri        = 'https://dtlgalleryint.cloudapp.net/api/v2/'
-            $PublishUri       = 'https://dtlgalleryint.cloudapp.net/api/v2/package'
-            $ScriptSourceUri  = 'https://dtlgalleryint.cloudapp.net/api/v2/items/psscript/'
+            $SourceUri        = 'https://www.poshtestgallery.com/api/v2/'
+            $PublishUri       = 'https://www.poshtestgallery.com/api/v2/package'
+            $ScriptSourceUri  = 'https://www.poshtestgallery.com/api/v2/items/psscript/'
             $ScriptPublishUri = $PublishUri
         }
     }
@@ -222,28 +221,43 @@ function Install-NuGetBinaries
     [cmdletbinding()]
     param()
 
-    # Rename again if the original dotnet command got renamed during the earlier bootstrap tests.
-    if($script:DotnetCommandPath_Renamed -and (Test-Path -LiteralPath $script:DotnetCommandPath_Renamed -PathType Leaf)) {
-        $script:DotnetCommandPath = $script:DotnetCommandPath_Backup
-        Rename-Item -Path $script:DotnetCommandPath_Renamed -NewName $script:DotnetCommandPath
-        $script:DotnetCommandPath_Renamed = $null
-        $script:DotnetCommandPath_Backup = $null
+    # Look for renamed dotnet file
+    $dotnetrenamed = 'dotnet.exe.Renamed'
+    $DotnetCmdRenamed = Microsoft.PowerShell.Core\Get-Command -Name $dotnetrenamed -All -ErrorAction Ignore -WarningAction SilentlyContinue
+
+    # Reset name if the original dotnet command was renamed during the previous bootstrap tests.
+    if ($DotnetCmdRenamed.path -and (Test-Path -LiteralPath $DotnetCmdRenamed.path -PathType Leaf)) {
+        For ($count=0; $count -lt $DotnetCmdRenamed.Length; $count++) {
+            # Check every path in $script:DotnetCommandPath_Renamed is valid
+            # If test-path is true, rename the particular path back to the original name
+            if (Test-Path -LiteralPath $DotnetCmdRenamed.path[$count] -PathType Leaf) {
+                $originalDotnetCmd = $DotnetCmdRenamed.path[$count] -replace ".Renamed", ''
+                Rename-Item -Path $DotnetCmdRenamed.path[$count] -NewName $originalDotnetCmd
+            }
+        }
     }
 
-    if($script:NuGetProvider -and 
+    if($script:NuGetProvider -and
        (($script:NuGetExePath -and (Microsoft.PowerShell.Management\Test-Path -Path $script:NuGetExePath)) -or
        ($script:DotnetCommandPath -and (Microsoft.PowerShell.Management\Test-Path -Path $script:DotnetCommandPath))))
     {
         return
     }
 
-    # Invoke Install-NuGetClientBinaries internal function in PowerShellGet module to bootstrap both NuGet provider and NuGet.exe 
+    # Invoke Install-NuGetClientBinaries internal function in PowerShellGet module to bootstrap both NuGet provider and NuGet.exe
     $psgetModule = Import-Module -Name PowerShellGet -PassThru -Scope Local
+
+    # Reset the environment path if the original env path was renamed during the previous bootstrap tests.
+    if ($script:IsWindows -and $script:EnvPATHValueBackup) {
+       & $psgetModule Set-EnvironmentVariable -Name 'PATH' -Value $script:EnvPATHValueBackup -Target $script:EnvironmentVariableTarget.Process
+       $script:EnvPATHValueBackup = $null
+    }
+
     & $psgetModule Install-NuGetClientBinaries -Force -BootstrapNuGetExe -CallerPSCmdlet $PSCmdlet
 
     $script:NuGetProvider = PackageManagement\Get-PackageProvider -ErrorAction SilentlyContinue -WarningAction SilentlyContinue |
-                                Microsoft.PowerShell.Core\Where-Object { 
-                                                                         $_.Name -eq $script:NuGetProviderName -and 
+                                Microsoft.PowerShell.Core\Where-Object {
+                                                                         $_.Name -eq $script:NuGetProviderName -and
                                                                          $_.Version -ge $script:NuGetProviderVersion
                                                                        }
 
@@ -263,11 +277,11 @@ function Install-NuGetBinaries
             # NuGet.exe does not work if it is under $env:WINDIR, so skipping it from the Get-Command results
             $nugetCmd = Microsoft.PowerShell.Core\Get-Command -Name $script:NuGetExeName `
                                                                 -ErrorAction SilentlyContinue `
-                                                                -WarningAction SilentlyContinue | 
-                            Microsoft.PowerShell.Core\Where-Object { 
-                                $_.Path -and 
+                                                                -WarningAction SilentlyContinue |
+                            Microsoft.PowerShell.Core\Where-Object {
+                                $_.Path -and
                                 ((Microsoft.PowerShell.Management\Split-Path -Path $_.Path -Leaf) -eq $script:NuGetExeName) -and
-                                (-not $_.Path.StartsWith($env:windir, [System.StringComparison]::OrdinalIgnoreCase)) 
+                                (-not $_.Path.StartsWith($env:windir, [System.StringComparison]::OrdinalIgnoreCase))
                             } | Microsoft.PowerShell.Utility\Select-Object -First 1
 
             if($nugetCmd -and $nugetCmd.Path)
@@ -286,15 +300,15 @@ function Install-NuGetBinaries
         }
         else {
             if($script:IsWindows) {
-                $DotnetCommandPath = Join-Path -Path $env:LocalAppData -ChildPath Microsoft | 
+                $DotnetCommandPath = Join-Path -Path $env:LocalAppData -ChildPath Microsoft |
                     Join-Path -ChildPath dotnet | Join-Path -ChildPath dotnet.exe
 
-                if($DotnetCommandPath -and 
+                if($DotnetCommandPath -and
                     -not (Microsoft.PowerShell.Management\Test-Path -LiteralPath $DotnetCommandPath -PathType Leaf)) {
                     $DotnetCommandPath = Join-Path -Path $env:ProgramFiles -ChildPath dotnet | Join-Path -ChildPath dotnet.exe
                 }
-            } 
-            else {                
+            }
+            else {
                 $DotnetCommandPath = '/usr/local/bin/dotnet'
             }
 
@@ -310,25 +324,60 @@ function Remove-NuGetExe
     Install-NuGetBinaries
 
     # Uninstall NuGet.exe if it is available under one of the predefined PowerShellGet locations under ProgramData or LocalAppData
-    if(Microsoft.PowerShell.Management\Test-Path -Path $script:ProgramDataExePath)
-    {
+    if (Microsoft.PowerShell.Management\Test-Path -Path $script:ProgramDataExePath) {
         Remove-Item -Path $script:ProgramDataExePath -Force -Confirm:$false -WhatIf:$false
     }
 
-    if(Microsoft.PowerShell.Management\Test-Path -Path $script:ApplocalDataExePath)
-    {
+    if (Microsoft.PowerShell.Management\Test-Path -Path $script:ApplocalDataExePath) {
         Remove-Item -Path $script:ApplocalDataExePath -Force -Confirm:$false -WhatIf:$false
-    }    
+    }
 
-    # Rename the existing dotnet to ensure that NuGet bootstrapping tests work fine.
-    if($script:DotnetCommandPath -and (Test-Path -LiteralPath $script:DotnetCommandPath -PathType Leaf)) {
-        $script:DotnetCommandPath_Renamed = "$script:DotnetCommandPath.Renamed"
-        $script:DotnetCommandPath_Backup = $script:DotnetCommandPath
-        Rename-Item -Path $script:DotnetCommandPath -NewName $script:DotnetCommandPath_Renamed
-        $script:DotnetCommandPath = $null
+    $DotnetCmd = Microsoft.PowerShell.Core\Get-Command -Name 'dotnet.exe' -All -ErrorAction Ignore -WarningAction SilentlyContinue
+
+    if ($DotnetCmd -and $DotnetCmd.path) {
+        # Dotnet can be stored in multiple locations, so test each path
+        $DotnetCmd.path | ForEach-Object {
+            if (Test-Path -LiteralPath $_ -PathType Leaf) {
+                # if test-path is true, rename the particular path
+                $renamed_dotnetCmdPath = "$_.Renamed"
+                Rename-Item -Path $_ -NewName $renamed_dotnetCmdPath
+            }
+        }
     }
 
     $script:NuGetExePath = $null
+
+    if ($script:IsWindows) {
+        # Changes the environment so that dotnet and nuget files are temporarily removed
+        $SourceLocations = Get-Command dotnet*, nuget* | ForEach-Object {
+            if ($_.Source) {
+                Split-Path -Path $_.Source -Parent
+            }
+            elseif ($_.Path) {
+                Split-Path -Path $_.Path -Parent
+            }
+            elseif ($_.FileVersionInfo.file) {
+                Split-Path -Path $_.FileVersionInfo.file -Parent
+            }
+        }
+        if ($sourceLocations) {
+            $psgetModule = Import-Module -Name PowerShellGet -PassThru -Scope Local
+            $currentValue = & $psgetModule Get-EnvironmentVariable -Name 'PATH' -Target $script:EnvironmentVariableTarget.Process
+            $script:EnvPATHValueBackup = $currentValue
+            $PathElements = $currentValue -split ';' | Where-Object {$_ -and ($sourceLocations -notcontains $_.TrimEnd('\'))}
+
+            & $psgetModule Set-EnvironmentVariable -Name 'PATH' -Value ($PathElements -join ';') -Target $script:EnvironmentVariableTarget.Process
+        }
+    }
+}
+
+function Install-Nuget28
+{
+    Remove-NuGetExe
+
+    # Download outdated version 2.8.60717.93 of NuGet.exe from https://nuget.org/nuget.exe
+    $null = Microsoft.PowerShell.Utility\Invoke-WebRequest -Uri 'https://go.microsoft.com/fwlink/?LinkID=690216&clcid=0x409' `
+     -OutFile $programDataExePath
 }
 
 function Get-NuGetExeFilePath
@@ -351,12 +400,12 @@ function CreateAndPublish-TestScript
     param(
         [Parameter(Mandatory=$true)]
         [string]
-        $Name, 
-        
+        $Name,
+
         [Parameter(Mandatory=$true)]
         [string]
         $NuGetApiKey,
-        
+
         [Parameter(Mandatory=$true)]
         [string]
         $Repository,
@@ -408,7 +457,7 @@ function CreateAndPublish-TestScript
             if($RequiredScripts) { $params['RequiredScripts'] = $RequiredScripts }
             if($ExternalModuleDependencies) { $params['ExternalModuleDependencies'] = $ExternalModuleDependencies }
             if($ExternalScriptDependencies) { $params['ExternalScriptDependencies'] = $ExternalScriptDependencies }
-            
+
             New-ScriptFileInfo @params
 
             Add-Content -Path $scriptFilePath -Value @"
@@ -436,12 +485,12 @@ function CreateAndPublishTestModule
     param(
         [Parameter(Mandatory=$true)]
         [string]
-        $ModuleName, 
-        
+        $ModuleName,
+
         [Parameter(Mandatory=$true)]
         [string]
         $NuGetApiKey,
-        
+
         [Parameter(Mandatory=$true)]
         [string]
         $Repository,
@@ -458,13 +507,13 @@ function CreateAndPublishTestModule
 
         [Parameter()]
         [string]
-        $ModulesPath = $script:TempPath       
+        $ModulesPath = $script:TempPath
     )
 
     $ModuleBase = Join-Path $ModulesPath $ModuleName
     $null = New-Item -Path $ModuleBase -ItemType Directory -Force
-      
-    # To create a module manifest for $ModuleName with some dependencies in NestedModules and RequiredModules, 
+
+    # To create a module manifest for $ModuleName with some dependencies in NestedModules and RequiredModules,
     # the dependency module should be available under one of the specified path in $env:PSModulePath.
     # Creating dummy module folders for them and will delete them after publishing the $ModuleName
 
@@ -486,7 +535,7 @@ function CreateAndPublishTestModule
         $ModuleToBeAvailable_Version = "1.0"
 
         if($ModuleToBeAvailable.GetType().ToString() -eq 'System.Collections.Hashtable')
-        {                                            
+        {
             $ModuleToBeAvailable_Name = $ModuleToBeAvailable.ModuleName
 
             if($ModuleToBeAvailable.Keys -Contains "RequiredVersion")
@@ -518,15 +567,15 @@ function CreateAndPublishTestModule
     }
 
     Set-Content "$ModuleBase\$ModuleName.psm1" -Value "function Get-$ModuleName { Get-Date }"
-    
+
     $NestedModules += "$ModuleName.psm1"
-    
+
     try
     {
         foreach($version in $Versions)
         {
             $tags = @('Tag1','Tag2', "Tag-$ModuleName-$version")
-            
+
             $exportedFunctions = '*'
             if($ModuleName -match "ModuleWithDependencies*")
             {
@@ -569,9 +618,9 @@ function CreateAndPublishTestModule
                 $params['Tags'] = $tags
                 $params['LicenseUri'] = "https://$ModuleName.com/license"
                 $params['IconUri'] = "https://$ModuleName.com/icon"
-                $params['ProjectUri'] = "https://$ModuleName.com" 
+                $params['ProjectUri'] = "https://$ModuleName.com"
             }
-            
+
             $null = Publish-Module @params
         }
     }
@@ -585,15 +634,15 @@ function CreateAndPublishTestModule
 function PublishDscTestModule
 {
     [cmdletbinding()]
-    param(       
+    param(
         [Parameter(Mandatory=$true)]
         [string]
-        $ModuleName, 
-        
+        $ModuleName,
+
         [Parameter(Mandatory=$true)]
         [string]
         $NuGetApiKey,
-        
+
         [Parameter(Mandatory=$true)]
         [string]
         $Repository,
@@ -613,28 +662,28 @@ function PublishDscTestModule
     Copy-Item -Path "$TestModulesBase\$ModuleName" -Destination $TempModulesPath -Recurse -Force
     $ModuleBase = Join-Path $TempModulesPath $ModuleName
 
-    # Create binary module   
-    $content = @"  
-        using System;  
-        using System.Management.Automation;  
-        namespace PSGetTestModule  
-        {  
-            [Cmdlet("Test","PSGetTestCmdlet")]  
-            public class PSGetTestCmdlet : PSCmdlet  
-            {  
-                [Parameter]  
-                public int a {   
-                    get;  
-                    set;  
-                }  
-                protected override void ProcessRecord()  
-                {  
-                    String s = "Value is :" + a;  
-                    WriteObject(s);  
-                }  
-            }  
-        }  
-"@  
+    # Create binary module
+    $content = @"
+        using System;
+        using System.Management.Automation;
+        namespace PSGetTestModule
+        {
+            [Cmdlet("Test","PSGetTestCmdlet")]
+            public class PSGetTestCmdlet : PSCmdlet
+            {
+                [Parameter]
+                public int a {
+                    get;
+                    set;
+                }
+                protected override void ProcessRecord()
+                {
+                    String s = "Value is :" + a;
+                    WriteObject(s);
+                }
+            }
+        }
+"@
 
     $assemblyName = "psgettestbinary_$(Get-Random).dll"
     $testBinaryPath = "$ModuleBase\$assemblyName"
@@ -666,7 +715,7 @@ function PublishDscTestModule
                                -NestedModules "$ModuleName.psm1",".\$assemblyName" `
                                -Description 'Temp Description KeyWord1 Keyword2 Keyword3' `
         }
-            
+
         $null = Publish-Module -Path $ModuleBase `
                                -NuGetApiKey $NuGetApiKey `
                                -Repository $Repository `
@@ -685,12 +734,12 @@ function CreateAndPublishTestModuleWithVersionFormat
     param(
         [Parameter(Mandatory=$true)]
         [string]
-        $ModuleName, 
-        
+        $ModuleName,
+
         [Parameter(Mandatory=$true)]
         [string]
         $NuGetApiKey,
-        
+
         [Parameter(Mandatory=$true)]
         [string]
         $Repository,
@@ -708,13 +757,13 @@ function CreateAndPublishTestModuleWithVersionFormat
         [string]
         $ModulesPath = $script:TempPath
     )
-    
+
     $repo = Get-PSRepository -Name $Repository -ErrorVariable err
     if($err)
     {
         Throw $err
     }
-        
+
     $ModuleBase = Join-Path $ModulesPath $ModuleName
 
     if ($PSGetFormatVersion -eq '1.0')
@@ -728,7 +777,7 @@ function CreateAndPublishTestModuleWithVersionFormat
     }
 
     $null = New-Item -Path $ModuleBase -ItemType Directory -Force
-      
+
     Set-Content "$ModuleBase\$ModuleName.psm1" -Value "function Get-$ModuleName { Get-Date }"
 
     foreach($version in $Versions)
@@ -805,7 +854,7 @@ function Publish-PSGetExtModule
         [Parameter()]
         [string[]]
         $Tags,
-        
+
         [Parameter()]
         [Uri]
         $LicenseUri,
@@ -813,7 +862,7 @@ function Publish-PSGetExtModule
         [Parameter()]
         [Uri]
         $IconUri,
-        
+
         [Parameter()]
         [Uri]
         $ProjectUri
@@ -821,34 +870,34 @@ function Publish-PSGetExtModule
 
     Install-NuGetBinaries
 
-    if($PSModuleInfo.PrivateData -and 
-       ($PSModuleInfo.PrivateData.GetType().ToString() -eq "System.Collections.Hashtable") -and 
+    if($PSModuleInfo.PrivateData -and
+       ($PSModuleInfo.PrivateData.GetType().ToString() -eq "System.Collections.Hashtable") -and
        $PSModuleInfo.PrivateData["PSData"] -and
        ($PSModuleInfo.PrivateData["PSData"].GetType().ToString() -eq "System.Collections.Hashtable")
        )
     {
         if( -not $Tags -and $PSModuleInfo.PrivateData.PSData["Tags"])
-        { 
+        {
             $Tags = $PSModuleInfo.PrivateData.PSData.Tags
         }
 
         if( -not $ReleaseNotes -and $PSModuleInfo.PrivateData.PSData["ReleaseNotes"])
-        { 
+        {
             $ReleaseNotes = $PSModuleInfo.PrivateData.PSData.ReleaseNotes
         }
 
         if( -not $LicenseUri -and $PSModuleInfo.PrivateData.PSData["LicenseUri"])
-        { 
+        {
             $LicenseUri = $PSModuleInfo.PrivateData.PSData.LicenseUri
         }
 
         if( -not $IconUri -and $PSModuleInfo.PrivateData.PSData["IconUri"])
-        { 
+        {
             $IconUri = $PSModuleInfo.PrivateData.PSData.IconUri
         }
 
         if( -not $ProjectUri -and $PSModuleInfo.PrivateData.PSData["ProjectUri"])
-        { 
+        {
             $ProjectUri = $PSModuleInfo.PrivateData.PSData.ProjectUri
         }
     }
@@ -895,7 +944,7 @@ function Publish-PSGetExtModule
 </package>
 "@
 
-# When packaging we must build something. 
+# When packaging we must build something.
 # So, we are building an empty assembly called NotUsed, and discarding it.
 $CsprojContent = @"
 <Project Sdk="Microsoft.NET.Sdk">
@@ -911,7 +960,7 @@ $CsprojContent = @"
 
     $csprojBasePath = $null
     try
-    {   
+    {
         $NupkgPath = Join-Path -Path $NugetPackageRoot -ChildPath "$($PSModuleInfo.Name).$($PSModuleInfo.Version.ToString()).nupkg"
 
         if($script:DotnetCommandPath) {
@@ -923,11 +972,11 @@ $CsprojContent = @"
         else {
             $NuspecPath = Join-Path -Path $NugetPackageRoot -ChildPath "$($PSModuleInfo.Name).nuspec"
         }
-    
+
         # Remove existing nuspec and nupkg files
         Remove-Item $NupkgPath  -Force -ErrorAction SilentlyContinue -WarningAction SilentlyContinue -Confirm:$false -WhatIf:$false
         Remove-Item $NuspecPath -Force -ErrorAction SilentlyContinue -WarningAction SilentlyContinue -Confirm:$false -WhatIf:$false
-            
+
         Set-Content -Value $nuspec -Path $NuspecPath
 
         # Create .nupkg file
@@ -947,7 +996,7 @@ $CsprojContent = @"
 
         if($LASTEXITCODE)
         {
-            $message = $LocalizedData.FailedToCreateCompressedModule -f ($output) 
+            $message = $LocalizedData.FailedToCreateCompressedModule -f ($output)
             Write-Error -Message $message -ErrorId "FailedToCreateCompressedModule" -Category InvalidOperation
             return
         }
@@ -963,16 +1012,16 @@ $CsprojContent = @"
             $output = & $script:DotnetCommandPath $ArgumentList
         }
         else {
-            $output = & $script:NuGetExePath push $NupkgPath  -source $Destination -NonInteractive -ApiKey $NugetApiKey 
+            $output = & $script:NuGetExePath push $NupkgPath  -source $Destination -NonInteractive -ApiKey $NugetApiKey
         }
         if($LASTEXITCODE)
         {
-            $message = $LocalizedData.FailedToPublish -f ($output) 
+            $message = $LocalizedData.FailedToPublish -f ($output)
             Write-Error -Message $message -ErrorId "FailedToPublishTheModule" -Category InvalidOperation
         }
         else
         {
-            $message = $LocalizedData.PublishedSuccessfully -f ($PSModuleInfo.Name, $Destination) 
+            $message = $LocalizedData.PublishedSuccessfully -f ($PSModuleInfo.Name, $Destination)
             Write-Verbose -Message $message
         }
     }
@@ -1004,17 +1053,17 @@ function Get-EscapedString
 
 function Uninstall-Module
 {
-    Param(    
+    Param(
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
         [string]
-        $Name    
+        $Name
     )
 
-    Get-Module $Name -ListAvailable | %{ 
-            
-            Remove-Module $_ -Force -ErrorAction SilentlyContinue; 
-            
+    Get-Module $Name -ListAvailable | Foreach-Object {
+
+            Remove-Module $_ -Force -ErrorAction SilentlyContinue;
+
             # Check if the module got installed with SxS version feature on PS 5.0 or later.
             if($_.ModuleBase.EndsWith("$($_.Version)", [System.StringComparison]::OrdinalIgnoreCase))
             {
@@ -1030,7 +1079,7 @@ function Uninstall-Module
 
 function RemoveItem
 {
-    Param(    
+    Param(
         [string]
         $path
     )
@@ -1043,7 +1092,12 @@ function RemoveItem
 
 function Set-PSGallerySourceLocation
 {
-    Param(    
+    Param(
+        [Parameter(Mandatory=$false)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Name = 'PSGallery',
+
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
         [string]
@@ -1060,12 +1114,21 @@ function Set-PSGallerySourceLocation
 
         [Parameter()]
         [string]
-        $ScriptPublishLocation
+        $ScriptPublishLocation,
+
+        [Parameter()]
+        [switch]
+        $UseExistingModuleSourcesFile
     )
 
-    $PSGetModuleSources = [ordered]@{}
+    if ($UseExistingModuleSourcesFile) {
+        $PSGetModuleSources = Import-CliXml -Path $script:moduleSourcesFilePath
+    } else {
+        $PSGetModuleSources = [ordered]@{}
+    }
+
     $moduleSource = New-Object PSCustomObject -Property ([ordered]@{
-            Name = 'PSGallery'
+            Name = $Name
             SourceLocation =  $Location
             PublishLocation = $PublishLocation
             ScriptSourceLocation =  $ScriptSourceLocation
@@ -1078,8 +1141,8 @@ function Set-PSGallerySourceLocation
         })
 
     $moduleSource.PSTypeNames.Insert(0, "Microsoft.PowerShell.Commands.PSRepository")
-    $PSGetModuleSources.Add("PSGallery", $moduleSource)
-    
+    $PSGetModuleSources.Add($Name, $moduleSource)
+
     if(-not (Test-Path $script:PSGetAppLocalPath))
     {
         $null = New-Item -Path $script:PSGetAppLocalPath `
@@ -1093,7 +1156,7 @@ function Set-PSGallerySourceLocation
     Export-Clixml -InputObject $PSGetModuleSources `
                   -Path $script:moduleSourcesFilePath `
                   -Force -Confirm:$false -WhatIf:$false
-    
+
     $null = Import-PackageProvider -Name PowerShellGet -Force
 }
 
@@ -1138,10 +1201,10 @@ function Reset-PATHVariableForScriptsInstallLocation
         $scopePath = $script:MyDocumentsScriptsPath
         $target = $script:EnvironmentVariableTarget.User
     }
-    
+
     $scopePathEndingWithBackSlash = "$scopePath\"
     $psgetModule = Import-Module -Name PowerShellGet -PassThru -Scope Local -Verbose:$VerbosePreference
-    
+
     if(-not $OnlyProcessPathVariable)
     {
         # Scope specific PATH
@@ -1190,10 +1253,10 @@ function Reset-PATHVariableForScriptsInstallLocation
     $currentValue = & $psgetModule Get-EnvironmentVariable -Name 'PATH' -Target $target
     $pathsInCurrentValue = ($currentValue -split ';') | Where-Object {$_}
 
-    if (($pathsInCurrentValue -contains $scopePath) -or 
+    if (($pathsInCurrentValue -contains $scopePath) -or
         ($pathsInCurrentValue -contains $scopePathEndingWithBackSlash))
     {
-        $pathsInCurrentValueAfterRemovingScopePath = $pathsInCurrentValue | Where-Object { 
+        $pathsInCurrentValueAfterRemovingScopePath = $pathsInCurrentValue | Where-Object {
                                                                                            ($_ -ne $scopePath) -and
                                                                                            ($_ -ne $scopePathEndingWithBackSlash)
                                                                                          }
@@ -1253,12 +1316,12 @@ function Set-PATHVariableForScriptsInstallLocation
             if((($currentPATHValue -split ';') -notcontains $scopePath) -and
                 (($currentPATHValue -split ';') -notcontains $scopePathEndingWithBackSlash))
             {
-                # To ensure that the installed script is immediately usable, 
+                # To ensure that the installed script is immediately usable,
                 # we need to add the scope path to the PATH enviroment variable.
                 & $psgetModule Set-EnvironmentVariable -Name 'PATH' `
                                                        -Value "$currentPATHValue;$scopePath" `
                                                        -Target $envVariableTarget
-                
+
                 $AddedToPath = $true
             }
         }
@@ -1272,12 +1335,12 @@ function Set-PATHVariableForScriptsInstallLocation
         if((($currentPATHValue -split ';') -notcontains $scopePath) -and
             (($currentPATHValue -split ';') -notcontains $scopePathEndingWithBackSlash))
         {
-            # To ensure that the installed script is immediately usable, 
+            # To ensure that the installed script is immediately usable,
             # we need to add the scope path to the PATH enviroment variable.
             & $psgetModule Set-EnvironmentVariable -Name 'PATH' `
                                                    -Value "$currentPATHValue;$scopePath" `
                                                    -Target $target
-                                            
+
             $AddedToPath = $true
         }
     }
@@ -1287,10 +1350,19 @@ function Set-PATHVariableForScriptsInstallLocation
 
 function Get-CodeSigningCert
 {
+    param(
+        [switch]
+        $IncludeLocalMachineCerts
+    )
+
     $cert = $null;
-    $scriptName = Join-Path $script:TempPath  "$([IO.Path]::GetRandomFileName()).ps1"  
-    "get-date" >$scriptName  
-    $cert = @(get-childitem cert:\CurrentUser\My -codesigning | Where-Object {(Set-AuthenticodeSignature $scriptName -cert $_).Status -eq "Valid"})[0];  
+    $scriptName = Join-Path $script:TempPath  "$([IO.Path]::GetRandomFileName()).ps1"
+    "get-date" >$scriptName
+    $cert = @(get-childitem cert:\CurrentUser\My -codesigning | Where-Object {(Set-AuthenticodeSignature $scriptName -cert $_).Status -eq "Valid"})[0];
+    if ((-not $cert) -and $IncludeLocalMachineCerts) {
+        $cert = @(get-childitem cert:\LocalMachine\My -codesigning | Where-Object {(Set-AuthenticodeSignature $scriptName -cert $_).Status -eq "Valid"})[0];
+    }
+
     del $scriptName
     $cert
 }
@@ -1355,7 +1427,7 @@ ValidityPeriodUnits = "1"
 %szOID_BASIC_CONSTRAINTS% = "{text}ca=1&pathlength=0"
 Critical = %szOID_BASIC_CONSTRAINTS%
 "@
-    $certInf | out-file ca.inf -force 
+    $certInf | out-file ca.inf -force
     Cleanup-CACert -CACert $CACert
     certreq -new .\ca.inf ca.cer
     $mypwd = ConvertTo-SecureString -String "1234" -Force -AsPlainText
@@ -1395,7 +1467,7 @@ function Create-CodeSigningCert
         [string]
         $CertRA = "PSCatalog Test Root Authority"
     )
-    
+
     if (!(Test-Path $storeName))
     {
        New-Item $storeName -Verbose -Force
@@ -1437,7 +1509,7 @@ ValidityPeriodUnits = "1"
 %szOID_BASIC_CONSTRAINTS% = "{text}ca=0"
 %szOID_ENHANCED_KEY_USAGE% = "{text}%szOID_CODE_SIGNING%"
 "@
-    $certInf | out-file signing.inf -force 
+    $certInf | out-file signing.inf -force
     [void](Cleanup-CodeSigningCert -Subject $subject)
     Create-CACert -CACert $CertRA
     certreq -new -q -cert $CertRA .\signing.inf signing.cer
@@ -1447,4 +1519,118 @@ ValidityPeriodUnits = "1"
     remove-item signing.cer -Force -ErrorAction SilentlyContinue
     remove-item signing.inf -Force -ErrorAction SilentlyContinue
     remove-item signing.pfx -Force -ErrorAction SilentlyContinue
+}
+
+function Get-LocalModulePath() {
+    $modulepath= Join-Path -Path (Split-Path $psscriptroot -parent) -ChildPath "src"
+    return $modulepath
+}
+
+# Ensure the local directory is at the front of the psmodulepath so that we test that instead of some other version on the system
+function Add-LocalTreeInPSModulePath() {
+    # we are in repo\tests, module is in repo\src\PowerShellGet
+    # add repo\src to $psmodulepath so PowerShellGet is found
+    $modulepath= Get-LocalModulePath
+    Write-Verbose "Ensure we load PowerShellGet from $modulepath"
+
+    $paths = $env:PSModulePath -split ";"
+    if ($paths[0] -notlike $modulepath)
+    {
+        $env:PSModulePath = "$modulepath;$env:PSModulePath"
+    }
+    Write-Verbose "New PSModulePath: $($env:psmodulepath -replace ";",`"`n`")"
+}
+
+function Remove-LocalTreeInPSModulePath() {
+    $modulepath= Get-LocalModulePath
+    $paths = $env:PSModulePath -split ";"
+    if ($paths[0] -like $modulepath)
+    {
+        $env:PSModulePath = ($paths[1..($paths.Length-1)] -join ";")
+    }
+    Write-Verbose "New PSModulePath: $($env:psmodulepath -replace ";",`"`n`")"
+}
+
+
+# Set up things so that tests run reliably and don't conflict with/overwrite user's local configuration during testing
+function Set-TestEnvironment() {
+    [cmdletbinding(supportsshouldprocess=$true)]
+    param(
+
+    )
+
+    $ErrorActionPreference="Stop"
+
+    Add-LocalTreeInPSModulePath
+
+    # Normally we want to test the code in this repo, not some other version of PowerShellGet on the system
+    $expectedModuleBase= Join-Path -Path (Split-Path $psscriptroot -parent) -ChildPath "src\PowerShellGet"
+    $expectedProviderPath = Join-Path -Path $expectedModuleBase -ChildPath "PSModule.psm1"
+
+    Write-Verbose "Ensure we load PowerShellGet from $expectedModuleBase"
+
+    $psgetmodule = Import-Module -Name PowerShellGet -PassThru -Scope Global -Force
+    if($psgetmodule.ModuleBase -ne $expectedModuleBase) {
+        Write-Warning "Loading PowerShellGet from $($psgetmodule.ModuleBase), but the PowerShellGet under development is in $expectedModuleBase."
+    }
+
+    Write-Verbose "Ensure we load PowerShellGet Provider from $expectedModuleBase"
+    $psgetprovider = Import-PackageProvider -Name PowerShellGet -Force
+
+    if($psgetprovider.ProviderPath -ne $expectedProviderPath) {
+        Write-Warning "Loading PowerShellGet Package Provider from $($psgetprovider.ProviderPath), but the PowerShellGet under development is in $expectedModuleBase."
+    }
+
+    #Set-TestRepositoryLocation -Verbose:$VerbosePreference
+
+    <#
+    Write-Verbose "Checking PSGallery Repository"
+    $repo = Get-PSRepository PSGallery -ErrorAction SilentlyContinue
+
+    if(-not $repo) {
+        Write-Warning "No PSGallery repository found"
+        if($psCmdlet.ShouldProcess("PSGallery", "Register default PSGallery")) {
+            Register-PSRepository -Default
+            $repo = Get-PSRepository PSGallery
+        }
+        else { throw "No PSGallery, can't continue"}
+    }
+
+    if ($repo.SourceLocation -ne "https://www.powershellgallery.com/api/v2" -or $repo.PublishLocation -ne "https://www.powershellgallery.com/api/v2/package/") {
+        Write-Warning "PSGallery set to unexpected location $($repo.SourceLocation) / $($repo.PublishLocation)"
+        if($psCmdlet.ShouldProcess("PSGallery", "Restore PSGallery to default")) {
+            Unregister-PSRepository PSGallery
+            Register-PSRepository -Default
+        }
+    }
+    #>
+}
+
+# All the test environment changes are inside the loaded module. So just reloading it clears everything
+function Remove-TestEnvironment
+{
+    Remove-LocalTreeInPSModulePath
+}
+
+function Invoke-WithoutAdminPrivileges
+{
+    [CmdletBinding()]
+    param($commandLine)
+
+    $tempFile = "$env:temp\$(New-Guid).txt"
+    $errFile = "$env:temp\$(New-Guid)-err.txt"
+    $wrappedCommandLine = "& { $commandLine } > $tempFile 2> $errFile"
+    Write-Verbose "Executing $wrappedCommandLine"
+    $bytes = [System.Text.Encoding]::Unicode.GetBytes($wrappedCommandLine)
+    $encodedCommand = [Convert]::ToBase64String($bytes)
+
+    $processName = (get-process -Id $pid).ProcessName
+    Start-Process "runas.exe" -ArgumentList ("/trustlevel:0x20000", "`"$processName -encodedcommand $encodedcommand`"") -Wait
+    Get-Content $tempFile
+    $errors = Get-Content $errFile
+    if($errors) {
+        Write-Error "Errors from child command: $errors"
+    }
+    Remove-Item $tempFile -Force -ErrorAction SilentlyContinue
+    Remove-Item $errFile -Force -ErrorAction SilentlyContinue
 }

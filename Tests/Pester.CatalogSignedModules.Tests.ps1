@@ -7,13 +7,14 @@ if($IsWindows -eq $false) {
 }
 
 Import-Module "$PSScriptRoot\PSGetTestUtils.psm1" -WarningAction SilentlyContinue
+Import-Module "$PSScriptRoot\Asserts.psm1" -WarningAction SilentlyContinue
 
 $Script:RepositoryName = 'Local'
 $SourceLocation = "$PSScriptRoot\PSGalleryTestRepo"
 $Script:RegisteredLocalRepo = $false
 
-$Script:INTRepositoryName = 'DTLGalleryINT'
-$Script:INTRepoLocation = 'https://dtlgalleryint.cloudapp.net/api/v2'
+$Script:INTRepositoryName = 'poshtestgallery'
+$Script:INTRepoLocation = 'https://www.poshtestgallery.com/api/v2'
 $Script:RegisteredINTRepo = $false
 
 $MicrosoftPowerShellArchive = 'Microsoft.PowerShell.Archive'
@@ -86,7 +87,7 @@ function SignAndPublish-TestModule
     }
 }
 
-function SuiteSetup {
+function RegisterLocalRepo {
     Install-NuGetBinaries
 
     if(-not (Test-Path -Path $SourceLocation -PathType Container))
@@ -105,6 +106,11 @@ function SuiteSetup {
         Register-PSRepository -Name $Script:RepositoryName -SourceLocation $SourceLocation -InstallationPolicy Trusted
         $Script:RegisteredLocalRepo = $true
     }
+}
+
+function SuiteSetup {
+
+    RegisterLocalRepo
 
     $INTRepo = Get-PSRepository -ErrorAction SilentlyContinue | 
                    Where-Object {$_.SourceLocation.StartsWith($Script:INTRepoLocation, [System.StringComparison]::OrdinalIgnoreCase)}
@@ -154,6 +160,18 @@ function SuiteSetup {
             SignAndPublish-TestModule -Name $MicrosoftPowerShellArchive -Version '1.0.1.5' -Certificate $Cert
         }
     }
+}
+
+function SuiteCleanup {
+
+    # Import the PowerShellGet provider to reload the repositories.
+    $null = Import-PackageProvider -Name PowerShellGet -Force
+
+    Cleanup-CodeSigningCert -subject "AliceTest"
+    Cleanup-CodeSigningCert -subject "BobTest"
+
+    RemoveItem (Join-Path -Path $ProgramFilesModulesPath -ChildPath "TestModule")
+    RemoveItem $script:TempModulesPath
 }
 
 function Test-SkipCondition {
@@ -226,7 +244,7 @@ Describe 'Test PowerShellGet cmdlets support for catalog signed modules' -tags '
 
     AfterAll {
         Get-InstalledModule -Name $TestArchiveModule -AllVersions -ErrorAction SilentlyContinue | PowerShellGet\Uninstall-Module
-        Get-InstalledModule -Name $ContosoServer -AllVersions -ErrorAction SilentlyContinue | PowerShellGet\Uninstall-Module
+        Get-InstalledModule -Name $ContosoServer -AllVersions -ErrorAction SilentlyContinue | PowerShellGet\Uninstall-Module    
     }
 
     BeforeEach {
@@ -234,7 +252,7 @@ Describe 'Test PowerShellGet cmdlets support for catalog signed modules' -tags '
         Get-InstalledModule -Name $ContosoServer -AllVersions -ErrorAction SilentlyContinue | PowerShellGet\Uninstall-Module
         Get-InstalledModule -Name $SmallContosoServer -AllVersions -ErrorAction SilentlyContinue | PowerShellGet\Uninstall-Module
     }
-    
+
     It 'Authenticode publisher is different from the previously installed module version: Should fail' {        
         Install-Module -Name $TestArchiveModule -RequiredVersion 1.0.1.1 -Repository $Script:RepositoryName
         Get-InstalledModule -Name $TestArchiveModule -RequiredVersion 1.0.1.1 | Should Not BeNullOrEmpty
@@ -348,6 +366,108 @@ Describe 'Test PowerShellGet\Update-Module cmdlet with catalog signed modules' -
     }
 }
 
+Describe 'Test Install-Module and Update-Module for catalog signed test modules' -tags 'BVT','InnerLoop' {
+    if(Test-SkipCondition) { return }
+
+    BeforeAll {        
+        if(Test-SkipCondition){ return }
+
+        RegisterLocalRepo
+
+        $script:TempPath = Get-TempPath
+    
+        # Create temp module to be published
+        $script:TempModulesPath = Join-Path -Path $script:TempPath -ChildPath "PSGet_$(Get-Random)"
+        $null = New-Item -Path $script:TempModulesPath -ItemType Directory -Force
+    
+        # Set up signed modules if signing is available
+        if ((Get-Module PKI -ListAvailable)) {
+           
+            $TestModuleDestination = Join-Path -Path $script:TempModulesPath -ChildPath "TestModule"
+           
+            if (Test-Path -Path $TestModuleDestination) {
+                $null = Remove-Item -Path $TestModuleDestination -Force
+            }
+            $null = New-Item -Path $TestModuleDestination -Force -ItemType Directory
+            $TestModuleRoot = Join-Path -Path $script:TempModulesPath -ChildPath "TestModule"
+    
+            # Create certificates, sign then publish the versions of TestModule
+            Create-CodeSigningCert -storeName "Cert:\LocalMachine\My" -subject "AliceTest" 
+            $alice1Cert = (Get-ChildItem cert: -CodeSigningCert -Recurse | Where-Object Subject -match "AliceTest" | Select-Object -First 1) 
+            Create-CodeSigningCert -subject "AliceTest" -CertRA "Other Root Authority" 
+            $alice2Cert = (Get-ChildItem cert: -CodeSigningCert -Recurse | Where-Object Issuer -match "Other" | Select-Object -First 1) 
+            Create-CodeSigningCert -subject "BobTest"
+            $bobCert = (Get-ChildItem cert: -CodeSigningCert -Recurse | Where-Object Subject -match "BobTest" | Select-Object -First 1)
+    
+            $certs =  @{'99.99.99.96' = $alice1Cert; '99.99.99.97' = $alice2Cert; '99.99.99.98' = $bobCert; '99.99.99.99' = $alice1Cert}
+
+            $certs.Keys | 
+            ForEach-Object { 
+                $TestModuleVersionDestination = Join-Path -Path $TestModuleDestination -ChildPath "$_" 
+                
+                $null = New-Item -Path $TestModuleVersionDestination -Force -ItemType Directory
+                $null = New-ModuleManifest -Path (Join-Path -Path $TestModuleVersionDestination -ChildPath "TestModule.psd1") -Description "Test signed TestModule module v. $_" -ModuleVersion $_
+                
+                $null = Set-AuthenticodeSignature -FilePath (Join-Path -Path $TestModuleVersionDestination -ChildPath "TestModule.psd1") -Certificate ($certs.$_)
+                $TestModuleVersionPath = Join-Path -Path $TestModuleRoot -ChildPath $_ 
+                
+                if(-not (Test-Path -Path "$SourceLocation\TestModule.$_.nupkg" -PathType Leaf)) {
+                    Publish-Module -Path $TestModuleVersionPath -Repository $Script:RepositoryName -Force
+                }
+            }
+        }
+
+        Install-Module TestModule -RequiredVersion 99.99.99.96 -Repository $Script:RepositoryName
+    } 
+
+    BeforeEach {
+        Get-InstalledModule TestModule -RequiredVersion 99.99.99.99 -ErrorAction SilentlyContinue | PowerShellGet\Uninstall-Module
+    }
+
+    AfterAll {
+        SuiteCleanup
+    }
+
+    AfterEach {
+    }
+
+    It 'Install module signed with same signature but different root certificate authority than current module: Should fail' {
+        Install-Module TestModule -RequiredVersion 99.99.99.97 -ErrorVariable iev -ErrorAction SilentlyContinue -WarningVariable iwv -WarningAction SilentlyContinue -Force 
+        $iev[0].FullyQualifiedErrorId | Should be 'AuthenticodeIssuerMismatch,Validate-ModuleAuthenticodeSignature,Microsoft.PowerShell.PackageManagement.Cmdlets.InstallPackage'
+        $iwv | should be $null
+    }
+
+    It 'Update module signed with different signature but different root certificate authority than than current module: Should fail' {
+        Update-Module TestModule -RequiredVersion 99.99.99.97 -ErrorVariable iev -ErrorAction SilentlyContinue -WarningVariable iwv -Force
+        $iev[0].FullyQualifiedErrorId | Should be 'AuthenticodeIssuerMismatch,Validate-ModuleAuthenticodeSignature,Microsoft.PowerShell.PackageManagement.Cmdlets.InstallPackage'
+        $iwv | should be $null
+    }
+
+    It 'Install module signed with different signature than current module: Should fail' {
+        Install-Module TestModule -RequiredVersion 99.99.99.98 -ErrorVariable iev -ErrorAction SilentlyContinue -WarningVariable iwv -Force   
+        $iev[0].FullyQualifiedErrorId | Should be 'AuthenticodeIssuerMismatch,Validate-ModuleAuthenticodeSignature,Microsoft.PowerShell.PackageManagement.Cmdlets.InstallPackage'
+        $iwv | should be $null
+    }
+
+    It 'Update module signed with different signature than current module: Should fail' {
+        Update-Module TestModule -RequiredVersion 99.99.99.98 -ErrorVariable iev -ErrorAction SilentlyContinue -WarningVariable iwv -Force
+        $iev[0].FullyQualifiedErrorId | Should be 'AuthenticodeIssuerMismatch,Validate-ModuleAuthenticodeSignature,Microsoft.PowerShell.PackageManagement.Cmdlets.InstallPackage'
+        $iwv | should be $null
+    }
+
+    It 'Install module signed with same signature and same root certificate authority as current module: Should work' {
+        Install-Module TestModule -RequiredVersion 99.99.99.99 -ErrorVariable iev -WarningVariable iwv -Force   
+        $iev | should be $null
+        $iwv | should be $null
+    }
+
+    It 'Update module signed with same signature and same root certificate authority as current module: Should work' {
+        Update-Module TestModule -RequiredVersion 99.99.99.99 -ErrorVariable iev -WarningVariable iwv -Force
+        $iev | should be $null
+        $iwv | should be $null
+    }
+}
+   
 Describe 'Install-Module --- Microsoft signed versions of Microsoft.PowerShell.Archive module' -tags 'BVT','InnerLoop' {
 
     BeforeAll {        

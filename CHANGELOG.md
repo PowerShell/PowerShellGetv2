@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.1.1
+- Fix DSC resource folder structure
+
 ## 2.1.0
 
 Breaking Change
@@ -18,6 +21,7 @@ Bug Fixes
 New Features
 
 - New DSC resource, PSRepository (#426) (Thanks @johlju!)
+- Added tests and integration of DSC resource PSModule (Thanks @johlju!)
 - Piping of PS respositories (#420)
 - utf8 support for .nuspec (#419)
 

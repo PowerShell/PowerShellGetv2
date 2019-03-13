@@ -1,6 +1,7 @@
 # Changelog
 
 ## 2.1.1
+
 - Fix DSC resource folder structure
 
 ## 2.1.0

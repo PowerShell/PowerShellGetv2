@@ -66,10 +66,14 @@ Describe 'Test Register-PSRepository and Register-PackageSource for PSGallery re
             New-Item -Path $tmpdir -ItemType Directory > $null
         }
         try {
-            Register-PSRepository -Name $RepositoryName -SourceLocation $tmpdir
-            $repo = Get-PSRepository -Name $RepositoryName
-            $repo.Name | should be $RepositoryName
-            $repo.SourceLocation | should be $tmpdir
+            Register-PSRepository -Name 'Test Repo' -SourceLocation $tmpdir
+            try {
+                $repo = Get-PSRepository -Name 'Test Repo'
+                $repo.Name | should be 'Test Repo'
+                $repo.SourceLocation | should be $tmpdir
+            } finally {
+                Unregister-PSRepository -Name 'Test Repo' -ErrorAction SilentlyContinue
+            }
         } finally {
             Remove-Item -LiteralPath $tmpdir -Force -Recurse
         }

@@ -106,7 +106,7 @@ function Add-PackageSource
 
         $PublishLocation = $Options[$script:PublishLocation]
 
-        if(-not (Microsoft.PowerShell.Management\Test-Path $PublishLocation) -and
+        if(-not (Microsoft.PowerShell.Management\Test-Path -LiteralPath $PublishLocation) -and
            -not (Test-WebUri -uri $PublishLocation))
         {
             $PublishLocationUri = [Uri]$PublishLocation
@@ -149,7 +149,7 @@ function Add-PackageSource
 
         $ScriptSourceLocation = $Options[$script:ScriptSourceLocation]
 
-        if(-not (Microsoft.PowerShell.Management\Test-Path $ScriptSourceLocation) -and
+        if(-not (Microsoft.PowerShell.Management\Test-Path -LiteralPath $ScriptSourceLocation) -and
            -not (Test-WebUri -uri $ScriptSourceLocation))
         {
             $ScriptSourceLocationUri = [Uri]$ScriptSourceLocation
@@ -192,7 +192,7 @@ function Add-PackageSource
 
         $ScriptPublishLocation = $Options[$script:ScriptPublishLocation]
 
-        if(-not (Microsoft.PowerShell.Management\Test-Path $ScriptPublishLocation) -and
+        if(-not (Microsoft.PowerShell.Management\Test-Path -LiteralPath $ScriptPublishLocation) -and
            -not (Test-WebUri -uri $ScriptPublishLocation))
         {
             $ScriptPublishLocationUri = [Uri]$ScriptPublishLocation
@@ -275,7 +275,7 @@ function Add-PackageSource
         return
     }
 
-    if(-not (Microsoft.PowerShell.Management\Test-Path -Path $Location) -and
+    if(-not (Microsoft.PowerShell.Management\Test-Path -LiteralPath $Location) -and
        -not (Test-WebUri -uri $Location) )
     {
         $LocationUri = [Uri]$Location
@@ -498,7 +498,7 @@ function Add-PackageSource
 
         # ScriptPublishLocation and PublishLocation should be equal in case of SMB Share or Local directory paths
         if($Options.ContainsKey($script:ScriptPublishLocation) -and
-           (Microsoft.PowerShell.Management\Test-Path -Path $ScriptPublishLocation))
+           (Microsoft.PowerShell.Management\Test-Path -LiteralPath $ScriptPublishLocation))
         {
             if($ScriptPublishLocation -ne $PublishLocation)
             {
@@ -521,7 +521,7 @@ function Add-PackageSource
     {
         # ScriptSourceLocation and SourceLocation cannot be same for they are URLs
         # Both should be equal in case of SMB Share or Local directory paths
-        if(Microsoft.PowerShell.Management\Test-Path -Path $ScriptSourceLocation)
+        if(Microsoft.PowerShell.Management\Test-Path -LiteralPath $ScriptSourceLocation)
         {
             if($ScriptSourceLocation -ne $LocationString)
             {

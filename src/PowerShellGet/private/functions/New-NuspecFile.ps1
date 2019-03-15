@@ -77,9 +77,9 @@ function New-NuspecFile {
         tags                     = $Tags
     }
 
-    if ($LicenseUrl) { $metaDataElement.Add("licenseUrl", $LicenseUrl) }
-    if ($ProjectUrl) { $metaDataElement.Add("projectUrl", $ProjectUrl) }
-    if ($IconUrl) { $metaDataElement.Add("iconUrl", $IconUrl) }
+    if ($LicenseUrl) { $metaDataElementsHash.Add("licenseUrl", $LicenseUrl) }
+    if ($ProjectUrl) { $metaDataElementsHash.Add("projectUrl", $ProjectUrl) }
+    if ($IconUrl) { $metaDataElementsHash.Add("iconUrl", $IconUrl) }
 
     foreach ($key in $metaDataElementsHash.Keys) {
         $element = $xml.CreateElement($key, $nameSpaceUri)
@@ -88,6 +88,7 @@ function New-NuspecFile {
 
         $metaDataElement.AppendChild($element) | Out-Null
     }
+
 
     if ($Dependencies) {
         $dependenciesElement = $xml.CreateElement("dependencies", $nameSpaceUri)

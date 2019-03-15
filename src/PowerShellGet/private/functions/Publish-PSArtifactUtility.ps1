@@ -377,13 +377,12 @@ function Publish-PSArtifactUtility {
 
     try {
         if ($DotnetCommandPath) {
-            New-NugetPackage -NuspecPath $NuspecFullName -NugetPackageRoot $NugetPackageRoot -UseDotnetCli -Verbose:$VerbosePreference
+            $NupkgFullName = New-NugetPackage -NuspecPath $NuspecFullName -NugetPackageRoot $NugetPackageRoot -UseDotnetCli -Verbose:$VerbosePreference
         }
         elseif ($NuGetExePath) {
-            New-NugetPackage -NuspecPath $NuspecFullName -NugetPackageRoot $NugetPackageRoot -NugetExePath $NuGetExePath -Verbose:$VerbosePreference
+            $NupkgFullName = New-NugetPackage -NuspecPath $NuspecFullName -NugetPackageRoot $NugetPackageRoot -NugetExePath $NuGetExePath -Verbose:$VerbosePreference
         }
 
-        $NupkgFullName = Join-Path -Path $NugetPackageRoot -ChildPath "$Name.$Version.nupkg"
         Write-Verbose -Message "Successfully created nuget package at $NupkgFullName"
     }
     catch {

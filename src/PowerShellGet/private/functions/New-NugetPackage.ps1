@@ -10,7 +10,7 @@ function New-NugetPackage {
         [Parameter()]
         [string]$OutputPath = $NugetPackageRoot,
 
-        [Parameter(ParameterSetName = "UseNuget")]
+        [Parameter(Mandatory = $true, ParameterSetName = "UseNuget")]
         [string]$NugetExePath,
 
         [Parameter(ParameterSetName = "UseDotnetCli")]
@@ -25,6 +25,7 @@ function New-NugetPackage {
     if (-Not(Test-Path -Path $NugetPackageRoot)) {
         throw "NugetPackageRoot $NugetPackageRoot does not exist"
     }
+
 
     if ($PSCmdlet.ParameterSetName -eq "UseNuget") {
         if (-Not(Test-Path -Path $NuGetExePath)) {
@@ -96,13 +97,19 @@ function New-NugetPackage {
         }
 
         if (-Not ($process.ExitCode -eq 0 )) {
-            $stdOut = $process.StandardOut.ReadToEnd()
+            $stdOut = $process.StandardOutput.ReadToEnd()
             throw "dotnet cli failed to pack $stdOut"
         }
 
     }
 
-    $stdOut = $process.StandardOutput.ReadLine()
+    [xml]$nuspecXml = Get-Content -Path $NuspecPath
+    $version = $nuspecXml.package.metadata.version
+    $id = $nuspecXml.package.metadata.id
+    $nupkgFullFile = Join-Path $OutputPath -ChildPath "$id.$version.nupkg"
+
+    $stdOut = $process.StandardOutput.ReadToEnd()
 
     Write-Verbose -Message $stdOut
+    Write-Output $nupkgFullFile
 }

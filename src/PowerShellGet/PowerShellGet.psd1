@@ -1,6 +1,6 @@
 @{
     RootModule        = 'PSModule.psm1'
-    ModuleVersion     = '2.1.1'
+    ModuleVersion     = '2.1.2'
     GUID              = '1d73a601-4a6c-43c5-ba3f-619b18bbb404'
     Author            = 'Microsoft Corporation'
     CompanyName       = 'Microsoft Corporation'
@@ -54,6 +54,12 @@
             ProjectUri   = 'https://go.microsoft.com/fwlink/?LinkId=828955'
             LicenseUri   = 'https://go.microsoft.com/fwlink/?LinkId=829061'
             ReleaseNotes = @'
+## 2.1.2
+
+New Feature
+
+- Added support for registering repositories with special characters
+
 ## 2.1.1
 
 - Fix DSC resource folder structure

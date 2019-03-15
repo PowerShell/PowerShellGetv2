@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.2
+
+New Feature
+
+- Added support for registering repositories with special characters
+
 ## 2.1.1
 - Fix DSC resource folder structure
 

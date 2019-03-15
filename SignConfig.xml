@@ -17,7 +17,8 @@
     <file src="__INPATHROOT__\PowerShellGet\DSCResources\MSFT_PSRepository\MSFT_PSRepository.schema.mof" signType="AuthenticodeFormer" dest="__OUTPATHROOT__\DSCResources\MSFT_PSRepository\MSFT_PSRepository.schema.mof" />
     <file src="__INPATHROOT__\PowerShellGet\DSCResources\MSFT_PSRepository\en-US\MSFT_PSRepository.strings.psd1" signType="AuthenticodeFormer" dest="__OUTPATHROOT__\DSCResources\MSFT_PSRepository\en-US\MSFT_PSRepository.strings.psd1" />
 
-    <file src="__INPATHROOT__\PowerShellGet\Modules\PowerShellGet.LocalizationHelper\PowerShellGet.LocalizationHelper.psm1" signType="AuthenticodeFormer" dest="__OUTPATHROOT__\Modules\PowerShellGet.LocalizationHelper\PowerShellGet.LocalizationHelper.psm1" />
+    <file src="__INPATHROOT__\PowerShellGet\Modules\PowerShellGet.ResourceHelper\en-US\PowerShellGet.ResourceHelper.strings.psd1" signType="AuthenticodeFormer" dest="__OUTPATHROOT__\Modules\PowerShellGet.ResourceHelper\en-US\PowerShellGet.ResourceHelper.strings.psd1" />
     <file src="__INPATHROOT__\PowerShellGet\Modules\PowerShellGet.ResourceHelper\PowerShellGet.ResourceHelper.psm1" signType="AuthenticodeFormer" dest="__OUTPATHROOT__\Modules\PowerShellGet.ResourceHelper\PowerShellGet.ResourceHelper.psm1" />
+    <file src="__INPATHROOT__\PowerShellGet\Modules\PowerShellGet.LocalizationHelper\PowerShellGet.LocalizationHelper.psm1" signType="AuthenticodeFormer" dest="__OUTPATHROOT__\Modules\PowerShellGet.LocalizationHelper\PowerShellGet.LocalizationHelper.psm1" />
   </job>
 </SignConfigXML>

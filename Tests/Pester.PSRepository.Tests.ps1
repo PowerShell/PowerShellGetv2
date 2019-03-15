@@ -60,6 +60,25 @@ Describe 'Test Register-PSRepository and Register-PackageSource for PSGallery re
         $repo.Trusted | should be $true
     }
 
+    It 'Register-PSRepository File system location with special chars' {
+        $tmpdir = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath 'ps repo testing [$!@^&test(;)]'
+        if (-not (Test-Path -LiteralPath $tmpdir)) {
+            New-Item -Path $tmpdir -ItemType Directory > $null
+        }
+        try {
+            Register-PSRepository -Name 'Test Repo' -SourceLocation $tmpdir
+            try {
+                $repo = Get-PSRepository -Name 'Test Repo'
+                $repo.Name | should be 'Test Repo'
+                $repo.SourceLocation | should be $tmpdir
+            } finally {
+                Unregister-PSRepository -Name 'Test Repo' -ErrorAction SilentlyContinue
+            }
+        } finally {
+            Remove-Item -LiteralPath $tmpdir -Force -Recurse
+        }
+    }
+
     It 'Reregister PSGallery again: Should fail' {
         Register-PSRepository -Default
         Register-PSRepository -Default -ErrorVariable ev -ErrorAction SilentlyContinue

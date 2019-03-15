@@ -29,7 +29,7 @@ function Resolve-Location
     # Ping and resolve the specified location
     if(-not (Test-WebUri -uri $Location))
     {
-        if(Microsoft.PowerShell.Management\Test-Path -Path $Location)
+        if(Microsoft.PowerShell.Management\Test-Path -LiteralPath $Location)
         {
             return $Location
         }

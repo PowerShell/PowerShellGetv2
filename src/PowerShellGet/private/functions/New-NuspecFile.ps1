@@ -62,8 +62,7 @@ function New-NuspecFile {
     $Tags = $Tags -Join " "
 
     if ($Tags.Length -gt 4000) {
-        $Tags = $Tags.Substring(0, $Tags.LastIndexOf(" "))
-        Write-Warning -Message "Nuspec 'Tag' list exceeded max 4000 characters and was truncated."
+        Write-Warning -Message "Tag list exceeded 4000 characters and may not be accepted by some Nuget feeds."
     }
 
     $metaDataElementsHash = [ordered]@{
@@ -121,5 +120,8 @@ function New-NuspecFile {
 
     $xml.AppendChild($packageElement) | Out-Null
 
-    $xml.save("$OutputPath\$Id.nuspec")
+    $nuspecFullName = Join-Path -Path $OutputPath -ChildPath "$Id.nuspec"
+    $xml.save($nuspecFullName)
+
+    Write-Output $nuspecFullName
 }

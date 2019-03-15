@@ -342,7 +342,6 @@ function Publish-PSArtifactUtility {
             $VersionString = "$($Dependency.MinimumVersion)"
         }
 
-        # fix#335 refactor to construct object to pass to new New-NuspecFile function.
         $props = @{
             id      = $ModuleName
             version = $VersionString
@@ -352,7 +351,6 @@ function Publish-PSArtifactUtility {
         $dependencies += $dependencyObject
     }
 
-    # fix#335 refactor to use new New-NuspecFile function.
     $params = @{
         OutputPath               = $NugetPackageRoot
         Id                       = $Name
@@ -371,14 +369,12 @@ function Publish-PSArtifactUtility {
     }
 
     try {
-        New-NuspecFile $params
-        $NuspecFullName = Join-Path -Path $NugetPackageRoot -ChildPath "$Name.nuspec"
+        $NuspecFullName = New-NuspecFile $params
     }
     catch {
         Write-Error -Message "Failed to create nuspec file $_.Exception" -ErrorAction Stop
     }
 
-    # fix#335 Refactor to use new New-NugetPackage function.
     try {
         if ($DotnetCommandPath) {
             New-NugetPackage -NuspecPath $NuspecFullName -NugetPackageRoot $NugetPackageRoot -UseDotnetCli -Verbose:$VerbosePreference
@@ -403,7 +399,6 @@ function Publish-PSArtifactUtility {
         Write-Error -Message $message -ErrorId $errorId -Category InvalidOperation -ErrorAction Stop
     }
 
-    # Fix#335 refactor to use new Publish-NugetPackage function.
     try {
         if ($DotnetCommandPath) {
             Publish-NugetPackage -NupkgPath $NupkgFullName -Destination $Destination -NugetApiKey $NugetApiKey -UseDotnetCli -Verbose:$VerbosePreference

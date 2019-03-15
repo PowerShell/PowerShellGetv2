@@ -91,17 +91,15 @@ function New-NugetPackage {
         $process.Start() | Out-Null
         $process.WaitForExit()
 
+        if (Test-Path -Path $tempPath) {
+            Remove-Item -Path $tempPath -Force -Recurse
+        }
+
         if (-Not ($process.ExitCode -eq 0 )) {
-            if (Test-Path -Path $tempPath) {
-                Remove-Item -Path $tempPath -Force -Recurse
-            }
             $stdOut = $process.StandardOut.ReadToEnd()
             throw "dotnet cli failed to pack $stdOut"
         }
 
-        if (Test-Path -Path $tempPath) {
-            Remove-Item -Path $tempPath -Force -Recurse
-        }
     }
 
     $stdOut = $process.StandardOutput.ReadLine()

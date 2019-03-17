@@ -1,59 +1,90 @@
 @{
-RootModule = 'PSModule.psm1'
-ModuleVersion = '2.0.4'
-GUID = '1d73a601-4a6c-43c5-ba3f-619b18bbb404'
-Author = 'Microsoft Corporation'
-CompanyName = 'Microsoft Corporation'
-Copyright = '(c) Microsoft Corporation. All rights reserved.'
-Description = 'PowerShell module with commands for discovering, installing, updating and publishing the PowerShell artifacts like Modules, DSC Resources, Role Capabilities and Scripts.'
-PowerShellVersion = '3.0'
-FormatsToProcess = 'PSGet.Format.ps1xml'
-FunctionsToExport = @(
-	'Find-Command',
-	'Find-DSCResource',
-	'Find-Module',
-	'Find-RoleCapability',
-	'Find-Script',
-	'Get-InstalledModule',
-	'Get-InstalledScript',
-	'Get-PSRepository',
-	'Install-Module',
-	'Install-Script',
-	'New-ScriptFileInfo',
-	'Publish-Module',
-	'Publish-Script',
-	'Register-PSRepository',
-	'Save-Module',
-	'Save-Script',
-	'Set-PSRepository',
-	'Test-ScriptFileInfo',
-	'Uninstall-Module',
-	'Uninstall-Script',
-	'Unregister-PSRepository',
-	'Update-Module',
-	'Update-ModuleManifest',
-	'Update-Script',
-	'Update-ScriptFileInfo')
+    RootModule        = 'PSModule.psm1'
+    ModuleVersion     = '2.1.2'
+    GUID              = '1d73a601-4a6c-43c5-ba3f-619b18bbb404'
+    Author            = 'Microsoft Corporation'
+    CompanyName       = 'Microsoft Corporation'
+    Copyright         = '(c) Microsoft Corporation. All rights reserved.'
+    Description       = 'PowerShell module with commands for discovering, installing, updating and publishing the PowerShell artifacts like Modules, DSC Resources, Role Capabilities and Scripts.'
+    PowerShellVersion = '3.0'
+    FormatsToProcess  = 'PSGet.Format.ps1xml'
+    FunctionsToExport = @(
+        'Find-Command',
+        'Find-DSCResource',
+        'Find-Module',
+        'Find-RoleCapability',
+        'Find-Script',
+        'Get-InstalledModule',
+        'Get-InstalledScript',
+        'Get-PSRepository',
+        'Install-Module',
+        'Install-Script',
+        'New-ScriptFileInfo',
+        'Publish-Module',
+        'Publish-Script',
+        'Register-PSRepository',
+        'Save-Module',
+        'Save-Script',
+        'Set-PSRepository',
+        'Test-ScriptFileInfo',
+        'Uninstall-Module',
+        'Uninstall-Script',
+        'Unregister-PSRepository',
+        'Update-Module',
+        'Update-ModuleManifest',
+        'Update-Script',
+        'Update-ScriptFileInfo')
 
-VariablesToExport = "*"
-AliasesToExport = @('inmo','fimo','upmo','pumo')
-FileList = @('PSModule.psm1',
-             'PSGet.Format.ps1xml',
-             'PSGet.Resource.psd1')
-RequiredModules = @(@{ModuleName='PackageManagement';ModuleVersion='1.1.7.0'})
-PrivateData = @{
-                "PackageManagementProviders" = 'PSModule.psm1'
-                 "SupportedPowerShellGetFormatVersions" = @('1.x','2.x')
-    PSData = @{
-        Tags = @('Packagemanagement',
-                 'Provider',
-                 'PSEdition_Desktop',                 
-		         'PSEdition_Core',
-                 'Linux',
-                 'Mac')
-        ProjectUri = 'https://go.microsoft.com/fwlink/?LinkId=828955'
-        LicenseUri = 'https://go.microsoft.com/fwlink/?LinkId=829061'
-        ReleaseNotes = @'
+    VariablesToExport = "*"
+    AliasesToExport   = @('inmo', 'fimo', 'upmo', 'pumo')
+    FileList          = @('PSModule.psm1',
+        'PSGet.Format.ps1xml',
+        'PSGet.Resource.psd1')
+    RequiredModules   = @(@{ModuleName = 'PackageManagement'; ModuleVersion = '1.1.7.0'})
+    PrivateData       = @{
+        "PackageManagementProviders"           = 'PSModule.psm1'
+        "SupportedPowerShellGetFormatVersions" = @('1.x', '2.x')
+        PSData                                 = @{
+            Tags         = @('Packagemanagement',
+                'Provider',
+                'PSEdition_Desktop',
+                'PSEdition_Core',
+                'Linux',
+                'Mac')
+            ProjectUri   = 'https://go.microsoft.com/fwlink/?LinkId=828955'
+            LicenseUri   = 'https://go.microsoft.com/fwlink/?LinkId=829061'
+            ReleaseNotes = @'
+## 2.1.2
+
+New Feature
+
+- Added support for registering repositories with special characters
+
+## 2.1.1
+
+- Fix DSC resource folder structure
+
+## 2.1.0
+
+Breaking Change
+
+- Default installation scope for Update-Module and Update-Script has changed to match Install-Module and Install-Script. For Windows PowerShell (version 5.1 or below), the default scope is AllUsers when running in an elevated session, and CurrentUser at all other times.
+  For PowerShell version 6.0.0 and above, the default installation scope is always CurrentUser. (#421)
+
+Bug Fixes
+
+- Update-ModuleManifest no longer clears FunctionsToExport, AliasesToExport, nor NestModules (#415 & #425) (Thanks @pougetat and @tnieto88!)
+- Update-Module no longer changes repository URL (#407)
+- Update-ModuleManifest no longer preprends 'PSGet_' to module name (#403) (Thanks @ThePoShWolf)
+- Update-ModuleManifest now throws error and fails to update when provided invalid entries (#398) (Thanks @pougetat!)
+- Ignore files no longer being included when uploading modules (#396)
+
+New Features
+
+- New DSC resource, PSRepository (#426) (Thanks @johlju!)
+- Piping of PS respositories (#420)
+- utf8 support for .nuspec (#419)
+
 ## 2.0.4
 
 Bug Fix
@@ -222,8 +253,8 @@ Bug fixes
 * Proxy Authentication support.
 * Responses to a number of user requests and issues.
 '@
+        }
     }
-}
 
-HelpInfoURI = 'http://go.microsoft.com/fwlink/?linkid=855963'
+    HelpInfoURI       = 'http://go.microsoft.com/fwlink/?linkid=855963'
 }

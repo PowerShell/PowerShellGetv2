@@ -118,7 +118,7 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
     # Action:
     #      Update-ModuleManifest -Path [Path] 
     #
-    # Expected Result: The updated manifest should have the same proerty values.
+    # Expected Result: The updated manifest should have the same property values.
     #
     It UpdateModuleManifestWithNoAdditionalParameters2 {    
 
@@ -144,6 +144,29 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
 
         AssertEquals $updatedModuleInfo.CompanyName $editedModuleInfo.CompanyName "Company name should be $expectedCompanyName"
         AssertEquals $($text.length) $expectedLength "Number of wildcards should be $expectedLength"
+    }
+
+    # Purpose: Validate Update-ModuleManifest will not reset original parameter values to default values
+    #
+    # Action:
+    #      Update-ModuleManifest -Path [Path]
+    #
+    # Expected Result: The updated manifest should have the same property values.
+    #
+    It UpdateModuleManifestWithNoAdditionalParameters3 {
+
+        New-ModuleManifest -Path $script:testManifestPath -ModuleVersion '1.0' -FunctionsToExport 'function1' -NestedModules 'Microsoft.PowerShell.Management' -AliasesToExport 'alias1'
+        Update-ModuleManifest -Path $script:testManifestPath
+
+        Import-LocalizedData -BindingVariable ModuleManifestHashTable `
+                     -FileName (Microsoft.PowerShell.Management\Split-Path $script:testManifestPath -Leaf) `
+                     -BaseDirectory (Microsoft.PowerShell.Management\Split-Path $script:testManifestPath -Parent) `
+                     -ErrorAction SilentlyContinue `
+                     -WarningAction SilentlyContinue
+
+        AssertEquals $ModuleManifestHashTable.FunctionsToExport 'function1' "FunctionsToExport should be 'function1'"
+        AssertEquals $ModuleManifestHashTable.NestedModules 'Microsoft.PowerShell.Management' "NestedModules should be 'module1'"
+        AssertEquals $ModuleManifestHashTable.AliasesToExport 'alias1' "AliasesToExport should be 'alias1'"
     } 
 
     # Purpose: Validate Update-ModuleManifest will keep the original property values for DefaultCommandPrefix,
@@ -152,7 +175,7 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
     # Action:
     #      Update-ModuleManifest -Path [Path] 
     #
-    # Expected Result: The updated manifest should have the same DefaultCommandPreifx as before, 
+    # Expected Result: The updated manifest should have the same DefaultCommandPrefix as before, 
     # CmdletsToExport, FunctionsToExport, AliasesToExport, DSCResourcesToExport should not have prefixes affixed
     #                   
     It UpdateModuleManifestWithDefaultCommandPrefix {
@@ -197,7 +220,22 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         }
     }
 
+    # Purpose: Update a module manifest with an empty array of commandlets and functions to export
+    #
+    # Action: Update-ModuleManifest -Path [path] -CmdletsToExport "" -functions ""
+    #
+    # Expected Result: The updated module manifest should have no commandlets or functions to export
+    #
+    It "UpdateModuleManifestWithEmptyFunctionsAndCmdletsToExport" {
+        New-ModuleManifest  -Path $script:testManifestPath -Confirm:$false -CmdletsToExport "commandlet1","commandlet2" `
+                            -FunctionsToExport "function1","function2" -AliasesToExport "alias1","alias2"
+        Update-ModuleManifest -Path $script:testManifestPath -CmdletsToExport "" -FunctionsToExport "" -AliasesToExport ""
+        $updatedModuleInfo = Test-ModuleManifest -Path $script:testManifestPath
 
+        AssertEquals $updatedModuleInfo.FunctionsToExport.Count 0 "FunctionsToExport count should be 0"
+        AssertEquals $updatedModuleInfo.CmdletsToExport.Count 0 "CmdletsToExport count should be 0"
+        AssertEquals $updatedModuleInfo.AliasesToExport.Count 0 "AliasesToExport count should be 0"
+    }
 
     # Purpose: Update a module manifest with same parameters
     #
@@ -636,7 +674,6 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
         
     } 
 
-
     # Purpose: Validate Update-ModuleManifest will throw errors when there are paths defined in FilePath that are not in the module base
     #
     # Action:
@@ -686,6 +723,25 @@ Describe PowerShell.PSGet.UpdateModuleManifest -Tags 'BVT','InnerLoop' {
                                           -expectedFullyQualifiedErrorId "InvalidPackageManagementProviders,Update-ModuleManifest"
     } 
 
+    # Purpose: Validate Update-ModuleManifest will throw errors when an invalid RootModule is provided
+    #
+    # Action:
+    #      Update-ModuleManifest -Path [Path] -RootModule [InvalidRootModule]
+    #
+    # Expected Result: Update-ModuleManifest should throw errors about the invalid RootModule
+    #
+    It UpdateModuleManifestWithInvalidRootModule {
+
+        New-ModuleManifest -path $script:testManifestPath
+
+        $InvalidRootModule = "\/"
+        AssertFullyQualifiedErrorIdEquals -scriptblock {Update-ModuleManifest -Path $script:testManifestPath -RootModule $InvalidRootModule} `
+                                          -expectedFullyQualifiedErrorId "UpdateManifestFileFail,Update-ModuleManifest"
+
+        $newModuleInfo = Test-ModuleManifest -Path $script:testManifestPath
+        Assert ($newModuleInfo.RootModule -contains $InvalidRootModule -eq $False) 'Module Manifest should not contain an invalid root module'
+    }`
+    -Skip:$($PSVersionTable.PSVersion -lt '5.1.0')
 
     # Purpose: Validate Update-ModuleManifest will throw errors if the original manifest fail the Test-ModuleManifest
     #

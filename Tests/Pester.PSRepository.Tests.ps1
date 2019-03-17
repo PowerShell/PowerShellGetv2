@@ -30,6 +30,16 @@ Describe 'Test Register-PSRepository and Register-PackageSource for PSGallery re
         Unregister-PSRepository -Name $RepositoryName -ErrorAction SilentlyContinue
     }
 
+    It 'Should pipe from Get-PSRepository to Set' {
+        Register-PSRepository -Default
+
+        Get-PSRepository $RepositoryName | Set-PSRepository -InstallationPolicy Trusted
+
+        $repo = Get-PSRepository $RepositoryName
+        $repo.Name | should be $RepositoryName
+        $repo.Trusted | should be $true
+    }
+
     It 'Register-PSRepository -Default: Should work' {
         Register-PSRepository -Default
         $repo = Get-PSRepository $RepositoryName
@@ -49,6 +59,25 @@ Describe 'Test Register-PSRepository and Register-PackageSource for PSGallery re
         $repo = Get-PSRepository $RepositoryName
         $repo.Name | should be $RepositoryName
         $repo.Trusted | should be $true
+    }
+
+    It 'Register-PSRepository File system location with special chars' {
+        $tmpdir = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath 'ps repo testing [$!@^&test(;)]'
+        if (-not (Test-Path -LiteralPath $tmpdir)) {
+            New-Item -Path $tmpdir -ItemType Directory > $null
+        }
+        try {
+            Register-PSRepository -Name 'Test Repo' -SourceLocation $tmpdir
+            try {
+                $repo = Get-PSRepository -Name 'Test Repo'
+                $repo.Name | should be 'Test Repo'
+                $repo.SourceLocation | should be $tmpdir
+            } finally {
+                Unregister-PSRepository -Name 'Test Repo' -ErrorAction SilentlyContinue
+            }
+        } finally {
+            Remove-Item -LiteralPath $tmpdir -Force -Recurse
+        }
     }
 
     It 'Reregister PSGallery again: Should fail' {

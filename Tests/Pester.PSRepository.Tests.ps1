@@ -226,9 +226,16 @@ Describe 'Test Register-PSRepository for PSTestGallery repository' -tags 'BVT', 
 
     BeforeAll {
         Install-NuGetBinaries
+        Get-PSRepository |
+            Where-Object -Property SourceLocation -eq $SourceLocation |
+            Unregister-PSRepository
     }
 
     BeforeEach {
+        Unregister-PSRepository -Name $TestRepositoryName -ErrorAction SilentlyContinue
+    }
+
+    BeforeAll {
         Unregister-PSRepository -Name $TestRepositoryName -ErrorAction SilentlyContinue
     }
 
@@ -254,9 +261,16 @@ Describe 'Test Set-PSRepository for PSTestGallery repository' -tags 'BVT', 'Inne
 
     BeforeAll {
         Install-NuGetBinaries
+        Get-PSRepository |
+            Where-Object -Property SourceLocation -eq $SourceLocation |
+            Unregister-PSRepository
     }
 
     BeforeEach {
+        Unregister-PSRepository -Name $TestRepositoryName -ErrorAction SilentlyContinue
+    }
+
+    BeforeAll {
         Unregister-PSRepository -Name $TestRepositoryName -ErrorAction SilentlyContinue
     }
 

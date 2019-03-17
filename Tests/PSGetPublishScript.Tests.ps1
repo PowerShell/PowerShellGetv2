@@ -86,6 +86,45 @@ function SuiteCleanup {
     RemoveItem $script:TempScriptsPath
 }
 
+Describe PowerShell.PSGet.PublishNonEnglishCharacterScriptTests -Tags 'BVT' {
+    BeforeAll {
+        SuiteSetup
+    }
+
+    AfterAll {
+        SuiteCleanup
+    }
+
+    BeforeEach {
+
+    }
+
+    AfterEach {
+        RemoveItem "$script:PSGalleryRepoPath\*"
+        RemoveItem $script:PublishScriptFilePath
+        RemoveItem "$script:TempScriptsPath\*.ps1"
+        RemoveItem "$script:TempScriptsLiteralPath\*"
+
+    }
+
+    It "PublishScriptRoundTripsNonAnsiCharacters" {
+        $description = "Remplace toutes les occurrences d'un modèle de caractère"
+        New-ScriptFileInfo -Path $script:PublishScriptFilePath `
+            -Version $script:PublishScriptVersion `
+            -Author Author@contoso.com `
+            -Description $description `
+            -Force
+
+        $sfi = Test-ScriptFileInfo -Path $script:PublishScriptFilePath
+        AssertEquals $description $sfi.Description
+
+        Publish-Script -Path $script:PublishScriptFilePath -NuGetApiKey $script:ApiKey
+        $psgetItemInfo = Find-Script $script:PublishScriptName
+
+        AssertEquals $description $psgetItemInfo.description
+    }
+
+}
 Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
     BeforeAll {
         SuiteSetup
@@ -120,6 +159,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
         RemoveItem "$script:TempScriptsLiteralPath\*"
 
     }
+
 
 
 
@@ -1142,7 +1182,7 @@ Describe PowerShell.PSGet.PublishScriptTests -Tags 'BVT','InnerLoop' {
 
     # Purpose: Validate that Publish-Module prompts to upgrade NuGet.exe if local NuGet.exe file is less than minimum required version
     #
-    # Action: Publish-Script 
+    # Action: Publish-Script
     #
     # Expected Result: Publish operation should fail, NuGet.exe should not upgrade to latest version
     #

@@ -6,7 +6,7 @@ function Set-PSRepository {
         HelpUri = 'https://go.microsoft.com/fwlink/?LinkID=517128')]
     Param
     (
-        [Parameter(Mandatory = $true, Position = 0)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipelineByPropertyName = $true)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Name,
@@ -166,7 +166,7 @@ function Set-PSRepository {
         }
 
         $PSBoundParameters[$script:PackageManagementProviderParam] = $PackageManagementProvider
-        $PSBoundParameters.Add("Trusted", $Trusted)
+        $PSBoundParameters["Trusted"] = $Trusted
         $PSBoundParameters["Provider"] = $script:PSModuleProviderName
         $PSBoundParameters["MessageResolver"] = $script:PackageManagementMessageResolverScriptBlock
 

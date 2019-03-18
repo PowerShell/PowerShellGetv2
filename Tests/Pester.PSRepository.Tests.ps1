@@ -9,6 +9,7 @@ $SourceLocation = 'https://www.poshtestgallery.com/api/v2/'
 $PublishLocation = 'https://www.poshtestgallery.com/api/v2/package/'
 $ScriptSourceLocation = 'https://www.poshtestgallery.com/api/v2/items/psscript/'
 $ScriptPublishLocation = 'https://www.poshtestgallery.com/api/v2/package/'
+$TestRepositoryName = 'PSTestGallery'
 
 Describe 'Test Register-PSRepository and Register-PackageSource for PSGallery repository' -tags 'BVT', 'InnerLoop' {
 
@@ -248,4 +249,85 @@ Describe 'Test Set-PSRepository and Set-PackageSource for PSGallery repository' 
         $ev[0].FullyQualifiedErrorId | Should be 'ParameterIsNotAllowedWithPSGallery,Add-PackageSource,Microsoft.PowerShell.PackageManagement.Cmdlets.SetPackageSource'
     } `
         -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
+}
+
+Describe 'Test Register-PSRepository for PSTestGallery repository' -tags 'BVT', 'InnerLoop' {
+
+    BeforeAll {
+        Install-NuGetBinaries
+        Get-PSRepository |
+            Where-Object -Property SourceLocation -eq $SourceLocation |
+            Unregister-PSRepository
+    }
+
+    BeforeEach {
+        Unregister-PSRepository -Name $TestRepositoryName -ErrorAction SilentlyContinue
+    }
+
+    BeforeAll {
+        Unregister-PSRepository -Name $TestRepositoryName -ErrorAction SilentlyContinue
+    }
+
+    It 'Register-PSRepository -Name $TestRepositoryName -SourceLocation $SourceLocation -ScriptSourceLocation $SourceLocation -PublishLocation $SourceLocation -ScriptPublishLocation $SourceLocation : Should work' {
+        $paramRegisterPSRepository = @{
+            Name                  = $TestRepositoryName
+            SourceLocation        = $SourceLocation
+            PublishLocation       = $SourceLocation
+            ScriptSourceLocation  = $SourceLocation
+            ScriptPublishLocation = $SourceLocation
+        }
+
+        { Register-PSRepository @paramRegisterPSRepository } | Should not Throw
+        $repo = Get-PSRepository -Name $TestRepositoryName
+        $repo.SourceLocation | Should be $SourceLocation
+        $repo.ScriptSourceLocation | Should be $SourceLocation
+        $repo.PublishLocation | Should be $SourceLocation
+        $repo.ScriptPublishLocation | Should be $SourceLocation
+    }
+}
+
+Describe 'Test Set-PSRepository for PSTestGallery repository' -tags 'BVT', 'InnerLoop' {
+
+    BeforeAll {
+        Install-NuGetBinaries
+        Get-PSRepository |
+            Where-Object -Property SourceLocation -eq $SourceLocation |
+            Unregister-PSRepository
+    }
+
+    BeforeEach {
+        Unregister-PSRepository -Name $TestRepositoryName -ErrorAction SilentlyContinue
+    }
+
+    BeforeAll {
+        Unregister-PSRepository -Name $TestRepositoryName -ErrorAction SilentlyContinue
+    }
+
+    It 'Set-PSRepository -Name $TestRepositoryName -SourceLocation $SourceLocation -ScriptSourceLocation $SourceLocation -PublishLocation $SourceLocation -ScriptPublishLocation $SourceLocation : Should work' {
+        $paramRegisterPSRepository = @{
+            Name                  = $TestRepositoryName
+            SourceLocation        = $SourceLocation
+            PublishLocation       = $PublishLocation
+            ScriptSourceLocation  = $ScriptSourceLocation
+            ScriptPublishLocation = $ScriptPublishLocation
+        }
+
+        Register-PSRepository @paramRegisterPSRepository
+
+        $paramSetPSRepository = @{
+            Name                  = $TestRepositoryName
+            SourceLocation        = $SourceLocation
+            PublishLocation       = $SourceLocation
+            ScriptSourceLocation  = $SourceLocation
+            ScriptPublishLocation = $SourceLocation
+        }
+
+        { Set-PSRepository @paramSetPSRepository } | Should not Throw
+
+        $repo = Get-PSRepository -Name $TestRepositoryName
+        $repo.SourceLocation | Should be $SourceLocation
+        $repo.ScriptSourceLocation | Should be $SourceLocation
+        $repo.PublishLocation | Should be $SourceLocation
+        $repo.ScriptPublishLocation | Should be $SourceLocation
+    }
 }

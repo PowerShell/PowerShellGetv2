@@ -31,10 +31,9 @@ function SuiteSetup {
     $psgetModuleInfo = Import-Module PowerShellGet -Global -Force -Passthru
     Import-LocalizedData  script:LocalizedData -filename PSGet.Resource.psd1 -BaseDirectory $psgetModuleInfo.ModuleBase
 
-    $script:moduleSourcesFilePath= Join-Path $script:PSGetLocalAppDataPath "PSRepositories.xml"
+    $script:moduleSourcesFilePath = Join-Path $script:PSGetLocalAppDataPath "PSRepositories.xml"
     $script:moduleSourcesBackupFilePath = Join-Path $script:PSGetLocalAppDataPath "PSRepositories.xml_$(get-random)_backup"
-    if(Test-Path $script:moduleSourcesFilePath)
-    {
+    if (Test-Path $script:moduleSourcesFilePath) {
         Rename-Item $script:moduleSourcesFilePath $script:moduleSourcesBackupFilePath -Force
     }
 
@@ -42,12 +41,10 @@ function SuiteSetup {
 }
 
 function SuiteCleanup {
-    if(Test-Path $script:moduleSourcesBackupFilePath)
-    {
+    if (Test-Path $script:moduleSourcesBackupFilePath) {
         Move-Item $script:moduleSourcesBackupFilePath $script:moduleSourcesFilePath -Force
     }
-    else
-    {
+    else {
         RemoveItem $script:moduleSourcesFilePath
     }
 
@@ -55,7 +52,7 @@ function SuiteCleanup {
     $null = Import-PackageProvider -Name PowerShellGet -Force
 }
 
-Describe PowerShell.PSGet.FindModuleTests -Tags 'BVT','InnerLoop' {
+Describe PowerShell.PSGet.FindModuleTests -Tags 'BVT', 'InnerLoop' {
 
     BeforeAll {
         SuiteSetup
@@ -120,7 +117,29 @@ Describe PowerShell.PSGet.FindModuleTests -Tags 'BVT','InnerLoop' {
     #
     It "FindModuleNonExistentModule" {
         AssertFullyQualifiedErrorIdEquals -scriptblock {Find-Module NonExistentModule} `
-                                          -expectedFullyQualifiedErrorId "NoMatchFoundForCriteria,Microsoft.PowerShell.PackageManagement.Cmdlets.FindPackage"
+            -expectedFullyQualifiedErrorId "NoMatchFoundForCriteria,Microsoft.PowerShell.PackageManagement.Cmdlets.FindPackage"
+    }
+
+    # Purpose: FindScriptNotModule
+    #
+    # Action: Find-Module Fabrikam-ServerScript
+    #
+    # Expected Result: Should fail
+    #
+    It "FindScriptNotModule" {
+        AssertFullyQualifiedErrorIdEquals -scriptblock {Find-Module Fabrikam-ServerScript} `
+            -expectedFullyQualifiedErrorId 'MatchInvalidType,Find-Module'
+    }
+
+    # Purpose: FindScriptNotModuleWildcard
+    #
+    # Action: Find-Module Fabrikam-ServerScript
+    #
+    # Expected Result: Should not return anything
+    #
+    It "FindScriptNotModuleWildcard" {
+        $res = Find-Module Fabrikam-ServerScript*
+        Assert (-not $res) "Find-Module returned a script"
     }
 
     # Purpose: FindModuleWithVersionParams
@@ -131,7 +150,7 @@ Describe PowerShell.PSGet.FindModuleTests -Tags 'BVT','InnerLoop' {
     #
     It "FindModuleWithVersionParams" {
         AssertFullyQualifiedErrorIdEquals -scriptblock {Find-Module ContosoServer -MinimumVersion 1.0 -RequiredVersion 5.0} `
-                                          -expectedFullyQualifiedErrorId "VersionRangeAndRequiredVersionCannotBeSpecifiedTogether,Find-Module"
+            -expectedFullyQualifiedErrorId "VersionRangeAndRequiredVersionCannotBeSpecifiedTogether,Find-Module"
     }
 
     # Purpose: Find a module using MinimumVersion
@@ -153,7 +172,7 @@ Describe PowerShell.PSGet.FindModuleTests -Tags 'BVT','InnerLoop' {
     #
     It "FindModuleWithMinVersionNotAvailable" {
         AssertFullyQualifiedErrorIdEquals -scriptblock {Find-Module ContosoServer -MinimumVersion 10.0} `
-                                          -expectedFullyQualifiedErrorId "NoMatchFoundForCriteria,Microsoft.PowerShell.PackageManagement.Cmdlets.FindPackage"
+            -expectedFullyQualifiedErrorId "NoMatchFoundForCriteria,Microsoft.PowerShell.PackageManagement.Cmdlets.FindPackage"
     }
 
     # Purpose: FindModuleWithReqVersionNotAvailable
@@ -164,7 +183,7 @@ Describe PowerShell.PSGet.FindModuleTests -Tags 'BVT','InnerLoop' {
     #
     It "FindModuleWithReqVersionNotAvailable" {
         AssertFullyQualifiedErrorIdEquals -scriptblock {Find-Module ContosoServer -RequiredVersion 10.0} `
-                                          -expectedFullyQualifiedErrorId "NoMatchFoundForCriteria,Microsoft.PowerShell.PackageManagement.Cmdlets.FindPackage"
+            -expectedFullyQualifiedErrorId "NoMatchFoundForCriteria,Microsoft.PowerShell.PackageManagement.Cmdlets.FindPackage"
     }
 
     # Purpose: FindModuleWithRequiredVersion
@@ -185,8 +204,8 @@ Describe PowerShell.PSGet.FindModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: Should fail with error id
     #
     It "FindModuleWithMultipleModuleNamesAndReqVersion" {
-        AssertFullyQualifiedErrorIdEquals -scriptblock {Find-Module ContosoServer,ContosoClient -RequiredVersion 1.0} `
-                                          -expectedFullyQualifiedErrorId "VersionParametersAreAllowedOnlyWithSingleName,Find-Module"
+        AssertFullyQualifiedErrorIdEquals -scriptblock {Find-Module ContosoServer, ContosoClient -RequiredVersion 1.0} `
+            -expectedFullyQualifiedErrorId "VersionParametersAreAllowedOnlyWithSingleName,Find-Module"
     }
 
     # Purpose: FindModuleWithMultipleModuleNamesAndMinVersion
@@ -196,8 +215,8 @@ Describe PowerShell.PSGet.FindModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: Should fail with error id
     #
     It "FindModuleWithMultipleModuleNamesAndMinVersion" {
-        AssertFullyQualifiedErrorIdEquals -scriptblock {Find-Module ContosoServer,ContosoClient -MinimumVersion 1.0} `
-                                          -expectedFullyQualifiedErrorId "VersionParametersAreAllowedOnlyWithSingleName,Find-Module"
+        AssertFullyQualifiedErrorIdEquals -scriptblock {Find-Module ContosoServer, ContosoClient -MinimumVersion 1.0} `
+            -expectedFullyQualifiedErrorId "VersionParametersAreAllowedOnlyWithSingleName,Find-Module"
     }
 
     # Purpose: FindModuleWithWildcardNameAndReqVersion
@@ -208,7 +227,7 @@ Describe PowerShell.PSGet.FindModuleTests -Tags 'BVT','InnerLoop' {
     #
     It "FindModuleWithWildcardNameAndReqVersion" {
         AssertFullyQualifiedErrorIdEquals -scriptblock {Find-Module Contoso*er -RequiredVersion 1.0} `
-                                          -expectedFullyQualifiedErrorId "VersionParametersAreAllowedOnlyWithSingleName,Find-Module"
+            -expectedFullyQualifiedErrorId "VersionParametersAreAllowedOnlyWithSingleName,Find-Module"
     }
 
     # Purpose: FindModuleWithWildcardNameAndMinVersion
@@ -219,7 +238,7 @@ Describe PowerShell.PSGet.FindModuleTests -Tags 'BVT','InnerLoop' {
     #
     It "FindModuleWithWildcardNameAndMinVersion" {
         AssertFullyQualifiedErrorIdEquals -scriptblock {Find-Module Contoso*er -MinimumVersion 1.0} `
-                                          -expectedFullyQualifiedErrorId "VersionParametersAreAllowedOnlyWithSingleName,Find-Module"
+            -expectedFullyQualifiedErrorId "VersionParametersAreAllowedOnlyWithSingleName,Find-Module"
     }
 
     # Purpose: FindModuleWithMultiNames
@@ -229,7 +248,7 @@ Describe PowerShell.PSGet.FindModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: should find ContosoClient and ContosoServer modules
     #
     It "FindModuleWithMultiNames" {
-        $res = Find-Module ContosoClient,ContosoServer -Repository PSGallery
+        $res = Find-Module ContosoClient, ContosoServer -Repository PSGallery
         Assert ($res.Count -eq 2) "Find-Module with multiple names should not fail, $res"
     }
 
@@ -334,7 +353,7 @@ Describe PowerShell.PSGet.FindModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: Should return two role capabilities
     #
     It FindRoleCapabilityWithTwoRoleCapabilityNames {
-        $psgetRoleCapabilityInfos = Find-RoleCapability -Name Lev1Maintenance,Lev2Maintenance
+        $psgetRoleCapabilityInfos = Find-RoleCapability -Name Lev1Maintenance, Lev2Maintenance
 
         AssertEquals $psgetRoleCapabilityInfos.Count 2 "Find-RoleCapability did not return the expected RoleCapabilities, $psgetRoleCapabilityInfos"
 
@@ -360,7 +379,7 @@ Describe PowerShell.PSGet.FindModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: Should return two resources
     #
     It FindDscResourceWithTwoResourceNames {
-        $psgetDscResourceInfos = Find-DscResource -Name DscTestResource,NewDscTestResource
+        $psgetDscResourceInfos = Find-DscResource -Name DscTestResource, NewDscTestResource
 
         Assert ($psgetDscResourceInfos.Count -ge 2) "Find-DscResource did not return the expected DscResources, $psgetDscResourceInfos"
 
@@ -387,7 +406,7 @@ Describe PowerShell.PSGet.FindModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: Should return two command names
     #
     It FindCommandWithTwoResourceNames {
-        $psgetCommandInfos = Find-Command -Name Get-ContosoServer,Get-ContosoClient
+        $psgetCommandInfos = Find-Command -Name Get-ContosoServer, Get-ContosoClient
 
         Assert ($psgetCommandInfos.Count -ge 2) "Find-Command did not return the expected command names, $psgetCommandInfos"
 
@@ -396,7 +415,7 @@ Describe PowerShell.PSGet.FindModuleTests -Tags 'BVT','InnerLoop' {
     }
 }
 
-Describe PowerShell.PSGet.FindModuleTests.P1 -Tags 'P1','OuterLoop' {
+Describe PowerShell.PSGet.FindModuleTests.P1 -Tags 'P1', 'OuterLoop' {
 
     BeforeAll {
         SuiteSetup
@@ -458,7 +477,7 @@ Describe PowerShell.PSGet.FindModuleTests.P1 -Tags 'P1','OuterLoop' {
     #
     It FindModuleWithAllVersionsAndMinimumVersion {
         AssertFullyQualifiedErrorIdEquals -scriptblock {Find-Module ContosoClient -MinimumVersion 2.0 -Repository PSGallery -AllVersions} `
-                                          -expectedFullyQualifiedErrorId 'AllVersionsCannotBeUsedWithOtherVersionParameters,Find-Module'
+            -expectedFullyQualifiedErrorId 'AllVersionsCannotBeUsedWithOtherVersionParameters,Find-Module'
     }
 
     # Purpose: FindModuleWithAllVersionsAndRequiredVersion
@@ -469,7 +488,7 @@ Describe PowerShell.PSGet.FindModuleTests.P1 -Tags 'P1','OuterLoop' {
     #
     It FindModuleWithAllVersionsAndRequiredVersion {
         AssertFullyQualifiedErrorIdEquals -scriptblock {Find-Module ContosoClient -RequiredVersion 2.0 -Repository PSGallery -AllVersions} `
-                                          -expectedFullyQualifiedErrorId 'AllVersionsCannotBeUsedWithOtherVersionParameters,Find-Module'
+            -expectedFullyQualifiedErrorId 'AllVersionsCannotBeUsedWithOtherVersionParameters,Find-Module'
     }
 
     # Purpose: Validate Find-Module -Filter KeyWordNotExists
@@ -498,7 +517,7 @@ Describe PowerShell.PSGet.FindModuleTests.P1 -Tags 'P1','OuterLoop' {
         $DepencyModuleNames = $res1.Dependencies.Name
 
         $res2 = Find-Module -Name $ModuleName -IncludeDependencies -MaximumVersion "1.0" -MinimumVersion "0.1"
-        Assert ($res2.Count -ge ($DepencyModuleNames.Count+1)) "Find-Module with -IncludeDependencies returned wrong results, $res2"
+        Assert ($res2.Count -ge ($DepencyModuleNames.Count + 1)) "Find-Module with -IncludeDependencies returned wrong results, $res2"
 
         $DepencyModuleNames | ForEach-Object { Assert ($res2.Name -Contains $_) "Find-Module with -IncludeDependencies didn't return the $_ module, $($res2.Name)"}
     }
@@ -507,8 +526,8 @@ Describe PowerShell.PSGet.FindModuleTests.P1 -Tags 'P1','OuterLoop' {
 Describe PowerShell.PSGet.FindModuleTests.P2 -Tags 'P2', 'OuterLoop' {
 
     BeforeAll {
-        if(($PSEdition -eq 'Core') -or ($env:APPVEYOR_TEST_PASS -eq 'True')) {
-            return 
+        if (($PSEdition -eq 'Core') -or ($env:APPVEYOR_TEST_PASS -eq 'True')) {
+            return
         }
 
         SuiteSetup
@@ -518,8 +537,8 @@ Describe PowerShell.PSGet.FindModuleTests.P2 -Tags 'P2', 'OuterLoop' {
         SuiteCleanup
     }
 
-    if(($PSEdition -eq 'Core') -or ($env:APPVEYOR_TEST_PASS -eq 'True')) {
-        return 
+    if (($PSEdition -eq 'Core') -or ($env:APPVEYOR_TEST_PASS -eq 'True')) {
+        return
     }
 
     <#
@@ -533,11 +552,10 @@ Describe PowerShell.PSGet.FindModuleTests.P2 -Tags 'P2', 'OuterLoop' {
 
     $ParameterSetCount = $ParameterSets.Count
     $i = 1
-    foreach ($inputParameters in $ParameterSets)
-    {
+    foreach ($inputParameters in $ParameterSets) {
         Write-Verbose -Message "Combination #$i out of $ParameterSetCount"
         Write-Verbose -Message "$($inputParameters | Out-String)"
-        Write-Progress -Activity "Combination $i out of $ParameterSetCount" -PercentComplete $(($i/$ParameterSetCount) * 100)
+        Write-Progress -Activity "Combination $i out of $ParameterSetCount" -PercentComplete $(($i / $ParameterSetCount) * 100)
 
         $params = $inputParameters.FindModuleInputParameters
         Write-Verbose -Message ($params | Out-String)
@@ -546,25 +564,21 @@ Describe PowerShell.PSGet.FindModuleTests.P2 -Tags 'P2', 'OuterLoop' {
 
         It "FindModuleParameterCombinationsTests - Combination $i/$ParameterSetCount" {
 
-            if($inputParameters.PositiveCase)
-            {
+            if ($inputParameters.PositiveCase) {
                 $res = Invoke-Command -ScriptBlock $scriptBlock
 
-                if($inputParameters.ExpectedModuleCount -gt 1)
-                {
+                if ($inputParameters.ExpectedModuleCount -gt 1) {
                     Assert ($res.Count -ge $inputParameters.ExpectedModuleCount) "Combination #$i : Find-Module did not return expected module count. Actual value $($res.Count) should be greater than or equal to the expected value $($inputParameters.ExpectedModuleCount)."
                 }
-                else
-                {
+                else {
                     AssertEqualsCaseInsensitive $res.Name $inputParameters.ExpectedModuleNames "Combination #$i : Find-Module did not return expected module"
                 }
             }
-            else
-            {
+            else {
                 AssertFullyQualifiedErrorIdEquals -Scriptblock $scriptBlock -ExpectedFullyQualifiedErrorId $inputParameters.FullyQualifiedErrorId
             }
         }
 
-        $i = $i+1
-    } 
+        $i = $i + 1
+    }
 }

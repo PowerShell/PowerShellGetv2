@@ -369,7 +369,7 @@ function Publish-PSArtifactUtility {
     }
 
     try {
-        $NuspecFullName = New-NuspecFile $params
+        $NuspecFullName = New-NuspecFile @params
     }
     catch {
         Write-Error -Message "Failed to create nuspec file $_.Exception" -ErrorAction Stop

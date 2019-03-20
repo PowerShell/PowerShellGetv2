@@ -17,6 +17,7 @@ function New-NugetPackage {
         [switch]$UseDotnetCli
 
     )
+    Set-StrictMode -Off
 
     if (-Not(Test-Path -Path $NuspecPath -PathType Leaf)) {
         throw "A nuspec file does not exist at $NuspecPath, provide valid path to a .nuspec"

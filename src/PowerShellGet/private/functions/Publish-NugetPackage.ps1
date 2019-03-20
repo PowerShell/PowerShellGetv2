@@ -16,6 +16,7 @@ function Publish-NugetPackage {
         [Parameter(ParameterSetName = "UseDotnetCli")]
         [switch]$UseDotnetCli
     )
+    Set-StrictMode -Off
 
     $Destination = $Destination.TrimEnd("\")
 

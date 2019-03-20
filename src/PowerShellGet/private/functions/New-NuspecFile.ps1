@@ -47,6 +47,7 @@ function New-NuspecFile {
         [PSObject[]]$Files
 
     )
+    Set-StrictMode -Off
 
     $nameSpaceUri = "http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd"
     [xml]$xml = New-Object System.Xml.XmlDocument

@@ -104,10 +104,9 @@ function New-NugetPackage {
 
     }
 
-    [xml]$nuspecXml = Get-Content -Path $NuspecPath
-    $version = $nuspecXml.package.metadata.version
-    $id = $nuspecXml.package.metadata.id
-    $nupkgFullFile = Join-Path $OutputPath -ChildPath "$id.$version.nupkg"
+    $stdOut = $process.StandardOutput.ReadToEnd()
+    $stdOut -match "Successfully created package '(.*.nupkg)'" | Out-Null
+    $nupkgFullFile = $matches[1]
 
     $stdOut = $process.StandardOutput.ReadToEnd()
 

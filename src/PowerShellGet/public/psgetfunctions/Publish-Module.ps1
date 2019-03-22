@@ -76,7 +76,11 @@ function Publish-Module {
 
         [Parameter(ParameterSetName = "ModuleNameParameterSet")]
         [switch]
-        $AllowPrerelease
+        $AllowPrerelease,
+
+        [Parameter()]
+        [switch]
+        $EnforceMaximumTagLength
     )
 
     Begin {
@@ -541,22 +545,23 @@ function Publish-Module {
             $shouldProcessMessage = $LocalizedData.PublishModulewhatIfMessage -f ($moduleInfo.Version, $moduleInfo.Name)
             if ($Force -or $PSCmdlet.ShouldProcess($shouldProcessMessage, "Publish-Module")) {
                 $PublishPSArtifactUtility_Params = @{
-                    PSModuleInfo     = $moduleInfo
-                    ManifestPath     = $manifestPath
-                    NugetApiKey      = $NuGetApiKey
-                    Destination      = $DestinationLocation
-                    Repository       = $Repository
-                    NugetPackageRoot = $tempModulePath
-                    FormatVersion    = $FormatVersion
-                    ReleaseNotes     = $($ReleaseNotes -join "`r`n")
-                    Tags             = $Tags
-                    LicenseUri       = $LicenseUri
-                    IconUri          = $IconUri
-                    ProjectUri       = $ProjectUri
-                    Verbose          = $VerbosePreference
-                    WarningAction    = $WarningPreference
-                    ErrorAction      = $ErrorActionPreference
-                    Debug            = $DebugPreference
+                    PSModuleInfo            = $moduleInfo
+                    ManifestPath            = $manifestPath
+                    NugetApiKey             = $NuGetApiKey
+                    Destination             = $DestinationLocation
+                    Repository              = $Repository
+                    NugetPackageRoot        = $tempModulePath
+                    FormatVersion           = $FormatVersion
+                    ReleaseNotes            = $($ReleaseNotes -join "`r`n")
+                    Tags                    = $Tags
+                    EnforceMaximumTagLength = $EnforceMaximumTagLength
+                    LicenseUri              = $LicenseUri
+                    IconUri                 = $IconUri
+                    ProjectUri              = $ProjectUri
+                    Verbose                 = $VerbosePreference
+                    WarningAction           = $WarningPreference
+                    ErrorAction             = $ErrorActionPreference
+                    Debug                   = $DebugPreference
                 }
                 if ($PSBoundParameters.Containskey('Credential')) {
                     $PublishPSArtifactUtility_Params.Add('Credential', $Credential)

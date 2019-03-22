@@ -763,6 +763,83 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     } `
     -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
 
+    # Purpose: Test Publish-Module cmdlet warns when tag length is greater than 4000
+    #
+    # Action: Create a module manifest with PrivateData\PSData hashtable, try to publish
+    #
+    # Expected Result: Publish operation should succeed and should have warned about tag length.
+    #
+    It PublishModuleFunctionsAsTagsWarnWithoutEnforceMaximumTagLength {
+        $version = "1.0.0"
+        $Description = "$script:PublishModuleName module"
+        $Tags = "PSGet","DSC"
+        $Author = "AuthorName"
+        $CompanyName = "CompanyName"
+        $CopyRight = "CopyRight"
+
+        $functionNames = 1..250 | Foreach-Object { "Get-TestFunction$($_)" }
+        $tempFunctions = 1..250 | Foreach-Object { "function Get-TestFunction$($_) { Get-Date }" + [Environment]::NewLine }
+        Set-Content (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psm1") -Value $tempFunctions
+
+        New-ModuleManifest -Path (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1") `
+                           -ModuleVersion $version `
+                           -Description "$script:PublishModuleName module" `
+                           -NestedModules "$script:PublishModuleName.psm1" `
+                           -Author $Author `
+                           -CompanyName $CompanyName `
+                           -Copyright $CopyRight `
+                           -Tags $Tags `
+                           -FunctionsToExport $functionNames
+
+        Publish-Module -Path $script:PublishModuleBase `
+                       -NuGetApiKey $script:ApiKey `
+                       -Repository "PSGallery" `
+                       -WarningAction SilentlyContinue `
+                       -WarningVariable wa
+
+        Assert ("$wa".Contains('4000 characters')) "Warning messages should include 'Tag list exceeded 4000 characters and may not be accepted by some Nuget feeds.'"
+    } `
+    -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
+
+    # Purpose: Test Publish-Module cmdlet excludes functions from tags when using EnforceMaximumTagLength parameter
+    #
+    # Action: Create a module manifest with PrivateData\PSData hashtable, try to publish with EnforceMaxmimumTagLength parameter
+    #
+    # Expected Result: Publish operation should succeed and should not have warned about tag length
+    #
+    It PublishModuleFunctionsAsTagsWithEnforceMaximumTagLength {
+        $version = "1.0.0"
+        $Description = "$script:PublishModuleName module"
+        $Tags = "PSGet","DSC"
+        $Author = "AuthorName"
+        $CompanyName = "CompanyName"
+        $CopyRight = "CopyRight"
+
+        $functionNames = 1..250 | Foreach-Object { "Get-TestFunction$($_)" }
+        $tempFunctions = 1..250 | Foreach-Object { "function Get-TestFunction$($_) { Get-Date }" + [Environment]::NewLine }
+        Set-Content (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psm1") -Value $tempFunctions
+
+        New-ModuleManifest -Path (Join-Path -Path $script:PublishModuleBase -ChildPath "$script:PublishModuleName.psd1") `
+                           -ModuleVersion $version `
+                           -Description "$script:PublishModuleName module" `
+                           -NestedModules "$script:PublishModuleName.psm1" `
+                           -Author $Author `
+                           -CompanyName $CompanyName `
+                           -Copyright $CopyRight `
+                           -Tags $Tags `
+                           -FunctionsToExport $functionNames
+
+        Publish-Module -Path $script:PublishModuleBase `
+                       -NuGetApiKey $script:ApiKey `
+                       -Repository "PSGallery" `
+                       -EnforceMaximumTagLength `
+                       -WarningAction SilentlyContinue `
+                       -WarningVariable wa
+
+        Assert (-not "$wa".Contains('4000 characters')) "Warning messages should not include 'Tag list exceeded 4000 characters and may not be accepted by some Nuget feeds.'"
+    } `
+    -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
+
     # Purpose: Test Publish-Module cmdlet gets the PSData properties from the module manifest file and also with Uri objects specified to the cmdlet
     #
     # Action: Create a module manifest with PrivateData\PSData hashtable, try to publish it with Uri objects to ProjectUri, IconUri and LicenseUri parameters

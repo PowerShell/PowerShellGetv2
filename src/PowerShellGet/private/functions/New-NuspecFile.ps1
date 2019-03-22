@@ -59,10 +59,9 @@ function New-NuspecFile {
     $packageElement = $xml.CreateElement("package", $nameSpaceUri)
     $metaDataElement = $xml.CreateElement("metadata", $nameSpaceUri)
 
-    #truncate tags if they exceed nuspec specifications for size.
-    $Tags = $Tags -Join " "
-
-    if ($Tags.Length -gt 4000) {
+    # warn we're over 4000 characters for standard nuget servers
+    $tagsString = $Tags -Join " "
+    if ($tagsString.Length -gt 4000) {
         Write-Warning -Message "Tag list exceeded 4000 characters and may not be accepted by some Nuget feeds."
     }
 

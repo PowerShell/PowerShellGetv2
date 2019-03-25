@@ -134,7 +134,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     #
     # Expected Result: should be able to publish a module
     #
-    It PublishModuleWithNameForSxSVersion {
+    It "PublishModuleWithNameForSxSVersion" {
         $version = "2.0.0.0"
         $semanticVersion = '2.0.0'
         RemoveItem "$script:PublishModuleBase\*"

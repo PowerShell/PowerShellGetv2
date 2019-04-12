@@ -28,8 +28,7 @@ function Publish-PSArtifactUtility
         [string]
         $Repository,
 
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
+        [Parameter(Mandatory=$false)]
         [string]
         $NugetApiKey,
 
@@ -531,7 +530,10 @@ $CsprojContent = @"
             $ArgumentList += 'push'
             $ArgumentList += "`"$NupkgPath`""
             $ArgumentList += @('--source', "`"$($Destination.TrimEnd('\'))`"")
-            $ArgumentList += @('--api-key', "`"$NugetApiKey`"")
+
+            if ($PSBoundParameters.Containskey('NugetApiKey')) {
+                $ArgumentList += @('--api-key', "`"$NugetApiKey`"")
+            }
         }
         elseif($script:NuGetExePath) {
             $StartProcess_params['FilePath'] = $script:NuGetExePath
@@ -539,8 +541,10 @@ $CsprojContent = @"
             $ArgumentList = @('push')
             $ArgumentList += "`"$NupkgPath`""
             $ArgumentList += @('-source', "`"$($Destination.TrimEnd('\'))`"")
-            $ArgumentList += @('-apikey', "`"$NugetApiKey`"")
             $ArgumentList += '-NonInteractive'
+            if ($PSBoundParameters.Containskey('NugetApiKey')) {
+                $ArgumentList += @('--api-key', "`"$NugetApiKey`"")
+            }
         }
         $StartProcess_params['ArgumentList'] = $ArgumentList
 

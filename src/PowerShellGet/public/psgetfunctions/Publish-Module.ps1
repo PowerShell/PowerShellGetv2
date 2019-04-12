@@ -28,7 +28,6 @@ function Publish-Module {
         $RequiredVersion,
 
         [Parameter()]
-        [ValidateNotNullOrEmpty()]
         [string]
         $NuGetApiKey,
 
@@ -150,20 +149,6 @@ function Publish-Module {
 
         $message = $LocalizedData.PublishLocation -f ($DestinationLocation)
         Write-Verbose -Message $message
-
-        if (-not $NuGetApiKey.Trim()) {
-            if (Microsoft.PowerShell.Management\Test-Path -Path $DestinationLocation) {
-                $NuGetApiKey = "$(Get-Random)"
-            }
-            else {
-                $message = $LocalizedData.NuGetApiKeyIsRequiredForNuGetBasedGalleryService -f ($Repository, $DestinationLocation)
-                ThrowError -ExceptionName "System.ArgumentException" `
-                    -ExceptionMessage $message `
-                    -ErrorId "NuGetApiKeyIsRequiredForNuGetBasedGalleryService" `
-                    -CallerPSCmdlet $PSCmdlet `
-                    -ErrorCategory InvalidArgument
-            }
-        }
 
         $providerName = Get-ProviderName -PSCustomObject $moduleSource
         if ($providerName -ne $script:NuGetProviderName) {
@@ -543,7 +528,6 @@ function Publish-Module {
                 $PublishPSArtifactUtility_Params = @{
                     PSModuleInfo     = $moduleInfo
                     ManifestPath     = $manifestPath
-                    NugetApiKey      = $NuGetApiKey
                     Destination      = $DestinationLocation
                     Repository       = $Repository
                     NugetPackageRoot = $tempModulePath
@@ -560,6 +544,9 @@ function Publish-Module {
                 }
                 if ($PSBoundParameters.Containskey('Credential')) {
                     $PublishPSArtifactUtility_Params.Add('Credential', $Credential)
+                }
+                if ($PSBoundParameters.Containskey('NugetApiKey')) {
+                    $PublishPSArtifactUtility_Params.Add('NugetApiKey', $NuGetApiKey)
                 }
                 Publish-PSArtifactUtility @PublishPSArtifactUtility_Params
             }

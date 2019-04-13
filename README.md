@@ -132,7 +132,7 @@ It is therefore easy to see with  ```Get Module``` that the version under develo
 
 ![alt text](./imgs/readme-getmodule-1.png "")
 
-To remove this module and revert to the production PowerShellGallery published version simply remove the folder from the module path. (if running VSCode select Terminal>Run Task>Remove Development Module).
+To remove this module and revert to the production PowerShellGallery published version, simply remove the folder from the module path. (if running VSCode select Terminal>Run Task>Remove Development Module).
 
 Running Tests
 =============

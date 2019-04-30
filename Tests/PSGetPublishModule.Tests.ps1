@@ -1176,7 +1176,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         finally {
             Install-NuGetBinaries
         }
-    } -Skip:$($PSEdition -eq 'Core')  -or ($env:APPVEYOR_TEST_PASS -eq 'True')
+    } -Skip:$($PSEdition -eq 'Core'  -or $env:APPVEYOR_TEST_PASS -eq 'True')
 
     # Purpose: Validate that Publish-Module prompts to install NuGet.exe if NuGet.exe file is not found
     #
@@ -1234,7 +1234,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         finally {
             Install-NuGetBinaries
         }
-    } -Skip:$($PSEdition -eq 'Core')  -or ($env:APPVEYOR_TEST_PASS -eq 'True')
+    } -Skip:$($PSEdition -eq 'Core' -or $env:APPVEYOR_TEST_PASS -eq 'True')
 
     # Purpose: Validate that Publish-Module prompts to upgrade NuGet.exe if local NuGet.exe file is less than minimum required version
     #
@@ -1300,7 +1300,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         finally {
             Install-NuGetBinaries
         }
-    } -Skip:$($PSEdition -eq 'Core')  -or ($env:APPVEYOR_TEST_PASS -eq 'True')
+    } -Skip:$($PSEdition -eq 'Core'  -or $env:APPVEYOR_TEST_PASS -eq 'True')
 
     # Purpose: Validate that Publish-Module prompts to install NuGet.exe if file not found
     #
@@ -1357,7 +1357,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         finally {
             Install-NuGetBinaries
         }
-    } -Skip:$($PSEdition -eq 'Core')  -or ($env:APPVEYOR_TEST_PASS -eq 'True')
+    } -Skip:$($PSEdition -eq 'Core'  -or $env:APPVEYOR_TEST_PASS -eq 'True')
 }
 
 Describe PowerShell.PSGet.PublishModuleTests.P1 -Tags 'P1','OuterLoop' {

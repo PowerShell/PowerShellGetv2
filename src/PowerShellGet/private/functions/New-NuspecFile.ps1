@@ -8,7 +8,7 @@ function New-NuspecFile {
         [string]$Id,
 
         [Parameter(Mandatory = $true)]
-        [version]$Version,
+        [string]$Version,
 
         [Parameter(Mandatory = $true)]
         [string]$Description,

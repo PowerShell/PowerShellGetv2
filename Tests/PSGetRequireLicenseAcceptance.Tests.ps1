@@ -345,7 +345,7 @@ Describe PowerShell.PSGet.PSGetRequireLicenseAcceptance.InstallSaveUpdate -Tags 
     It "InstallModuleAcceptLicense" {
         Install-Module ModuleRequireLicenseAcceptance -Repository PSGallery -AcceptLicense -ErrorAction Stop -Verbose 4> .\verbose.txt
         $res = Get-Module ModuleRequireLicenseAcceptance -ListAvailable
-        Assert (($res.Count -eq 7) -and ($res.Name -eq "ModuleRequireLicenseAcceptance")) "Install-Module should install the module if -AcceptLicense is specified ($($res | Out-String; Get-content .\verbose.txt)) "
+        Assert (($res.Count -eq 1) -and ($res.Name -eq "ModuleRequireLicenseAcceptance")) "Install-Module should install the module if -AcceptLicense is specified ($($res | Out-String; Get-content .\verbose.txt; Get-Module -ListAvailable | Out-String)) "
     }
 
 

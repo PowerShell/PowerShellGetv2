@@ -26,6 +26,11 @@ function Update-Module {
         [PSCredential]
         $Credential,
 
+        [Parameter()]
+        [ValidateSet("CurrentUser", "AllUsers")]
+        [string]
+        $Scope,
+
         [Parameter(ValueFromPipelineByPropertyName = $true)]
         [ValidateNotNullOrEmpty()]
         [Uri]
@@ -50,6 +55,17 @@ function Update-Module {
 
     Begin {
         Install-NuGetClientBinaries -CallerPSCmdlet $PSCmdlet -Proxy $Proxy -ProxyCredential $ProxyCredential
+
+        if ($Scope -eq "AllUsers" -and -not (Test-RunningAsElevated)) {
+          # Throw an error when Update-Module is used as a non-admin user and '-Scope AllUsers'
+          $message = $LocalizedData.UpdateModuleAdminPrivilegeRequiredForAllUsersScope -f @($script:programFilesModulesPath, $script:MyDocumentsModulesPath)
+
+          ThrowError -ExceptionName "System.ArgumentException" `
+              -ExceptionMessage $message `
+              -ErrorId "UpdateModuleAdminPrivilegeRequiredForAllUsersScope" `
+              -CallerPSCmdlet $PSCmdlet `
+              -ErrorCategory InvalidArgument
+        }
 
         # Module names already tried in the current pipeline
         $moduleNamesInPipeline = @()
@@ -135,7 +151,11 @@ function Update-Module {
             $PSBoundParameters["PackageManagementProvider"] = $providerName
             $PSBoundParameters["InstallUpdate"] = $true
 
-            $PSBoundParameters["Scope"] = Get-InstallationScope -PreviousInstallLocation $psgetItemInfo.InstalledLocation -CurrentUserPath $script:MyDocumentsModulesPath
+            if (-not $Scope) {
+              $Scope = Get-InstallationScope -PreviousInstallLocation $psgetItemInfo.InstalledLocation -CurrentUserPath $script:MyDocumentsModulesPath
+            }
+
+            $PSBoundParameters["Scope"] = $Scope
 
             $sid = PackageManagement\Install-Package @PSBoundParameters
         }

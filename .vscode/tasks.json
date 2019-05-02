@@ -1,0 +1,97 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build and Import Module",
+            "command": "pwsh",
+            "type": "shell",
+            "windows": {
+                "command": "c:\\windows\\system32\\WindowsPowerShell\\v1.0\\powershell.exe"
+            },
+            "args": [
+                "-command",
+                "Import-Module ${workspaceFolder}\\tools\\build.psm1;",
+                "Install-DevelopmentModule",
+            ],
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false,
+            }
+        },
+        {
+            "label": "Install Dependencies",
+            "command": "pwsh",
+            "windows": {
+                "command": "c:\\windows\\system32\\WindowsPowerShell\\v1.0\\powershell.exe"
+            },
+            "args": [
+                "-command",
+                "Import-Module ${workspaceFolder}\\tools\\build.psm1;",
+                "Install-Dependencies"
+            ],
+            "problemMatcher": [],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false,
+            }
+        },
+        {
+            "label": "Remove Development Module",
+            "command": "pwsh",
+            "windows": {
+                "command": "c:\\windows\\system32\\WindowsPowerShell\\v1.0\\powershell.exe"
+            },
+            "args": [
+                "-command",
+                "Import-Module ${workspaceFolder}\\tools\\build.psm1;",
+                "Uninstall-DevelopmentModule"
+            ],
+            "problemMatcher": [],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false,
+            }
+        },
+        {
+            "label": "Run Full Test Suite",
+            "command": "pwsh",
+            "windows": {
+                "command": "c:\\windows\\system32\\WindowsPowerShell\\v1.0\\powershell.exe"
+            },
+            "args": [
+                "-command",
+                "Import-Module ${workspaceFolder}\\tools\\build.psm1;",
+                "Install-Dependencies;",
+                "Invoke-PowerShellGetTest"
+            ],
+            "problemMatcher": [],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false,
+            }
+        }
+    ]
+}

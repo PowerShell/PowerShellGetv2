@@ -106,8 +106,41 @@ Import-Module src/PowerShellGet
 ```
 
 
+Local Development
+=================
+### Visual Studio Code:-
+1. Open VSCode choosing "Run as Administrator"
+2. Select Terminal>Run Task>Install Dependencies
+3. Select Terminal>Run Task>Build and Import Module
+
+for subsequent changes you can just run 'Build and Import Module' or press <kbd>ctrl</kbd> + <kbd>shift</kbd> + <kbd>B</kbd>
+
+### Standard PowerShell:-
+1. Open an administrative PowerShell prompt
+2. Run the following commands
+```PowerShell
+Import-Module "$ClonePath\tools\build.psm1"
+Install-Dependencies
+Install-DevelopmentModule
+```
+
+This will take the published module from ./dist and install it into the powershell module path under the current version of PowerShellGet apending 9999 to the version number.
+
+An explicit or implicit (such as when the test suite is invoked) import of the PowerShell get module will ensure the module version under development gets loaded.
+
+It is therefore easy to see with  ```Get Module``` that the version under development is loaded, like this:-
+
+![alt text](./imgs/readme-getmodule-1.png "")
+
+To remove this module and revert to the production PowerShellGallery published version, simply remove the folder from the module path. (if running VSCode select Terminal>Run Task>Remove Development Module).
+
 Running Tests
 =============
+
+### VSCode
+You can run the test task Terminal>Run Task>Run Full Test Suite
+
+### Non VSCode
 
 Pester-based PowerShellGet Tests are located in `<branch>/PowerShellGet/Tests` folder.
 
@@ -115,20 +148,7 @@ Run following commands in PowerShell Console with Administrator privileges.
 
 ```powershell
 Import-Module "$ClonePath\tools\build.psm1"
-
 Install-Dependencies
-
-# Option 1: Execute the following, replacing $ClonePath, when testing PowerShellGet module changes under $ClonePath.
-# $env:PSModulePath = "$ClonePath\src;$env:PSModulePath"
-
-# Option 2: Execute the following commands to run tests with the merged PSModule.psm1
-<#
-Update-ModuleManifestFunctions
-Publish-ModuleArtifacts
-Install-PublishedModule
-#>
-
-# Run tests
 Invoke-PowerShellGetTest
 ```
 

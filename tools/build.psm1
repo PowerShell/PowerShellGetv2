@@ -131,7 +131,7 @@ function Install-PackageManagement {
 
             $null = Microsoft.PowerShell.Management\New-Item -Path $OneGetModulePath -Force -ItemType Directory
             Microsoft.PowerShell.Management\Copy-Item -Path "$($OneGetWithVersion.FullName)\*" -Destination "$OneGetModulePath\" -Recurse -Force
-            Get-Module -ListAvailable -Name $OneGetModuleName | Microsoft.PowerShell.Core\Where-Object {$_.Version -eq $OneGetVersion}
+            Get-Module -ListAvailable -Name $OneGetModuleName | Microsoft.PowerShell.Core\Where-Object { $_.Version -eq $OneGetVersion }
         }
         finally {
             Remove-Item -Path $TempModulePath -Recurse -Force
@@ -425,10 +425,24 @@ function Publish-ModuleArtifacts {
 }
 function Install-PublishedModule {
     # function to install the merged module artifact from /dist into the module path.
+    Param (
+        [switch]$LocalDevInstall
+    )
+
     $moduleFolder = Join-Path -Path $ArtifactRoot -ChildPath 'PowerShellGet'
-    $PowerShellGetModuleInfo = Test-ModuleManifest "$moduleFolder\PowerShellGet.psd1" -ErrorAction Ignore
+    $manifestFullName = Join-Path -Path $moduleFolder -ChildPath "PowerShellGet.psd1" -ErrorAction Ignore
+    $PowerShellGetModuleInfo = Test-ModuleManifest $manifestFullName
     $ModuleVersion = "$($PowerShellGetModuleInfo.Version)"
     $InstallLocation = Join-Path -Path $AllUsersModulesPath -ChildPath 'PowerShellGet'
+
+    if ($LocalDevInstall) {
+        Write-Verbose -Message "Local dev installation specified."
+        $versionUnderDevelopment = "$ModuleVersion.9999"
+        $rawManifest = Get-Content -Path $manifestFullName -Raw
+        $newContent = $rawManifest -replace "    ModuleVersion     = '$ModuleVersion'", "    ModuleVersion     = '$versionUnderDevelopment'"
+        Set-Content -Path $manifestFullName -Value $newContent
+        $ModuleVersion = $versionUnderDevelopment
+    }
 
     if (($script:PowerShellEdition -eq 'Core') -or ($PSVersionTable.PSVersion -ge '5.0.0')) {
         $InstallLocation = Join-Path -Path $InstallLocation -ChildPath $ModuleVersion
@@ -437,6 +451,26 @@ function Install-PublishedModule {
     Copy-Item -Path "$moduleFolder\*" -Destination $InstallLocation -Recurse -Force
 
     Write-Verbose -Message "Copied module artifacts from $moduleFolder merged module artifact to`n$InstallLocation"
+}
+
+function Install-DevelopmentModule {
+    Update-ModuleManifestFunctions
+    Publish-ModuleArtifacts
+    Install-PublishedModule -LocalDevInstall
+}
+
+function Uninstall-DevelopmentModule {
+    $manifestFullName = Join-Path -Path $ModuleRoot -ChildPath "PowerShellGet.psd1" -ErrorAction Ignore
+    $PowerShellGetModuleInfo = Test-ModuleManifest $manifestFullName
+    $ModuleVersion = "$($PowerShellGetModuleInfo.Version)"
+    $InstallLocation = Join-Path -Path $AllUsersModulesPath -ChildPath 'PowerShellGet'
+    $versionUnderDevelopment = "$ModuleVersion.9999"
+
+    if (($script:PowerShellEdition -eq 'Core') -or ($PSVersionTable.PSVersion -ge '5.0.0')) {
+        $InstallLocation = Join-Path -Path $InstallLocation -ChildPath $versionUnderDevelopment
+        Remove-Item $InstallLocation -Recurse -Force
+    }
+
 }
 
 <#

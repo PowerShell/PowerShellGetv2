@@ -63,7 +63,11 @@ function Publish-PSArtifactUtility {
 
         [Parameter(ParameterSetName = 'PublishModule')]
         [Uri]
-        $ProjectUri
+        $ProjectUri,
+
+        [Parameter(ParameterSetName = 'PublishModule')]
+        [string[]]
+        $Exclude
     )
 
     Install-NuGetClientBinaries -CallerPSCmdlet $PSCmdlet -BootstrapNuGetExe
@@ -203,6 +207,11 @@ function Publish-PSArtifactUtility {
         }
     }
 
+    $nuspecFiles = ""
+    if ($Exclude) {
+        $nuspecFileExcludePattern = $Exclude -Join ";"
+        $nuspecFiles = @{ src = "**/*.*"; exclude = $nuspecFileExcludePattern }
+    }
 
     # Add PSModule and PSGet format version tags
     if (-not $Tags) {
@@ -366,6 +375,10 @@ function Publish-PSArtifactUtility {
         ProjectUrl               = $ProjectUri
         IconUrl                  = $IconUri
         Dependencies             = $dependencies
+    }
+
+    if ($nuspecFiles) {
+        $params.Add('Files', $nuspecFiles)
     }
 
     try {

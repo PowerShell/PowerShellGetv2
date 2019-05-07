@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+Bug Fixes
+
+- A few of localization strings for the DSC resource PSModule was revised
+  to be more descriptive and fixed typos. One localization string was
+  removed as it was not used.
+
 ## 2.1.2
 
 New Feature
@@ -7,6 +15,7 @@ New Feature
 - Added support for registering repositories with special characters
 
 ## 2.1.1
+
 - Fix DSC resource folder structure
 
 ## 2.1.0

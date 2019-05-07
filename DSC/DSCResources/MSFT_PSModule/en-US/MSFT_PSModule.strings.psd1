@@ -25,12 +25,11 @@ ConvertFrom-StringData -StringData @'
     StartUnInstallModule            = Begin invoking Remove-Item to remove the module '{0}' from the file system.
     InstalledSuccess                = Successfully installed the module '{0}'
     UnInstalledSuccess              = Successfully uninstalled the module '{0}'
-    VersionMismatch                 = The installed Module '{0}' has the version: '{1}'
-    RepositoryMismatch              = The installed Module '{0}' is from '{1}' repository.
+    VersionMismatch                 = The installed module '{0}' has the version: '{1}'
+    RepositoryMismatch              = The installed module '{0}' is from the '{1}' repository.
     FoundModulePath                 = Found the module path: '{0}'.
-    MultipleModuleFound             = Total: '{0}' modules found with the same name. Please use -RequiredVersion for filtering. Message: {1}
-    InstallationPolicyWarning       = You are installing the module '{0}' from an untrusted repository' {1}'. Your current InstallationPolicy is '{2}'. If you trust the repository, set the policy to "Trusted".
-    InstallationPolicyFailed        = Failed in the installation policy. Your current InstallationPolicy is '{0}' and the repository is '{1}'. If you trust the repository, set the policy to "Trusted".
+    InstallationPolicyWarning       = The module '{0}' was installed from the untrusted repository' {1}'. The InstallationPolicy is set to '{2}' to override the repository installation policy. If you trust the repository, set the repository installation policy to 'Trusted', that will also remove this warning.
+    InstallationPolicyFailed        = The current installation policy do not allow installation from this repository. Your current installation policy is '{0}' and the repository installation policy is '{1}'. If you trust the repository, either change the repository installation policy, or set the parameter InstallationPolicy to 'Trusted' to override the repository installation policy.
     GetTargetResourceMessage        = Getting the current state of the module '{0}'.
     TestTargetResourceMessage       = Determining if the module '{0}' is in the desired state.
 '@

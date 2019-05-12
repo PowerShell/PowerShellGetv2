@@ -54,6 +54,10 @@ function Publish-PSArtifactUtility {
         $Tags,
 
         [Parameter(ParameterSetName = 'PublishModule')]
+        [switch]
+        $SkipAutomaticTags,
+
+        [Parameter(ParameterSetName = 'PublishModule')]
         [Uri]
         $LicenseUri,
 
@@ -227,7 +231,7 @@ function Publish-PSArtifactUtility {
     if ($PSScriptInfo) {
         $Tags += "PSScript"
 
-        if ($PSScriptInfo.DefinedCommands) {
+        if ($PSScriptInfo.DefinedCommands -and -not $SkipAutomaticTags) {
             if ($PSScriptInfo.DefinedFunctions) {
                 $Tags += "$($script:Includes)_Function"
                 $Tags += $PSScriptInfo.DefinedFunctions | Microsoft.PowerShell.Core\ForEach-Object { "$($script:Function)_$_" }
@@ -260,52 +264,54 @@ function Publish-PSArtifactUtility {
 
         $ModuleManifestHashTable = Get-ManifestHashTable -Path $ManifestPath
 
-        if ($PSModuleInfo.ExportedCommands.Count) {
-            if ($PSModuleInfo.ExportedCmdlets.Count) {
-                $Tags += "$($script:Includes)_Cmdlet"
-                $Tags += $PSModuleInfo.ExportedCmdlets.Keys | Microsoft.PowerShell.Core\ForEach-Object { "$($script:Cmdlet)_$_" }
+        if (-not $SkipAutomaticTags) {
+            if ($PSModuleInfo.ExportedCommands.Count) {
+                if ($PSModuleInfo.ExportedCmdlets.Count) {
+                    $Tags += "$($script:Includes)_Cmdlet"
+                    $Tags += $PSModuleInfo.ExportedCmdlets.Keys | Microsoft.PowerShell.Core\ForEach-Object { "$($script:Cmdlet)_$_" }
 
-                #if CmdletsToExport field in manifest file is "*", we suggest the user to include all those cmdlets for best practice
-                if ($ModuleManifestHashTable -and $ModuleManifestHashTable.ContainsKey('CmdletsToExport') -and ($ModuleManifestHashTable.CmdletsToExport -eq "*")) {
-                    $WarningMessage = $LocalizedData.ShouldIncludeCmdletsToExport -f ($ManifestPath)
+                    #if CmdletsToExport field in manifest file is "*", we suggest the user to include all those cmdlets for best practice
+                    if ($ModuleManifestHashTable -and $ModuleManifestHashTable.ContainsKey('CmdletsToExport') -and ($ModuleManifestHashTable.CmdletsToExport -eq "*")) {
+                        $WarningMessage = $LocalizedData.ShouldIncludeCmdletsToExport -f ($ManifestPath)
+                        Write-Warning -Message $WarningMessage
+                    }
+                }
+
+                if ($PSModuleInfo.ExportedFunctions.Count) {
+                    $Tags += "$($script:Includes)_Function"
+                    $Tags += $PSModuleInfo.ExportedFunctions.Keys | Microsoft.PowerShell.Core\ForEach-Object { "$($script:Function)_$_" }
+
+                    if ($ModuleManifestHashTable -and $ModuleManifestHashTable.ContainsKey('FunctionsToExport') -and ($ModuleManifestHashTable.FunctionsToExport -eq "*")) {
+                        $WarningMessage = $LocalizedData.ShouldIncludeFunctionsToExport -f ($ManifestPath)
+                        Write-Warning -Message $WarningMessage
+                    }
+                }
+
+                $Tags += $PSModuleInfo.ExportedCommands.Keys | Microsoft.PowerShell.Core\ForEach-Object { "$($script:Command)_$_" }
+            }
+
+            $dscResourceNames = Get-ExportedDscResources -PSModuleInfo $PSModuleInfo
+            if ($dscResourceNames) {
+                $Tags += "$($script:Includes)_DscResource"
+
+                $Tags += $dscResourceNames | Microsoft.PowerShell.Core\ForEach-Object { "$($script:DscResource)_$_" }
+
+                #If DscResourcesToExport is commented out or "*" is used, we will write-warning
+                if ($ModuleManifestHashTable -and
+                    ($ModuleManifestHashTable.ContainsKey("DscResourcesToExport") -and
+                        $ModuleManifestHashTable.DscResourcesToExport -eq "*") -or
+                    -not $ModuleManifestHashTable.ContainsKey("DscResourcesToExport")) {
+                    $WarningMessage = $LocalizedData.ShouldIncludeDscResourcesToExport -f ($ManifestPath)
                     Write-Warning -Message $WarningMessage
                 }
             }
 
-            if ($PSModuleInfo.ExportedFunctions.Count) {
-                $Tags += "$($script:Includes)_Function"
-                $Tags += $PSModuleInfo.ExportedFunctions.Keys | Microsoft.PowerShell.Core\ForEach-Object { "$($script:Function)_$_" }
+            $RoleCapabilityNames = Get-AvailableRoleCapabilityName -PSModuleInfo $PSModuleInfo
+            if ($RoleCapabilityNames) {
+                $Tags += "$($script:Includes)_RoleCapability"
 
-                if ($ModuleManifestHashTable -and $ModuleManifestHashTable.ContainsKey('FunctionsToExport') -and ($ModuleManifestHashTable.FunctionsToExport -eq "*")) {
-                    $WarningMessage = $LocalizedData.ShouldIncludeFunctionsToExport -f ($ManifestPath)
-                    Write-Warning -Message $WarningMessage
-                }
+                $Tags += $RoleCapabilityNames | Microsoft.PowerShell.Core\ForEach-Object { "$($script:RoleCapability)_$_" }
             }
-
-            $Tags += $PSModuleInfo.ExportedCommands.Keys | Microsoft.PowerShell.Core\ForEach-Object { "$($script:Command)_$_" }
-        }
-
-        $dscResourceNames = Get-ExportedDscResources -PSModuleInfo $PSModuleInfo
-        if ($dscResourceNames) {
-            $Tags += "$($script:Includes)_DscResource"
-
-            $Tags += $dscResourceNames | Microsoft.PowerShell.Core\ForEach-Object { "$($script:DscResource)_$_" }
-
-            #If DscResourcesToExport is commented out or "*" is used, we will write-warning
-            if ($ModuleManifestHashTable -and
-                ($ModuleManifestHashTable.ContainsKey("DscResourcesToExport") -and
-                    $ModuleManifestHashTable.DscResourcesToExport -eq "*") -or
-                -not $ModuleManifestHashTable.ContainsKey("DscResourcesToExport")) {
-                $WarningMessage = $LocalizedData.ShouldIncludeDscResourcesToExport -f ($ManifestPath)
-                Write-Warning -Message $WarningMessage
-            }
-        }
-
-        $RoleCapabilityNames = Get-AvailableRoleCapabilityName -PSModuleInfo $PSModuleInfo
-        if ($RoleCapabilityNames) {
-            $Tags += "$($script:Includes)_RoleCapability"
-
-            $Tags += $RoleCapabilityNames | Microsoft.PowerShell.Core\ForEach-Object { "$($script:RoleCapability)_$_" }
         }
 
         # Populate the module dependencies elements from RequiredModules and

@@ -80,7 +80,7 @@ function Publish-Module {
 
         [Parameter()]
         [switch]
-        $EnforceMaximumTagLength
+        $SkipAutomaticTags
     )
 
     Begin {
@@ -141,8 +141,7 @@ function Publish-Module {
 
         if (-not $DestinationLocation -or
             (-not (Microsoft.PowerShell.Management\Test-Path $DestinationLocation) -and
-                -not (Test-WebUri -uri $DestinationLocation)))
-        {
+                -not (Test-WebUri -uri $DestinationLocation))) {
             $message = $LocalizedData.PSGalleryPublishLocationIsMissing -f ($Repository, $Repository)
             ThrowError -ExceptionName "System.ArgumentException" `
                 -ExceptionMessage $message `
@@ -374,12 +373,12 @@ function Publish-Module {
         # This finds all the items without force (leaving out hidden files and dirs) then copies them
         Microsoft.PowerShell.Management\Get-ChildItem $Path -recurse |
             Microsoft.PowerShell.Management\Copy-Item -Force -Confirm:$false -WhatIf:$false -Destination {
-                if ($_.PSIsContainer) {
-                    Join-Path $tempModulePathForFormatVersion $_.Parent.FullName.substring($path.length)
-                }
-                else {
-                    join-path $tempModulePathForFormatVersion $_.FullName.Substring($path.Length)
-                }
+            if ($_.PSIsContainer) {
+                Join-Path $tempModulePathForFormatVersion $_.Parent.FullName.substring($path.length)
+            }
+            else {
+                join-path $tempModulePathForFormatVersion $_.FullName.Substring($path.Length)
+            }
         }
 
         try {
@@ -545,23 +544,23 @@ function Publish-Module {
             $shouldProcessMessage = $LocalizedData.PublishModulewhatIfMessage -f ($moduleInfo.Version, $moduleInfo.Name)
             if ($Force -or $PSCmdlet.ShouldProcess($shouldProcessMessage, "Publish-Module")) {
                 $PublishPSArtifactUtility_Params = @{
-                    PSModuleInfo            = $moduleInfo
-                    ManifestPath            = $manifestPath
-                    NugetApiKey             = $NuGetApiKey
-                    Destination             = $DestinationLocation
-                    Repository              = $Repository
-                    NugetPackageRoot        = $tempModulePath
-                    FormatVersion           = $FormatVersion
-                    ReleaseNotes            = $($ReleaseNotes -join "`r`n")
-                    Tags                    = $Tags
-                    EnforceMaximumTagLength = $EnforceMaximumTagLength
-                    LicenseUri              = $LicenseUri
-                    IconUri                 = $IconUri
-                    ProjectUri              = $ProjectUri
-                    Verbose                 = $VerbosePreference
-                    WarningAction           = $WarningPreference
-                    ErrorAction             = $ErrorActionPreference
-                    Debug                   = $DebugPreference
+                    PSModuleInfo      = $moduleInfo
+                    ManifestPath      = $manifestPath
+                    NugetApiKey       = $NuGetApiKey
+                    Destination       = $DestinationLocation
+                    Repository        = $Repository
+                    NugetPackageRoot  = $tempModulePath
+                    FormatVersion     = $FormatVersion
+                    ReleaseNotes      = $($ReleaseNotes -join "`r`n")
+                    Tags              = $Tags
+                    SkipAutomaticTags = $SkipAutomaticTags
+                    LicenseUri        = $LicenseUri
+                    IconUri           = $IconUri
+                    ProjectUri        = $ProjectUri
+                    Verbose           = $VerbosePreference
+                    WarningAction     = $WarningPreference
+                    ErrorAction       = $ErrorActionPreference
+                    Debug             = $DebugPreference
                 }
                 if ($PSBoundParameters.Containskey('Credential')) {
                     $PublishPSArtifactUtility_Params.Add('Credential', $Credential)

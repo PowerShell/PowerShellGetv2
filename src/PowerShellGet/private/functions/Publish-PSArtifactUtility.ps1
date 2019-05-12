@@ -55,7 +55,7 @@ function Publish-PSArtifactUtility {
 
         [Parameter(ParameterSetName = 'PublishModule')]
         [switch]
-        $EnforceMaximumTagLength,
+        $SkipAutomaticTags,
 
         [Parameter(ParameterSetName = 'PublishModule')]
         [Uri]
@@ -222,7 +222,7 @@ function Publish-PSArtifactUtility {
     if ($PSScriptInfo) {
         $Tags += "PSScript"
 
-        if ($PSScriptInfo.DefinedCommands -and -not $EnforceMaximumTagLength) {
+        if ($PSScriptInfo.DefinedCommands -and -not $SkipAutomaticTags) {
             if ($PSScriptInfo.DefinedFunctions) {
                 $Tags += "$($script:Includes)_Function"
                 $Tags += $PSScriptInfo.DefinedFunctions | Microsoft.PowerShell.Core\ForEach-Object { "$($script:Function)_$_" }
@@ -255,7 +255,7 @@ function Publish-PSArtifactUtility {
 
         $ModuleManifestHashTable = Get-ManifestHashTable -Path $ManifestPath
 
-        if (-not $EnforceMaximumTagLength) {
+        if (-not $SkipAutomaticTags) {
             if ($PSModuleInfo.ExportedCommands.Count) {
                 if ($PSModuleInfo.ExportedCmdlets.Count) {
                     $Tags += "$($script:Includes)_Cmdlet"

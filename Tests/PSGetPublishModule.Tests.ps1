@@ -769,7 +769,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     #
     # Expected Result: Publish operation should succeed and should have warned about tag length.
     #
-    It PublishModuleFunctionsAsTagsWarnWithoutEnforceMaximumTagLength {
+    It PublishModuleFunctionsAsTagsWarnWithoutSkipAutomaticTags {
         $version = "1.0.0"
         $Description = "$script:PublishModuleName module"
         $Tags = "PSGet","DSC"
@@ -801,13 +801,13 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
     } `
     -Skip:$($PSVersionTable.PSVersion -lt '5.0.0')
 
-    # Purpose: Test Publish-Module cmdlet excludes functions from tags when using EnforceMaximumTagLength parameter
+    # Purpose: Test Publish-Module cmdlet excludes functions from tags when using SkipAutomaticTags parameter
     #
-    # Action: Create a module manifest with PrivateData\PSData hashtable, try to publish with EnforceMaxmimumTagLength parameter
+    # Action: Create a module manifest with PrivateData\PSData hashtable, try to publish with SkipAutomaticTags parameter
     #
     # Expected Result: Publish operation should succeed and should not have warned about tag length
     #
-    It PublishModuleFunctionsAsTagsWithEnforceMaximumTagLength {
+    It PublishModuleFunctionsAsTagsWithSkipAutomaticTags {
         $version = "1.0.0"
         $Description = "$script:PublishModuleName module"
         $Tags = "PSGet","DSC"
@@ -832,7 +832,7 @@ Describe PowerShell.PSGet.PublishModuleTests -Tags 'BVT','InnerLoop' {
         Publish-Module -Path $script:PublishModuleBase `
                        -NuGetApiKey $script:ApiKey `
                        -Repository "PSGallery" `
-                       -EnforceMaximumTagLength `
+                       -SkipAutomaticTags `
                        -WarningAction SilentlyContinue `
                        -WarningVariable wa
 

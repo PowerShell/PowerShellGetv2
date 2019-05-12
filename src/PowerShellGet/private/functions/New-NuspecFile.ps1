@@ -74,7 +74,7 @@ function New-NuspecFile {
         releaseNotes             = $ReleaseNotes
         requireLicenseAcceptance = $RequireLicenseAcceptance.ToString().ToLower()
         copyright                = $Copyright
-        tags                     = $Tags
+        tags                     = $tagsString
     }
 
     if ($LicenseUrl) { $metaDataElementsHash.Add("licenseUrl", $LicenseUrl) }

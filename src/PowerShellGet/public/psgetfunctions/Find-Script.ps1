@@ -154,16 +154,24 @@ function Find-Script {
         PackageManagement\Find-Package @PSBoundParameters | Microsoft.PowerShell.Core\ForEach-Object {
             $psgetItemInfo = New-PSGetItemInfo -SoftwareIdentity $_ -Type $script:PSArtifactTypeScript
 
-            if ($AllVersions -and -not $AllowPrerelease) {
-                # If AllVersions is specified but not AllowPrerelease, we should only return stable release versions.
-                # PackageManagement returns ALL versions (including prerelease) when AllVersions is specified, regardless of the value of AllowPrerelease.
-                # Filtering results returned from PackageManagement based on flags.
-                if ($psgetItemInfo.AdditionalMetadata -and $psgetItemInfo.AdditionalMetadata.IsPrerelease -eq $false) {
+            if ($psgetItemInfo.Type -eq $script:PSArtifactTypeScript) {
+                if ($AllVersions -and -not $AllowPrerelease) {
+                    # If AllVersions is specified but not AllowPrerelease, we should only return stable release versions.
+                    # PackageManagement returns ALL versions (including prerelease) when AllVersions is specified, regardless of the value of AllowPrerelease.
+                    # Filtering results returned from PackageManagement based on flags.
+                    if ($psgetItemInfo.AdditionalMetadata -and $psgetItemInfo.AdditionalMetadata.IsPrerelease -eq $false) {
+                        $psgetItemInfo
+                    }
+                }
+                else {
                     $psgetItemInfo
                 }
-            }
-            else {
-                $psgetItemInfo
+            } elseif ($PSBoundParameters['Name'] -and -not (Test-WildcardPattern -Name ($Name | Microsoft.PowerShell.Core\Where-Object { $psgetItemInfo.Name -like $_ }))) {
+                $message = $LocalizedData.MatchInvalidType -f ($psgetItemInfo.Name, $psgetItemInfo.Type, $script:PSArtifactTypeScript)
+                Write-Error -Message $message `
+                            -ErrorId 'MatchInvalidType' `
+                            -Category InvalidArgument `
+                            -TargetObject $Name
             }
 
             if ($psgetItemInfo -and

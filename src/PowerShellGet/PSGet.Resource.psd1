@@ -22,6 +22,7 @@ ConvertFrom-StringData @'
         RequiredVersionAllowedOnlyWithSingleModuleName=The RequiredVersion parameter is allowed only when a single module name is specified as the value of the Name parameter, without any wildcard characters.
         MinimumVersionIsGreaterThanMaximumVersion=The specified MinimumVersion '{0}' is greater than the specified MaximumVersion '{1}'.
         AllowPrereleaseRequiredToUsePrereleaseStringInVersion=The '-AllowPrerelease' parameter must be specified when using the Prerelease string in MinimumVersion, MaximumVersion, or RequiredVersion.
+        UpdateModuleAdminPrivilegeRequiredForAllUsersScope=Administrator rights are required to update modules in '{0}'. Log on to the computer with an account that has Administrator rights, and then try again, or update '{1}' by adding "-Scope CurrentUser" to your command. You can also try running the Windows PowerShell session with elevated rights (Run as Administrator).
         InstallModuleAdminPrivilegeRequiredForAllUsersScope=Administrator rights are required to install modules in '{0}'. Log on to the computer with an account that has Administrator rights, and then try again, or install '{1}' by adding "-Scope CurrentUser" to your command. You can also try running the Windows PowerShell session with elevated rights (Run as Administrator).
         InstallScriptAdminPrivilegeRequiredForAllUsersScope=Administrator rights are required to install scripts in '{0}'. Log on to the computer with an account that has Administrator rights, and then try again, or install '{1}' by adding "-Scope CurrentUser" to your command. You can also try running the Windows PowerShell session with elevated rights (Run as Administrator).
         AdministratorRightsNeededOrSpecifyCurrentUserScope=Administrator rights are required to install or update. Log on to the computer with an account that has Administrator rights, and then try again, or install by adding "-Scope CurrentUser" to your command. You can also try running the Windows PowerShell session with elevated rights (Run as Administrator).
@@ -95,6 +96,7 @@ ConvertFrom-StringData @'
         ModuleNotFound=Module '{0}' was not found.
         NoMatchFound=No match was found for the specified search criteria and module names '{0}'.
         NoMatchFoundForScriptName=No match was found for the specified search criteria and script names '{0}'.
+        MatchInvalidType=The name '{0}' is a {1} not a {2}.
         FailedToCreateCompressedModule=Failed to generate the compressed file for module '{0}'.
         FailedToPublish=Failed to publish module '{0}': '{1}'.
         PublishedSuccessfully=Successfully published module '{0}' to the module publish location '{1}'. Please allow few minutes for '{2}' to show up in the search results.
@@ -208,7 +210,6 @@ ConvertFrom-StringData @'
         MissingRequiredPSScriptInfoProperties=Script '{0}' is missing required metadata properties. Verify that the script file has Version, Guid, Description and Author properties. You can use the Update-ScriptFileInfo or New-ScriptFileInfo cmdlet to add or update the PSScriptInfo to the script file.
         SkippedScriptDependency=Because dependent script '{0}' was skipped in the script dependencies list, users might not know how to install it.
         SourceLocationPathsForModulesAndScriptsShouldBeEqual=SourceLocation '{0}' and ScriptSourceLocation '{1}' should be same for SMB Share or Local directory based repositories.
-        SourceLocationUrisForModulesAndScriptsShouldBeDifferent=SourceLocation '{0}' and ScriptSourceLocation '{1}' should not be same for URI based repositories.
         PublishLocationPathsForModulesAndScriptsShouldBeEqual=PublishLocation '{0}' and ScriptPublishLocation '{1}' should be same for SMB Share or Local directory based repositories.
         SpecifiedNameIsAlearyUsed=The specified name '{0}' is already used for a different item on the specified repository '{1}'. Run '{2} -Name {0} -Repository {1}' to check whether the specified name '{0}' is already taken.
         InvalidScriptFilePath=The script file path '{0}' is not valid. The value of the Path argument must resolve to a single file that has a '.ps1' extension. Change the value of the Path argument to point to a valid ps1 file, and then try again.

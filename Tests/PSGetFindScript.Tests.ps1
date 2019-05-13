@@ -17,7 +17,7 @@
 function SuiteSetup {
     Import-Module "$PSScriptRoot\PSGetTestUtils.psm1" -WarningAction SilentlyContinue
     Import-Module "$PSScriptRoot\Asserts.psm1" -WarningAction SilentlyContinue
-    
+
     $script:PSGetLocalAppDataPath = Get-PSGetLocalAppDataPath
     $script:DscTestScript = "DscTestScript"
 
@@ -27,10 +27,9 @@ function SuiteSetup {
     $psgetModuleInfo = Import-Module PowerShellGet -Global -Force -Passthru
     Import-LocalizedData  script:LocalizedData -filename PSGet.Resource.psd1 -BaseDirectory $psgetModuleInfo.ModuleBase
 
-    $script:moduleSourcesFilePath= Join-Path $script:PSGetLocalAppDataPath "PSRepositories.xml"
+    $script:moduleSourcesFilePath = Join-Path $script:PSGetLocalAppDataPath "PSRepositories.xml"
     $script:moduleSourcesBackupFilePath = Join-Path $script:PSGetLocalAppDataPath "PSRepositories.xml_$(get-random)_backup"
-    if(Test-Path $script:moduleSourcesFilePath)
-    {
+    if (Test-Path $script:moduleSourcesFilePath) {
         Rename-Item $script:moduleSourcesFilePath $script:moduleSourcesBackupFilePath -Force
     }
 
@@ -38,12 +37,10 @@ function SuiteSetup {
 }
 
 function SuiteCleanup {
-    if(Test-Path $script:moduleSourcesBackupFilePath)
-    {
+    if (Test-Path $script:moduleSourcesBackupFilePath) {
         Move-Item $script:moduleSourcesBackupFilePath $script:moduleSourcesFilePath -Force
     }
-    else
-    {
+    else {
         RemoveItem $script:moduleSourcesFilePath
     }
 
@@ -51,7 +48,7 @@ function SuiteCleanup {
     $null = Import-PackageProvider -Name PowerShellGet -Force
 }
 
-Describe PowerShell.PSGet.FindScriptTests -Tags 'BVT','InnerLoop' {
+Describe PowerShell.PSGet.FindScriptTests -Tags 'BVT', 'InnerLoop' {
 
     BeforeAll {
         SuiteSetup
@@ -116,7 +113,29 @@ Describe PowerShell.PSGet.FindScriptTests -Tags 'BVT','InnerLoop' {
     #
     It "FindScriptNonExistentScript" {
         AssertFullyQualifiedErrorIdEquals -scriptblock {Find-Script NonExistentScript} `
-                                          -expectedFullyQualifiedErrorId 'NoMatchFoundForCriteria,Microsoft.PowerShell.PackageManagement.Cmdlets.FindPackage'
+            -expectedFullyQualifiedErrorId 'NoMatchFoundForCriteria,Microsoft.PowerShell.PackageManagement.Cmdlets.FindPackage'
+    }
+
+    # Purpose: FindModuleNotScript
+    #
+    # Action: Find-Script ContosoServer
+    #
+    # Expected Result: Should fail
+    #
+    It "FindModuleNotScript" {
+        AssertFullyQualifiedErrorIdEquals -scriptblock {Find-Script ContosoServer} `
+            -expectedFullyQualifiedErrorId 'MatchInvalidType,Find-Script'
+    }
+
+    # Purpose: FindModuleNotScriptWildcard
+    #
+    # Action: Find-Script ContosoServer
+    #
+    # Expected Result: Should not return anything
+    #
+    It "FindModuleNotScriptWildcard" {
+        $res = Find-Script ContosoServer*
+        Assert (-not $res) "Find-Script returned a module"
     }
 
     # Purpose: Find a script using MinimumVersion
@@ -148,7 +167,7 @@ Describe PowerShell.PSGet.FindScriptTests -Tags 'BVT','InnerLoop' {
     # Expected Result: should find Fabrikam-ClientScript and Fabrikam-ServerScript scripts
     #
     It "FindScriptWithMultiNames" {
-        $res = Find-Script Fabrikam-ClientScript,Fabrikam-ServerScript -Repository PSGallery
+        $res = Find-Script Fabrikam-ClientScript, Fabrikam-ServerScript -Repository PSGallery
         Assert ($res.Count -eq 2) "Find-Script with multiple names should not fail, $res"
     }
 
@@ -235,7 +254,7 @@ Describe PowerShell.PSGet.FindScriptTests -Tags 'BVT','InnerLoop' {
     }
 }
 
-Describe PowerShell.PSGet.FindScriptTests.P1 -Tags 'P1','OuterLoop' {
+Describe PowerShell.PSGet.FindScriptTests.P1 -Tags 'P1', 'OuterLoop' {
 
     BeforeAll {
         SuiteSetup
@@ -288,7 +307,7 @@ Describe PowerShell.PSGet.FindScriptTests.P1 -Tags 'P1','OuterLoop' {
         $res = Find-Script *rikam-ServerScr*
         Assert ($res -and ($res.Name -eq "Fabrikam-ServerScript")) "Find-Script failed to find script using wild cards"
     }
-    
+
     # Purpose: FindScriptWithVersionParams
     #
     # Action: Find-Script Fabrikam-ServerScript -MinimumVersion 1.0 -RequiredVersion 5.0
@@ -297,7 +316,7 @@ Describe PowerShell.PSGet.FindScriptTests.P1 -Tags 'P1','OuterLoop' {
     #
     It "FindScriptWithVersionParams" {
         AssertFullyQualifiedErrorIdEquals -scriptblock {Find-Script Fabrikam-ServerScript -MinimumVersion 1.0 -RequiredVersion 5.0} `
-                                          -expectedFullyQualifiedErrorId "VersionRangeAndRequiredVersionCannotBeSpecifiedTogether,Find-Script"
+            -expectedFullyQualifiedErrorId "VersionRangeAndRequiredVersionCannotBeSpecifiedTogether,Find-Script"
     }
 
     # Purpose: Find a script with not available MinimumVersion
@@ -308,7 +327,7 @@ Describe PowerShell.PSGet.FindScriptTests.P1 -Tags 'P1','OuterLoop' {
     #
     It "FindScriptWithMinVersionNotAvailable" {
         AssertFullyQualifiedErrorIdEquals -scriptblock {Find-Script Fabrikam-ServerScript -MinimumVersion 10.0} `
-                                          -expectedFullyQualifiedErrorId "NoMatchFoundForCriteria,Microsoft.PowerShell.PackageManagement.Cmdlets.FindPackage"
+            -expectedFullyQualifiedErrorId "NoMatchFoundForCriteria,Microsoft.PowerShell.PackageManagement.Cmdlets.FindPackage"
     }
 
     # Purpose: FindScriptWithReqVersionNotAvailable
@@ -319,7 +338,7 @@ Describe PowerShell.PSGet.FindScriptTests.P1 -Tags 'P1','OuterLoop' {
     #
     It "FindScriptWithReqVersionNotAvailable" {
         AssertFullyQualifiedErrorIdEquals -scriptblock {Find-Script Fabrikam-ServerScript -RequiredVersion 10.0} `
-                                          -expectedFullyQualifiedErrorId "NoMatchFoundForCriteria,Microsoft.PowerShell.PackageManagement.Cmdlets.FindPackage"
+            -expectedFullyQualifiedErrorId "NoMatchFoundForCriteria,Microsoft.PowerShell.PackageManagement.Cmdlets.FindPackage"
     }
 
     # Purpose: FindScriptWithMultipleScriptNamesAndReqVersion
@@ -329,8 +348,8 @@ Describe PowerShell.PSGet.FindScriptTests.P1 -Tags 'P1','OuterLoop' {
     # Expected Result: Should fail with error id
     #
     It "FindScriptWithMultipleScriptNamesAndReqVersion" {
-        AssertFullyQualifiedErrorIdEquals -scriptblock {Find-Script Fabrikam-ServerScript,Fabrikam-ClientScript -RequiredVersion 1.0} `
-                                          -expectedFullyQualifiedErrorId "VersionParametersAreAllowedOnlyWithSingleName,Find-Script"
+        AssertFullyQualifiedErrorIdEquals -scriptblock {Find-Script Fabrikam-ServerScript, Fabrikam-ClientScript -RequiredVersion 1.0} `
+            -expectedFullyQualifiedErrorId "VersionParametersAreAllowedOnlyWithSingleName,Find-Script"
     }
 
     # Purpose: FindScriptWithMultipleScriptNamesAndMinVersion
@@ -340,8 +359,8 @@ Describe PowerShell.PSGet.FindScriptTests.P1 -Tags 'P1','OuterLoop' {
     # Expected Result: Should fail with error id
     #
     It "FindScriptWithMultipleScriptNamesAndMinVersion" {
-        AssertFullyQualifiedErrorIdEquals -scriptblock {Find-Script Fabrikam-ServerScript,Fabrikam-ClientScript -MinimumVersion 1.0} `
-                                          -expectedFullyQualifiedErrorId "VersionParametersAreAllowedOnlyWithSingleName,Find-Script"
+        AssertFullyQualifiedErrorIdEquals -scriptblock {Find-Script Fabrikam-ServerScript, Fabrikam-ClientScript -MinimumVersion 1.0} `
+            -expectedFullyQualifiedErrorId "VersionParametersAreAllowedOnlyWithSingleName,Find-Script"
     }
 
     # Purpose: FindScriptWithWildcardNameAndReqVersion
@@ -352,7 +371,7 @@ Describe PowerShell.PSGet.FindScriptTests.P1 -Tags 'P1','OuterLoop' {
     #
     It "FindScriptWithWildcardNameAndReqVersion" {
         AssertFullyQualifiedErrorIdEquals -scriptblock {Find-Script Fabrikam-Ser*er -RequiredVersion 1.0} `
-                                          -expectedFullyQualifiedErrorId "VersionParametersAreAllowedOnlyWithSingleName,Find-Script"
+            -expectedFullyQualifiedErrorId "VersionParametersAreAllowedOnlyWithSingleName,Find-Script"
     }
 
     # Purpose: FindScriptWithWildcardNameAndMinVersion
@@ -363,7 +382,7 @@ Describe PowerShell.PSGet.FindScriptTests.P1 -Tags 'P1','OuterLoop' {
     #
     It "FindScriptWithWildcardNameAndMinVersion" {
         AssertFullyQualifiedErrorIdEquals -scriptblock {Find-Script Fabrikam-Ser*er -MinimumVersion 1.0} `
-                                          -expectedFullyQualifiedErrorId "VersionParametersAreAllowedOnlyWithSingleName,Find-Script"
+            -expectedFullyQualifiedErrorId "VersionParametersAreAllowedOnlyWithSingleName,Find-Script"
     }
 
     # Purpose: FindScriptWithAllVersionsAndMinimumVersion
@@ -374,7 +393,7 @@ Describe PowerShell.PSGet.FindScriptTests.P1 -Tags 'P1','OuterLoop' {
     #
     It FindScriptWithAllVersionsAndMinimumVersion {
         AssertFullyQualifiedErrorIdEquals -scriptblock {Find-Script Fabrikam-ClientScript -MinimumVersion 2.0 -Repository PSGallery -AllVersions} `
-                                          -expectedFullyQualifiedErrorId 'AllVersionsCannotBeUsedWithOtherVersionParameters,Find-Script'
+            -expectedFullyQualifiedErrorId 'AllVersionsCannotBeUsedWithOtherVersionParameters,Find-Script'
     }
 
     # Purpose: FindScriptWithAllVersionsAndRequiredVersion
@@ -385,7 +404,7 @@ Describe PowerShell.PSGet.FindScriptTests.P1 -Tags 'P1','OuterLoop' {
     #
     It FindScriptWithAllVersionsAndRequiredVersion {
         AssertFullyQualifiedErrorIdEquals -scriptblock {Find-Script Fabrikam-ClientScript -RequiredVersion 2.0 -Repository PSGallery -AllVersions} `
-                                          -expectedFullyQualifiedErrorId 'AllVersionsCannotBeUsedWithOtherVersionParameters,Find-Script'
+            -expectedFullyQualifiedErrorId 'AllVersionsCannotBeUsedWithOtherVersionParameters,Find-Script'
     }
 
     # Purpose: Validate Find-Script -Filter KeyWordNotExists
@@ -414,7 +433,7 @@ Describe PowerShell.PSGet.FindScriptTests.P1 -Tags 'P1','OuterLoop' {
         $DepencyScriptNames = $res1.Dependencies.Name
 
         $res2 = Find-Script -Name $ScriptName -IncludeDependencies -MaximumVersion "1.0" -MinimumVersion "0.1"
-        Assert ($res2.Count -ge ($DepencyScriptNames.Count+1)) "Find-Script with -IncludeDependencies returned wrong results, $res2"
+        Assert ($res2.Count -ge ($DepencyScriptNames.Count + 1)) "Find-Script with -IncludeDependencies returned wrong results, $res2"
 
         $DepencyScriptNames | ForEach-Object { Assert ($res2.Name -Contains $_) "Find-Script with -IncludeDependencies didn't return the $_ script, $($res2.Name)"}
     }

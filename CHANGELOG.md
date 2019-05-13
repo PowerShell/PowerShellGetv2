@@ -1,12 +1,25 @@
 # Changelog
 
+## 2.1.3
+
+New Features
+
+- Added -Scope parameter to Update-Module (Thanks @lwajswaj!) (#471)
+- Added -Exclude parameter to Publish-Module (Thanks @Benny1007!) (#191)
+- Added -SkipAutomticTags parameter to Publish-Module (Thanks @awickham10!) (#452)
+
+Bug Fix
+
+- Fixed issue with finding modules using macOS and .NET Core 3.0
+
 ## 2.1.2
 
 New Feature
 
-- Added support for registering repositories with special characters
+- Added support for registering repositories with special characters (@Thanks jborean93!) (#442)
 
 ## 2.1.1
+
 - Fix DSC resource folder structure
 
 ## 2.1.0

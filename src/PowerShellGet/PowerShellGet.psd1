@@ -1,6 +1,6 @@
 @{
     RootModule        = 'PSModule.psm1'
-    ModuleVersion     = '2.1.2'
+    ModuleVersion     = '2.1.3'
     GUID              = '1d73a601-4a6c-43c5-ba3f-619b18bbb404'
     Author            = 'Microsoft Corporation'
     CompanyName       = 'Microsoft Corporation'
@@ -40,7 +40,7 @@
     FileList          = @('PSModule.psm1',
         'PSGet.Format.ps1xml',
         'PSGet.Resource.psd1')
-    RequiredModules   = @(@{ModuleName = 'PackageManagement'; ModuleVersion = '1.1.7.0'})
+    RequiredModules   = @(@{ModuleName = 'PackageManagement'; ModuleVersion = '1.1.7.0' })
     PrivateData       = @{
         "PackageManagementProviders"           = 'PSModule.psm1'
         "SupportedPowerShellGetFormatVersions" = @('1.x', '2.x')
@@ -54,6 +54,17 @@
             ProjectUri   = 'https://go.microsoft.com/fwlink/?LinkId=828955'
             LicenseUri   = 'https://go.microsoft.com/fwlink/?LinkId=829061'
             ReleaseNotes = @'
+## 2.1.3
+New Features
+
+- Added -Scope parameter to Update-Module (Thanks @lwajswaj!) (#471)
+- Added -Exclude parameter to Publish-Module (Thanks @Benny1007!) (#191)
+- Added -SkipAutomticTags parameter to Publish-Module (Thanks @awickham10!) (#452)
+
+Bug Fix
+
+- Fixed issue with finding modules using macOS and .NET Core 3.0
+
 ## 2.1.2
 
 New Feature

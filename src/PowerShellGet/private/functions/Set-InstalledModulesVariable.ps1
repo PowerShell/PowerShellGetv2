@@ -11,6 +11,7 @@ function Set-InstalledModulesVariable
         $GetChildItemParams = @{
             Path = $location
             Recurse = $true
+            Force = $true
             Filter = $script:PSGetItemInfoFileName
             ErrorAction = 'SilentlyContinue'
             WarningAction = 'SilentlyContinue'

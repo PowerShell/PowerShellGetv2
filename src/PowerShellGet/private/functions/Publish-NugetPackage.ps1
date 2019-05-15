@@ -18,6 +18,7 @@ function Publish-NugetPackage {
     )
     Set-StrictMode -Off
 
+    Write-Verbose "Calling Publish-NugetPackage -NupkgPath $NupkgPath -Destination $Destination -NugetExePath $NugetExePath -UseDotnetCli:$UseDotnetCli"
     $Destination = $Destination.TrimEnd("\")
 
     if ($PSCmdlet.ParameterSetName -eq "UseNuget") {

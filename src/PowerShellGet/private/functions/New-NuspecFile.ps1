@@ -49,6 +49,8 @@ function New-NuspecFile {
     )
     Set-StrictMode -Off
 
+    Write-Verbose "Calling New-NuspecFile"
+
     $nameSpaceUri = "http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd"
     [xml]$xml = New-Object System.Xml.XmlDocument
 

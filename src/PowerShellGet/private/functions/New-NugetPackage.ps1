@@ -40,6 +40,8 @@ function New-NugetPackage {
         $ArgumentList = @("pack")
         $ArgumentList += "`"$NuspecPath`""
         $ArgumentList += "-outputdirectory `"$OutputPath`" -noninteractive"
+
+        $tempPath = $null
     }
     else {
         # use Dotnet CLI
@@ -84,9 +86,10 @@ function New-NugetPackage {
 
     # read output incrementally, it'll block if it writes too much
     $outputLines = @()
+    Write-Verbose "$ProcessName output:"
     while (! $process.HasExited) {
         $output = $process.StandardOutput.ReadLine()
-        Write-Verbose "Nuget output: $output"
+        Write-Verbose "`t$output"
         $outputLines += $output
     }
 
@@ -98,9 +101,19 @@ function New-NugetPackage {
 
     Write-Verbose "finished running $($processStartInfo.FileName) with exit code $($process.ExitCode)"
 
+    if (($tempPath -ne $null) -and (Test-Path -Path $tempPath)) {
+        Remove-Item -Path $tempPath -Force -Recurse
+    }
+
     if (-Not ($process.ExitCode -eq 0 )) {
-        $stdErr = $process.StandardError.ReadToEnd()
-        throw "$ProcessName failed to pack: error $stdErr"
+        # nuget writes errors to stdErr, dotnet writes them to stdOut
+        if ($UseDotnetCli) {
+            $errors = $stdOut
+        }
+        else {
+            $errors = $process.StandardError.ReadToEnd()
+        }
+        throw "$ProcessName failed to pack: error $errors"
     }
 
     $stdOut -match "Successfully created package '(.*.nupkg)'" | Out-Null

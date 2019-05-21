@@ -18,19 +18,25 @@ function Get-PSRepository {
         $PSBoundParameters["Provider"] = $script:PSModuleProviderName
         $PSBoundParameters["MessageResolver"] = $script:PackageManagementMessageResolverScriptBlock
 
+        $repositories = @()
+
         if ($Name) {
             foreach ($sourceName in $Name) {
                 $PSBoundParameters["Name"] = $sourceName
 
                 $packageSources = PackageManagement\Get-PackageSource @PSBoundParameters
 
-                $packageSources | Microsoft.PowerShell.Core\ForEach-Object { New-ModuleSourceFromPackageSource -PackageSource $_ }
+                $repositories += $packageSources | Microsoft.PowerShell.Core\ForEach-Object { New-ModuleSourceFromPackageSource -PackageSource $_ }
             }
         }
         else {
             $packageSources = PackageManagement\Get-PackageSource @PSBoundParameters
 
-            $packageSources | Microsoft.PowerShell.Core\ForEach-Object { New-ModuleSourceFromPackageSource -PackageSource $_ }
+            $repositories += $packageSources | Microsoft.PowerShell.Core\ForEach-Object { New-ModuleSourceFromPackageSource -PackageSource $_ }
         }
+
+        $repositories |
+            Microsoft.PowerShell.Utility\Sort-Object -Property IsTrusted -Descending |
+            Microsoft.PowerShell.Utility\Sort-Object -Property Name
     }
 }

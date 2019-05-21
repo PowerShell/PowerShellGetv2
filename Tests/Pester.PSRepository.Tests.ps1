@@ -40,6 +40,22 @@ Describe 'Test Register-PSRepository and Register-PackageSource for PSGallery re
         $repo.Trusted | should be $true
     }
 
+    It 'Get-PSRepository: Should return trusted before untrused' {
+        Register-PSRepository -Default
+
+        Set-PSRepository -Name $RepositoryName -InstallationPolicy 'Untrusted'
+
+        $repos = Get-PSRepository
+        $repos.InstallationPolicy | Should -Contain 'Trusted'
+        $repos.InstallationPolicy | Should -Contain 'Untrusted'
+
+        $orderedRepos = $repos | Sort-Object -Property 'InstallationPolicy' | Sort-Object -Property Name
+        for ($i = 0; $i -lt $repos.Count; $i++) {
+            $repos[$i].Name | Should -Be $orderedRepos[$i].Name
+            $repos[$i].InstallationPolicy | Should -Be $orderedRepos[$i].InstallationPolicy
+        }
+    }
+
     It 'Register-PSRepository -Default: Should work' {
         Register-PSRepository -Default
         $repo = Get-PSRepository $RepositoryName
@@ -72,10 +88,12 @@ Describe 'Test Register-PSRepository and Register-PackageSource for PSGallery re
                 $repo = Get-PSRepository -Name 'Test Repo'
                 $repo.Name | should be 'Test Repo'
                 $repo.SourceLocation | should be $tmpdir
-            } finally {
+            }
+            finally {
                 Unregister-PSRepository -Name 'Test Repo' -ErrorAction SilentlyContinue
             }
-        } finally {
+        }
+        finally {
             Remove-Item -LiteralPath $tmpdir -Force -Recurse
         }
     }

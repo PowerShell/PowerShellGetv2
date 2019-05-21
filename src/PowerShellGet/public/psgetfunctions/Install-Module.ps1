@@ -155,7 +155,14 @@ function Install-Module {
                 if ($ev) { return }
             }
 
-            $modules = Find-Module @PSBoundParameters
+            $findCommand = Get-Command -Name 'Find-Module' -Module 'PowerShellGet'
+            $findSplat = @{ }
+            $findParameters = $PSBoundParameters.Keys | Where-Object { $findCommand.Parameters.Keys -contains $_ }
+            foreach ($findParameter in $findParameters) {
+                $findSplat[$findParameter] = $PSBoundParameters[$findParameter]
+            }
+
+            $modules = Find-Module @findSplat
             $distinctRepositories = $modules.Repository | Microsoft.PowerShell.Utility\Select-Object -Unique
             if (([array]$distinctRepositories).Count -gt 1) {
                 $preferredRepository = Get-PSRepository -Name $distinctRepositories | Microsoft.PowerShell.Utility\Select-Object -First 1

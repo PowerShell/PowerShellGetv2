@@ -40,7 +40,7 @@
     FileList          = @('PSModule.psm1',
         'PSGet.Format.ps1xml',
         'PSGet.Resource.psd1')
-    RequiredModules   = @(@{ModuleName = 'PackageManagement'; ModuleVersion = '1.3.2' })
+    RequiredModules   = @(@{ModuleName = 'PackageManagement'; ModuleVersion = '1.4' })
     PrivateData       = @{
         "PackageManagementProviders"           = 'PSModule.psm1'
         "SupportedPowerShellGetFormatVersions" = @('1.x', '2.x')

@@ -155,6 +155,13 @@ function Install-Module {
                 if ($ev) { return }
             }
 
+            $modules = Find-Module @PSBoundParameters
+            $distinctRepositories = $modules.Repository | Microsoft.PowerShell.Utility\Select-Object -Unique
+            if (([array]$distinctRepositories).Count -gt 1) {
+                $preferredRepository = Get-PSRepository -Name $distinctRepositories | Microsoft.PowerShell.Utility\Select-Object -First 1
+                $PSBoundParameters['Source'] = $preferredRepository.Name
+            }
+
             $null = PackageManagement\Install-Package @PSBoundParameters
         }
         elseif ($PSCmdlet.ParameterSetName -eq "InputObject") {

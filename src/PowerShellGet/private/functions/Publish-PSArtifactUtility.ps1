@@ -585,6 +585,11 @@ $CsprojContent = @"
                 $errorMsg = $LocalizedData.RegisterVSTSFeedAsNuGetPackageSource -f ($Destination, $script:VSTSAuthenticatedFeedsDocUrl)
             }
 
+            if($errorMsg -match 'warn : No API Key was provided and no API Key could be found for *')
+            {
+                $errorMsg = $LocalizedData.NuGetApiKeyIsRequiredForNuGetBasedGalleryService -f ($Name, $Destination)
+            }
+
             if($PSArtifactType -eq $script:PSArtifactTypeModule)
             {
                 $message = $LocalizedData.FailedToPublish -f ($Name,$errorMsg)

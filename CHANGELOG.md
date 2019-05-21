@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.4
+
+Bug Fix
+
+- Fixed hang when publishing some modules (#478)
+
 ## 2.1.3
 
 New Features

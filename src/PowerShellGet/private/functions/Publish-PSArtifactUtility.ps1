@@ -74,6 +74,7 @@ function Publish-PSArtifactUtility {
         $Exclude
     )
 
+    Write-Verbose "Calling Publish-PSArtifactUtility"
     Install-NuGetClientBinaries -CallerPSCmdlet $PSCmdlet -BootstrapNuGetExe
 
     $PSArtifactType = $script:PSArtifactTypeModule

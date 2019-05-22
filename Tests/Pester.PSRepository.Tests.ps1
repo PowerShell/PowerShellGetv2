@@ -46,8 +46,8 @@ Describe 'Test Register-PSRepository and Register-PackageSource for PSGallery re
         Set-PSRepository -Name $RepositoryName -InstallationPolicy 'Untrusted'
 
         $repos = Get-PSRepository
-        $repos.InstallationPolicy | Should -Contain 'Trusted'
-        $repos.InstallationPolicy | Should -Contain 'Untrusted'
+        { $repos.InstallationPolicy -contains 'Trusted' } | Should -Be $true
+        { $repos.InstallationPolicy -contains 'Untrusted' } | Should -Be $true
 
         $orderedRepos = $repos | Sort-Object -Property 'InstallationPolicy' | Sort-Object -Property Name
         for ($i = 0; $i -lt $repos.Count; $i++) {

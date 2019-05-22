@@ -534,25 +534,6 @@ function Publish-Module {
             $shouldProcessMessage = $LocalizedData.PublishModulewhatIfMessage -f ($moduleInfo.Version, $moduleInfo.Name)
             if ($Force -or $PSCmdlet.ShouldProcess($shouldProcessMessage, "Publish-Module")) {
                 $PublishPSArtifactUtility_Params = @{
-<<<<<<< HEAD
-                    PSModuleInfo      = $moduleInfo
-                    ManifestPath      = $manifestPath
-                    NugetApiKey       = $NuGetApiKey
-                    Destination       = $DestinationLocation
-                    Repository        = $Repository
-                    NugetPackageRoot  = $tempModulePath
-                    FormatVersion     = $FormatVersion
-                    ReleaseNotes      = $($ReleaseNotes -join "`r`n")
-                    Tags              = $Tags
-                    SkipAutomaticTags = $SkipAutomaticTags
-                    LicenseUri        = $LicenseUri
-                    IconUri           = $IconUri
-                    ProjectUri        = $ProjectUri
-                    Verbose           = $VerbosePreference
-                    WarningAction     = $WarningPreference
-                    ErrorAction       = $ErrorActionPreference
-                    Debug             = $DebugPreference
-=======
                     PSModuleInfo     = $moduleInfo
                     ManifestPath     = $manifestPath
                     Destination      = $DestinationLocation
@@ -568,18 +549,15 @@ function Publish-Module {
                     WarningAction    = $WarningPreference
                     ErrorAction      = $ErrorActionPreference
                     Debug            = $DebugPreference
->>>>>>> Remove validation on NugetApiKey parameter
                 }
                 if ($PSBoundParameters.Containskey('Credential')) {
                     $PublishPSArtifactUtility_Params.Add('Credential', $Credential)
                 }
-<<<<<<< HEAD
                 if ($Exclude) {
                     $PublishPSArtifactUtility_Params.Add('Exclude', $Exclude)
-=======
+                }
                 if ($PSBoundParameters.Containskey('NugetApiKey')) {
                     $PublishPSArtifactUtility_Params.Add('NugetApiKey', $NuGetApiKey)
->>>>>>> Remove validation on NugetApiKey parameter
                 }
                 Publish-PSArtifactUtility @PublishPSArtifactUtility_Params
             }

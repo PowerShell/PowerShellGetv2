@@ -45,7 +45,11 @@ function Update-Script {
 
         [Parameter()]
         [switch]
-        $AcceptLicense
+        $AcceptLicense,
+
+        [Parameter()]
+        [switch]
+        $PassThru
     )
 
     Begin {
@@ -70,7 +74,7 @@ function Update-Script {
             return
         }
 
-        if(-not $Name) {
+        if (-not $Name) {
             $Name = @('*')
         }
 
@@ -87,7 +91,7 @@ function Update-Script {
                 foreach ($scriptFilePath in $availableScriptPaths) {
                     # Check if this script got installed with PowerShellGet
                     $installedScriptFilePath = Get-InstalledScriptFilePath -Name ([System.IO.Path]::GetFileNameWithoutExtension($scriptFilePath)) |
-                        Microsoft.PowerShell.Core\Where-Object {$_ -eq $scriptFilePath }
+                    Microsoft.PowerShell.Core\Where-Object { $_ -eq $scriptFilePath }
 
                     if ($installedScriptFilePath) {
                         $scriptFilePathsToUpdate += $installedScriptFilePath
@@ -162,9 +166,14 @@ function Update-Script {
                 $PSBoundParameters[$script:AllowPrereleaseVersions] = $true
             }
             $null = $PSBoundParameters.Remove("AllowPrerelease")
+            $null = $PSBoundParameters.Remove("PassThru")
 
             $PSBoundParameters["Scope"] = Get-InstallationScope -PreviousInstallLocation $scriptFilePath -CurrentUserPath $script:MyDocumentsScriptsPath
             $sid = PackageManagement\Install-Package @PSBoundParameters
+
+            if ($PassThru) {
+                $sid | Microsoft.PowerShell.Core\ForEach-Object { New-PSGetItemInfo -SoftwareIdentity $_ -Type $script:PSArtifactTypeScript }
+            }
         }
     }
 }

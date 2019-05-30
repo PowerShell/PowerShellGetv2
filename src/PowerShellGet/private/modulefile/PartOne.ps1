@@ -78,6 +78,14 @@ $script:MyDocumentsModulesPath = Microsoft.PowerShell.Management\Join-Path -Path
 $script:ProgramFilesScriptsPath = Microsoft.PowerShell.Management\Join-Path -Path $script:ProgramFilesPSPath -ChildPath 'Scripts'
 $script:MyDocumentsScriptsPath = Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsPSPath -ChildPath 'Scripts'
 
+$script:PSGetPath = [pscustomobject]@{
+    AllUsersModules    = $script:ProgramFilesModulesPath
+    AllUsersScripts    = $script:ProgramFilesScriptsPath
+    CurrentUserModules = $script:MyDocumentsModulesPath
+    CurrentUserScripts = $script:MyDocumentsScriptsPath
+    PSTypeName         = 'Microsoft.PowerShell.Commands.PSGetPath'
+}
+
 $script:TempPath = [System.IO.Path]::GetTempPath()
 $script:PSGetItemInfoFileName = "PSGetModuleInfo.xml"
 
@@ -133,9 +141,9 @@ $script:NuGetProviderName = "NuGet"
 $script:NuGetProviderVersion = [Version]'2.8.5.201'
 
 $script:SupportsPSModulesFeatureName = "supports-powershell-modules"
-$script:FastPackRefHashtable = @{}
-$script:NuGetBinaryProgramDataPath = if ($script:IsWindows) {"$env:ProgramFiles\PackageManagement\ProviderAssemblies"}
-$script:NuGetBinaryLocalAppDataPath = if ($script:IsWindows) {"$env:LOCALAPPDATA\PackageManagement\ProviderAssemblies"}
+$script:FastPackRefHashtable = @{ }
+$script:NuGetBinaryProgramDataPath = if ($script:IsWindows) { "$env:ProgramFiles\PackageManagement\ProviderAssemblies" }
+$script:NuGetBinaryLocalAppDataPath = if ($script:IsWindows) { "$env:LOCALAPPDATA\PackageManagement\ProviderAssemblies" }
 # go fwlink for 'https://dist.nuget.org/win-x86-commandline/latest/nuget.exe'
 $script:NuGetClientSourceURL = 'https://aka.ms/psget-nugetexe'
 $script:NuGetExeMinRequiredVersion = [Version]'4.1.0'
@@ -261,7 +269,7 @@ $script:PackageManagementSaveModuleMessageResolverScriptBlock = {
 
     switch ($i) {
         'ActionInstallPackage' { return "Save-Module" }
-        'QueryInstallUntrustedPackage' {return $QuerySaveUntrustedPackage}
+        'QueryInstallUntrustedPackage' { return $QuerySaveUntrustedPackage }
         'TargetPackage' { return $PackageTarget }
         Default {
             $Message = $Message -creplace "Install", "Download"
@@ -326,7 +334,7 @@ function PackageManagementMessageResolver($MsgID, $Message) {
         'SourceNotFound' { return $SourceNotFound }
         'CaptionPackageNotTrusted' { return $ModuleIsNotTrusted }
         'CaptionSourceNotTrusted' { return $RepositoryIsNotTrusted }
-        'QueryInstallUntrustedPackage' {return $QueryInstallUntrustedPackage}
+        'QueryInstallUntrustedPackage' { return $QueryInstallUntrustedPackage }
         Default {
             if ($Message) {
                 $tempMessage = $Message -creplace "PackageSource", "PSRepository"
@@ -359,7 +367,7 @@ $script:PackageManagementSaveScriptMessageResolverScriptBlock = {
 
     switch ($i) {
         'ActionInstallPackage' { return "Save-Script" }
-        'QueryInstallUntrustedPackage' {return $QuerySaveUntrustedPackage}
+        'QueryInstallUntrustedPackage' { return $QuerySaveUntrustedPackage }
         'TargetPackage' { return $PackageTarget }
         Default {
             $Message = $Message -creplace "Install", "Download"
@@ -418,7 +426,7 @@ function PackageManagementMessageResolverForScripts($MsgID, $Message) {
         'SourceNotFound' { return $SourceNotFound }
         'CaptionPackageNotTrusted' { return $ScriptIsNotTrusted }
         'CaptionSourceNotTrusted' { return $RepositoryIsNotTrusted }
-        'QueryInstallUntrustedPackage' {return $QueryInstallUntrustedPackage}
+        'QueryInstallUntrustedPackage' { return $QueryInstallUntrustedPackage }
         Default {
             if ($Message) {
                 $tempMessage = $Message -creplace "PackageSource", "PSRepository"

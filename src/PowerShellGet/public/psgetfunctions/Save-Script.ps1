@@ -84,6 +84,7 @@ function Save-Script {
         [Parameter(Mandatory = $true,
             ValueFromPipelineByPropertyName = $true,
             ParameterSetName = 'InputObjectAndLiteralPathParameterSet')]
+        [Alias('PSPath')]
         [string]
         $LiteralPath,
 
@@ -134,7 +135,7 @@ function Save-Script {
         if (-not $Force) {
             if ($Path) {
                 $destinationPath = Resolve-PathHelper -Path $Path -CallerPSCmdlet $PSCmdlet |
-                    Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
+                Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
 
                 if (-not $destinationPath -or -not (Microsoft.PowerShell.Management\Test-path $destinationPath)) {
                     $errorMessage = ($LocalizedData.PathNotFound -f $Path)
@@ -150,7 +151,7 @@ function Save-Script {
             }
             else {
                 $destinationPath = Resolve-PathHelper -Path $LiteralPath -IsLiteralPath -CallerPSCmdlet $PSCmdlet |
-                    Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
+                Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
 
                 if (-not $destinationPath -or -not (Microsoft.PowerShell.Management\Test-Path -LiteralPath $destinationPath)) {
                     $errorMessage = ($LocalizedData.PathNotFound -f $LiteralPath)

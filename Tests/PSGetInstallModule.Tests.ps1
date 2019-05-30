@@ -192,7 +192,6 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
     It "Install-Module ContosoServer -PassThru should return output" {
         $result = Install-Module -Name "ContosoServer" -PassThru
         $result | Should -Not -BeNullOrEmpty
-        $result | Should -BeOfType Microsoft.PowerShell.Commands.PSRepositoryItemInfo
     }
 
     # Purpose: InstallNotAvailableModuleWithWildCard

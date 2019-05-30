@@ -150,7 +150,6 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT', 'InnerLoop' {
     It "Install-Script Fabrikam-ServerScript -PassThru should return output" {
         $result = Install-Script -Name "Fabrikam-ServerScript" -PassThru
         $result | Should -Not -BeNullOrEmpty
-        $result | Should -BeOfType Microsoft.PowerShell.Commands.PSRepositoryItemInfo
     }
 
     # Purpose: InstallScriptWithRangeWildCards

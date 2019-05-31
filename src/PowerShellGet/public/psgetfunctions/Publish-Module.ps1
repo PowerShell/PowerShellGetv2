@@ -28,7 +28,6 @@ function Publish-Module {
         $RequiredVersion,
 
         [Parameter()]
-        [ValidateNotNullOrEmpty()]
         [string]
         $NuGetApiKey,
 
@@ -158,20 +157,6 @@ function Publish-Module {
 
         $message = $LocalizedData.PublishLocation -f ($DestinationLocation)
         Write-Verbose -Message $message
-
-        if (-not $NuGetApiKey.Trim()) {
-            if (Microsoft.PowerShell.Management\Test-Path -Path $DestinationLocation) {
-                $NuGetApiKey = "$(Get-Random)"
-            }
-            else {
-                $message = $LocalizedData.NuGetApiKeyIsRequiredForNuGetBasedGalleryService -f ($Repository, $DestinationLocation)
-                ThrowError -ExceptionName "System.ArgumentException" `
-                    -ExceptionMessage $message `
-                    -ErrorId "NuGetApiKeyIsRequiredForNuGetBasedGalleryService" `
-                    -CallerPSCmdlet $PSCmdlet `
-                    -ErrorCategory InvalidArgument
-            }
-        }
 
         $providerName = Get-ProviderName -PSCustomObject $moduleSource
         if ($providerName -ne $script:NuGetProviderName) {
@@ -549,29 +534,30 @@ function Publish-Module {
             $shouldProcessMessage = $LocalizedData.PublishModulewhatIfMessage -f ($moduleInfo.Version, $moduleInfo.Name)
             if ($Force -or $PSCmdlet.ShouldProcess($shouldProcessMessage, "Publish-Module")) {
                 $PublishPSArtifactUtility_Params = @{
-                    PSModuleInfo      = $moduleInfo
-                    ManifestPath      = $manifestPath
-                    NugetApiKey       = $NuGetApiKey
-                    Destination       = $DestinationLocation
-                    Repository        = $Repository
-                    NugetPackageRoot  = $tempModulePath
-                    FormatVersion     = $FormatVersion
-                    ReleaseNotes      = $($ReleaseNotes -join "`r`n")
-                    Tags              = $Tags
-                    SkipAutomaticTags = $SkipAutomaticTags
-                    LicenseUri        = $LicenseUri
-                    IconUri           = $IconUri
-                    ProjectUri        = $ProjectUri
-                    Verbose           = $VerbosePreference
-                    WarningAction     = $WarningPreference
-                    ErrorAction       = $ErrorActionPreference
-                    Debug             = $DebugPreference
+                    PSModuleInfo     = $moduleInfo
+                    ManifestPath     = $manifestPath
+                    Destination      = $DestinationLocation
+                    Repository       = $Repository
+                    NugetPackageRoot = $tempModulePath
+                    FormatVersion    = $FormatVersion
+                    ReleaseNotes     = $($ReleaseNotes -join "`r`n")
+                    Tags             = $Tags
+                    LicenseUri       = $LicenseUri
+                    IconUri          = $IconUri
+                    ProjectUri       = $ProjectUri
+                    Verbose          = $VerbosePreference
+                    WarningAction    = $WarningPreference
+                    ErrorAction      = $ErrorActionPreference
+                    Debug            = $DebugPreference
                 }
                 if ($PSBoundParameters.Containskey('Credential')) {
                     $PublishPSArtifactUtility_Params.Add('Credential', $Credential)
                 }
                 if ($Exclude) {
                     $PublishPSArtifactUtility_Params.Add('Exclude', $Exclude)
+                }
+                if ($PSBoundParameters.Containskey('NugetApiKey')) {
+                    $PublishPSArtifactUtility_Params.Add('NugetApiKey', $NuGetApiKey)
                 }
                 Publish-PSArtifactUtility @PublishPSArtifactUtility_Params
             }

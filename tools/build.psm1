@@ -102,8 +102,12 @@ function Install-PackageManagement {
             Install-PackageProvider -Name NuGet -Force
         }
 
+        # temporarily register poshtest
+        Register-PSRepository -name PoshTest -SourceLocation "https://www.poshtestgallery.com/api/v2/"
+
         $FindModule_params = @{
-            Name = $OneGetModuleName
+            Name       = $OneGetModuleName
+            Repository = "PoshTest"
         }
         if ($PSVersionTable.PSVersion -eq '5.1.14394.1000') {
             # Adding -MaximumVersion 1.1.7.0 as AppVeyor VM with WMF 5 is not installed with latest root CA certificates
@@ -120,7 +124,7 @@ function Install-PackageManagement {
         $null = Microsoft.PowerShell.Management\New-Item -Path $TempModulePath -Force -ItemType Directory
         $OneGetModuleName = 'PackageManagement'
         try {
-            & $NugetExeFilePath install $OneGetModuleName -source https://www.powershellgallery.com/api/v2 -outputDirectory $TempModulePath -verbosity detailed
+            & $NugetExeFilePath install $OneGetModuleName -source https: / / www.powershellgallery.com / api / v2 -outputDirectory $TempModulePath -verbosity detailed
             $OneGetWithVersion = Microsoft.PowerShell.Management\Get-ChildItem -Path $TempModulePath -Directory
             $OneGetVersion = ($OneGetWithVersion.Name.Split('.', 2))[1]
 

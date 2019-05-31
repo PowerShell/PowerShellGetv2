@@ -209,6 +209,28 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         $repoPath = (Resolve-Path -Path $targetRepo.SourceLocation).Path
         $modulePath = (Resolve-Path -Path $module.RepositorySourceLocation.ToString().Replace('file:///', '')).Path
         $modulePath | Should -Be $repoPath
+
+    # Purpose: InstallShouldBeSilent
+    #
+    # Action: Install-Module "ContosoServer"
+    #
+    # Expected Result: Should pass
+    #
+    It "Install-Module ContosoServer should return be silent" {
+        $result = Install-Module -Name "ContosoServer"
+        $result | Should -BeNullOrEmpty
+    }
+
+    # Purpose: InstallShouldReturnOutput
+    #
+    # Action: Install-Module "ContosoServer" -PassThru
+    #
+    # Expected Result: Should pass
+    #
+    It "Install-Module ContosoServer -PassThru should return output" {
+        $result = Install-Module -Name "ContosoServer" -PassThru
+        $result | Should -Not -BeNullOrEmpty
+
     }
 
     # Purpose: InstallNotAvailableModuleWithWildCard

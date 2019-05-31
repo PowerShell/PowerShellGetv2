@@ -65,13 +65,24 @@ function Save-Module {
         [string[]]
         $Repository,
 
-        [Parameter(Mandatory = $true, Position = 1, ParameterSetName = 'NameAndPathParameterSet')]
-        [Parameter(Mandatory = $true, Position = 1, ParameterSetName = 'InputObjectAndPathParameterSet')]
+        [Parameter(Mandatory = $true,
+            Position = 1,
+            ValueFromPipelineByPropertyName = $true,
+            ParameterSetName = 'NameAndPathParameterSet')]
+        [Parameter(Mandatory = $true,
+            Position = 1,
+            ValueFromPipelineByPropertyName = $true,
+            ParameterSetName = 'InputObjectAndPathParameterSet')]
         [string]
         $Path,
 
-        [Parameter(Mandatory = $true, ParameterSetName = 'NameAndLiteralPathParameterSet')]
-        [Parameter(Mandatory = $true, ParameterSetName = 'InputObjectAndLiteralPathParameterSet')]
+        [Parameter(Mandatory = $true,
+            ValueFromPipelineByPropertyName = $true,
+            ParameterSetName = 'NameAndLiteralPathParameterSet')]
+        [Parameter(Mandatory = $true,
+            ValueFromPipelineByPropertyName = $true,
+            ParameterSetName = 'InputObjectAndLiteralPathParameterSet')]
+        [Alias('PSPath')]
         [string]
         $LiteralPath,
 
@@ -189,8 +200,7 @@ function Save-Module {
                     ($inputValue.PSTypeNames -notcontains "Microsoft.PowerShell.Commands.PSGetDscResourceInfo") -and
                     ($inputValue.PSTypeNames -notcontains "Deserialized.Microsoft.PowerShell.Commands.PSGetDscResourceInfo") -and
                     ($inputValue.PSTypeNames -notcontains "Microsoft.PowerShell.Commands.PSGetRoleCapabilityInfo") -and
-                    ($inputValue.PSTypeNames -notcontains "Deserialized.Microsoft.PowerShell.Commands.PSGetRoleCapabilityInfo"))
-                {
+                    ($inputValue.PSTypeNames -notcontains "Deserialized.Microsoft.PowerShell.Commands.PSGetRoleCapabilityInfo")) {
                     ThrowError -ExceptionName "System.ArgumentException" `
                         -ExceptionMessage $LocalizedData.InvalidInputObjectValue `
                         -ErrorId "InvalidInputObjectValue" `

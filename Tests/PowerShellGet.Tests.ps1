@@ -19,12 +19,11 @@ function IsCoreCLR { $PSVersionTable.ContainsKey('PSEdition') -and $PSVersionTab
 
 #region Install locations for modules and scripts
 
-if(IsInbox)
-{
+if (IsInbox) {
     $script:ProgramFilesPSPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramFiles -ChildPath "WindowsPowerShell"
 }
-elseif(IsCoreCLR){
-    if(IsWindows) {
+elseif (IsCoreCLR) {
+    if (IsWindows) {
         $script:ProgramFilesPSPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramFiles -ChildPath 'PowerShell'
     }
     else {
@@ -32,40 +31,31 @@ elseif(IsCoreCLR){
     }
 }
 
-try
-{
+try {
     $script:MyDocumentsFolderPath = [Environment]::GetFolderPath("MyDocuments")
 }
-catch
-{
+catch {
     $script:MyDocumentsFolderPath = $null
 }
 
-if(IsInbox)
-{
-    $script:MyDocumentsPSPath = if($script:MyDocumentsFolderPath)
-                                {
-                                    Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsFolderPath -ChildPath "WindowsPowerShell"
-                                } 
-                                else
-                                {
-                                    Microsoft.PowerShell.Management\Join-Path -Path $env:USERPROFILE -ChildPath "Documents\WindowsPowerShell"
-                                }
+if (IsInbox) {
+    $script:MyDocumentsPSPath = if ($script:MyDocumentsFolderPath) {
+        Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsFolderPath -ChildPath "WindowsPowerShell"
+    }
+    else {
+        Microsoft.PowerShell.Management\Join-Path -Path $env:USERPROFILE -ChildPath "Documents\WindowsPowerShell"
+    }
 }
-elseif(IsCoreCLR) {
-    if(IsWindows)
-    {
-        $script:MyDocumentsPSPath = if($script:MyDocumentsFolderPath)
-        {
+elseif (IsCoreCLR) {
+    if (IsWindows) {
+        $script:MyDocumentsPSPath = if ($script:MyDocumentsFolderPath) {
             Microsoft.PowerShell.Management\Join-Path -Path $script:MyDocumentsFolderPath -ChildPath 'PowerShell'
-        } 
-        else
-        {
+        }
+        else {
             Microsoft.PowerShell.Management\Join-Path -Path $HOME -ChildPath "Documents\PowerShell"
         }
     }
-    else
-    {
+    else {
         $script:MyDocumentsPSPath = Split-Path -Path ([System.Management.Automation.Platform]::SelectProductNameForDirectory('USER_MODULES')) -Parent
     }
 }
@@ -80,20 +70,17 @@ $script:MyDocumentsScriptsPath = Microsoft.PowerShell.Management\Join-Path -Path
 
 #region Register a test repository
 
-function Initialize
-{
+function Initialize {
     # Cleaned up commands whose output to console by deleting or piping to Out-Null
     Import-Module PackageManagement
     Get-PackageProvider -ListAvailable | Out-Null
 
     $repo = Get-PSRepository -ErrorAction SilentlyContinue |
-                Where-Object {$_.SourceLocation.StartsWith($SourceLocation, [System.StringComparison]::OrdinalIgnoreCase)}
-    if($repo)
-    {
+    Where-Object { $_.SourceLocation.StartsWith($SourceLocation, [System.StringComparison]::OrdinalIgnoreCase) }
+    if ($repo) {
         $script:RepositoryName = $repo.Name
     }
-    else
-    {
+    else {
         Register-PSRepository -Name $RepositoryName -SourceLocation $SourceLocation -InstallationPolicy Trusted
         $script:RegisteredINTRepo = $true
     }
@@ -101,9 +88,37 @@ function Initialize
 
 #endregion
 
-function Remove-InstalledModules
-{
+function Remove-InstalledModules {
     Get-InstalledModule -Name $ContosoServer -AllVersions -ErrorAction SilentlyContinue | PowerShellGet\Uninstall-Module -Force
+}
+
+Describe "PowerShellGet - Module public variable tests" {
+    BeforeAll {
+        if ($script:Initialized -eq $false) {
+            Initialize
+            $script:Initialized = $true
+        }
+    }
+
+    It "PSGetPath variable should exist" {
+        Test-Path -Path variable:PSGetPath | Should -BeTrue
+    }
+
+    It "PSGetPath - AllUsersModules should be $ProgramFilesModulesPath" {
+        $PSGetPath.AllUsersModules | Should -Be $script:ProgramFilesModulesPath
+    }
+
+    It "PSGetPath - AllUsersScripts should be $ProgramFilesScriptsPath" {
+        $PSGetPath.AllUsersScripts | Should -Be $script:ProgramFilesScriptsPath
+    }
+
+    It "PSGetPath - CurrentUserModules should be $ProgramFilesModulesPath" {
+        $PSGetPath.CurrentUserModules | Should -Be $script:MyDocumentsModulesPath
+    }
+
+    It "PSGetPath - CurrentUserScripts should be $ProgramFilesScriptsPath" {
+        $PSGetPath.CurrentUserScripts | Should -Be $script:MyDocumentsScriptsPath
+    }
 }
 
 Describe "PowerShellGet - Module tests" -tags "Feature" {
@@ -162,8 +177,7 @@ Describe "PowerShellGet - Module tests (Admin)" -tags @('Feature', 'RequireAdmin
 
         $installedModuleInfo | Should Not Be $null
         $installedModuleInfo.Name | Should Be $ContosoServer
-        if ($script:IsCoreCLR)
-        {
+        if ($script:IsCoreCLR) {
             $installedModuleInfo.InstalledLocation.StartsWith($script:MyDocumentsModulesPath, [System.StringComparison]::OrdinalIgnoreCase) | Should Be $true
         }
         else {
@@ -180,8 +194,7 @@ Describe "PowerShellGet - Module tests (Admin)" -tags @('Feature', 'RequireAdmin
     }
 }
 
-function Remove-InstalledScripts
-{
+function Remove-InstalledScripts {
     Get-InstalledScript -Name $FabrikamServerScript -ErrorAction SilentlyContinue | Uninstall-Script -Force
 }
 
@@ -237,22 +250,20 @@ Describe "PowerShellGet - Script tests (Admin)" -tags @('Feature', 'RequireAdmin
 
         $installedScriptInfo | Should Not Be $null
         $installedScriptInfo.Name | Should Be $FabrikamServerScript
-        if ($script:IsCoreCLR)
-        {
+        if ($script:IsCoreCLR) {
             $installedScriptInfo.InstalledLocation.StartsWith($script:MyDocumentsScriptsPath, [System.StringComparison]::OrdinalIgnoreCase) | Should Be $true
         }
-        else
-        {
+        else {
             $installedScriptInfo.InstalledLocation.StartsWith($script:ProgramFilesScriptsPath, [System.StringComparison]::OrdinalIgnoreCase) | Should Be $true
         }
-    } 
+    }
 
     AfterAll {
         Remove-InstalledScripts
     }
 }
 
-Describe 'PowerShellGet Type tests' -tags @('BVT','CI') {
+Describe 'PowerShellGet Type tests' -tags @('BVT', 'CI') {
     BeforeAll {
         Import-Module PowerShellGet -Force
     }
@@ -263,15 +274,15 @@ Describe 'PowerShellGet Type tests' -tags @('BVT','CI') {
             InternalWebProxy = @('GetProxy', 'IsBypassed')
         }
 
-        if((IsWindows)) {
-            $PowerShellGetTypeDetails['CERT_CHAIN_POLICY_PARA'] = @('cbSize','dwFlags','pvExtraPolicyPara')
-            $PowerShellGetTypeDetails['CERT_CHAIN_POLICY_STATUS'] = @('cbSize','dwError','lChainIndex','lElementIndex','pvExtraPolicyStatus')
+        if ((IsWindows)) {
+            $PowerShellGetTypeDetails['CERT_CHAIN_POLICY_PARA'] = @('cbSize', 'dwFlags', 'pvExtraPolicyPara')
+            $PowerShellGetTypeDetails['CERT_CHAIN_POLICY_STATUS'] = @('cbSize', 'dwError', 'lChainIndex', 'lElementIndex', 'pvExtraPolicyStatus')
             $PowerShellGetTypeDetails['InternalSafeHandleZeroOrMinusOneIsInvalid'] = @('IsInvalid')
-            $PowerShellGetTypeDetails['InternalSafeX509ChainHandle'] = @('CertFreeCertificateChain','ReleaseHandle','InvalidHandle')
+            $PowerShellGetTypeDetails['InternalSafeX509ChainHandle'] = @('CertFreeCertificateChain', 'ReleaseHandle', 'InvalidHandle')
             $PowerShellGetTypeDetails['Win32Helpers'] = @('CertVerifyCertificateChainPolicy', 'CertDuplicateCertificateChain', 'IsMicrosoftCertificate')
         }
 
-        if('Microsoft.PowerShell.Telemetry.Internal.TelemetryAPI' -as [Type]) {
+        if ('Microsoft.PowerShell.Telemetry.Internal.TelemetryAPI' -as [Type]) {
             $PowerShellGetTypeDetails['Telemetry'] = @('TraceMessageArtifactsNotFound', 'TraceMessageNonPSGalleryRegistration')
         }
 
@@ -284,7 +295,6 @@ Describe 'PowerShellGet Type tests' -tags @('BVT','CI') {
     }
 }
 
-if($RegisteredINTRepo)
-{
+if ($RegisteredINTRepo) {
     Get-PSRepository -Name $RepositoryName -ErrorAction SilentlyContinue | Unregister-PSRepository
 }

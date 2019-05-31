@@ -17,7 +17,7 @@
                     <TableColumnHeader>
                         <Width>20</Width>
                     </TableColumnHeader>
-                    <TableColumnHeader/>
+                    <TableColumnHeader />
                 </TableHeaders>
                 <TableRowEntries>
                     <TableRowEntry>
@@ -52,7 +52,7 @@
                     <TableColumnHeader>
                         <Width>20</Width>
                     </TableColumnHeader>
-                    <TableColumnHeader/>
+                    <TableColumnHeader />
                 </TableHeaders>
                 <TableRowEntries>
                     <TableRowEntry>
@@ -87,7 +87,7 @@
                     <TableColumnHeader>
                         <Width>20</Width>
                     </TableColumnHeader>
-                    <TableColumnHeader/>
+                    <TableColumnHeader />
                 </TableHeaders>
                 <TableRowEntries>
                     <TableRowEntry>
@@ -126,7 +126,7 @@
                     <TableColumnHeader>
                         <Width>35</Width>
                     </TableColumnHeader>
-                    <TableColumnHeader/>
+                    <TableColumnHeader />
                 </TableHeaders>
                 <TableRowEntries>
                     <TableRowEntry>
@@ -164,7 +164,7 @@
                     <TableColumnHeader>
                         <Width>35</Width>
                     </TableColumnHeader>
-                    <TableColumnHeader/>
+                    <TableColumnHeader />
                 </TableHeaders>
                 <TableRowEntries>
                     <TableRowEntry>
@@ -185,6 +185,32 @@
                     </TableRowEntry>
                 </TableRowEntries>
             </TableControl>
+        </View>
+        <View>
+            <Name>PSGetPath</Name>
+            <ViewSelectedBy>
+                <TypeName>Microsoft.PowerShell.Commands.PSGetPath</TypeName>
+            </ViewSelectedBy>
+            <ListControl>
+                <ListEntries>
+                    <ListEntry>
+                        <ListItems>
+                            <ListItem>
+                                <PropertyName>AllUsersModules</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>AllUsersScripts</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>CurrentUserModules</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>CurrentUserScripts</PropertyName>
+                            </ListItem>
+                        </ListItems>
+                    </ListEntry>
+                </ListEntries>
+            </ListControl>
         </View>
     </ViewDefinitions>
 </Configuration>

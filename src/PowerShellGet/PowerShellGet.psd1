@@ -35,7 +35,7 @@
         'Update-Script',
         'Update-ScriptFileInfo')
 
-    VariablesToExport = "*"
+    VariablesToExport = 'PSGetPath'
     AliasesToExport   = @('inmo', 'fimo', 'upmo', 'pumo')
     FileList          = @('PSModule.psm1',
         'PSGet.Format.ps1xml',

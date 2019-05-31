@@ -1,74 +1,68 @@
-function Test-ScriptFileInfo
-{
+function Test-ScriptFileInfo {
     <#
     .ExternalHelp PSModule-help.xml
     #>
-    [CmdletBinding(PositionalBinding=$false,
-                   DefaultParameterSetName='PathParameterSet',
-                   HelpUri='https://go.microsoft.com/fwlink/?LinkId=619791')]
+    [CmdletBinding(PositionalBinding = $false,
+        DefaultParameterSetName = 'PathParameterSet',
+        HelpUri = 'https://go.microsoft.com/fwlink/?LinkId=619791')]
     Param
     (
-        [Parameter(Mandatory=$true,
-                   Position=0,
-                   ValueFromPipelineByPropertyName=$true,
-                   ParameterSetName='PathParameterSet')]
+        [Parameter(Mandatory = $true,
+            Position = 0,
+            ValueFromPipelineByPropertyName = $true,
+            ParameterSetName = 'PathParameterSet')]
         [ValidateNotNullOrEmpty()]
         [string]
         $Path,
 
-        [Parameter(Mandatory=$true,
-                   ValueFromPipelineByPropertyName=$true,
-                   ParameterSetName='LiteralPathParameterSet')]
+        [Parameter(Mandatory = $true,
+            ValueFromPipelineByPropertyName = $true,
+            ParameterSetName = 'LiteralPathParameterSet')]
+        [Alias('PSPath')]
         [ValidateNotNullOrEmpty()]
         [string]
         $LiteralPath
     )
 
-    Process
-    {
+    Process {
         $scriptFilePath = $null
-        if($Path)
-        {
+        if ($Path) {
             $scriptFilePath = Resolve-PathHelper -Path $Path -CallerPSCmdlet $PSCmdlet | Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
 
-            if(-not $scriptFilePath -or -not (Microsoft.PowerShell.Management\Test-Path -Path $scriptFilePath -PathType Leaf))
-            {
+            if (-not $scriptFilePath -or -not (Microsoft.PowerShell.Management\Test-Path -Path $scriptFilePath -PathType Leaf)) {
                 $errorMessage = ($LocalizedData.PathNotFound -f $Path)
                 ThrowError  -ExceptionName "System.ArgumentException" `
-                            -ExceptionMessage $errorMessage `
-                            -ErrorId "PathNotFound" `
-                            -CallerPSCmdlet $PSCmdlet `
-                            -ExceptionObject $Path `
-                            -ErrorCategory InvalidArgument
+                    -ExceptionMessage $errorMessage `
+                    -ErrorId "PathNotFound" `
+                    -CallerPSCmdlet $PSCmdlet `
+                    -ExceptionObject $Path `
+                    -ErrorCategory InvalidArgument
                 return
             }
         }
-        else
-        {
+        else {
             $scriptFilePath = Resolve-PathHelper -Path $LiteralPath -IsLiteralPath -CallerPSCmdlet $PSCmdlet | Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
 
-            if(-not $scriptFilePath -or -not (Microsoft.PowerShell.Management\Test-Path -LiteralPath $scriptFilePath -PathType Leaf))
-            {
+            if (-not $scriptFilePath -or -not (Microsoft.PowerShell.Management\Test-Path -LiteralPath $scriptFilePath -PathType Leaf)) {
                 $errorMessage = ($LocalizedData.PathNotFound -f $LiteralPath)
                 ThrowError  -ExceptionName "System.ArgumentException" `
-                            -ExceptionMessage $errorMessage `
-                            -ErrorId "PathNotFound" `
-                            -CallerPSCmdlet $PSCmdlet `
-                            -ExceptionObject $LiteralPath `
-                            -ErrorCategory InvalidArgument
+                    -ExceptionMessage $errorMessage `
+                    -ErrorId "PathNotFound" `
+                    -CallerPSCmdlet $PSCmdlet `
+                    -ExceptionObject $LiteralPath `
+                    -ErrorCategory InvalidArgument
                 return
             }
         }
 
-        if(-not $scriptFilePath.EndsWith('.ps1', [System.StringComparison]::OrdinalIgnoreCase))
-        {
+        if (-not $scriptFilePath.EndsWith('.ps1', [System.StringComparison]::OrdinalIgnoreCase)) {
             $errorMessage = ($LocalizedData.InvalidScriptFilePath -f $scriptFilePath)
             ThrowError  -ExceptionName "System.ArgumentException" `
-                        -ExceptionMessage $errorMessage `
-                        -ErrorId "InvalidScriptFilePath" `
-                        -CallerPSCmdlet $PSCmdlet `
-                        -ExceptionObject $scriptFilePath `
-                        -ErrorCategory InvalidArgument
+                -ExceptionMessage $errorMessage `
+                -ErrorId "InvalidScriptFilePath" `
+                -CallerPSCmdlet $PSCmdlet `
+                -ExceptionObject $scriptFilePath `
+                -ErrorCategory InvalidArgument
             return
         }
 
@@ -80,39 +74,36 @@ function Test-ScriptFileInfo
 
 
         $notSupportedOnNanoErrorIds = @('WorkflowNotSupportedInPowerShellCore',
-                                        'ConfigurationNotSupportedInPowerShellCore')
-        $errorsAfterSkippingOneCoreErrors = $errors | Microsoft.PowerShell.Core\Where-Object { $notSupportedOnNanoErrorIds -notcontains $_.ErrorId}
+            'ConfigurationNotSupportedInPowerShellCore')
+        $errorsAfterSkippingOneCoreErrors = $errors | Microsoft.PowerShell.Core\Where-Object { $notSupportedOnNanoErrorIds -notcontains $_.ErrorId }
 
-        if($errorsAfterSkippingOneCoreErrors)
-        {
+        if ($errorsAfterSkippingOneCoreErrors) {
             $errorMessage = ($LocalizedData.ScriptParseError -f $scriptFilePath)
             ThrowError  -ExceptionName "System.ArgumentException" `
-                        -ExceptionMessage $errorMessage `
-                        -ErrorId "ScriptParseError" `
-                        -CallerPSCmdlet $PSCmdlet `
-                        -ExceptionObject $errorsAfterSkippingOneCoreErrors `
-                        -ErrorCategory InvalidArgument
+                -ExceptionMessage $errorMessage `
+                -ErrorId "ScriptParseError" `
+                -CallerPSCmdlet $PSCmdlet `
+                -ExceptionObject $errorsAfterSkippingOneCoreErrors `
+                -ErrorCategory InvalidArgument
             return
         }
 
-        if($ast)
-        {
+        if ($ast) {
             # Get the block/group comment beginning with <#PSScriptInfo
-            $CommentTokens = $tokens | Microsoft.PowerShell.Core\Where-Object {$_.Kind -eq 'Comment'}
+            $CommentTokens = $tokens | Microsoft.PowerShell.Core\Where-Object { $_.Kind -eq 'Comment' }
 
             $psscriptInfoComments = $CommentTokens |
-                                        Microsoft.PowerShell.Core\Where-Object { $_.Extent.Text -match "<#PSScriptInfo" } |
-                                            Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
+            Microsoft.PowerShell.Core\Where-Object { $_.Extent.Text -match "<#PSScriptInfo" } |
+            Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
 
-            if(-not $psscriptInfoComments)
-            {
+            if (-not $psscriptInfoComments) {
                 $errorMessage = ($LocalizedData.MissingPSScriptInfo -f $scriptFilePath)
                 ThrowError  -ExceptionName "System.ArgumentException" `
-                            -ExceptionMessage $errorMessage `
-                            -ErrorId "MissingPSScriptInfo" `
-                            -CallerPSCmdlet $PSCmdlet `
-                            -ExceptionObject $scriptFilePath `
-                            -ErrorCategory InvalidArgument
+                    -ExceptionMessage $errorMessage `
+                    -ErrorId "MissingPSScriptInfo" `
+                    -CallerPSCmdlet $PSCmdlet `
+                    -ExceptionObject $scriptFilePath `
+                    -ErrorCategory InvalidArgument
                 return
             }
 
@@ -124,7 +115,7 @@ function Test-ScriptFileInfo
             $Value = ""
 
             # PSScriptInfo comment will be in following format:
-                <#PSScriptInfo
+            <#PSScriptInfo
 
                 .VERSION 1.0
 
@@ -163,68 +154,55 @@ function Test-ScriptFileInfo
             # First line is <#PSScriptInfo
             # Last line #>
             #
-            if($commentLines.Count -gt 2)
-            {
-                for($i = 1; $i -lt ($commentLines.count - 1); $i++)
-                {
+            if ($commentLines.Count -gt 2) {
+                for ($i = 1; $i -lt ($commentLines.count - 1); $i++) {
                     $line = $commentLines[$i]
 
-                    if(-not $line)
-                    {
+                    if (-not $line) {
                         continue
                     }
 
                     # A line is starting with . conveys a new metadata property
                     # __NEWLINE__ is used for replacing the value lines while adding the value to $PSScriptInfo object
                     #
-                    if($line.trim().StartsWith('.'))
-                    {
-                        $parts = $line.trim() -split '[.\s+]',3 | Microsoft.PowerShell.Core\Where-Object {$_}
+                    if ($line.trim().StartsWith('.')) {
+                        $parts = $line.trim() -split '[.\s+]', 3 | Microsoft.PowerShell.Core\Where-Object { $_ }
 
-                        if($KeyName -and $Value)
-                        {
-                            if($keyName -eq $script:ReleaseNotes)
-                            {
+                        if ($KeyName -and $Value) {
+                            if ($keyName -eq $script:ReleaseNotes) {
                                 $Value = $Value.Trim() -split '__NEWLINE__'
                             }
-                            elseif($keyName -eq $script:DESCRIPTION)
-                            {
+                            elseif ($keyName -eq $script:DESCRIPTION) {
                                 $Value = $Value -split '__NEWLINE__'
                                 $Value = ($Value -join "`r`n").Trim()
                             }
-                            else
-                            {
-                                $Value = $Value -split '__NEWLINE__'  | Microsoft.PowerShell.Core\Where-Object { $_ }
+                            else {
+                                $Value = $Value -split '__NEWLINE__' | Microsoft.PowerShell.Core\Where-Object { $_ }
 
-                                if($Value -and $Value.GetType().ToString() -eq "System.String")
-                                {
+                                if ($Value -and $Value.GetType().ToString() -eq "System.String") {
                                     $Value = $Value.Trim()
                                 }
                             }
 
                             ValidateAndAdd-PSScriptInfoEntry -PSScriptInfo $PSScriptInfo `
-                                                             -PropertyName $KeyName `
-                                                             -PropertyValue $Value `
-                                                             -CallerPSCmdlet $PSCmdlet
+                                -PropertyName $KeyName `
+                                -PropertyValue $Value `
+                                -CallerPSCmdlet $PSCmdlet
                         }
 
                         $KeyName = $null
                         $Value = ""
 
-                        if($parts.GetType().ToString() -eq "System.String")
-                        {
+                        if ($parts.GetType().ToString() -eq "System.String") {
                             $KeyName = $parts
                         }
-                        else
-                        {
+                        else {
                             $KeyName = $parts[0];
                             $Value = $parts[1]
                         }
                     }
-                    else
-                    {
-                        if($Value)
-                        {
+                    else {
+                        if ($Value) {
                             # __NEWLINE__ is used for replacing the value lines while adding the value to $PSScriptInfo object
                             $Value += '__NEWLINE__'
                         }
@@ -233,31 +211,26 @@ function Test-ScriptFileInfo
                     }
                 }
 
-                if($KeyName -and $Value)
-                {
-                    if($keyName -eq $script:ReleaseNotes)
-                    {
+                if ($KeyName -and $Value) {
+                    if ($keyName -eq $script:ReleaseNotes) {
                         $Value = $Value.Trim() -split '__NEWLINE__'
                     }
-                    elseif($keyName -eq $script:DESCRIPTION)
-                    {
+                    elseif ($keyName -eq $script:DESCRIPTION) {
                         $Value = $Value -split '__NEWLINE__'
                         $Value = ($Value -join "`r`n").Trim()
                     }
-                    else
-                    {
-                        $Value = $Value -split '__NEWLINE__'  | Microsoft.PowerShell.Core\Where-Object { $_ }
+                    else {
+                        $Value = $Value -split '__NEWLINE__' | Microsoft.PowerShell.Core\Where-Object { $_ }
 
-                        if($Value -and $Value.GetType().ToString() -eq "System.String")
-                        {
+                        if ($Value -and $Value.GetType().ToString() -eq "System.String") {
                             $Value = $Value.Trim()
                         }
                     }
 
                     ValidateAndAdd-PSScriptInfoEntry -PSScriptInfo $PSScriptInfo `
-                                                     -PropertyName $KeyName `
-                                                     -PropertyValue $Value `
-                                                     -CallerPSCmdlet $PSCmdlet
+                        -PropertyName $KeyName `
+                        -PropertyValue $Value `
+                        -CallerPSCmdlet $PSCmdlet
 
                     $KeyName = $null
                     $Value = ""
@@ -265,71 +238,65 @@ function Test-ScriptFileInfo
             }
 
             $helpContent = $ast.GetHelpContent()
-            if($helpContent -and $helpContent.Description)
-            {
+            if ($helpContent -and $helpContent.Description) {
                 ValidateAndAdd-PSScriptInfoEntry -PSScriptInfo $PSScriptInfo `
-                                                 -PropertyName $script:DESCRIPTION `
-                                                 -PropertyValue $helpContent.Description.Trim() `
-                                                 -CallerPSCmdlet $PSCmdlet
+                    -PropertyName $script:DESCRIPTION `
+                    -PropertyValue $helpContent.Description.Trim() `
+                    -CallerPSCmdlet $PSCmdlet
 
             }
 
             # Handle RequiredModules
-            if((Microsoft.PowerShell.Utility\Get-Member -InputObject $ast -Name 'ScriptRequirements') -and
-               $ast.ScriptRequirements -and
-               (Microsoft.PowerShell.Utility\Get-Member -InputObject $ast.ScriptRequirements -Name 'RequiredModules') -and
-               $ast.ScriptRequirements.RequiredModules)
-            {
+            if ((Microsoft.PowerShell.Utility\Get-Member -InputObject $ast -Name 'ScriptRequirements') -and
+                $ast.ScriptRequirements -and
+                (Microsoft.PowerShell.Utility\Get-Member -InputObject $ast.ScriptRequirements -Name 'RequiredModules') -and
+                $ast.ScriptRequirements.RequiredModules) {
                 ValidateAndAdd-PSScriptInfoEntry -PSScriptInfo $PSScriptInfo `
-                                                 -PropertyName $script:RequiredModules `
-                                                 -PropertyValue $ast.ScriptRequirements.RequiredModules `
-                                                 -CallerPSCmdlet $PSCmdlet
+                    -PropertyName $script:RequiredModules `
+                    -PropertyValue $ast.ScriptRequirements.RequiredModules `
+                    -CallerPSCmdlet $PSCmdlet
             }
 
             # Get all defined functions and populate DefinedCommands, DefinedFunctions and DefinedWorkflows
-            $allCommands = $ast.FindAll({param($i) return ($i.GetType().Name -eq 'FunctionDefinitionAst')}, $true)
+            $allCommands = $ast.FindAll( { param($i) return ($i.GetType().Name -eq 'FunctionDefinitionAst') }, $true)
 
-            if($allCommands)
-            {
-                $allCommandNames = $allCommands | ForEach-Object {$_.Name} | Select-Object -Unique -ErrorAction Ignore
+            if ($allCommands) {
+                $allCommandNames = $allCommands | ForEach-Object { $_.Name } | Select-Object -Unique -ErrorAction Ignore
                 ValidateAndAdd-PSScriptInfoEntry -PSScriptInfo $PSScriptInfo `
-                                                 -PropertyName $script:DefinedCommands `
-                                                 -PropertyValue $allCommandNames `
-                                                 -CallerPSCmdlet $PSCmdlet
+                    -PropertyName $script:DefinedCommands `
+                    -PropertyValue $allCommandNames `
+                    -CallerPSCmdlet $PSCmdlet
 
-                $allFunctionNames = $allCommands | Where-Object {-not $_.IsWorkflow}  | ForEach-Object {$_.Name} | Select-Object -Unique -ErrorAction Ignore
+                $allFunctionNames = $allCommands | Where-Object { -not $_.IsWorkflow } | ForEach-Object { $_.Name } | Select-Object -Unique -ErrorAction Ignore
                 ValidateAndAdd-PSScriptInfoEntry -PSScriptInfo $PSScriptInfo `
-                                                 -PropertyName $script:DefinedFunctions `
-                                                 -PropertyValue $allFunctionNames `
-                                                 -CallerPSCmdlet $PSCmdlet
+                    -PropertyName $script:DefinedFunctions `
+                    -PropertyValue $allFunctionNames `
+                    -CallerPSCmdlet $PSCmdlet
 
 
-                $allWorkflowNames = $allCommands | Where-Object {$_.IsWorkflow} | ForEach-Object {$_.Name} | Select-Object -Unique -ErrorAction Ignore
+                $allWorkflowNames = $allCommands | Where-Object { $_.IsWorkflow } | ForEach-Object { $_.Name } | Select-Object -Unique -ErrorAction Ignore
                 ValidateAndAdd-PSScriptInfoEntry -PSScriptInfo $PSScriptInfo `
-                                                 -PropertyName $script:DefinedWorkflows `
-                                                 -PropertyValue $allWorkflowNames `
-                                                 -CallerPSCmdlet $PSCmdlet
+                    -PropertyName $script:DefinedWorkflows `
+                    -PropertyValue $allWorkflowNames `
+                    -CallerPSCmdlet $PSCmdlet
             }
         }
 
         # Ensure that the script file has the required metadata properties.
-        if(-not $PSScriptInfo.Version -or -not $PSScriptInfo.Guid -or -not $PSScriptInfo.Author -or -not $PSScriptInfo.Description)
-        {
+        if (-not $PSScriptInfo.Version -or -not $PSScriptInfo.Guid -or -not $PSScriptInfo.Author -or -not $PSScriptInfo.Description) {
             $errorMessage = ($LocalizedData.MissingRequiredPSScriptInfoProperties -f $scriptFilePath)
             ThrowError  -ExceptionName "System.ArgumentException" `
-                        -ExceptionMessage $errorMessage `
-                        -ErrorId "MissingRequiredPSScriptInfoProperties" `
-                        -CallerPSCmdlet $PSCmdlet `
-                        -ExceptionObject $Path `
-                        -ErrorCategory InvalidArgument
+                -ExceptionMessage $errorMessage `
+                -ErrorId "MissingRequiredPSScriptInfoProperties" `
+                -CallerPSCmdlet $PSCmdlet `
+                -ExceptionObject $Path `
+                -ErrorCategory InvalidArgument
             return
         }
 
-        if ($PSScriptInfo.Version -match '-')
-        {
+        if ($PSScriptInfo.Version -match '-') {
             $result = ValidateAndGet-VersionPrereleaseStrings -Version $PSScriptInfo.Version  -CallerPSCmdlet $PSCmdlet
-            if (-not $result)
-            {
+            if (-not $result) {
                 # ValidateAndGet-VersionPrereleaseStrings throws the error.
                 # returning to avoid further execution when different values are specified for -ErrorAction parameter
                 return

@@ -26,7 +26,6 @@ function Publish-NugetPackage {
         $ArgumentList += "`"$NupkgPath`""
         $ArgumentList += @('-source', "`"$Destination`"")
         $ArgumentList += @('-apikey', "`"$NugetApiKey`"")
-        $ArgumentList += '-NonInteractive'
 
         #use processstartinfo and process objects here as it allows stderr redirection in memory rather than file.
         $processStartInfo = New-Object System.Diagnostics.ProcessStartInfo
@@ -56,6 +55,7 @@ function Publish-NugetPackage {
         $ArgumentList += "`"$NupkgPath`""
         $ArgumentList += @('--source', "`"$Destination`"")
         $ArgumentList += @('--api-key', "`"$NugetApiKey`"")
+        $ArgumentList += @('--interactive')
 
         #use processstartinfo and process objects here as it allows stdout redirection in memory rather than file.
         $processStartInfo = New-Object System.Diagnostics.ProcessStartInfo

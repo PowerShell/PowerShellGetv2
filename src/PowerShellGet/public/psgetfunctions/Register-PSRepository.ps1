@@ -180,5 +180,13 @@ function Register-PSRepository {
         $PSBoundParameters["MessageResolver"] = $script:PackageManagementMessageResolverScriptBlock
 
         $null = PackageManagement\Register-PackageSource @PSBoundParameters
+
+        # add nuget based repo as a nuget source
+        if ($PackageManagementProvider -eq "Nuget") {
+            $nugetSourceExists = nuget sources list | where-object { $_.Trim() -in $SourceLocation }
+            if (!$nugetSourceExists) {
+                nuget sources add -name $Name -source $SourceLocation
+            }
+        }
     }
 }

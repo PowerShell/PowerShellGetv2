@@ -6,6 +6,7 @@ Import-Module "$PSScriptRoot\PSGetTestUtils.psm1" -WarningAction SilentlyContinu
 
 $RepositoryName = 'PSGallery'
 $SourceLocation = 'https://www.poshtestgallery.com/api/v2'
+$SourceLocation2 = 'https://www.poshtestgallery.com/api/v2/'
 $PublishLocation = 'https://www.poshtestgallery.com/api/v2/package'
 $ScriptSourceLocation = 'https://www.poshtestgallery.com/api/v2/items/psscript'
 $ScriptPublishLocation = 'https://www.poshtestgallery.com/api/v2/package'
@@ -15,6 +16,9 @@ Describe 'Test Register-PSRepository and Register-PackageSource for PSGallery re
 
     BeforeAll {
         Install-NuGetBinaries
+        Get-PSRepository |
+        Where-Object -Property SourceLocation -eq $SourceLocation2 |
+        Unregister-PSRepository
     }
 
     AfterAll {
@@ -284,17 +288,17 @@ Describe 'Test Register-PSRepository for PSTestGallery repository' -tags 'BVT', 
         $paramRegisterPSRepository = @{
             Name                  = $TestRepositoryName
             SourceLocation        = $SourceLocation
-            PublishLocation       = $SourceLocation
-            ScriptSourceLocation  = $SourceLocation
-            ScriptPublishLocation = $SourceLocation
+            PublishLocation       = $PublishLocation
+            ScriptSourceLocation  = $ScriptSourceLocation
+            ScriptPublishLocation = $ScriptPublishLocation
         }
 
         { Register-PSRepository @paramRegisterPSRepository } | Should not Throw
         $repo = Get-PSRepository -Name $TestRepositoryName
         $repo.SourceLocation | Should be $SourceLocation
-        $repo.ScriptSourceLocation | Should be $SourceLocation
-        $repo.PublishLocation | Should be $SourceLocation
-        $repo.ScriptPublishLocation | Should be $SourceLocation
+        $repo.ScriptSourceLocation | Should be $ScriptSourceLocation
+        $repo.PublishLocation | Should be $PublishLocation
+        $repo.ScriptPublishLocation | Should be $ScriptPublishLocation
     }
 }
 
@@ -324,22 +328,22 @@ Describe 'Test Set-PSRepository for PSTestGallery repository' -tags 'BVT', 'Inne
             ScriptPublishLocation = $ScriptPublishLocation
         }
 
-        Register-PSRepository @paramRegisterPSRepository
+        Register-PSRepository @paramRegisterPSRepository -ErrorAction SilentlyContinue
 
         $paramSetPSRepository = @{
             Name                  = $TestRepositoryName
             SourceLocation        = $SourceLocation
-            PublishLocation       = $SourceLocation
-            ScriptSourceLocation  = $SourceLocation
-            ScriptPublishLocation = $SourceLocation
+            PublishLocation       = $PublishLocation
+            ScriptSourceLocation  = $ScriptSourceLocation
+            ScriptPublishLocation = $ScriptPublishLocation
         }
 
         { Set-PSRepository @paramSetPSRepository } | Should not Throw
 
         $repo = Get-PSRepository -Name $TestRepositoryName
         $repo.SourceLocation | Should be $SourceLocation
-        $repo.ScriptSourceLocation | Should be $SourceLocation
-        $repo.PublishLocation | Should be $SourceLocation
-        $repo.ScriptPublishLocation | Should be $SourceLocation
+        $repo.ScriptSourceLocation | Should be $ScriptSourceLocation
+        $repo.PublishLocation | Should be $PublishLocation
+        $repo.ScriptPublishLocation | Should be $ScriptPublishLocation
     }
 }

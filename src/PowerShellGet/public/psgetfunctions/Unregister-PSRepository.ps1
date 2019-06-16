@@ -33,10 +33,15 @@ function Unregister-PSRepository {
 
             $null = PackageManagement\Unregister-PackageSource @PSBoundParameters
 
-            # remove nuget based repo as a nuget source
-            $nugetSourceExists = nuget sources list | where-object { $_.Contains($Name) }
-            if ($nugetSourceExists) {
-                nuget sources remove -name $Name
+            $nugetCmd = Microsoft.PowerShell.Core\Get-Command -Name $script:NuGetExeName `
+                -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
+
+            if ($nugetCmd){
+                # remove nuget based repo as a nuget source
+                $nugetSourceExists = nuget source list | where-object { $_.Contains($Name) }
+                if ($nugetSourceExists) {
+                    nuget sources remove -name $Name
+                }
             }
         }
     }

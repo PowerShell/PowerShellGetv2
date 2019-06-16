@@ -19,6 +19,9 @@ Describe 'Test Register-PSRepository and Register-PackageSource for PSGallery re
         Get-PSRepository |
         Where-Object -Property SourceLocation -eq $SourceLocation2 |
         Unregister-PSRepository
+
+        $nugetCmd = Microsoft.PowerShell.Core\Get-Command -Name 'NuGet.exe' `
+            -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
     }
 
     AfterAll {
@@ -42,7 +45,7 @@ Describe 'Test Register-PSRepository and Register-PackageSource for PSGallery re
         unregister-PSRepository -Name $TestRepositoryName
         $nugetSourceExists = nuget sources list | where-object { $_.Trim() -in $SourceLocation }
         $nugetSourceExists | should be $null
-    }
+    } -Skip:$(!$nugetCmd)
 
     It 'Should pipe from Get-PSRepository to Set' {
         Register-PSRepository -Default

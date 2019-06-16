@@ -182,7 +182,10 @@ function Register-PSRepository {
         $null = PackageManagement\Register-PackageSource @PSBoundParameters
 
         # add nuget based repo as a nuget source
-        if ($PackageManagementProvider -eq "Nuget") {
+        $nugetCmd = Microsoft.PowerShell.Core\Get-Command -Name $script:NuGetExeName `
+                -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
+
+        if ($nugetCmd){
             $nugetSourceExists = nuget sources list | where-object { $_.Trim() -in $SourceLocation }
             if (!$nugetSourceExists) {
                 nuget sources add -name $Name -source $SourceLocation

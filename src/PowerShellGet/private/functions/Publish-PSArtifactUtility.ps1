@@ -422,7 +422,7 @@ function Publish-PSArtifactUtility {
         if ($DotnetCommandPath) {
             Publish-NugetPackage -NupkgPath $NupkgFullName -Destination $Destination -NugetApiKey $NugetApiKey -UseDotnetCli -Verbose:$VerbosePreference
         }
-        if ($NuGetExePath) {
+        elseif ($NuGetExePath) {
             Publish-NugetPackage -NupkgPath $NupkgFullName -Destination $Destination -NugetApiKey $NugetApiKey -NugetExePath $NuGetExePath -Verbose:$VerbosePreference
         }
 

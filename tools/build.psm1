@@ -102,8 +102,12 @@ function Install-PackageManagement {
             Install-PackageProvider -Name NuGet -Force
         }
 
+        # temporarily add to test new release of PackageManagement
+        Register-PSRepository -name PoshTest -SourceLocation "https://www.poshtestgallery.com/api/v2"
+
         $FindModule_params = @{
-            Name = $OneGetModuleName
+            Name       = $OneGetModuleName
+            Repository = "PoshTest"
         }
         if ($PSVersionTable.PSVersion -eq '5.1.14394.1000') {
             # Adding -MaximumVersion 1.1.7.0 as AppVeyor VM with WMF 5 is not installed with latest root CA certificates

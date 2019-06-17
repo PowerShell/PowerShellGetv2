@@ -251,7 +251,8 @@ Bug fixes
 * Initial release from GitHub.
 * PowerShellCore support.
 
-## For full history of release notes see changelog
+## For full history of release notes see changelog:
+https://github.com/PowerShell/PowerShellGet/blob/master/CHANGELOG.md
 '@
         }
     }

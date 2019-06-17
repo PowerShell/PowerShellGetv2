@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.1.5
+
+New Features
+
+- Add and remove nuget based repositories as a nuget source when nuget client tool is installed (#498)
+
+Bug Fix
+
+- Fix for 'Failed to publish module' error thrown when publishing modules (#497)
+
 ## 2.1.4
 
 Bug Fix

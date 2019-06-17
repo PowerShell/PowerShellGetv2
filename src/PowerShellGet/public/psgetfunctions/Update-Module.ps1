@@ -50,21 +50,25 @@ function Update-Module {
 
         [Parameter()]
         [switch]
-        $AcceptLicense
+        $AcceptLicense,
+
+        [Parameter()]
+        [switch]
+        $PassThru
     )
 
     Begin {
         Install-NuGetClientBinaries -CallerPSCmdlet $PSCmdlet -Proxy $Proxy -ProxyCredential $ProxyCredential
 
         if ($Scope -eq "AllUsers" -and -not (Test-RunningAsElevated)) {
-          # Throw an error when Update-Module is used as a non-admin user and '-Scope AllUsers'
-          $message = $LocalizedData.UpdateModuleAdminPrivilegeRequiredForAllUsersScope -f @($script:programFilesModulesPath, $script:MyDocumentsModulesPath)
+            # Throw an error when Update-Module is used as a non-admin user and '-Scope AllUsers'
+            $message = $LocalizedData.UpdateModuleAdminPrivilegeRequiredForAllUsersScope -f @($script:programFilesModulesPath, $script:MyDocumentsModulesPath)
 
-          ThrowError -ExceptionName "System.ArgumentException" `
-              -ExceptionMessage $message `
-              -ErrorId "UpdateModuleAdminPrivilegeRequiredForAllUsersScope" `
-              -CallerPSCmdlet $PSCmdlet `
-              -ErrorCategory InvalidArgument
+            ThrowError -ExceptionName "System.ArgumentException" `
+                -ExceptionMessage $message `
+                -ErrorId "UpdateModuleAdminPrivilegeRequiredForAllUsersScope" `
+                -CallerPSCmdlet $PSCmdlet `
+                -ErrorCategory InvalidArgument
         }
 
         # Module names already tried in the current pipeline
@@ -84,7 +88,7 @@ function Update-Module {
             return
         }
 
-        $GetPackageParameters = @{}
+        $GetPackageParameters = @{ }
         $GetPackageParameters[$script:PSArtifactType] = $script:PSArtifactTypeModule
         $GetPackageParameters["Provider"] = $script:PSModuleProviderName
         $GetPackageParameters["MessageResolver"] = $script:PackageManagementMessageResolverScriptBlock
@@ -94,6 +98,7 @@ function Update-Module {
             $PSBoundParameters[$script:AllowPrereleaseVersions] = $true
         }
         $null = $PSBoundParameters.Remove("AllowPrerelease")
+        $null = $PSBoundParameters.Remove("PassThru")
 
         $PSGetItemInfos = @()
 
@@ -121,8 +126,8 @@ function Update-Module {
             }
 
             $installedPackages |
-                Microsoft.PowerShell.Core\ForEach-Object { New-PSGetItemInfo -SoftwareIdentity $_ -Type $script:PSArtifactTypeModule} |
-                Microsoft.PowerShell.Core\ForEach-Object { $PSGetItemInfos += $_ }
+            Microsoft.PowerShell.Core\ForEach-Object { New-PSGetItemInfo -SoftwareIdentity $_ -Type $script:PSArtifactTypeModule } |
+            Microsoft.PowerShell.Core\ForEach-Object { $PSGetItemInfos += $_ }
         }
 
         $PSBoundParameters["Provider"] = $script:PSModuleProviderName
@@ -152,12 +157,16 @@ function Update-Module {
             $PSBoundParameters["InstallUpdate"] = $true
 
             if (-not $Scope) {
-              $Scope = Get-InstallationScope -PreviousInstallLocation $psgetItemInfo.InstalledLocation -CurrentUserPath $script:MyDocumentsModulesPath
+                $Scope = Get-InstallationScope -PreviousInstallLocation $psgetItemInfo.InstalledLocation -CurrentUserPath $script:MyDocumentsModulesPath
             }
 
             $PSBoundParameters["Scope"] = $Scope
 
             $sid = PackageManagement\Install-Package @PSBoundParameters
+
+            if ($PassThru) {
+                $sid | Microsoft.PowerShell.Core\ForEach-Object { New-PSGetItemInfo -SoftwareIdentity $_ -Type $script:PSArtifactTypeModule }
+            }
         }
     }
 }

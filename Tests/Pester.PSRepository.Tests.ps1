@@ -5,16 +5,23 @@
 Import-Module "$PSScriptRoot\PSGetTestUtils.psm1" -WarningAction SilentlyContinue
 
 $RepositoryName = 'PSGallery'
-$SourceLocation = 'https://www.poshtestgallery.com/api/v2/'
-$PublishLocation = 'https://www.poshtestgallery.com/api/v2/package/'
-$ScriptSourceLocation = 'https://www.poshtestgallery.com/api/v2/items/psscript/'
-$ScriptPublishLocation = 'https://www.poshtestgallery.com/api/v2/package/'
+$SourceLocation = 'https://www.poshtestgallery.com/api/v2'
+$SourceLocation2 = 'https://www.poshtestgallery.com/api/v2/'
+$PublishLocation = 'https://www.poshtestgallery.com/api/v2/package'
+$ScriptSourceLocation = 'https://www.poshtestgallery.com/api/v2/items/psscript'
+$ScriptPublishLocation = 'https://www.poshtestgallery.com/api/v2/package'
 $TestRepositoryName = 'PSTestGallery'
 
 Describe 'Test Register-PSRepository and Register-PackageSource for PSGallery repository' -tags 'BVT', 'InnerLoop' {
 
     BeforeAll {
         Install-NuGetBinaries
+        Get-PSRepository |
+        Where-Object -Property SourceLocation -eq $SourceLocation2 |
+        Unregister-PSRepository
+
+        $nugetCmd = Microsoft.PowerShell.Core\Get-Command -Name 'NuGet.exe' `
+            -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
     }
 
     AfterAll {
@@ -29,6 +36,16 @@ Describe 'Test Register-PSRepository and Register-PackageSource for PSGallery re
     BeforeEach {
         Unregister-PSRepository -Name $RepositoryName -ErrorAction SilentlyContinue
     }
+
+    It 'Should add and remove nuget source when -PackageMangementProvider is set to Nuget' {
+        Register-PSRepository -Name $TestRepositoryName -SourceLocation $SourceLocation -PackageManagementProvider Nuget
+        $nugetSourceExists = nuget sources list | where-object { $_.Trim() -in $SourceLocation }
+        $nugetSourceExists | should be $true
+
+        unregister-PSRepository -Name $TestRepositoryName
+        $nugetSourceExists = nuget sources list | where-object { $_.Trim() -in $SourceLocation }
+        $nugetSourceExists | should be $null
+    } -Skip:$(!$nugetCmd)
 
     It 'Should pipe from Get-PSRepository to Set' {
         Register-PSRepository -Default
@@ -72,10 +89,12 @@ Describe 'Test Register-PSRepository and Register-PackageSource for PSGallery re
                 $repo = Get-PSRepository -Name 'Test Repo'
                 $repo.Name | should be 'Test Repo'
                 $repo.SourceLocation | should be $tmpdir
-            } finally {
+            }
+            finally {
                 Unregister-PSRepository -Name 'Test Repo' -ErrorAction SilentlyContinue
             }
-        } finally {
+        }
+        finally {
             Remove-Item -LiteralPath $tmpdir -Force -Recurse
         }
     }
@@ -99,7 +118,7 @@ Describe 'Test Register-PSRepository and Register-PackageSource for PSGallery re
     }
 
     It 'Register-PSRepository -Name PSGallery -SourceLocation $SourceLocation -PublishLocation $PublishLocation : Should fail' {
-        { Register-PSRepository $RepositoryName $SourceLocation -PublishLocation $PublishLocation -ErrorVariable ev  -ErrorAction SilentlyContinue  } | Should Throw
+        { Register-PSRepository $RepositoryName $SourceLocation -PublishLocation $PublishLocation -ErrorVariable ev  -ErrorAction SilentlyContinue } | Should Throw
     }
 
     It 'Register-PSRepository -Name PSGallery -SourceLocation $SourceLocation -ScriptPublishLocation $ScriptPublishLocation : Should fail' {
@@ -256,8 +275,8 @@ Describe 'Test Register-PSRepository for PSTestGallery repository' -tags 'BVT', 
     BeforeAll {
         Install-NuGetBinaries
         Get-PSRepository |
-            Where-Object -Property SourceLocation -eq $SourceLocation |
-            Unregister-PSRepository
+        Where-Object -Property SourceLocation -eq $SourceLocation |
+        Unregister-PSRepository
     }
 
     BeforeEach {
@@ -272,17 +291,17 @@ Describe 'Test Register-PSRepository for PSTestGallery repository' -tags 'BVT', 
         $paramRegisterPSRepository = @{
             Name                  = $TestRepositoryName
             SourceLocation        = $SourceLocation
-            PublishLocation       = $SourceLocation
-            ScriptSourceLocation  = $SourceLocation
-            ScriptPublishLocation = $SourceLocation
+            PublishLocation       = $PublishLocation
+            ScriptSourceLocation  = $ScriptSourceLocation
+            ScriptPublishLocation = $ScriptPublishLocation
         }
 
         { Register-PSRepository @paramRegisterPSRepository } | Should not Throw
         $repo = Get-PSRepository -Name $TestRepositoryName
         $repo.SourceLocation | Should be $SourceLocation
-        $repo.ScriptSourceLocation | Should be $SourceLocation
-        $repo.PublishLocation | Should be $SourceLocation
-        $repo.ScriptPublishLocation | Should be $SourceLocation
+        $repo.ScriptSourceLocation | Should be $ScriptSourceLocation
+        $repo.PublishLocation | Should be $PublishLocation
+        $repo.ScriptPublishLocation | Should be $ScriptPublishLocation
     }
 }
 
@@ -291,8 +310,8 @@ Describe 'Test Set-PSRepository for PSTestGallery repository' -tags 'BVT', 'Inne
     BeforeAll {
         Install-NuGetBinaries
         Get-PSRepository |
-            Where-Object -Property SourceLocation -eq $SourceLocation |
-            Unregister-PSRepository
+        Where-Object -Property SourceLocation -eq $SourceLocation |
+        Unregister-PSRepository
     }
 
     BeforeEach {
@@ -312,22 +331,22 @@ Describe 'Test Set-PSRepository for PSTestGallery repository' -tags 'BVT', 'Inne
             ScriptPublishLocation = $ScriptPublishLocation
         }
 
-        Register-PSRepository @paramRegisterPSRepository
+        Register-PSRepository @paramRegisterPSRepository -ErrorAction SilentlyContinue
 
         $paramSetPSRepository = @{
             Name                  = $TestRepositoryName
             SourceLocation        = $SourceLocation
-            PublishLocation       = $SourceLocation
-            ScriptSourceLocation  = $SourceLocation
-            ScriptPublishLocation = $SourceLocation
+            PublishLocation       = $PublishLocation
+            ScriptSourceLocation  = $ScriptSourceLocation
+            ScriptPublishLocation = $ScriptPublishLocation
         }
 
         { Set-PSRepository @paramSetPSRepository } | Should not Throw
 
         $repo = Get-PSRepository -Name $TestRepositoryName
         $repo.SourceLocation | Should be $SourceLocation
-        $repo.ScriptSourceLocation | Should be $SourceLocation
-        $repo.PublishLocation | Should be $SourceLocation
-        $repo.ScriptPublishLocation | Should be $SourceLocation
+        $repo.ScriptSourceLocation | Should be $ScriptSourceLocation
+        $repo.PublishLocation | Should be $PublishLocation
+        $repo.ScriptPublishLocation | Should be $ScriptPublishLocation
     }
 }

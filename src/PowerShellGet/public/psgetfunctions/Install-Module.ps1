@@ -83,7 +83,11 @@ function Install-Module {
 
         [Parameter()]
         [switch]
-        $AcceptLicense
+        $AcceptLicense,
+
+        [Parameter()]
+        [switch]
+        $PassThru
     )
 
     Begin {
@@ -130,6 +134,7 @@ function Install-Module {
             $PSBoundParameters[$script:AllowPrereleaseVersions] = $true
         }
         $null = $PSBoundParameters.Remove("AllowPrerelease")
+        $null = $PSBoundParameters.Remove("PassThru")
 
         if ($PSCmdlet.ParameterSetName -eq "NameParameterSet") {
             $ValidationResult = Validate-VersionParameters -CallerPSCmdlet $PSCmdlet `
@@ -155,7 +160,11 @@ function Install-Module {
                 if ($ev) { return }
             }
 
-            $null = PackageManagement\Install-Package @PSBoundParameters
+            $installedPackages = PackageManagement\Install-Package @PSBoundParameters
+
+            if ($PassThru) {
+                $installedPackages | Microsoft.PowerShell.Core\ForEach-Object { New-PSGetItemInfo -SoftwareIdentity $_ -Type $script:PSArtifactTypeModule }
+            }
         }
         elseif ($PSCmdlet.ParameterSetName -eq "InputObject") {
             $null = $PSBoundParameters.Remove("InputObject")
@@ -218,7 +227,7 @@ function Install-Module {
 
                 #Check if module is already installed
                 $InstalledModuleInfo = Test-ModuleInstalled -Name $psgetModuleInfo.Name -RequiredVersion $psgetModuleInfo.Version
-                if (-not $Force -and $InstalledModuleInfo -ne $null) {
+                if (-not $Force -and $null -ne $InstalledModuleInfo) {
                     $message = $LocalizedData.ModuleAlreadyInstalledVerbose -f ($InstalledModuleInfo.Version, $InstalledModuleInfo.Name, $InstalledModuleInfo.ModuleBase)
                     Write-Verbose -Message $message
                 }
@@ -249,7 +258,11 @@ function Install-Module {
 
                         if ($installationPolicy.Equals("trusted", [StringComparison]::OrdinalIgnoreCase) -or $SourceSGrantedTrust.Contains($source) -or $YesToAll -or $Force) {
                             $PSBoundParameters["Force"] = $true
-                            $null = PackageManagement\Install-Package @PSBoundParameters
+                            $installedPackages = PackageManagement\Install-Package @PSBoundParameters
+
+                            if ($PassThru) {
+                                $installedPackages | Microsoft.PowerShell.Core\ForEach-Object { New-PSGetItemInfo -SoftwareIdentity $_ -Type $script:PSArtifactTypeModule }
+                            }
                         }
                     }
                 }

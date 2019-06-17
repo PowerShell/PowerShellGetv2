@@ -17,7 +17,7 @@
 function SuiteSetup {
     Import-Module "$PSScriptRoot\PSGetTestUtils.psm1" -WarningAction SilentlyContinue
     Import-Module "$PSScriptRoot\Asserts.psm1" -WarningAction SilentlyContinue
-    
+
     $script:IsWindowsOS = (-not (Get-Variable -Name IsWindows -ErrorAction Ignore)) -or $IsWindows
     $script:ProgramFilesModulesPath = Get-AllUsersModulesPath
     $script:MyDocumentsModulesPath = Get-CurrentUserModulesPath
@@ -64,7 +64,7 @@ function SuiteSetup {
     $script:TestPSModulePath = Join-Path -Path $script:TempPath -ChildPath "PSGet_$(Get-Random)"
     $null = New-Item -Path $script:TempModulesPath -ItemType Directory -Force
     $null = New-Item -Path $script:TestPSModulePath -ItemType Directory -Force
-    
+
     # Set up local "gallery"
     $script:localGalleryName = [System.Guid]::NewGuid().ToString()
     $script:PSGalleryRepoPath = Join-Path -Path $script:TempPath -ChildPath 'PSGalleryRepo'
@@ -88,7 +88,7 @@ function SuiteSetup {
 
         $null = New-ModuleManifest -Path (Join-Path -Path $pesterv1Destination -ChildPath "Pester.psd1") -Description "Test signed module v1" -ModuleVersion 99.99.99.98
         $null = New-ModuleManifest -Path (Join-Path -Path $pesterv2Destination -ChildPath "Pester.psd1") -Description "Test signed module v2" -ModuleVersion 99.99.99.99
- 
+
         # Move Pester 3.4.0 to $script:TestPSModulePath
         # If it doesn't exist, attempt to download it.
         # If this is run offline, just fail the test for now.
@@ -150,7 +150,7 @@ function SuiteCleanup {
             }
         }
     }
-      
+
     RemoveItem $script:TempModulesPath
     RemoveItem $script:TestPSModulePath
 }
@@ -170,6 +170,28 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         PSGetTestUtils\Uninstall-Module ContosoServer
         PSGetTestUtils\Uninstall-Module ContosoClient
         PSGetTestUtils\Uninstall-Module DscTestModule
+    }
+
+    # Purpose: InstallShouldBeSilent
+    #
+    # Action: Install-Module "ContosoServer"
+    #
+    # Expected Result: Should pass
+    #
+    It "Install-Module ContosoServer should return be silent" {
+        $result = Install-Module -Name "ContosoServer"
+        $result | Should -BeNullOrEmpty
+    }
+
+    # Purpose: InstallShouldReturnOutput
+    #
+    # Action: Install-Module "ContosoServer" -PassThru
+    #
+    # Expected Result: Should pass
+    #
+    It "Install-Module ContosoServer -PassThru should return output" {
+        $result = Install-Module -Name "ContosoServer" -PassThru
+        $result | Should -Not -BeNullOrEmpty
     }
 
     # Purpose: InstallNotAvailableModuleWithWildCard
@@ -624,7 +646,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
                                                -RedirectStandardOutput $NonAdminConsoleOutput
         waitFor {Test-Path $NonAdminConsoleOutput} -timeoutInMilliseconds $script:assertTimeOutms -exceptionMessage "Install-Module on non-admin console failed to complete"
         $content = Get-Content $NonAdminConsoleOutput
-        
+
         Assert ($content -and ($content -match 'DscTestModule')) "Install-module with -force should fail when a module version being installed is in use, $content."
         RemoveItem $NonAdminConsoleOutput
     } `
@@ -847,7 +869,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
 
         # Because of TFS:1908563, we changed Get-Package to show only the latest version by default
         # hence the count is same after the update.
-        AssertEquals $modules1.count $modules2.count "module count should be same before and after updating a module, before: $($modules1.count), after: $($modules2.count)"        
+        AssertEquals $modules1.count $modules2.count "module count should be same before and after updating a module, before: $($modules1.count), after: $($modules2.count)"
     }
 
     It ValidateGetInstalledModuleAndUninstallModuleCmdletsWithMinimumVersion {
@@ -1054,7 +1076,7 @@ Describe PowerShell.PSGet.InstallModuleTests.P1 -Tags 'P1','OuterLoop' {
     #
     # Expected Result: should fail with an error
     #
-    It "InstallModuleWithRangeWildCards" {        
+    It "InstallModuleWithRangeWildCards" {
         AssertFullyQualifiedErrorIdEquals -scriptblock {Install-Module -Name "Co[nN]t?soS[a-z]r?er"} `
                                           -expectedFullyQualifiedErrorId 'NameShouldNotContainWildcardCharacters,Install-Module'
     }
@@ -1338,13 +1360,13 @@ Describe PowerShell.PSGet.InstallModuleTests.P1 -Tags 'P1','OuterLoop' {
     #
     It GetInstalledModuleWithWildcard {
         $ModuleNames = 'Contoso','ContosoServer','ContosoClient'
-            
+
         Install-Module -Name $ModuleNames
 
         # ModuleName without wildcards
         $res1 = Get-InstalledModule -Name $ModuleNames[0]
         AssertEquals $res1.Name $ModuleNames[0] "Get-InstalledModule didn't return the exact module, $res1"
-            
+
         # ModuleName with wildcards
         $res2 = Get-InstalledModule -Name "Contoso*"
         AssertEquals $res2.count $ModuleNames.Count "Get-InstalledModule didn't return the $ModuleNames modules, $res2"
@@ -1352,14 +1374,14 @@ Describe PowerShell.PSGet.InstallModuleTests.P1 -Tags 'P1','OuterLoop' {
 
     # Purpose: Validate Install-Module cmdlet with same source location registered with NUGet provider
     #
-    # Expected Result: Get-InstalledModule should return proper Repository and RepositorySourceLocation values 
+    # Expected Result: Get-InstalledModule should return proper Repository and RepositorySourceLocation values
     #    from the PowerShellGet provider only not from the NuGet provider
     #
     It InstallModuleWithSameLocationRegisteredWithNuGetProvider {
         $ModuleName = 'ContosoServer'
         $TempNuGetSourceName = "$(Get-Random)"
         $RepositoryName = "PSGallery"
-        Register-PackageSource -Provider nuget -Name $TempNuGetSourceName -Location $Global:PSGallerySourceUri -Trusted 
+        Register-PackageSource -Provider nuget -Name $TempNuGetSourceName -Location $Global:PSGallerySourceUri -Trusted
         try
         {
             Install-Module -Name $ModuleName -Repository $RepositoryName
@@ -1385,7 +1407,7 @@ Describe PowerShell.PSGet.InstallModuleTests.P1 -Tags 'P1','OuterLoop' {
         finally
         {
             Unregister-PackageSource -ProviderName NuGet -Name $TempNuGetSourceName -Force
-        }            
+        }
     }
 
     # Purpose: Validate Save-Module cmdlet with Find-Command cmdlet output
@@ -1416,7 +1438,7 @@ Describe PowerShell.PSGet.InstallModuleTests.P1 -Tags 'P1','OuterLoop' {
 }
 
 Describe PowerShell.PSGet.InstallModuleTests.P2 -Tags 'P2','OuterLoop' {
-    # Not executing these tests on MacOS as 
+    # Not executing these tests on MacOS as
     # the total execution time is exceeding allowed 50 min in TravisCI daily builds.
     if($IsMacOS) {
         return

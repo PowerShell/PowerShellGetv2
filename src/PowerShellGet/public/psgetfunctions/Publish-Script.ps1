@@ -18,6 +18,7 @@ function Publish-Script {
         [Parameter(Mandatory = $true,
             ValueFromPipelineByPropertyName = $true,
             ParameterSetName = 'LiteralPathParameterSet')]
+        [Alias('PSPath')]
         [ValidateNotNullOrEmpty()]
         [string]
         $LiteralPath,
@@ -49,7 +50,7 @@ function Publish-Script {
         $scriptFilePath = $null
         if ($Path) {
             $scriptFilePath = Resolve-PathHelper -Path $Path -CallerPSCmdlet $PSCmdlet |
-                Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
+            Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
 
             if (-not $scriptFilePath -or
                 -not (Microsoft.PowerShell.Management\Test-Path -Path $scriptFilePath -PathType Leaf)) {
@@ -64,7 +65,7 @@ function Publish-Script {
         }
         else {
             $scriptFilePath = Resolve-PathHelper -Path $LiteralPath -IsLiteralPath -CallerPSCmdlet $PSCmdlet |
-                Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
+            Microsoft.PowerShell.Utility\Select-Object -First 1 -ErrorAction Ignore
 
             if (-not $scriptFilePath -or
                 -not (Microsoft.PowerShell.Management\Test-Path -LiteralPath $scriptFilePath -PathType Leaf)) {
@@ -117,8 +118,7 @@ function Publish-Script {
 
         if (-not $DestinationLocation -or
             (-not (Microsoft.PowerShell.Management\Test-Path -Path $DestinationLocation) -and
-                -not (Test-WebUri -uri $DestinationLocation)))
-        {
+                -not (Test-WebUri -uri $DestinationLocation))) {
             $message = $LocalizedData.PSRepositoryScriptPublishLocationIsMissing -f ($Repository, $Repository)
             ThrowError -ExceptionName "System.ArgumentException" `
                 -ExceptionMessage $message `
@@ -182,7 +182,7 @@ function Publish-Script {
 
         # Copy the source script file to temp location to publish
         $tempScriptPath = Microsoft.PowerShell.Management\Join-Path -Path $script:TempPath -ChildPath "$(Get-Random)" |
-            Microsoft.PowerShell.Management\Join-Path -ChildPath $scriptName
+        Microsoft.PowerShell.Management\Join-Path -ChildPath $scriptName
 
         $null = Microsoft.PowerShell.Management\New-Item -Path $tempScriptPath -ItemType Directory -Force -ErrorAction SilentlyContinue -WarningAction SilentlyContinue -Confirm:$false -WhatIf:$false
         if ($Path) {
@@ -211,8 +211,8 @@ function Publish-Script {
             # Check if the specified script name is already used for a module on the specified repository
             # Use Find-Module to check if that name is already used as module name
             $modulePSGetItemInfo = Find-Module @FindParameters |
-                Microsoft.PowerShell.Core\Where-Object {$_.Name -eq $scriptName} |
-                Microsoft.PowerShell.Utility\Select-Object -Last 1 -ErrorAction Ignore
+            Microsoft.PowerShell.Core\Where-Object { $_.Name -eq $scriptName } |
+            Microsoft.PowerShell.Utility\Select-Object -Last 1 -ErrorAction Ignore
             if ($modulePSGetItemInfo) {
                 $message = $LocalizedData.SpecifiedNameIsAlearyUsed -f ($scriptName, $Repository, 'Find-Module')
                 ThrowError -ExceptionName "System.InvalidOperationException" `
@@ -227,8 +227,8 @@ function Publish-Script {
 
             $currentPSGetItemInfo = $null
             $currentPSGetItemInfo = Find-Script @FindParameters |
-                Microsoft.PowerShell.Core\Where-Object {$_.Name -eq $scriptName} |
-                Microsoft.PowerShell.Utility\Select-Object -Last 1 -ErrorAction Ignore
+            Microsoft.PowerShell.Core\Where-Object { $_.Name -eq $scriptName } |
+            Microsoft.PowerShell.Utility\Select-Object -Last 1 -ErrorAction Ignore
 
             if ($currentPSGetItemInfo) {
                 $result = ValidateAndGet-VersionPrereleaseStrings -Version $currentPSGetItemInfo.Version -CallerPSCmdlet $PSCmdlet

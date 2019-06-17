@@ -1,6 +1,6 @@
 @{
     RootModule        = 'PSModule.psm1'
-    ModuleVersion     = '2.1.4'
+    ModuleVersion     = '2.1.5'
     GUID              = '1d73a601-4a6c-43c5-ba3f-619b18bbb404'
     Author            = 'Microsoft Corporation'
     CompanyName       = 'Microsoft Corporation'
@@ -54,6 +54,15 @@
             ProjectUri   = 'https://go.microsoft.com/fwlink/?LinkId=828955'
             LicenseUri   = 'https://go.microsoft.com/fwlink/?LinkId=829061'
             ReleaseNotes = @'
+
+## 2.1.5
+New Features
+
+- Add and remove nuget based repositories as a nuget source when nuget client tool is installed (#498)
+
+Bug Fix
+
+- Fix for 'Failed to publish module' error thrown when publishing modules (#497)
 
 ## 2.1.4
 - Fixed hang while publishing some packages (#478)

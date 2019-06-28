@@ -110,6 +110,7 @@ ConvertFrom-StringData @'
         UseDefaultParameterSetOnRegisterPSRepository=Use 'Register-PSRepository -Default' to register the PSGallery repository.
         RepositoryNameContainsWildCards=The repository name '{0}' should not have wildcards, correct it and try again.
         InvalidRepository=The specified repository '{0}' is not a valid registered repository name. Please ensure that '{1}' is a registered repository.
+        RepositoryCannotBeRegistered=The specified repository '{0}' is unauthorized and cannot be registered. Try running with -Credential.
         RepositoryRegistered=Successfully registered the repository '{0}' with source location '{1}'.
         RepositoryUnregistered=Successfully unregistered the repository '{0}'.
         PSGalleryPublishLocationIsMissing=The specified repository '{0}' does not have a valid PublishLocation. Retry after setting the PublishLocation for repository '{1}' to a valid NuGet publishing endpoint using the Set-PSRepository cmdlet.

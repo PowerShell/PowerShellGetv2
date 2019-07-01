@@ -19,7 +19,6 @@ function Get-CredsFromCredentialProvider {
     $regex = [regex] '^(\S*pkgs.dev.azure.com\S*/v2)$|^(\S*pkgs.visualstudio.com\S*/v2)$'
 
     if (!($SourceLocation -match $regex)) {
-        Write-Debug "SourceLocation did not match regex"
         return $null;
     }
 
@@ -37,7 +36,7 @@ function Get-CredsFromCredentialProvider {
         # Obtion 1a) The environment variable NUGET_PLUGIN_PATHS should contain a full path to the executable,
         # .exe in the .NET Framework case and .dll in the .NET Core case
         $credProviderPath = $nugetPluginPath.value
-        $extension = $credProviderPath.Substring($credProviderPath.get_Length()-4)
+        $extension = $credProviderPath.Substring($credProviderPath.get_Length() - 4)
         if ($extension -eq ".exe") {
             $callDotnet = $false
         }
@@ -87,7 +86,6 @@ function Get-CredsFromCredentialProvider {
         $vsInstallationPath = ""
         if ([System.Text.RegularExpressions.Regex]::IsMatch($content, "installationPath")) {
             $vsInstallationPath = [System.Text.RegularExpressions.Regex]::Match($content, "(?<=installationPath: ).*(?= installationVersion:)");
-            Write-Debug "vsinstallpathmatch:  $vsInstallationPath."
             $vsInstallationPath = $vsInstallationPath.ToString()
         }
 
@@ -115,9 +113,10 @@ function Get-CredsFromCredentialProvider {
     $argumentsNoRetry = $arguments
     if ($isRetry) {
         $arguments = "$arguments -I";
-        Write-Debug "Is retry"
+        Write-Debug "Credential provider is re-running with -IsRetry"
     }
 
+    Write-Debug "Credential provider path is: $credProviderPath"
     # Using a process to run CredentialProvider.Microsoft.exe with arguments -V verbose -U query (and -IsRetry when appropriate)
     # See: https://github.com/Microsoft/artifacts-credprovider
     Start-Process $filename -ArgumentList "$arguments -V minimal" `
@@ -136,7 +135,6 @@ function Get-CredsFromCredentialProvider {
     $content = Get-Content $RedirectedOutput
     Remove-Item $RedirectedOutput -Force -Recurse -ErrorAction SilentlyContinue
 
-    Write-Debug "content is: $content"
     $username = [System.Text.RegularExpressions.Regex]::Match($content, '(?<=Username: )\S*')
     $password = [System.Text.RegularExpressions.Regex]::Match($content, '(?<=Password: ).*')
 

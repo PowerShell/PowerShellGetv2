@@ -139,6 +139,61 @@ function Register-PSRepository {
                 return
             }
 
+            $pingResult = Ping-Endpoint -Endpoint (Get-LocationString -LocationUri $SourceLocation) -Credential $Credential -Proxy $Proxy -ProxyCredential $ProxyCredential
+
+            $retrievedCredential = $null
+            if (!$Credential -and $pingResult -and $pingResult.ContainsKey($Script:StatusCode) `
+                    -and ($pingResult[$Script:StatusCode] -eq 401)) {
+
+                # Try pulling credentials from credential provider
+                $retrievedCredential = Get-CredsFromCredentialProvider -SourceLocation $SourceLocation
+
+                # Ping and resolve the specified location
+                $SourceLocation = Resolve-Location -Location (Get-LocationString -LocationUri $SourceLocation) `
+                    -LocationParameterName 'SourceLocation' `
+                    -Credential $retrievedCredential `
+                    -Proxy $Proxy `
+                    -ProxyCredential $ProxyCredential `
+                    -CallerPSCmdlet $PSCmdlet
+                if (-not $SourceLocation) {
+                    # Above Resolve-Location function throws an error when it is not able to resolve a location
+                    return
+                }
+
+                $pingResult = Ping-Endpoint -Endpoint (Get-LocationString -LocationUri $SourceLocation) -Credential $retrievedCredential -Proxy $Proxy -ProxyCredential $ProxyCredential
+
+                if (!$retrievedCredential -or ($pingResult -and $pingResult.ContainsKey($Script:StatusCode) `
+                            -and ($pingResult[$Script:StatusCode] -eq 401))) {
+
+                    # Try again
+                    $retriedRetrievedCredential = Get-CredsFromCredentialProvider -SourceLocation $SourceLocation -IsRetry $true
+
+                    # Ping and resolve the specified location
+                    $SourceLocation = Resolve-Location -Location (Get-LocationString -LocationUri $SourceLocation) `
+                        -LocationParameterName 'SourceLocation' `
+                        -Credential $retriedRetrievedCredential `
+                        -Proxy $Proxy `
+                        -ProxyCredential $ProxyCredential `
+                        -CallerPSCmdlet $PSCmdlet
+
+                    if (-not $SourceLocation) {
+                        # Above Resolve-Location function throws an error when it is not able to resolve a location
+                        return
+                    }
+
+                    $pingResult = Ping-Endpoint -Endpoint (Get-LocationString -LocationUri $SourceLocation) -Credential $retrievedCredential -Proxy $Proxy -ProxyCredential $ProxyCredential
+
+                    if (!$retriedRetrievedCredential -or ($pingResult -and $pingResult.ContainsKey($Script:StatusCode) `
+                                -and ($pingResult[$Script:StatusCode] -eq 401))) {
+
+                        $message = $LocalizedData.RepositoryCannotBeRegistered -f ($Name)
+                        Write-Error -Message $message -ErrorId "RepositoryCannotBeRegistered" -Category InvalidOperation
+
+                        return
+                    }
+                }
+            }
+
             $providerName = $null
 
             if ($PackageManagementProvider) {
@@ -183,9 +238,9 @@ function Register-PSRepository {
 
         # add nuget based repo as a nuget source
         $nugetCmd = Microsoft.PowerShell.Core\Get-Command -Name $script:NuGetExeName `
-                -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
+            -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
 
-        if ($nugetCmd){
+        if ($nugetCmd) {
             $nugetSourceExists = nuget sources list | where-object { $_.Trim() -in $SourceLocation }
             if (!$nugetSourceExists) {
                 nuget sources add -name $Name -source $SourceLocation

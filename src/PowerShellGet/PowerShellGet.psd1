@@ -1,6 +1,6 @@
 @{
     RootModule        = 'PSModule.psm1'
-    ModuleVersion     = '2.1.5'
+    ModuleVersion     = '2.2'
     GUID              = '1d73a601-4a6c-43c5-ba3f-619b18bbb404'
     Author            = 'Microsoft Corporation'
     CompanyName       = 'Microsoft Corporation'
@@ -14,6 +14,7 @@
         'Find-Module',
         'Find-RoleCapability',
         'Find-Script',
+        'Get-CredsFromCredentialProvider',
         'Get-InstalledModule',
         'Get-InstalledScript',
         'Get-PSRepository',
@@ -54,6 +55,11 @@
             ProjectUri   = 'https://go.microsoft.com/fwlink/?LinkId=828955'
             LicenseUri   = 'https://go.microsoft.com/fwlink/?LinkId=829061'
             ReleaseNotes = @'
+
+## 2.2
+Bug Fix
+
+- Fix for prompting for credentials when passing in -Credential parameter when using Register-PSRepository
 
 ## 2.1.5
 New Features

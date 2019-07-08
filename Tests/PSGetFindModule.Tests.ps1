@@ -613,7 +613,7 @@ Describe "Azure Artifacts Credential Provider Integration" -Tags 'BVT' {
         UnRegister-PSRepository -Name $repoName -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
     }
 
-    it "Register-PackageSource using Visual Studio installed credential provider" -Skip:(!$VSinstalledCredProvider -and !$IsWindows) {
+    it "Register-PackageSource using Visual Studio installed credential provider" -Skip:(!$VSinstalledCredProvider -or !$IsWindows) {
         Register-PSRepository $repoName -SourceLocation $testLocation
 
         (Get-PSRepository -Name $repoName).Name | should match $repoName

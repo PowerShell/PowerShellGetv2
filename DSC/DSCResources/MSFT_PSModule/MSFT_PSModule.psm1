@@ -146,7 +146,10 @@ function Get-TargetResource {
         # Check if the repository matches.
         $repositoryName = Get-ModuleRepositoryName -Module $latestModule -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
 
-        $installationPolicy = Get-InstallationPolicy -RepositoryName $repositoryName -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
+        if ($repositoryName) {
+            $installationPolicy = Get-InstallationPolicy -RepositoryName $repositoryName -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
+        }
+
         if ($installationPolicy) {
             $installationPolicyReturnValue = 'Trusted'
         }
@@ -389,7 +392,7 @@ function Set-TargetResource {
         $extractedArguments = New-SplatParameterHashTable -FunctionBoundParameters $PSBoundParameters `
             -ArgumentNames ('MinimumVersion', 'MaximumVersion', 'RequiredVersion')
 
-        Test-VersionParameter @extractedArguments
+        $null = Test-VersionParameter @extractedArguments
 
         try {
             $extractedArguments = New-SplatParameterHashTable -FunctionBoundParameters $PSBoundParameters `
@@ -426,7 +429,7 @@ function Set-TargetResource {
                 # Extract the installation options.
                 $extractedSwitches = New-SplatParameterHashTable -FunctionBoundParameters $PSBoundParameters -ArgumentNames ('Force', 'AllowClobber', 'SkipPublisherCheck')
 
-                $moduleFound | Install-Module @extractedSwitches
+                $moduleFound | Install-Module @extractedSwitches 2>&1 | out-string | Write-Verbose
             }
             # The repository is untrusted but user's installation policy is trusted, so we install it with a warning.
             elseif ($InstallationPolicy -ieq 'Trusted') {
@@ -436,7 +439,7 @@ function Set-TargetResource {
                 $extractedSwitches = New-SplatParameterHashTable -FunctionBoundParameters $PSBoundParameters -ArgumentNames ('AllowClobber', 'SkipPublisherCheck')
 
                 # If all the repositories are untrusted, we choose the first one.
-                $modules[0] | Install-Module @extractedSwitches -Force
+                $modules[0] | Install-Module @extractedSwitches -Force 2>&1 | out-string | Write-Verbose
             }
             # Both user and repository is untrusted
             else {

@@ -7,8 +7,8 @@
 
 # Find-Module returns an object with properties: Version, Name, Repository, Description
 # Find-Script returns an object with properties: Version, Name, Repository, Description
-function Find-PSResource
-{
+
+function Find-PSResource {
     [OutputType([PSCustomObject[]])]
     [Cmdletbinding(SupportsShouldProcess = $true)]
     Param
@@ -117,10 +117,10 @@ function Find-PSResource
         [switch]
         $IncludeDependencies,
 
-        # Returns only those modules that include specific kinds of PowerShell functionality. For example, you might only want to find modules that include DSCResource. 
+        # Returns only those modules that include specific kinds of PowerShell functionality. For example, you might only want to find modules that include DSCResource.
         # The acceptable values for this parameter are as follows:
-                # Module: DscResource, Cmdlet, Function, RoleCapability; 
-                # Scripts: Function, Workflow;
+        # Module: DscResource, Cmdlet, Function, RoleCapability;
+        # Scripts: Function, Workflow;
         # Resources that use this param: Package, Script.
         [Parameter(ParameterSetName = "PackageParameterSet")]
         [Parameter(ParameterSetName = "ScriptParameterSet")]
@@ -153,30 +153,30 @@ function Find-PSResource
 
     )
 
-    begin{
-        #For each repository, if local cache does not exist then Update-PSResourceCache
+    begin {
+        # For each repository, if local cache does not exist then Update-PSResourceCache
     }
-    process{
+    process {
 
         # Returning the array of resources
         $foundResources
 
-        foreach ($n in $name){
+        foreach ($n in $name) {
 
             if ($pscmdlet.ShouldProcess($n)) {
 
                 $PSResource = [PSCustomObject] @{
-                    Name                    = $Name
-                    Version                 = "placeholder-for-module-version"
-                    Type                    = $Type
-                    Description             = "placeholder-for-description"
+                    Name        = $Name
+                    Version     = "placeholder-for-module-version"
+                    Type        = $Type
+                    Description = "placeholder-for-description"
                 }
-            
+
                 $foundResources += $PSResource
             }
         }
 
         return $foundResources
     }
-    end{}
+    end { }
 }

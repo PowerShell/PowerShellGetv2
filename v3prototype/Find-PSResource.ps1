@@ -103,7 +103,7 @@ function Find-PSResource {
         [string[]]
         $Repository,
 
-        # Specifies a user account that has rights to install a module for a specified package provider or source.
+        # Specifies a user account that has rights to find a resource from a specific repository.
         # Resources that use this param: Package, Script.
         [Parameter(ValueFromPipelineByPropertyName = $true, ParameterSetName = "PackageParameterSet")]
         [Parameter(ValueFromPipelineByPropertyName = $true, ParameterSetName = "ScriptParameterSet")]

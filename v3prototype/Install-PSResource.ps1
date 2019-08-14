@@ -114,7 +114,7 @@ function Install-PSResource {
         [PSCredential]
         $ProxyCredential,
 
-        # Specifies a user account that has rights to install a module for a specified package provider or source.
+        # Specifies a user account that has rights to install a resource from a specific repository.
         [Parameter(ValueFromPipelineByPropertyName = $true)]
         [PSCredential]
         $Credential,

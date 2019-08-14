@@ -59,7 +59,7 @@ function Save-PSResource {
         [string]
         $MaximumVersion,
 
-        # Specifies the required version of the resource to include to be installed (cannot use this parameter with the MinimumVersion or MaximumVersion parameters).
+        # Specifies the required version of the resource to include to be saved (cannot use this parameter with the MinimumVersion or MaximumVersion parameters).
         [Parameter(ValueFromPipelineByPropertyName = $true,
             ParameterSetName = 'NameAndPathParameterSet')]
         [Parameter(ValueFromPipelineByPropertyName = $true,

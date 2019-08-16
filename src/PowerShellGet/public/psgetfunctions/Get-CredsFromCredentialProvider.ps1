@@ -43,10 +43,10 @@ function Get-CredsFromCredentialProvider {
     }
     else {
         # Option 1b) Find User-location - The NuGet Home location - %UserProfile%/.nuget/plugins/
-        $path = "`"$env:UserProfile/.nuget/plugins/netcore/CredentialProvider.Microsoft/CredentialProvider.Microsoft.dll`"";
+        $path = "$($env:UserProfile)/.nuget/plugins/netcore/CredentialProvider.Microsoft/CredentialProvider.Microsoft.dll";
 
         if ($script:IsLinux -or $script:IsMacOS) {
-            $path = "`"$HOME/.nuget/plugins/netcore/CredentialProvider.Microsoft/CredentialProvider.Microsoft.dll`"";
+            $path = "$($HOME)/.nuget/plugins/netcore/CredentialProvider.Microsoft/CredentialProvider.Microsoft.dll";
         }
         if (Test-Path $path -PathType Leaf) {
             $credProviderPath = $path
@@ -68,7 +68,7 @@ function Get-CredsFromCredentialProvider {
             return $null
         }
 
-        $vswhereExePath = "`"$programFiles\\Microsoft Visual Studio\\Installer\\vswhere.exe`""
+        $vswhereExePath = "$($programFiles)\\Microsoft Visual Studio\\Installer\\vswhere.exe"
         if (!(Test-Path $vswhereExePath -PathType Leaf)) {
             return $null
         }

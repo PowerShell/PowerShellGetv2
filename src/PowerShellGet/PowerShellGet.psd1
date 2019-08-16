@@ -1,6 +1,6 @@
 @{
     RootModule        = 'PSModule.psm1'
-    ModuleVersion     = '2.2'
+    ModuleVersion     = '2.2.1'
     GUID              = '1d73a601-4a6c-43c5-ba3f-619b18bbb404'
     Author            = 'Microsoft Corporation'
     CompanyName       = 'Microsoft Corporation'
@@ -41,7 +41,7 @@
     FileList          = @('PSModule.psm1',
         'PSGet.Format.ps1xml',
         'PSGet.Resource.psd1')
-    RequiredModules   = @(@{ModuleName = 'PackageManagement'; ModuleVersion = '1.4' })
+    RequiredModules   = @(@{ModuleName = 'PackageManagement'; ModuleVersion = '1.4.4' })
     PrivateData       = @{
         "PackageManagementProviders"           = 'PSModule.psm1'
         "SupportedPowerShellGetFormatVersions" = @('1.x', '2.x')
@@ -55,6 +55,11 @@
             ProjectUri   = 'https://go.microsoft.com/fwlink/?LinkId=828955'
             LicenseUri   = 'https://go.microsoft.com/fwlink/?LinkId=829061'
             ReleaseNotes = @'
+### 2.2.1
+Bug Fix
+
+- Allow DscResources to work on case sensitive platforms (#521)
+- Fix for failure to return credential provider when using private feeds (#521)
 
 ## 2.2
 Bug Fix

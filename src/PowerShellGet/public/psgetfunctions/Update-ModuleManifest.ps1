@@ -1,5 +1,4 @@
-function Update-ModuleManifest
-{
+function Update-ModuleManifest {
     <#
     .ExternalHelp PSModule-help.xml
     #>
@@ -9,6 +8,7 @@ function Update-ModuleManifest
     Param
     (
         [Parameter(Mandatory = $true,
+            Position = 0,
             ValueFromPipelineByPropertyName = $true,
             ParameterSetName = "NameAndPathParameterSet")]
         [ValidateNotNullOrEmpty()]
@@ -218,11 +218,10 @@ function Update-ModuleManifest
     )
 
     # If $Path is null, use the value of $literalpath
-    if (!$Path)
-    {
+    if (!$Path) {
         $Path = $LiteralPath;
     }
-       
+
     if (-not (Microsoft.PowerShell.Management\Test-Path -Path $Path -PathType Leaf)) {
         $message = $LocalizedData.UpdateModuleManifestPathCannotFound -f ($Path)
         ThrowError -ExceptionName "System.ArgumentException" `

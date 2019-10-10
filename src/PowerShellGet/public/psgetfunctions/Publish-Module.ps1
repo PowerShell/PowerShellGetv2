@@ -22,6 +22,14 @@ function Publish-Module {
         [string]
         $Path,
 
+        [Parameter(Mandatory = $true,
+            ParameterSetName = "ModuleLiteralPathParameterSet",
+            ValueFromPipelineByPropertyName = $true)]
+        [Alias('PSPath')]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $LiteralPath,
+
         [Parameter(ParameterSetName = "ModuleNameParameterSet")]
         [ValidateNotNullOrEmpty()]
         [string]
@@ -123,6 +131,12 @@ function Publish-Module {
     }
 
     Process {
+        # If $Path is null, use the value of $literalpath
+        if (!$Path)
+        {
+            $Path = $LiteralPath;
+        }
+        
         if ($Repository -eq $Script:PSGalleryModuleSource) {
             $moduleSource = Get-PSRepository -Name $Repository -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
             if (-not $moduleSource) {

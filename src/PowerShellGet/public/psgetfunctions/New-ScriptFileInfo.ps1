@@ -8,12 +8,21 @@ function New-ScriptFileInfo
                    HelpUri='https://go.microsoft.com/fwlink/?LinkId=619792')]
     Param
     (
-        [Parameter(Mandatory=$false,
-                   Position=0,
-                   ValueFromPipelineByPropertyName=$true)]
+        [Parameter(Mandatory = $false,
+            Position=0,
+            ValueFromPipelineByPropertyName = $true,
+            ParameterSetName = "PathParameterSet")]
         [ValidateNotNullOrEmpty()]
         [string]
         $Path,
+
+        [Parameter(Mandatory = $false,
+            ValueFromPipelineByPropertyName = $true,
+            ParameterSetName = "LiteralPathParameterSet")]
+        [Alias('PSPath')]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $LiteralPath,
 
         [Parameter()]
         [ValidateNotNullOrEmpty()]
@@ -105,6 +114,12 @@ function New-ScriptFileInfo
 
     Process
     {
+        # If $Path is null, use the value of $literalpath
+        if (!$Path)
+        {
+            $Path = $LiteralPath;
+        }
+
         if($Path)
         {
             if(-not $Path.EndsWith('.ps1', [System.StringComparison]::OrdinalIgnoreCase))

@@ -15,15 +15,13 @@ function Publish-Module {
         [string]
         $Name,
 
-        [Parameter(Mandatory = $true,
-            ParameterSetName = "ModulePathParameterSet",
+        [Parameter(Mandatory = $false,
             ValueFromPipelineByPropertyName = $true)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Path,
 
-        [Parameter(Mandatory = $true,
-            ParameterSetName = "ModuleLiteralPathParameterSet",
+        [Parameter(Mandatory = $false,
             ValueFromPipelineByPropertyName = $true)]
         [Alias('PSPath')]
         [ValidateNotNullOrEmpty()]
@@ -131,12 +129,17 @@ function Publish-Module {
     }
 
     Process {
-        # If $Path is null, use the value of $literalpath
-        if (!$Path)
-        {
-            $Path = $LiteralPath;
+        if ($Path) {
+            #echo "Path is not null, Do nothing"
         }
-        
+        Elseif ($LiteralPath) {
+            #echo "LiteralPath is not null, assign the value to Path"
+            $Path = $LiteralPath
+        }
+        else {
+            #echo "Both are null, do nothing"
+        }
+
         if ($Repository -eq $Script:PSGalleryModuleSource) {
             $moduleSource = Get-PSRepository -Name $Repository -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
             if (-not $moduleSource) {
@@ -229,16 +232,16 @@ function Publish-Module {
             # Find the module to be published locally, search by name and RequiredVersion
             $module = Microsoft.PowerShell.Core\Get-Module -ListAvailable -Name $Name -Verbose:$false |
                 Microsoft.PowerShell.Core\Where-Object {
-                $modInfoPrerelease = $null
-                if ($_.PrivateData -and
-                    $_.PrivateData.GetType().ToString() -eq "System.Collections.Hashtable" -and
-                    $_.PrivateData["PSData"] -and
-                    $_.PrivateData.PSData.GetType().ToString() -eq "System.Collections.Hashtable" -and
-                    $_.PrivateData.PSData["Prerelease"]) {
-                    $modInfoPrerelease = $_.PrivateData.PSData.Prerelease
+                    $modInfoPrerelease = $null
+                    if ($_.PrivateData -and
+                        $_.PrivateData.GetType().ToString() -eq "System.Collections.Hashtable" -and
+                        $_.PrivateData["PSData"] -and
+                        $_.PrivateData.PSData.GetType().ToString() -eq "System.Collections.Hashtable" -and
+                        $_.PrivateData.PSData["Prerelease"]) {
+                        $modInfoPrerelease = $_.PrivateData.PSData.Prerelease
+                    }
+                    (-not $RequiredVersion) -or ( ($reqVersion -eq $_.Version) -and ($reqPrerelease -match $modInfoPrerelease) )
                 }
-                (-not $RequiredVersion) -or ( ($reqVersion -eq $_.Version) -and ($reqPrerelease -match $modInfoPrerelease) )
-            }
 
             if (-not $module) {
                 if ($RequiredVersion) {
@@ -392,13 +395,13 @@ function Publish-Module {
         # This finds all the items without force (leaving out hidden files and dirs) then copies them
         Microsoft.PowerShell.Management\Get-ChildItem $Path -recurse |
             Microsoft.PowerShell.Management\Copy-Item -Force -Confirm:$false -WhatIf:$false -Destination {
-            if ($_.PSIsContainer) {
-                Join-Path $tempModulePathForFormatVersion $_.Parent.FullName.substring($path.length)
+                if ($_.PSIsContainer) {
+                    Join-Path $tempModulePathForFormatVersion $_.Parent.FullName.substring($path.length)
+                }
+                else {
+                    join-path $tempModulePathForFormatVersion $_.FullName.Substring($path.Length)
+                }
             }
-            else {
-                join-path $tempModulePathForFormatVersion $_.FullName.Substring($path.Length)
-            }
-        }
 
         try {
             $manifestPath = Join-PathUtility -Path $tempModulePathForFormatVersion -ChildPath "$moduleName.psd1" -PathType File
@@ -472,7 +475,7 @@ function Publish-Module {
             # Check if the specified module name is already used for a script on the specified repository
             # Use Find-Script to check if that name is already used as scriptname
             $scriptPSGetItemInfo = Find-Script @FindParameters |
-                Microsoft.PowerShell.Core\Where-Object {$_.Name -eq $moduleName} |
+                Microsoft.PowerShell.Core\Where-Object { $_.Name -eq $moduleName } |
                 Microsoft.PowerShell.Utility\Select-Object -Last 1 -ErrorAction Ignore
             if ($scriptPSGetItemInfo) {
                 $message = $LocalizedData.SpecifiedNameIsAlearyUsed -f ($moduleName, $Repository, 'Find-Script')
@@ -486,7 +489,7 @@ function Publish-Module {
 
             $null = $FindParameters.Remove('Tag')
             $currentPSGetItemInfo = Find-Module @FindParameters |
-                Microsoft.PowerShell.Core\Where-Object {$_.Name -eq $moduleInfo.Name} |
+                Microsoft.PowerShell.Core\Where-Object { $_.Name -eq $moduleInfo.Name } |
                 Microsoft.PowerShell.Utility\Select-Object -Last 1 -ErrorAction Ignore
 
             if ($currentPSGetItemInfo) {

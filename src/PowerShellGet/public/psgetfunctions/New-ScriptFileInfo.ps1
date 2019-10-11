@@ -1,24 +1,21 @@
-function New-ScriptFileInfo
-{
+function New-ScriptFileInfo {
     <#
     .ExternalHelp PSModule-help.xml
     #>
-    [CmdletBinding(PositionalBinding=$false,
-                   SupportsShouldProcess=$true,
-                   HelpUri='https://go.microsoft.com/fwlink/?LinkId=619792')]
+    [CmdletBinding(PositionalBinding = $false,
+        SupportsShouldProcess = $true,
+        HelpUri = 'https://go.microsoft.com/fwlink/?LinkId=619792')]
     Param
     (
         [Parameter(Mandatory = $false,
-            Position=0,
-            ValueFromPipelineByPropertyName = $true,
-            ParameterSetName = "PathParameterSet")]
+            Position = 0,
+            ValueFromPipelineByPropertyName = $true)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Path,
 
         [Parameter(Mandatory = $false,
-            ValueFromPipelineByPropertyName = $true,
-            ParameterSetName = "LiteralPathParameterSet")]
+            ValueFromPipelineByPropertyName = $true)]
         [Alias('PSPath')]
         [ValidateNotNullOrEmpty()]
         [string]
@@ -34,7 +31,7 @@ function New-ScriptFileInfo
         [string]
         $Author,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Description,
@@ -98,8 +95,8 @@ function New-ScriptFileInfo
         [string[]]
         $ReleaseNotes,
 
-		[Parameter()]
-		[ValidateNotNullOrEmpty()]
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
         [string]
         $PrivateData,
 
@@ -112,106 +109,97 @@ function New-ScriptFileInfo
         $Force
     )
 
-    Process
-    {
-        # If $Path is null, use the value of $literalpath
-        if (!$Path)
-        {
-            $Path = $LiteralPath;
+    Process {
+        if ($Path) {
+            #echo "Path is not null, Do nothing"
+        }
+        Elseif ($LiteralPath) {
+            #echo "LiteralPath is not null, assign the value to Path"
+            $Path = $LiteralPath
+        }
+        else {
+            #echo "Both are null, do nothing"
         }
 
-        if($Path)
-        {
-            if(-not $Path.EndsWith('.ps1', [System.StringComparison]::OrdinalIgnoreCase))
-            {
+        if ($Path) {
+            if (-not $Path.EndsWith('.ps1', [System.StringComparison]::OrdinalIgnoreCase)) {
                 $errorMessage = ($LocalizedData.InvalidScriptFilePath -f $Path)
                 ThrowError  -ExceptionName 'System.ArgumentException' `
-                            -ExceptionMessage $errorMessage `
-                            -ErrorId 'InvalidScriptFilePath' `
-                            -CallerPSCmdlet $PSCmdlet `
-                            -ExceptionObject $Path `
-                            -ErrorCategory InvalidArgument
+                    -ExceptionMessage $errorMessage `
+                    -ErrorId 'InvalidScriptFilePath' `
+                    -CallerPSCmdlet $PSCmdlet `
+                    -ExceptionObject $Path `
+                    -ErrorCategory InvalidArgument
                 return
             }
 
-            if(-not $Force -and (Microsoft.PowerShell.Management\Test-Path -Path $Path))
-            {
+            if (-not $Force -and (Microsoft.PowerShell.Management\Test-Path -Path $Path)) {
                 $errorMessage = ($LocalizedData.ScriptFileExist -f $Path)
                 ThrowError  -ExceptionName 'System.ArgumentException' `
-                            -ExceptionMessage $errorMessage `
-                            -ErrorId 'ScriptFileExist' `
-                            -CallerPSCmdlet $PSCmdlet `
-                            -ExceptionObject $Path `
-                            -ErrorCategory InvalidArgument
+                    -ExceptionMessage $errorMessage `
+                    -ErrorId 'ScriptFileExist' `
+                    -CallerPSCmdlet $PSCmdlet `
+                    -ExceptionObject $Path `
+                    -ErrorCategory InvalidArgument
                 return
             }
         }
-        elseif(-not $PassThru)
-        {
+        elseif (-not $PassThru) {
             ThrowError  -ExceptionName 'System.ArgumentException' `
-                        -ExceptionMessage $LocalizedData.MissingTheRequiredPathOrPassThruParameter `
-                        -ErrorId 'MissingTheRequiredPathOrPassThruParameter' `
-                        -CallerPSCmdlet $PSCmdlet `
-                        -ErrorCategory InvalidArgument
+                -ExceptionMessage $LocalizedData.MissingTheRequiredPathOrPassThruParameter `
+                -ErrorId 'MissingTheRequiredPathOrPassThruParameter' `
+                -CallerPSCmdlet $PSCmdlet `
+                -ErrorCategory InvalidArgument
             return
         }
 
-        if(-not $Version)
-        {
+        if (-not $Version) {
             $Version = '1.0'
         }
-        else
-        {
+        else {
             $result = ValidateAndGet-VersionPrereleaseStrings -Version $Version -CallerPSCmdlet $PSCmdlet
-            if (-not $result)
-            {
+            if (-not $result) {
                 # ValidateAndGet-VersionPrereleaseStrings throws the error.
                 # returning to avoid further execution when different values are specified for -ErrorAction parameter
                 return
             }
         }
 
-        if(-not $Author)
-        {
-            if($script:IsWindows)
-            {
+        if (-not $Author) {
+            if ($script:IsWindows) {
                 $Author = (Get-EnvironmentVariable -Name 'USERNAME' -Target $script:EnvironmentVariableTarget.Process -ErrorAction SilentlyContinue)
             }
-            else
-            {
+            else {
                 $Author = $env:USER
             }
         }
 
-        if(-not $Guid)
-        {
+        if (-not $Guid) {
             $Guid = [System.Guid]::NewGuid()
         }
 
         $params = @{
-            Version = $Version
-            Author = $Author
-            Guid = $Guid
-            CompanyName = $CompanyName
-            Copyright = $Copyright
+            Version                    = $Version
+            Author                     = $Author
+            Guid                       = $Guid
+            CompanyName                = $CompanyName
+            Copyright                  = $Copyright
             ExternalModuleDependencies = $ExternalModuleDependencies
-            RequiredScripts = $RequiredScripts
+            RequiredScripts            = $RequiredScripts
             ExternalScriptDependencies = $ExternalScriptDependencies
-            Tags = $Tags
-            ProjectUri = $ProjectUri
-            LicenseUri = $LicenseUri
-            IconUri = $IconUri
-            ReleaseNotes = $ReleaseNotes
-			PrivateData = $PrivateData
+            Tags                       = $Tags
+            ProjectUri                 = $ProjectUri
+            LicenseUri                 = $LicenseUri
+            IconUri                    = $IconUri
+            ReleaseNotes               = $ReleaseNotes
+            PrivateData                = $PrivateData
         }
 
-        if(-not (Validate-ScriptFileInfoParameters -parameters $params))
-        {
+        if (-not (Validate-ScriptFileInfoParameters -parameters $params)) {
             return
         }
 
-        if("$Description" -match '<#' -or "$Description" -match '#>')
-        {
+        if ("$Description" -match '<#' -or "$Description" -match '#>') {
             $message = $LocalizedData.InvalidParameterValue -f ($Description, 'Description')
             Write-Error -Message $message -ErrorId 'InvalidParameterValue' -Category InvalidArgument
 
@@ -227,8 +215,7 @@ function New-ScriptFileInfo
         $ScriptMetadataString = $PSScriptInfoString
         $ScriptMetadataString += "`r`n"
 
-        if("$requiresStrings".Trim())
-        {
+        if ("$requiresStrings".Trim()) {
             $ScriptMetadataString += "`r`n"
             $ScriptMetadataString += $requiresStrings -join "`r`n"
             $ScriptMetadataString += "`r`n"
@@ -240,30 +227,25 @@ function New-ScriptFileInfo
 
         $tempScriptFilePath = Microsoft.PowerShell.Management\Join-Path -Path $script:TempPath -ChildPath "$(Get-Random).ps1"
 
-        try
-        {
+        try {
             Microsoft.PowerShell.Management\Set-Content -Value $ScriptMetadataString -Path $tempScriptFilePath -Force -WhatIf:$false -Confirm:$false
 
             $scriptInfo = Test-ScriptFileInfo -Path $tempScriptFilePath
 
-            if(-not $scriptInfo)
-            {
+            if (-not $scriptInfo) {
                 # Above Test-ScriptFileInfo cmdlet writes the errors
                 return
             }
 
-    	    if($Path -and ($Force -or $PSCmdlet.ShouldProcess($Path, ($LocalizedData.NewScriptFileInfowhatIfMessage -f $Path) )))
-    	    {
+            if ($Path -and ($Force -or $PSCmdlet.ShouldProcess($Path, ($LocalizedData.NewScriptFileInfowhatIfMessage -f $Path) ))) {
                 Microsoft.PowerShell.Management\Copy-Item -Path $tempScriptFilePath -Destination $Path -Force -WhatIf:$false -Confirm:$false
             }
 
-            if($PassThru)
-            {
+            if ($PassThru) {
                 Write-Output -InputObject $ScriptMetadataString
             }
         }
-        finally
-        {
+        finally {
             Microsoft.PowerShell.Management\Remove-Item -Path $tempScriptFilePath -Force -WhatIf:$false -Confirm:$false -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
         }
     }

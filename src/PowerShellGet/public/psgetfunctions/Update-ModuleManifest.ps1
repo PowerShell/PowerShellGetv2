@@ -9,19 +9,10 @@ function Update-ModuleManifest {
     (
         [Parameter(Mandatory = $true,
             Position = 0,
-            ValueFromPipelineByPropertyName = $true,
-            ParameterSetName = "NameAndPathParameterSet")]
+            ValueFromPipelineByPropertyName = $true)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Path,
-
-        [Parameter(Mandatory = $true,
-            ValueFromPipelineByPropertyName = $true,
-            ParameterSetName = "NameAndLiteralPathParameterSet")]
-        [ValidateNotNullOrEmpty()]
-        [Alias('PSPath')]
-        [string]
-        $LiteralPath,
 
         [ValidateNotNullOrEmpty()]
         [Object[]]
@@ -216,11 +207,6 @@ function Update-ModuleManifest {
 
 
     )
-
-    # If $Path is null, use the value of $literalpath
-    if (!$Path) {
-        $Path = $LiteralPath;
-    }
 
     if (-not (Microsoft.PowerShell.Management\Test-Path -Path $Path -PathType Leaf)) {
         $message = $LocalizedData.UpdateModuleManifestPathCannotFound -f ($Path)

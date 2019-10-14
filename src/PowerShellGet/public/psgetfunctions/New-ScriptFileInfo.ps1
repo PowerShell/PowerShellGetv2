@@ -14,13 +14,6 @@ function New-ScriptFileInfo {
         [string]
         $Path,
 
-        [Parameter(Mandatory = $false,
-            ValueFromPipelineByPropertyName = $true)]
-        [Alias('PSPath')]
-        [ValidateNotNullOrEmpty()]
-        [string]
-        $LiteralPath,
-
         [Parameter()]
         [ValidateNotNullOrEmpty()]
         [string]
@@ -110,17 +103,6 @@ function New-ScriptFileInfo {
     )
 
     Process {
-        if ($Path) {
-            #echo "Path is not null, Do nothing"
-        }
-        Elseif ($LiteralPath) {
-            #echo "LiteralPath is not null, assign the value to Path"
-            $Path = $LiteralPath
-        }
-        else {
-            #echo "Both are null, do nothing"
-        }
-
         if ($Path) {
             if (-not $Path.EndsWith('.ps1', [System.StringComparison]::OrdinalIgnoreCase)) {
                 $errorMessage = ($LocalizedData.InvalidScriptFilePath -f $Path)

@@ -3,14 +3,12 @@ function New-ScriptFileInfo {
     .ExternalHelp PSModule-help.xml
     #>
     [CmdletBinding(PositionalBinding = $false,
-        DefaultParameterSetName = 'PathParameterSet',
         SupportsShouldProcess = $true,
         HelpUri = 'https://go.microsoft.com/fwlink/?LinkId=619792')]
     Param
     (
         [Parameter(Mandatory = $false,
             Position = 0,
-            ParameterSetName = 'PathParameterSet',
             ValueFromPipelineByPropertyName = $true)]
         [ValidateNotNullOrEmpty()]
         [string]
@@ -18,7 +16,6 @@ function New-ScriptFileInfo {
 
         [Parameter(Mandatory = $false,
             Position = 0,
-            ParameterSetName = 'LiteralPathParameterSet',
             ValueFromPipelineByPropertyName = $true)]
         [Alias('PSPath')]
         [ValidateNotNullOrEmpty()]

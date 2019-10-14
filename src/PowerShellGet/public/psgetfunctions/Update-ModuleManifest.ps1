@@ -3,16 +3,27 @@ function Update-ModuleManifest {
     .ExternalHelp PSModule-help.xml
     #>
     [CmdletBinding(SupportsShouldProcess = $true,
+        DefaultParameterSetName = 'PathParameterSet',
         PositionalBinding = $false,
         HelpUri = 'https://go.microsoft.com/fwlink/?LinkId=619311')]
     Param
     (
         [Parameter(Mandatory = $true,
             Position = 0,
+            ParameterSetName = 'PathParameterSet',
             ValueFromPipelineByPropertyName = $true)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Path,
+
+        [Parameter(Mandatory = $true,
+            Position = 0,
+            ParameterSetName = 'LiteralPathParameterSet',
+            ValueFromPipelineByPropertyName = $true)]
+        [Alias('PSPath')]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $LiteralPath,
 
         [ValidateNotNullOrEmpty()]
         [Object[]]
@@ -207,6 +218,20 @@ function Update-ModuleManifest {
 
 
     )
+
+    if ($Path) {
+        if (!$Path) {
+            #echo "Path is not null, Do nothing"
+            $Path = $LiteralPath;
+        }
+    }
+    Elseif ($LiteralPath) {
+        #echo "LiteralPath is not null, assign the value to Path"
+        $Path = $LiteralPath
+    }
+    else {
+        #echo "Both are null, do nothing"
+    }
 
     if (-not (Microsoft.PowerShell.Management\Test-Path -Path $Path -PathType Leaf)) {
         $message = $LocalizedData.UpdateModuleManifestPathCannotFound -f ($Path)

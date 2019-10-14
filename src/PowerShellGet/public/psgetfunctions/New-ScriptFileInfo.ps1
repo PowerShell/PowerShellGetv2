@@ -3,16 +3,27 @@ function New-ScriptFileInfo {
     .ExternalHelp PSModule-help.xml
     #>
     [CmdletBinding(PositionalBinding = $false,
+        DefaultParameterSetName = 'PathParameterSet',
         SupportsShouldProcess = $true,
         HelpUri = 'https://go.microsoft.com/fwlink/?LinkId=619792')]
     Param
     (
         [Parameter(Mandatory = $false,
             Position = 0,
+            ParameterSetName = 'PathParameterSet',
             ValueFromPipelineByPropertyName = $true)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Path,
+
+        [Parameter(Mandatory = $false,
+            Position = 0,
+            ParameterSetName = 'LiteralPathParameterSet',
+            ValueFromPipelineByPropertyName = $true)]
+        [Alias('PSPath')]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $LiteralPath,
 
         [Parameter()]
         [ValidateNotNullOrEmpty()]
@@ -103,6 +114,20 @@ function New-ScriptFileInfo {
     )
 
     Process {
+        if ($Path) {
+            if (!$Path) {
+                #echo "Path is not null, Do nothing"
+                $Path = $LiteralPath;
+            }
+        }
+        Elseif ($LiteralPath) {
+            #echo "LiteralPath is not null, assign the value to Path"
+            $Path = $LiteralPath
+        }
+        else {
+            #echo "Both are null, do nothing"
+        }
+
         if ($Path) {
             if (-not $Path.EndsWith('.ps1', [System.StringComparison]::OrdinalIgnoreCase)) {
                 $errorMessage = ($LocalizedData.InvalidScriptFilePath -f $Path)

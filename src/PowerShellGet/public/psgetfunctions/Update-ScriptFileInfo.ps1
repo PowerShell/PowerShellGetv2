@@ -396,13 +396,23 @@ function Update-ScriptFileInfo {
                             $PSScriptInfoString = $PSScriptInfoString.TrimStart()
                             $requiresStrings = $requiresStrings.TrimEnd()
 
-                            $tempContents += "$PSScriptInfoString `r`n`r`n$($requiresStrings -join "`r`n")"
+                            if ("$requiresStrings".Trim()) {
+                                $tempContents += "$PSScriptInfoString`r`n`r`n$($requiresStrings -join "`r`n")"
+                            } else {
+                                $tempContents += $PSScriptInfoString
+                            }
                             $IsNewPScriptInfoAdded = $true
                         }
                     }
                     elseif ($line -notmatch "\s*#Requires\s+-Module") {
                         # Add the existing lines if they are not part of PSScriptInfo comment or not containing #Requires -Module statements.
                         $tempContents += $line
+                    } elseif (($scriptFileContents[$i + 1] -eq "`r`n" -or $scriptFileContents[$i + 1] -eq "") -and (($i + 1) -lt $scriptFileContents.Count)) {
+                        # This condition will only be met if the line is a Requires -Module statement.
+                        # To adding newlines everytime the function is called on a script, we must increment i by 1
+                        # if the next line after the caught Requires -Module statement is the empty string or a `r`n
+                        # This prevents extra newlines from being inserted
+                        $i = $i + 1
                     }
                 }
 
@@ -441,7 +451,7 @@ function Update-ScriptFileInfo {
 
                                 if ($line.Trim().StartsWith("#>", [System.StringComparison]::OrdinalIgnoreCase) -or
                                     $line.Trim().StartsWith(".", [System.StringComparison]::OrdinalIgnoreCase)) {
-                                    $tempContents += ".DESCRIPTION `r`n$($Description -join "`r`n")`r`n"
+                                    $tempContents += ".DESCRIPTION`r`n$($Description -join "`r`n")`r`n"
                                     $IsDescriptionAdded = $true
                                     $tempContents += $line
                                 }

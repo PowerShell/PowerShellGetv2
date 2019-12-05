@@ -396,7 +396,7 @@ function Update-ScriptFileInfo {
                             $PSScriptInfoString = $PSScriptInfoString.TrimStart()
                             $requiresStrings = $requiresStrings.TrimEnd()
 
-                            if ("$requiresStrings".Trim()) {
+                            if ($requiresStrings.Trim() -ne "") {
                                 $tempContents += "$PSScriptInfoString`r`n`r`n$($requiresStrings -join "`r`n")"
                             } else {
                                 $tempContents += $PSScriptInfoString

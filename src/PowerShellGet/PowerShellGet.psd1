@@ -1,6 +1,6 @@
 @{
     RootModule        = 'PSModule.psm1'
-    ModuleVersion     = '2.2.1'
+    ModuleVersion     = '2.2.2'
     GUID              = '1d73a601-4a6c-43c5-ba3f-619b18bbb404'
     Author            = 'Microsoft Corporation'
     CompanyName       = 'Microsoft Corporation'
@@ -55,6 +55,11 @@
             ProjectUri   = 'https://go.microsoft.com/fwlink/?LinkId=828955'
             LicenseUri   = 'https://go.microsoft.com/fwlink/?LinkId=829061'
             ReleaseNotes = @'
+### 2.2.2
+Bug Fix
+
+- Update casing of DscResources output
+
 ### 2.2.1
 Bug Fix
 

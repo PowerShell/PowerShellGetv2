@@ -93,11 +93,13 @@ function Install-NuGetClientBinaries
             $applocalDataExePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetAppLocalPath -ChildPath $script:NuGetExeName
 
             # Check if NuGet.exe is available under one of the predefined PowerShellGet locations under ProgramData or LocalAppData
-            if(Microsoft.PowerShell.Management\Test-Path -Path $programDataExePath)
+            if( (Microsoft.PowerShell.Management\Test-Path -Path $programDataExePath) -and 
+                ($programDataExePath | Microsoft.PowerShell.Core\Get-Command).Version -ge $script:NuGetExeMinRequiredVersion )
             {
                 $NugetExePath = $programDataExePath
             }
-            elseif(Microsoft.PowerShell.Management\Test-Path -Path $applocalDataExePath)
+            elseif( (Microsoft.PowerShell.Management\Test-Path -Path $applocalDataExePath) -and 
+                ($applocalDataExePath | Microsoft.PowerShell.Core\Get-Command).Version -ge $script:NuGetExeMinRequiredVersion )
             {
                 $NugetExePath = $applocalDataExePath
             }

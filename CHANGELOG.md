@@ -1,4 +1,7 @@
 # Changelog
+### 2.2.3
+
+- Update `HelpInfoUri` to point to the latest content
 
 ### 2.2.2
 

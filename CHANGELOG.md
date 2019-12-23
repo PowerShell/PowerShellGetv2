@@ -1,4 +1,8 @@
 # Changelog
+### 2.2.3
+
+- Update `HelpInfoUri` to point to the latest content (#560)
+- Improve discovery of usable nuget.exe binary (Thanks bwright86!) (#558)
 
 ### 2.2.2
 

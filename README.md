@@ -65,7 +65,7 @@ Daily Build status
 Documentation
 =============
 
-[Click here](https://msdn.microsoft.com/en-us/powershell/gallery/psget/overview)
+[Click here](https://docs.microsoft.com/powershell/scripting/gallery/installing-psget?view=powershell-6)
 
 
 Requirements

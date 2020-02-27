@@ -119,5 +119,5 @@ function New-NugetPackage {
     $nupkgFullFile = Get-ChildItem -Path $OutputPath -Filter *.nupkg
 
     Write-Verbose "Created Nuget Package $nupkgFullFile"
-    Write-Output $nupkgFullFile
+    Write-Output $nupkgFullFile.FullName
 }

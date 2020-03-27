@@ -1,6 +1,6 @@
 @{
     RootModule        = 'PSModule.psm1'
-    ModuleVersion     = '2.2.3'
+    ModuleVersion     = '2.2.4'
     GUID              = '1d73a601-4a6c-43c5-ba3f-619b18bbb404'
     Author            = 'Microsoft Corporation'
     CompanyName       = 'Microsoft Corporation'
@@ -8,33 +8,33 @@
     Description       = 'PowerShell module with commands for discovering, installing, updating and publishing the PowerShell artifacts like Modules, DSC Resources, Role Capabilities and Scripts.'
     PowerShellVersion = '3.0'
     FormatsToProcess  = 'PSGet.Format.ps1xml'
-    FunctionsToExport = @(
-        'Find-Command',
-        'Find-DSCResource',
-        'Find-Module',
-        'Find-RoleCapability',
-        'Find-Script',
-        'Get-CredsFromCredentialProvider',
-        'Get-InstalledModule',
-        'Get-InstalledScript',
-        'Get-PSRepository',
-        'Install-Module',
-        'Install-Script',
-        'New-ScriptFileInfo',
-        'Publish-Module',
-        'Publish-Script',
-        'Register-PSRepository',
-        'Save-Module',
-        'Save-Script',
-        'Set-PSRepository',
-        'Test-ScriptFileInfo',
-        'Uninstall-Module',
-        'Uninstall-Script',
-        'Unregister-PSRepository',
-        'Update-Module',
-        'Update-ModuleManifest',
-        'Update-Script',
-        'Update-ScriptFileInfo')
+FunctionsToExport = @(
+	'Find-Command',
+	'Find-DSCResource',
+	'Find-Module',
+	'Find-RoleCapability',
+	'Find-Script',
+	'Get-CredsFromCredentialProvider',
+	'Get-InstalledModule',
+	'Get-InstalledScript',
+	'Get-PSRepository',
+	'Install-Module',
+	'Install-Script',
+	'New-ScriptFileInfo',
+	'Publish-Module',
+	'Publish-Script',
+	'Register-PSRepository',
+	'Save-Module',
+	'Save-Script',
+	'Set-PSRepository',
+	'Test-ScriptFileInfo',
+	'Uninstall-Module',
+	'Uninstall-Script',
+	'Unregister-PSRepository',
+	'Update-Module',
+	'Update-ModuleManifest',
+	'Update-Script',
+	'Update-ScriptFileInfo')
 
     VariablesToExport = 'PSGetPath'
     AliasesToExport   = @('inmo', 'fimo', 'upmo', 'pumo')
@@ -55,6 +55,11 @@
             ProjectUri   = 'https://go.microsoft.com/fwlink/?LinkId=828955'
             LicenseUri   = 'https://go.microsoft.com/fwlink/?LinkId=829061'
             ReleaseNotes = @'
+### 2.2.4
+Bug Fix
+
+- Keep AllUsers scope for PowerShell Core script/modules as well (not just up to PS 5.1) when updating via Update-Script and Update-Module
+
 ### 2.2.3
 - Update `HelpInfoUri` to point to the latest content (#560)
 - Improve discovery of usable nuget.exe binary (Thanks bwright86!) (#558)
@@ -279,3 +284,4 @@ https://github.com/PowerShell/PowerShellGet/blob/master/CHANGELOG.md
 
     HelpInfoURI       = 'http://go.microsoft.com/fwlink/?linkid=855963'
 }
+

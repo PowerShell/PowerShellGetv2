@@ -89,6 +89,10 @@ function Publish-Module {
     )
 
     Begin {
+        # Change security protocol to TLS 1.2
+        $script:securityProtocol = [Net.ServicePointManager]::SecurityProtocol
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
         if ($LicenseUri -and -not (Test-WebUri -uri $LicenseUri)) {
             $message = $LocalizedData.InvalidWebUri -f ($LicenseUri, "LicenseUri")
             ThrowError -ExceptionName "System.ArgumentException" `
@@ -214,7 +218,7 @@ function Publish-Module {
 
             # Find the module to be published locally, search by name and RequiredVersion
             $module = Microsoft.PowerShell.Core\Get-Module -ListAvailable -Name $Name -Verbose:$false |
-                Microsoft.PowerShell.Core\Where-Object {
+            Microsoft.PowerShell.Core\Where-Object {
                 $modInfoPrerelease = $null
                 if ($_.PrivateData -and
                     $_.PrivateData.GetType().ToString() -eq "System.Collections.Hashtable" -and
@@ -377,7 +381,7 @@ function Publish-Module {
         # Copy-Item -Recurse -Force includes hidden items like .git directories, which we don't want
         # This finds all the items without force (leaving out hidden files and dirs) then copies them
         Microsoft.PowerShell.Management\Get-ChildItem $Path -recurse |
-            Microsoft.PowerShell.Management\Copy-Item -Force -Confirm:$false -WhatIf:$false -Destination {
+        Microsoft.PowerShell.Management\Copy-Item -Force -Confirm:$false -WhatIf:$false -Destination {
             if ($_.PSIsContainer) {
                 Join-Path $tempModulePathForFormatVersion $_.Parent.FullName.substring($path.length)
             }
@@ -458,8 +462,8 @@ function Publish-Module {
             # Check if the specified module name is already used for a script on the specified repository
             # Use Find-Script to check if that name is already used as scriptname
             $scriptPSGetItemInfo = Find-Script @FindParameters |
-                Microsoft.PowerShell.Core\Where-Object {$_.Name -eq $moduleName} |
-                Microsoft.PowerShell.Utility\Select-Object -Last 1 -ErrorAction Ignore
+            Microsoft.PowerShell.Core\Where-Object { $_.Name -eq $moduleName } |
+            Microsoft.PowerShell.Utility\Select-Object -Last 1 -ErrorAction Ignore
             if ($scriptPSGetItemInfo) {
                 $message = $LocalizedData.SpecifiedNameIsAlearyUsed -f ($moduleName, $Repository, 'Find-Script')
                 ThrowError -ExceptionName "System.InvalidOperationException" `
@@ -472,8 +476,8 @@ function Publish-Module {
 
             $null = $FindParameters.Remove('Tag')
             $currentPSGetItemInfo = Find-Module @FindParameters |
-                Microsoft.PowerShell.Core\Where-Object {$_.Name -eq $moduleInfo.Name} |
-                Microsoft.PowerShell.Utility\Select-Object -Last 1 -ErrorAction Ignore
+            Microsoft.PowerShell.Core\Where-Object { $_.Name -eq $moduleInfo.Name } |
+            Microsoft.PowerShell.Utility\Select-Object -Last 1 -ErrorAction Ignore
 
             if ($currentPSGetItemInfo) {
                 $result = ValidateAndGet-VersionPrereleaseStrings -Version $currentPSGetItemInfo.Version -CallerPSCmdlet $PSCmdlet
@@ -579,5 +583,10 @@ function Publish-Module {
         finally {
             Microsoft.PowerShell.Management\Remove-Item $tempModulePath -Force -Recurse -ErrorAction Ignore -WarningAction SilentlyContinue -Confirm:$false -WhatIf:$false
         }
+    }
+
+    End {
+        # Change back to user specified security protocol
+        [Net.ServicePointManager]::SecurityProtocol = $script:securityProtocol
     }
 }

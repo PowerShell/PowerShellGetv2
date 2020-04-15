@@ -87,6 +87,10 @@ function Install-Script {
     )
 
     Begin {
+        # Change security protocol to TLS 1.2
+        $script:securityProtocol = [Net.ServicePointManager]::SecurityProtocol
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
         if ($Scope -eq "AllUsers" -and -not (Test-RunningAsElevated)) {
             # Throw an error when Install-Script is used as a non-admin user and '-Scope AllUsers'
             $message = $LocalizedData.InstallScriptAdminPrivilegeRequiredForAllUsersScope -f @($script:ProgramFilesScriptsPath, $script:MyDocumentsScriptsPath)
@@ -317,5 +321,10 @@ function Install-Script {
                 }
             }
         }
+    }
+
+    End {
+        # Change back to user specified security protocol
+        [Net.ServicePointManager]::SecurityProtocol = $script:securityProtocol
     }
 }

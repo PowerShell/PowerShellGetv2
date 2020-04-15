@@ -43,6 +43,10 @@ function Publish-Script {
     )
 
     Begin {
+        # Change security protocol to TLS 1.2
+        $script:securityProtocol = [Net.ServicePointManager]::SecurityProtocol
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
         Install-NuGetClientBinaries -CallerPSCmdlet $PSCmdlet -BootstrapNuGetExe -Force:$Force
     }
 
@@ -335,5 +339,10 @@ function Publish-Script {
         finally {
             Microsoft.PowerShell.Management\Remove-Item $tempScriptPath -Force -Recurse -ErrorAction Ignore -WarningAction SilentlyContinue -Confirm:$false -WhatIf:$false
         }
+    }
+
+    End {
+        # Change back to user specified security protocol
+        [Net.ServicePointManager]::SecurityProtocol = $script:securityProtocol
     }
 }

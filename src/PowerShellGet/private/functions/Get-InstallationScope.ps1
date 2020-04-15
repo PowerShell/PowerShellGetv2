@@ -14,7 +14,6 @@ function Get-InstallationScope()
     )
 
     if ( -not $PreviousInstallLocation.ToString().StartsWith($currentUserPath, [System.StringComparison]::OrdinalIgnoreCase) -and
-         -not $script:IsCoreCLR -and
          (Test-RunningAsElevated)) {
         $Scope = "AllUsers"
     }

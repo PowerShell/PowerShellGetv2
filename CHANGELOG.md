@@ -1,4 +1,7 @@
 # Changelog
+### 2.2.4.1
+- Remove catalog file
+
 ### 2.2.4
 - Enforce a security protocol of TLS 1.2 when interacting with online repositories (#598)
 

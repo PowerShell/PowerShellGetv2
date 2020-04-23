@@ -5,6 +5,15 @@
 [![PowerShell Gallery - PowerShellGet](https://img.shields.io/badge/PowerShell%20Gallery-PowerShellGet-blue.svg)](https://www.powershellgallery.com/packages/PowerShellGet)
 [![Minimum Supported PowerShell Version](https://img.shields.io/badge/PowerShell-3.0-blue.svg)](https://github.com/PowerShell/PowerShellGet)
 
+Important Note
+==============
+
+This version of the module is currently not in development.
+We are no longer accepting any pull requests to this repository and are not planning any future releases.
+If you have a question, or are seeing an unexpected behavior from PowerShellGet 2.x or below please open an issue in this repository.
+We are tracking the on-going development of the new version of this module in the  [PowerShell/PowerShellGet](https://github.com/powershell/powershellget) repository.
+The [PowerShell/PowerShellGet](https://github.com/powershell/powershellget) repository is also the best place to open any feature requests for this module.
+
 Introduction
 ============
 

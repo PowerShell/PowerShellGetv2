@@ -38,7 +38,8 @@ $commandsWithRepositoryParameter = @(
     "Save-Script")
 
 $commandsWithRepositoryAsName = @(
-    "Get-PSRepository",
+    "Get-PSRepository"
+    "Set-PSRepository"
     "Register-PSRepository"
     "Unregister-PSRepository"
 )

@@ -77,12 +77,14 @@ function Ping-Endpoint
         $iss.formats.clear()
         $iss.LanguageMode = "FullLanguage"
 
+        $EndPoint = [System.Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent($EndPoint)
+
         $WebRequestcmd =  @'
             param($Credential, $WebProxy)
 
             try
             {{
-                $request = [System.Net.WebRequest]::Create("{0}")
+                $request = [System.Net.WebRequest]::Create('{0}')
                 $request.Method = 'GET'
                 $request.Timeout = 30000
                 if($Credential)

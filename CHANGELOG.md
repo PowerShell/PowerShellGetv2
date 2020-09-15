@@ -1,4 +1,7 @@
 # Changelog
+### 2.2.5
+- Security patch for code injection bug
+
 ### 2.2.4.1
 - Remove catalog file
 

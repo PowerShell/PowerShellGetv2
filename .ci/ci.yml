@@ -1,0 +1,69 @@
+name: $(BuildDefinitionName)-$(date:yyMM).$(date:dd)$(rev:rrr)
+trigger:
+  # Batch merge builds together while a merge build is running
+  batch: true
+  branches:
+    include:
+    #- master
+    - development
+pr:
+  branches:
+    include:
+    #- master
+    - development
+
+resources:
+  repositories:
+  - repository: ComplianceRepo
+    type: github
+    endpoint: ComplianceGHRepo
+    name: PowerShell/compliance
+
+stages:
+- stage: Build
+  displayName: Build PowerShellGet Module Package
+  jobs:
+  - job: BuildPkg
+    displayName: Build Package
+    pool:
+      vmImage: windows-latest
+
+    steps:
+    - powershell: |
+        $powerShellPath = Join-Path -Path $env:AGENT_TEMPDIRECTORY -ChildPath 'powershell'
+        Invoke-WebRequest -Uri https://raw.githubusercontent.com/PowerShell/PowerShell/master/tools/install-powershell.ps1 -outfile ./install-powershell.ps1
+        ./install-powershell.ps1 -Destination $powerShellPath
+        $vstsCommandString = "vso[task.setvariable variable=PATH]$powerShellPath;$env:PATH"
+        Write-Host "sending " + $vstsCommandString
+        Write-Host "##$vstsCommandString"
+
+
+        Import-Module $(Build.SourcesDirectory)/tools/build.psm1 -Force
+        Install-Dependencies
+        Update-ModuleManifestFunctions
+        Publish-ModuleArtifacts
+      displayName: Install PowerShell Core
+
+    - pwsh: |
+        Get-ChildItem -Path env:
+      displayName: Capture environment for build
+      condition: succeededOrFailed()
+
+- stage: Compliance
+  displayName: Compliance
+  dependsOn: Build
+  jobs:
+  - job: ComplianceJob
+    pool:
+      vmImage: windows-latest
+    steps:
+    - checkout: self
+      clean: true
+    - checkout: ComplianceRepo
+      clean: true
+    - download: current
+      artifact: 'PowerShellGet'
+    - template: ci-compliance.yml@ComplianceRepo
+      parameters:
+        # credscan
+        suppressionsFile: ''

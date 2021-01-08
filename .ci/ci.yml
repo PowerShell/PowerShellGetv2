@@ -36,13 +36,20 @@ stages:
         $vstsCommandString = "vso[task.setvariable variable=PATH]$powerShellPath;$env:PATH"
         Write-Host "sending " + $vstsCommandString
         Write-Host "##$vstsCommandString"
+      displayName: Install PowerShell Core
 
-
+    - powershell: |
         Import-Module $(Build.SourcesDirectory)/tools/build.psm1 -Force
         Install-Dependencies
         Update-ModuleManifestFunctions
         Publish-ModuleArtifacts
-      displayName: Install PowerShell Core
+      displayName: Build Package
+
+    - pwsh: |
+        Get-ChildItem -Path $(Build.SourcesDirectory)\dist\PowerShellGet*   | Select-Object -ExpandProperty FullName | ForEach-Object {
+          Write-Host "##vso[artifact.upload containerfolder=PowerShellGet;artifactname=PowerShellGet]$_"
+        }
+      displayName: Publish Artifacts
 
     - pwsh: |
         Get-ChildItem -Path env:

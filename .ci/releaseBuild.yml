@@ -67,7 +67,7 @@ stages:
         Write-Host "sending " + $vstsCommandString
         Write-Host "##$vstsCommandString"
 
-        $signOutPath = "$(Build.SourcesDirectory)/OSS_Microsoft_PowerShellGetv2/signed/PowerShellGet"
+        $signOutPath = "$(Build.SourcesDirectory)/OSS_Microsoft_PowerShellGetv2new/signed/PowerShellGet"
         $null = New-Item -ItemType Directory -Path $signOutPath
         # Set signing out path variable
         $vstsCommandString = "vso[task.setvariable variable=signOutPath]${signOutPath}"

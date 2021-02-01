@@ -116,7 +116,7 @@ stages:
     #    publish-module -Path $(signOutPath)
 
     #    ./build -BuildNupkg -signed
-    3  displayName: Create nupkg for publishing
+    #  displayName: Create nupkg for publishing
 
     # finally publish the parts of the build which will be used in the next stages
     # if it's not published, the subsequent stages will not be able to access it.
@@ -162,6 +162,6 @@ stages:
         optionsFTPath: ''
         # tsa-upload
         # the compliance scanning must be uploaded, which you need to request
-        codeBaseName: 'PSSA_202004'
+        codeBaseName: 'PowerShellGetv2_20200129'
         # selections
         APIScan: false # set to false when not using Windows APIs.

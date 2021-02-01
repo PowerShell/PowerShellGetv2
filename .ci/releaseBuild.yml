@@ -61,6 +61,7 @@ stages:
     # these are setting vso variables which will be persisted between stages
     - pwsh: |
         $signSrcPath = "$(Build.SourcesDirectory)/dist/PowerShellGet"
+        dir
         # Set signing src path variable
         $vstsCommandString = "vso[task.setvariable variable=signSrcPath]${signSrcPath}"
         Write-Host "sending " + $vstsCommandString
@@ -79,7 +80,8 @@ stages:
         Write-Host "##$vstsCommandString"
 
         # Get version and create a variable
-        $moduleData = Import-PowerShellDataFile "$(Build.SourcesDirectory)/dist/PowerShellGet/PowerShellGet.psd1"
+        dir
+        $moduleData = Import-PowerShellDataFile "$(Build.SourcesDirectory)/PowerShellGet/dist/PowerShellGet/PowerShellGet.psd1"
         $moduleVersion = $moduleData.ModuleVersion
         $vstsCommandString = "vso[task.setvariable variable=moduleVersion]${moduleVersion}"
         Write-Host "sending " + $vstsCommandString

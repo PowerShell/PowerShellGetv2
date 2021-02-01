@@ -51,11 +51,7 @@ stages:
       displayName: Capture environment
 
     - pwsh: |
-        Set-Location "$(Build.SourcesDirectory)"
-        dir
-
-        cd tools
-        dir
+        Set-Location "$(Build.SourcesDirectory)/PowerShellGetv2"
         Import-Module $(Build.SourcesDirectory)/tools/build.psm1 -Force
         Install-Dependencies
         Update-ModuleManifestFunctions

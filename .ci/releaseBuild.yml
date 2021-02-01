@@ -60,7 +60,7 @@ stages:
 
     # these are setting vso variables which will be persisted between stages
     - pwsh: |
-        $signSrcPath = "$(Build.SourcesDirectory)/dist/PowerShellGet"
+        $signSrcPath = "$(Build.SourcesDirectory)/PowerShellGetv2/dist/PowerShellGet"
         dir
         # Set signing src path variable
         $vstsCommandString = "vso[task.setvariable variable=signSrcPath]${signSrcPath}"

@@ -52,7 +52,7 @@ stages:
 
     - pwsh: |
         Set-Location "$(Build.SourcesDirectory)/PowerShellGetv2"
-        Import-Module $(Build.SourcesDirectory)/tools/build.psm1 -Force
+        Import-Module ./tools/build.psm1 -Force
         Install-Dependencies
         Update-ModuleManifestFunctions
         Publish-ModuleArtifacts

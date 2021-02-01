@@ -81,6 +81,9 @@ stages:
 
         # Get version and create a variable
         dir
+        dir OSS_Microsoft_PowerShellGetv2new
+        write-host "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        dir PowerShellGetv2
         $moduleData = Import-PowerShellDataFile "$(Build.SourcesDirectory)/PowerShellGet/dist/PowerShellGet/PowerShellGet.psd1"
         $moduleVersion = $moduleData.ModuleVersion
         $vstsCommandString = "vso[task.setvariable variable=moduleVersion]${moduleVersion}"

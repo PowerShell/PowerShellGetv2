@@ -13,8 +13,6 @@ pr:
 variables:
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
   POWERSHELL_TELEMETRY_OPTOUT: 1
-  BUILD_SOURCESDIRECTORY: 'E:\BA\41\s\PowerShellGetv2'
-  Build.SourcesDirectory: 'E:\BA\41\s\PowerShellGetv2'
 
 # since this build relies on templates, we need access to those
 # This needs a service connection in the build to work

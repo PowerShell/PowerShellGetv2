@@ -47,10 +47,6 @@ stages:
 
     # the steps for building the module go here
     - pwsh: |
-        dir env:
-      displayName: Capture environment
-
-    - pwsh: |
         Set-Location "$(Build.SourcesDirectory)/PowerShellGetv2"
         Import-Module ./tools/build.psm1 -Force
         Install-Dependencies
@@ -101,11 +97,8 @@ stages:
         buildOutputPath: $(signSrcPath)
         # the location to put the signed output
         signOutputPath: $(signOutPath)
-        # the certificate ID to use
+        # the certificate ID to use (Authenticode)
         certificateId: "CP-230012"
-        # use minimatch because we need to exclude the NewtonSoft assembly
-        useMinimatch: true
-        # the file pattern to use - newtonSoft is excluded
         pattern: |
           **\*.psd1
           **\*.psm1
@@ -140,11 +133,6 @@ stages:
       parameters:
         # component-governance - the path to sources
         sourceScanPath: '$(Build.SourcesDirectory)'
-        # binskim - this isn't recursive, so you need the path to the assemblies
-        # AnalyzeTarget: '$(Pipeline.Workspace)\build\bin\PSV7Release\netcoreapp3.1\*.dll'
-        # credscan - scan the repo for credentials
-        # you can suppress some files with this.
-        # suppressionsFile: '$(Build.SourcesDirectory)/OSS_Microsoft_PSSA/tools/ReleaseBuild/CredScan.Suppressions.json'
         # TermCheck
         optionsRulesDBPath: ''
         optionsFTPath: ''

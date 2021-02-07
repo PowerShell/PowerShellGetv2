@@ -116,8 +116,8 @@ function New-NugetPackage {
         throw "$ProcessName failed to pack: error $errors"
     }
 
-    $stdOut -match "Successfully created package '(.*.nupkg)'" | Out-Null
-    $nupkgFullFile = $matches[1]
+    $nupkgFiles = Get-ChildItem $OutputPath -Filter "*.nupkg";
+    $nupkgFullFile = $nupkgFiles[0].FullName
 
     Write-Verbose "Created Nuget Package $nupkgFullFile"
     Write-Output $nupkgFullFile

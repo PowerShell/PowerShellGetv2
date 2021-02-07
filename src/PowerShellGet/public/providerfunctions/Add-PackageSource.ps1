@@ -247,7 +247,7 @@ function Add-PackageSource
     if($Name -eq $Script:PSGalleryModuleSource)
     {
         # Add or update the PSGallery repository
-        $repository = Set-PSGalleryRepository -Trusted:$Trusted
+        $repository = Set-PSGalleryRepository -Trusted:$Trusted -Proxy $Proxy -ProxyCredential $ProxyCredential
 
         if($repository)
         {

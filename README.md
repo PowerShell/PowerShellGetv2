@@ -74,7 +74,7 @@ Daily Build status
 Documentation
 =============
 
-[Click here](https://docs.microsoft.com/powershell/scripting/gallery/installing-psget?view=powershell-6)
+[Click here](https://docs.microsoft.com/powershell/scripting/gallery/installing-psget)
 
 
 Requirements
@@ -91,7 +91,7 @@ Module Dependencies
 Get PowerShellGet Module
 ========================
 
-Please refer to our [documentation](https://aka.ms/installing-psget) for the up-to-date version on how to get the PowerShellGet Module.
+Please refer to our [documentation](https://docs.microsoft.com/powershell/scripting/gallery/installing-psget) for the up-to-date version on how to get the PowerShellGet Module.
 
 
 Get PowerShellGet Source

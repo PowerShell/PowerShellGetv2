@@ -47,11 +47,11 @@ function Get-ScriptCommentHelpInfoString
 
     Process
     {
-        $ScriptCommentHelpInfoString = "<# `r`n`r`n.DESCRIPTION `r`n $Description `r`n`r`n"
+        $ScriptCommentHelpInfoString = "<#`r`n`r`n.DESCRIPTION`r`n$Description`r`n`r`n"
 
         if("$Synopsis".Trim())
         {
-            $ScriptCommentHelpInfoString += ".SYNOPSIS `r`n$Synopsis `r`n`r`n"
+            $ScriptCommentHelpInfoString += ".SYNOPSIS`r`n$Synopsis`r`n`r`n"
         }
 
         if("$Example".Trim())
@@ -59,7 +59,7 @@ function Get-ScriptCommentHelpInfoString
             $Example | ForEach-Object {
                            if($_)
                            {
-                               $ScriptCommentHelpInfoString += ".EXAMPLE `r`n$_ `r`n`r`n"
+                               $ScriptCommentHelpInfoString += ".EXAMPLE`r`n$_`r`n`r`n"
                            }
                        }
         }
@@ -69,7 +69,7 @@ function Get-ScriptCommentHelpInfoString
             $Inputs |  ForEach-Object {
                            if($_)
                            {
-                               $ScriptCommentHelpInfoString += ".INPUTS `r`n$_ `r`n`r`n"
+                               $ScriptCommentHelpInfoString += ".INPUTS`r`n$_`r`n`r`n"
                            }
                        }
         }
@@ -79,14 +79,14 @@ function Get-ScriptCommentHelpInfoString
             $Outputs |  ForEach-Object {
                            if($_)
                            {
-                               $ScriptCommentHelpInfoString += ".OUTPUTS `r`n$_ `r`n`r`n"
+                               $ScriptCommentHelpInfoString += ".OUTPUTS`r`n$_`r`n`r`n"
                            }
                        }
         }
 
         if("$Notes".Trim())
         {
-            $ScriptCommentHelpInfoString += ".NOTES `r`n$($Notes -join "`r`n") `r`n`r`n"
+            $ScriptCommentHelpInfoString += ".NOTES`r`n$($Notes -join "`r`n")`r`n`r`n"
         }
 
         if("$Link".Trim())
@@ -94,27 +94,27 @@ function Get-ScriptCommentHelpInfoString
             $Link |  ForEach-Object {
                          if($_)
                          {
-                              $ScriptCommentHelpInfoString += ".LINK `r`n$_ `r`n`r`n"
+                              $ScriptCommentHelpInfoString += ".LINK`r`n$_`r`n`r`n"
                          }
                      }
         }
 
         if("$Component".Trim())
         {
-            $ScriptCommentHelpInfoString += ".COMPONENT `r`n$($Component -join "`r`n") `r`n`r`n"
+            $ScriptCommentHelpInfoString += ".COMPONENT`r`n$($Component -join "`r`n")`r`n`r`n"
         }
 
         if("$Role".Trim())
         {
-            $ScriptCommentHelpInfoString += ".ROLE `r`n$($Role -join "`r`n") `r`n`r`n"
+            $ScriptCommentHelpInfoString += ".ROLE`r`n$($Role -join "`r`n")`r`n`r`n"
         }
 
         if("$Functionality".Trim())
         {
-            $ScriptCommentHelpInfoString += ".FUNCTIONALITY `r`n$($Functionality -join "`r`n") `r`n`r`n"
+            $ScriptCommentHelpInfoString += ".FUNCTIONALITY`r`n$($Functionality -join "`r`n")`r`n`r`n"
         }
 
-        $ScriptCommentHelpInfoString += "#> `r`n"
+        $ScriptCommentHelpInfoString += "#>`r`n"
 
         return $ScriptCommentHelpInfoString
     }

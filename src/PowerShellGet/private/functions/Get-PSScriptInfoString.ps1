@@ -87,14 +87,13 @@ function Get-PSScriptInfoString
 
 .ICONURI$(if ($IconUri) {" $IconUri"})
 
-.EXTERNALMODULEDEPENDENCIES$(if ($ExternalModuleDependencies) {" $($ExternalModuleDependencies -join ',')"}) 
+.EXTERNALMODULEDEPENDENCIES$(if ($ExternalModuleDependencies) {" $($ExternalModuleDependencies -join ',')"})
 
 .REQUIREDSCRIPTS$(if ($RequiredScripts) {" $($RequiredScripts -join ',')"})
 
 .EXTERNALSCRIPTDEPENDENCIES$(if ($ExternalScriptDependencies) {" $($ExternalScriptDependencies -join ',')"})
 
-.RELEASENOTES
-$($ReleaseNotes -join "`r`n")
+.RELEASENOTES$(if ($ReleaseNotes) {`r`n$($ReleaseNotes -join "`r`n")})
 
 .PRIVATEDATA$(if ($PrivateData) {" $PrivateData"})
 

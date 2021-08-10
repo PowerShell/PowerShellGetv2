@@ -10,7 +10,7 @@
    Description: Tests for PowerShellGet module functionality with PackageManagement integration
 #>
 
-Describe PowerShell.PSGet.PackageManagementIntegrationTests -Tags 'P1','OuterLoop' {
+Describe PowerShell.PSGet.PackageManagementIntegrationTests -Tags 'P1', 'OuterLoop' {
 
     BeforeAll {
         Import-Module "$PSScriptRoot\PSGetTestUtils.psm1" -WarningAction SilentlyContinue
@@ -29,10 +29,9 @@ Describe PowerShell.PSGet.PackageManagementIntegrationTests -Tags 'P1','OuterLoo
         Import-Module PowerShellGet -Global -Force
 
         # Backup the existing module sources information
-        $script:moduleSourcesFilePath= Join-Path $script:PSModuleSourcesPath "PSRepositories.xml"
+        $script:moduleSourcesFilePath = Join-Path $script:PSModuleSourcesPath "PSRepositories.xml"
         $script:moduleSourcesBackupFilePath = Join-Path $script:PSModuleSourcesPath "PSRepositories.xml_$(get-random)_backup"
-        if(Test-Path $script:moduleSourcesFilePath)
-        {
+        if (Test-Path $script:moduleSourcesFilePath) {
             Rename-Item $script:moduleSourcesFilePath $script:moduleSourcesBackupFilePath -Force
         }
 
@@ -46,41 +45,27 @@ Describe PowerShell.PSGet.PackageManagementIntegrationTests -Tags 'P1','OuterLoo
         Register-PSRepository -Default -InstallationPolicy Trusted
 
         $script:TestModuleSourceName = "PSGetTestModuleSource"
-
-        if($script:IsWindowsOS)
-        {
-            $script:userName = "PSGetUser"
-            $password = "Password1"
-            $null = net user $script:userName $password /add
-            $secstr = ConvertTo-SecureString $password -AsPlainText -Force
-            $script:credential = new-object -typename System.Management.Automation.PSCredential -argumentlist $script:userName, $secstr
-        }
     }
 
     AfterAll {
-        if(Test-Path $script:moduleSourcesBackupFilePath)
-        {
+        if (Test-Path $script:moduleSourcesBackupFilePath) {
             Move-Item $script:moduleSourcesBackupFilePath $script:moduleSourcesFilePath -Force
         }
-        else
-        {
+        else {
             RemoveItem $script:moduleSourcesFilePath
         }
 
         # To reload the repositories
         $null = Import-PackageProvider -Name PowerShellGet -Force
 
-        if($script:IsWindowsOS)
-        {
+        if ($script:IsWindowsOS) {
             # Delete the user
             net user $script:UserName /delete | Out-Null
             # Delete the user profile
             # Run only if cmd is available
-            if(Get-Command -Name Get-WmiObject -ErrorAction SilentlyContinue)
-            {
-                $userProfile = (Get-WmiObject -Class Win32_UserProfile | Where-Object {$_.LocalPath -match $script:UserName})
-                if($userProfile)
-                {
+            if (Get-Command -Name Get-WmiObject -ErrorAction SilentlyContinue) {
+                $userProfile = (Get-WmiObject -Class Win32_UserProfile | Where-Object { $_.LocalPath -match $script:UserName })
+                if ($userProfile) {
                     RemoveItem $userProfile.LocalPath
                 }
             }
@@ -102,7 +87,7 @@ Describe PowerShell.PSGet.PackageManagementIntegrationTests -Tags 'P1','OuterLoo
     #>
     It ValidateRegisterPackageSourceWithPSModuleProvider {
 
-        $Location='https://www.nuget.org/api/v2/'
+        $Location = 'https://www.nuget.org/api/v2/'
         $beforePackageSources = Get-PackageSource -Provider $script:PSGetModuleProviderName
 
         Register-PackageSource -Name $script:TestModuleSourceName -Location $Location -Provider $script:PSGetModuleProviderName -Trusted
@@ -128,7 +113,7 @@ Describe PowerShell.PSGet.PackageManagementIntegrationTests -Tags 'P1','OuterLoo
     #>
     It ValidateRegisterPackageSourceWithPSModuleProviderWithOptionalParams {
 
-        $Location='https://www.nuget.org/api/v2/'
+        $Location = 'https://www.nuget.org/api/v2/'
         $beforePackageSources = Get-PackageSource -Provider $script:PSGetModuleProviderName
 
         Register-PackageSource -Name $script:TestModuleSourceName -Location $Location -Provider $script:PSGetModuleProviderName -PackageManagementProvider "NuGet"
@@ -154,8 +139,8 @@ Describe PowerShell.PSGet.PackageManagementIntegrationTests -Tags 'P1','OuterLoo
     Expected Result: should fail.
     #>
     It ValidateRegisterPackageSourceWithPSModuleProviderOGPDoesntSupportModules {
-        AssertFullyQualifiedErrorIdEquals -scriptblock {Register-PackageSource -provider PowerShellGet -Name TestSource -Location 'https://www.nuget.org/api/v2/' -PackageManagementProvider TestChainingPackageProvider} `
-                                          -expectedFullyQualifiedErrorId "SpecifiedProviderNotAvailable,Add-PackageSource,Microsoft.PowerShell.PackageManagement.Cmdlets.RegisterPackageSource"
+        AssertFullyQualifiedErrorIdEquals -scriptblock { Register-PackageSource -provider PowerShellGet -Name TestSource -Location 'https://www.nuget.org/api/v2/' -PackageManagementProvider TestChainingPackageProvider } `
+            -expectedFullyQualifiedErrorId "SpecifiedProviderNotAvailable,Add-PackageSource,Microsoft.PowerShell.PackageManagement.Cmdlets.RegisterPackageSource"
     }
 
     <#
@@ -167,7 +152,7 @@ Describe PowerShell.PSGet.PackageManagementIntegrationTests -Tags 'P1','OuterLoo
     #>
     It ValidateModuleSourceCmdletsWithOptionalParams {
 
-        $Location='https://www.nuget.org/api/v2/'
+        $Location = 'https://www.nuget.org/api/v2/'
 
         $beforeSources = Get-PSRepository
 
@@ -242,8 +227,8 @@ Describe PowerShell.PSGet.PackageManagementIntegrationTests -Tags 'P1','OuterLoo
 
         Register-PSRepository -Name $script:TestModuleSourceName -SourceLocation $Location1 -PackageManagementProvider "NuGet"
 
-        AssertFullyQualifiedErrorIdEquals -scriptblock {Set-PSRepository -Name $script:TestModuleSourceName -SourceLocation $Location2} `
-                                          -expectedFullyQualifiedErrorId 'RepositoryAlreadyRegistered,Add-PackageSource,Microsoft.PowerShell.PackageManagement.Cmdlets.SetPackageSource'
+        AssertFullyQualifiedErrorIdEquals -scriptblock { Set-PSRepository -Name $script:TestModuleSourceName -SourceLocation $Location2 } `
+            -expectedFullyQualifiedErrorId 'RepositoryAlreadyRegistered,Add-PackageSource,Microsoft.PowerShell.PackageManagement.Cmdlets.SetPackageSource'
     }
 
     <#
@@ -256,7 +241,7 @@ Describe PowerShell.PSGet.PackageManagementIntegrationTests -Tags 'P1','OuterLoo
     It ValidateSetModuleSourceWithNewLocationAndInstallationPolicyValuesForPSGallery {
 
         try {
-            $ModuleSourceName='PSGallery'        
+            $ModuleSourceName = 'PSGallery'
 
             Set-PSRepository -Name $ModuleSourceName -InstallationPolicy Trusted
 
@@ -265,12 +250,13 @@ Describe PowerShell.PSGet.PackageManagementIntegrationTests -Tags 'P1','OuterLoo
             AssertEquals $source.Name $ModuleSourceName "The module source name is not same as the specified"
             AssertEquals $source.Trusted $true "The module source IsTrusted is not same as the specified"
             AssertEquals $source.InstallationPolicy "Trusted" "The module source IsTrusted is not same as the specified"
-        } finally {
+        }
+        finally {
             # Reset the InstallationPolicy
             Set-PSRepository -Name $script:BuiltInModuleSourceName -InstallationPolicy Untrusted
         }
     }
-    
+
     <#
     Purpose: Validate the Get-InstalledPackage function in PowerShellGet provider using Get-Package cmdlet
 
@@ -309,88 +295,4 @@ Describe PowerShell.PSGet.PackageManagementIntegrationTests -Tags 'P1','OuterLoo
         # hence the count is same after the update.
         AssertEquals $packages1.count $packages2.count "package count should be same before and after updating a package, before: $($packages1.count), after: $($packages2.count)"
     }
-
-    # Purpose: Install a package with all users scope parameter for non-admin user
-    #
-    # Action: Try to install a package with all users scope in a non-admin console
-    #
-    # Expected Result: It should fail with an error
-    #
-    It "InstallPackageWithAllUsersScopeParameterForNonAdminUser" {
-        $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
-
-        $psProcess = "PowerShell.exe"
-        if ($script:IsCoreCLR)
-        {
-            $psProcess = "pwsh.exe"
-        }
-
-        Start-Process $psProcess -ArgumentList '-command if(-not (Get-PSRepository -Name PoshTest -ErrorAction SilentlyContinue)) {
-                                                                Register-PSRepository -Name PoshTest -SourceLocation https://www.poshtestgallery.com/api/v2/ -InstallationPolicy Trusted
-                                                              }
-                                                              Install-Package -Name ContosoServer -scope AllUsers -Source PoshTest -ErrorVariable ev -ErrorAction SilentlyContinue;
-                                                              Write-Host($ev)' `
-                                               -Credential $script:credential `
-                                               -Wait `
-                                               -RedirectStandardOutput $NonAdminConsoleOutput
-
-
-        waitFor {Test-Path $NonAdminConsoleOutput} -timeoutInMilliseconds $script:assertTimeOutms -exceptionMessage "Install-Package on non-admin console failed to complete"
-        $content = Get-Content $NonAdminConsoleOutput
-        RemoveItem $NonAdminConsoleOutput
-
-        AssertNotNull ($content) "Install-Package with AllUsers scope on non-admin user console should not succeed"
-        Assert ($content -match "Administrator rights are required to install") "Install-Package with AllUsers scope on non-admin user console should fail, $content"
-    } `
-    -Skip:$(
-        $whoamiValue = (whoami)
-
-        ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
-        ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
-        ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
-        ($PSVersionTable.PSVersion -lt '4.0.0') -or
-        # Temporarily disable tests for Core
-        ($script:IsCoreCLR)
-    )
-
-    # Purpose: Install a package with default scope parameter for non-admin user
-    #
-    # Action: Try to install a package with default (current user) scope in a non-admin console
-    #
-    # Expected Result: It should succeed and install only to current user
-    #
-    It "InstallPackageDefaultUserScopeParameterForNonAdminUser" {
-        $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
-
-        $psProcess = "PowerShell.exe"
-        if ($script:IsCoreCLR)
-        {
-            $psProcess = "pwsh.exe"
-        }
-
-        Start-Process $psProcess -ArgumentList '-command Install-Package -Name ContosoServer -Source PoshTest;
-                                                              Get-Package ContosoServer | Format-List Name, SwidTagText' `
-                                               -Credential $script:credential `
-                                               -Wait `
-                                               -WorkingDirectory $PSHOME `
-                                               -RedirectStandardOutput $NonAdminConsoleOutput
-
-        waitFor {Test-Path $NonAdminConsoleOutput} -timeoutInMilliseconds $script:assertTimeOutms -exceptionMessage "Install-Package on non-admin console failed to complete"
-        $content = Get-Content $NonAdminConsoleOutput
-        RemoveItem $NonAdminConsoleOutput
-
-        AssertNotNull ($content) "Install package with default current user scope on non-admin user console should succeed"
-        Assert ($content -match "ContosoServer") "Package did not install correctly"
-        Assert ($content -match "Documents") "Package did not install to the correct location"
-    } `
-    -Skip:$(
-        $whoamiValue = (whoami)
-
-        ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
-        ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
-        ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
-        ($PSVersionTable.PSVersion -lt '4.0.0') -or
-        # Temporarily disable tests for Core
-        ($script:IsCoreCLR)
-    )
 }

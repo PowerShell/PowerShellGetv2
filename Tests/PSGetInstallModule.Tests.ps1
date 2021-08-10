@@ -31,29 +31,17 @@ function SuiteSetup {
     $psgetModuleInfo = Import-Module PowerShellGet -Global -Force -Passthru
     Import-LocalizedData  script:LocalizedData -filename PSGet.Resource.psd1 -BaseDirectory $psgetModuleInfo.ModuleBase
 
-    $script:moduleSourcesFilePath= Join-Path $script:PSGetLocalAppDataPath "PSRepositories.xml"
+    $script:moduleSourcesFilePath = Join-Path $script:PSGetLocalAppDataPath "PSRepositories.xml"
     $script:moduleSourcesBackupFilePath = Join-Path $script:PSGetLocalAppDataPath "PSRepositories.xml_$(get-random)_backup"
-    if(Test-Path $script:moduleSourcesFilePath)
-    {
+    if (Test-Path $script:moduleSourcesFilePath) {
         Rename-Item $script:moduleSourcesFilePath $script:moduleSourcesBackupFilePath -Force
     }
 
-    $Global:PSGallerySourceUri  = ''
+    $Global:PSGallerySourceUri = ''
     GetAndSet-PSGetTestGalleryDetails -SetPSGallery -PSGallerySourceUri ([REF]$Global:PSGallerySourceUri)
 
     PSGetTestUtils\Uninstall-Module ContosoServer
     PSGetTestUtils\Uninstall-Module ContosoClient
-
-    if($script:IsWindowsOS)
-    {
-        $script:userName = "PSGetUser"
-        $password = "Password1"
-        # remove the user in case they already exist
-        net user $script:UserName /delete 2>&1 | Out-Null
-        $null = net user $script:userName $password /add
-        $secstr = ConvertTo-SecureString $password -AsPlainText -Force
-        $script:credential = new-object -typename System.Management.Automation.PSCredential -argumentlist $script:userName, $secstr
-    }
 
     $script:assertTimeOutms = 20000
     $script:UntrustedRepoSourceLocation = 'https://powershell.myget.org/F/powershellget-test-items/api/v2/'
@@ -100,10 +88,12 @@ function SuiteSetup {
             Register-PackageSource -Name $psName -Location "https://www.powershellgallery.com/api/v2" -ProviderName PowerShellGet -Trusted
             try {
                 Save-Module Pester -RequiredVersion 3.4.0 -Repository $psName -Path $script:TestPSModulePath
-            } finally {
+            }
+            finally {
                 Unregister-PackageSource -Name $psName
             }
-        } else {
+        }
+        else {
             $signedPesterDestination = Join-Path -Path $script:TestPSModulePath -ChildPath "Pester"
             if (-not (Test-Path -Path $signedPesterDestination)) {
                 $null = New-Item -Path $signedPesterDestination -ItemType Directory
@@ -123,29 +113,24 @@ function SuiteSetup {
 }
 
 function SuiteCleanup {
-    if(Test-Path $script:moduleSourcesBackupFilePath)
-    {
+    if (Test-Path $script:moduleSourcesBackupFilePath) {
         Move-Item $script:moduleSourcesBackupFilePath $script:moduleSourcesFilePath -Force
     }
-    else
-    {
+    else {
         RemoveItem $script:moduleSourcesFilePath
     }
 
     # Import the PowerShellGet provider to reload the repositories.
     $null = Import-PackageProvider -Name PowerShellGet -Force
 
-    if($script:IsWindowsOS)
-    {
+    if ($script:IsWindowsOS) {
         # Delete the user
         net user $script:UserName /delete | Out-Null
         # Delete the user profile
         # run only if cmd is available
-        if(Get-Command -Name Get-WmiObject -ErrorAction SilentlyContinue)
-        {
-            $userProfile = (Get-WmiObject -Class Win32_UserProfile | Where-Object {$_.LocalPath -match $script:UserName})
-            if($userProfile)
-            {
+        if (Get-Command -Name Get-WmiObject -ErrorAction SilentlyContinue) {
+            $userProfile = (Get-WmiObject -Class Win32_UserProfile | Where-Object { $_.LocalPath -match $script:UserName })
+            if ($userProfile) {
                 RemoveItem $userProfile.LocalPath
             }
         }
@@ -155,7 +140,7 @@ function SuiteCleanup {
     RemoveItem $script:TestPSModulePath
 }
 
-Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
+Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT', 'InnerLoop' {
 
     BeforeAll {
         SuiteSetup
@@ -201,8 +186,8 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: Should fail with an error
     #
     It "InstallNotAvailableModuleWithWildCard" {
-        AssertFullyQualifiedErrorIdEquals -scriptblock {Install-Module -Name "Co[nN]t?soS[a-z]r?eW"} `
-                                          -expectedFullyQualifiedErrorId 'NameShouldNotContainWildcardCharacters,Install-Module'
+        AssertFullyQualifiedErrorIdEquals -scriptblock { Install-Module -Name "Co[nN]t?soS[a-z]r?eW" } `
+            -expectedFullyQualifiedErrorId 'NameShouldNotContainWildcardCharacters,Install-Module'
     }
 
     # Purpose: InstallModuleWithVersionParams
@@ -212,8 +197,8 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: Should fail with an error id
     #
     It "InstallModuleWithVersionParams" {
-        AssertFullyQualifiedErrorIdEquals -scriptblock {Install-Module ContosoServer -MinimumVersion 1.0 -RequiredVersion 5.0} `
-                                          -expectedFullyQualifiedErrorId "VersionRangeAndRequiredVersionCannotBeSpecifiedTogether,Install-Module"
+        AssertFullyQualifiedErrorIdEquals -scriptblock { Install-Module ContosoServer -MinimumVersion 1.0 -RequiredVersion 5.0 } `
+            -expectedFullyQualifiedErrorId "VersionRangeAndRequiredVersionCannotBeSpecifiedTogether,Install-Module"
     }
 
     # Purpose: InstallMultipleNamesWithReqVersion
@@ -223,8 +208,8 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: Should fail with an error id
     #
     It "InstallMultipleNamesWithReqVersion" {
-        AssertFullyQualifiedErrorIdEquals -scriptblock {Install-Module ContosoClient,ContosoServer -RequiredVersion 2.0} `
-                                          -expectedFullyQualifiedErrorId "VersionParametersAreAllowedOnlyWithSingleName,Install-Module"
+        AssertFullyQualifiedErrorIdEquals -scriptblock { Install-Module ContosoClient, ContosoServer -RequiredVersion 2.0 } `
+            -expectedFullyQualifiedErrorId "VersionParametersAreAllowedOnlyWithSingleName,Install-Module"
     }
 
     # Purpose: InstallMultipleNamesWithMinVersion
@@ -234,8 +219,8 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: Should fail with an error id
     #
     It "InstallMultipleNamesWithMinVersion" {
-        AssertFullyQualifiedErrorIdEquals -scriptblock {Install-Module ContosoClient,ContosoServer -MinimumVersion 2.0} `
-                                          -expectedFullyQualifiedErrorId "VersionParametersAreAllowedOnlyWithSingleName,Install-Module"
+        AssertFullyQualifiedErrorIdEquals -scriptblock { Install-Module ContosoClient, ContosoServer -MinimumVersion 2.0 } `
+            -expectedFullyQualifiedErrorId "VersionParametersAreAllowedOnlyWithSingleName,Install-Module"
     }
 
     # Purpose: InstallMultipleModules
@@ -245,8 +230,8 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: two modules should be installed
     #
     It "InstallMultipleModules" {
-        Install-Module ContosoClient,ContosoServer
-        $res = Get-Module ContosoClient,ContosoServer -ListAvailable
+        Install-Module ContosoClient, ContosoServer
+        $res = Get-Module ContosoClient, ContosoServer -ListAvailable
         Assert ($res.Count -eq 2) "Install-Module with multiple names should not fail"
     }
 
@@ -297,8 +282,8 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
 
         $expectedFullyQualifiedErrorId = 'ModuleAlreadyInstalled,Install-Package,Microsoft.PowerShell.PackageManagement.Cmdlets.InstallPackage'
 
-        AssertFullyQualifiedErrorIdEquals -scriptblock {Install-Module ContosoServer -RequiredVersion 2.0 -WarningAction SilentlyContinue} `
-                                          -expectedFullyQualifiedErrorId $expectedFullyQualifiedErrorId
+        AssertFullyQualifiedErrorIdEquals -scriptblock { Install-Module ContosoServer -RequiredVersion 2.0 -WarningAction SilentlyContinue } `
+            -expectedFullyQualifiedErrorId $expectedFullyQualifiedErrorId
     }
 
     # Purpose: InstallModuleShouldFailIfMinVersionNotAlreadyInstalled
@@ -312,8 +297,8 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
 
         $expectedFullyQualifiedErrorId = 'ModuleAlreadyInstalled,Install-Package,Microsoft.PowerShell.PackageManagement.Cmdlets.InstallPackage'
 
-        AssertFullyQualifiedErrorIdEquals -scriptblock {Install-Module ContosoServer -MinimumVersion 2.0 -WarningAction SilentlyContinue} `
-                                          -expectedFullyQualifiedErrorId $expectedFullyQualifiedErrorId
+        AssertFullyQualifiedErrorIdEquals -scriptblock { Install-Module ContosoServer -MinimumVersion 2.0 -WarningAction SilentlyContinue } `
+            -expectedFullyQualifiedErrorId $expectedFullyQualifiedErrorId
     }
 
     # Purpose: InstallModuleShouldNotFailIfReqVersionAlreadyInstalled
@@ -324,7 +309,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
     #
     It "InstallModuleShouldNotFailIfReqVersionAlreadyInstalled" {
         Install-Module ContosoServer -RequiredVersion 2.0
-        $MyError=$null
+        $MyError = $null
         Install-Module ContosoServer -RequiredVersion 2.0 -ErrorVariable MyError
         Assert ($MyError.Count -eq 0) "There should not be any error from second install with required, $MyError"
     }
@@ -337,7 +322,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
     #
     It "InstallModuleShouldNotFailIfMinVersionAlreadyInstalled" {
         Install-Module ContosoServer -RequiredVersion 2.5
-        $MyError=$null
+        $MyError = $null
         Install-Module ContosoServer -MinimumVersion 2.0 -ErrorVariable MyError
         Assert ($MyError.Count -eq 0) "There should not be any error from second install with min version, $MyError"
     }
@@ -352,16 +337,14 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
     #
     It InstallModuleWithForce {
         Install-Module ContosoServer -RequiredVersion 1.0
-        $MyError=$null
+        $MyError = $null
         Install-Module ContosoServer -RequiredVersion 1.5 -Force -ErrorVariable MyError
         Assert ($MyError.Count -eq 0) "There should not be any error from force install, $MyError"
 
-        if(Test-ModuleSxSVersionSupport)
-        {
-            $res = Get-Module -FullyQualifiedName @{ModuleName='ContosoServer';RequiredVersion='1.5'} -ListAvailable
+        if (Test-ModuleSxSVersionSupport) {
+            $res = Get-Module -FullyQualifiedName @{ModuleName = 'ContosoServer'; RequiredVersion = '1.5' } -ListAvailable
         }
-        else
-        {
+        else {
             $res = Get-Module ContosoServer -ListAvailable
         }
 
@@ -378,7 +361,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
     #
     It InstallModuleSameVersionWithForce {
         Install-Module ContosoServer -RequiredVersion 1.5
-        $MyError=$null
+        $MyError = $null
         Install-Module ContosoServer -RequiredVersion 1.5 -Force -ErrorVariable MyError
         Assert ($MyError.Count -eq 0) "There should not be any error from force install, $MyError"
         $res = Get-Module ContosoServer -ListAvailable
@@ -395,8 +378,8 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
 
         $expectedFullyQualifiedErrorId = 'NoMatchFoundForCriteria,Microsoft.PowerShell.PackageManagement.Cmdlets.InstallPackage'
 
-        AssertFullyQualifiedErrorIdEquals -scriptblock {Install-Module ContosoServer -MinimumVersion 10.0} `
-                                          -expectedFullyQualifiedErrorId $expectedFullyQualifiedErrorId
+        AssertFullyQualifiedErrorIdEquals -scriptblock { Install-Module ContosoServer -MinimumVersion 10.0 } `
+            -expectedFullyQualifiedErrorId $expectedFullyQualifiedErrorId
     }
 
     # Purpose: Install a module using non available RequiredVersion
@@ -409,8 +392,8 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
 
         $expectedFullyQualifiedErrorId = 'NoMatchFoundForCriteria,Microsoft.PowerShell.PackageManagement.Cmdlets.InstallPackage'
 
-        AssertFullyQualifiedErrorIdEquals -scriptblock {Install-Module ContosoServer -RequiredVersion 1.44} `
-                                          -expectedFullyQualifiedErrorId $expectedFullyQualifiedErrorId
+        AssertFullyQualifiedErrorIdEquals -scriptblock { Install-Module ContosoServer -RequiredVersion 1.44 } `
+            -expectedFullyQualifiedErrorId $expectedFullyQualifiedErrorId
     }
 
     # Purpose: Install a module using RequiredVersion
@@ -422,7 +405,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
     It "InstallModuleWithReqVersion" {
         Install-Module ContosoServer -RequiredVersion 1.5 -Confirm:$false
         $res = Get-Module ContosoServer -ListAvailable
-        Assert (($res.Count -eq 1) -and ($res.Name -eq "ContosoServer")-and ($res.Version -eq [Version]"1.5")) "Install-Module failed to install with RequiredVersion"
+        Assert (($res.Count -eq 1) -and ($res.Name -eq "ContosoServer") -and ($res.Version -eq [Version]"1.5")) "Install-Module failed to install with RequiredVersion"
     }
 
     # Purpose: Install a module using MinimumVersion
@@ -434,7 +417,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
     It "InstallModuleWithMinVersion" {
         Install-Module ContosoServer -MinimumVersion 1.5
         $res = Get-Module ContosoServer -ListAvailable
-        Assert (($res.Count -eq 1) -and ($res.Name -eq "ContosoServer")-and ($res.Version -ge [Version]"2.5")) "Install-Module failed to install with MinimumVersion"
+        Assert (($res.Count -eq 1) -and ($res.Name -eq "ContosoServer") -and ($res.Version -ge [Version]"2.5")) "Install-Module failed to install with MinimumVersion"
     }
 
     # Purpose: InstallNotAvailableModule
@@ -447,8 +430,8 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
 
         $expectedFullyQualifiedErrorId = 'NoMatchFoundForCriteria,Microsoft.PowerShell.PackageManagement.Cmdlets.InstallPackage'
 
-        AssertFullyQualifiedErrorIdEquals -scriptblock {Install-Module NonExistentModule} `
-                                          -expectedFullyQualifiedErrorId $expectedFullyQualifiedErrorId
+        AssertFullyQualifiedErrorIdEquals -scriptblock { Install-Module NonExistentModule } `
+            -expectedFullyQualifiedErrorId $expectedFullyQualifiedErrorId
     }
 
     # Purpose: InstallModuleWithPipelineInput
@@ -470,8 +453,8 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: ContosoServer and ContosoClient should be installed
     #
     It "InstallMultipleModulesWithPipelineInput" {
-        Find-Module ContosoClient,ContosoServer | Install-Module
-        $res = Get-Module ContosoClient,ContosoServer -ListAvailable
+        Find-Module ContosoClient, ContosoServer | Install-Module
+        $res = Get-Module ContosoClient, ContosoServer -ListAvailable
         Assert ($res.Count -eq 2) "Install-Module failed to install multiple modules from Find-Module output"
     }
 
@@ -482,9 +465,9 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
     # Expected Result: ContosoServer and ContosoClient should be installed
     #
     It "InstallMultipleModulesUsingInputObjectParam" {
-        $items = Find-Module ContosoClient,ContosoServer
+        $items = Find-Module ContosoClient, ContosoServer
         Install-Module -InputObject $items
-        $res = Get-Module ContosoClient,ContosoServer -ListAvailable
+        $res = Get-Module ContosoClient, ContosoServer -ListAvailable
         Assert ($res.Count -eq 2) "Install-Module failed to install multiple modules with -InputObject parameter"
     }
 
@@ -542,93 +525,6 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         Assert ($mod2.Count -ge 2) "Atleast two versions of ContosoServer should be available after changing the -Scope with -Force and without -AllowClobber on Install-Module cmdlet, $mod2"
     }
 
-    # Purpose: Install a module with all users scope parameter for non-admin user
-    #
-    # Action: Try to install a module with all users scope in a non-admin console
-    #
-    # Expected Result: It should fail with an error
-    #
-    It "InstallModuleWithAllUsersScopeParameterForNonAdminUser" {
-        $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
-
-        $psProcess = "$pshome\PowerShell.exe"
-        if ($script:IsCoreCLR)
-        {
-            $psProcess = "$pshome\pwsh.exe"
-        }
-
-        Start-Process $psProcess -ArgumentList '-command if(-not (Get-PSRepository -Name PoshTest -ErrorAction SilentlyContinue)) {
-                                                Register-PSRepository -Name PoshTest -SourceLocation https://www.poshtestgallery.com/api/v2/ -InstallationPolicy Trusted
-                                                }
-                                                Install-Module -Name ContosoServer -scope AllUsers -Repository PoshTest -ErrorVariable ev -ErrorAction SilentlyContinue;
-                                                Write-Output "$ev"' `
-                                -Credential $script:credential `
-                                -Wait `
-                                -WorkingDirectory $PSHOME `
-                                -RedirectStandardOutput $NonAdminConsoleOutput
-
-        waitFor {Test-Path $NonAdminConsoleOutput} -timeoutInMilliseconds $script:assertTimeOutms -exceptionMessage "Install-Module on non-admin console failed to complete"
-        $content = Get-Content $NonAdminConsoleOutput
-        RemoveItem $NonAdminConsoleOutput
-
-        AssertNotNull ($content) "Install-Module with AllUsers scope on non-admin user console should not succeed"
-        Assert ($content -match "Administrator rights are required to install") "Install module with AllUsers scope on non-admin user console should fail, $content"
-    } `
-    -Skip:$(
-        $whoamiValue = (whoami)
-
-        ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
-        ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
-        ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
-        ($PSVersionTable.PSVersion -lt '4.0.0') -or
-        (-not $script:IsWindowsOS) -or
-        # Temporarily disable tests for Core
-        ($script:IsCoreCLR)
-
-    )
-
-    # Purpose: Install a module with default scope parameter for non-admin user
-    #
-    # Action: Try to install a module with default (current user) scope in a non-admin console
-    #
-    # Expected Result: It should succeed and install only to current user
-    #
-    It "InstallModuleDefaultUserScopeParameterForNonAdminUser" {
-        $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
-
-        $psProcess = "PowerShell.exe"
-        if ($script:IsCoreCLR)
-        {
-            $psProcess = "pwsh.exe"
-        }
-
-        Start-Process $psProcess -ArgumentList '-command Install-Module -Name ContosoServer -Repository PoshTest;
-                                                Get-InstalledModule -Name ContosoServer | Format-List Name, InstalledLocation' `
-                                               -Credential $script:credential `
-                                               -Wait `
-                                               -WorkingDirectory $PSHOME `
-                                               -RedirectStandardOutput $NonAdminConsoleOutput
-
-        waitFor {Test-Path $NonAdminConsoleOutput} -timeoutInMilliseconds $script:assertTimeOutms -exceptionMessage "Install-Module on non-admin console failed to complete"
-        $content = Get-Content $NonAdminConsoleOutput
-        RemoveItem $NonAdminConsoleOutput
-
-        AssertNotNull ($content) "Install-Module with default current user scope on non-admin user console should succeed"
-        Assert ($content -match "ContosoServer") "Module did not install correctly"
-        Assert ($content -match "Documents") "Module did not install to the correct location"
-    } `
-    -Skip:$(
-        $whoamiValue = (whoami)
-
-        ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
-        ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
-        ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
-        ($PSVersionTable.PSVersion -lt '4.0.0') -or
-        (-not $script:IsWindowsOS) -or
-        # Temporarily disable tests for Core
-        ($script:IsCoreCLR)
-    )
-
     # Purpose: ValidateModuleIsInUseError
     #
     # Action: Install and import a module then try to install the same version again with -Force
@@ -642,15 +538,15 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
                                                               Install-Module -Name DscTestModule -Scope CurrentUser;
                                                               Import-Module -Name DscTestModule;
                                                               Install-Module -Name DscTestModule -Scope CurrentUser -Force' `
-                                               -Wait `
-                                               -RedirectStandardOutput $NonAdminConsoleOutput
-        waitFor {Test-Path $NonAdminConsoleOutput} -timeoutInMilliseconds $script:assertTimeOutms -exceptionMessage "Install-Module on non-admin console failed to complete"
+            -Wait `
+            -RedirectStandardOutput $NonAdminConsoleOutput
+        waitFor { Test-Path $NonAdminConsoleOutput } -timeoutInMilliseconds $script:assertTimeOutms -exceptionMessage "Install-Module on non-admin console failed to complete"
         $content = Get-Content $NonAdminConsoleOutput
 
         Assert ($content -and ($content -match 'DscTestModule')) "Install-module with -force should fail when a module version being installed is in use, $content."
         RemoveItem $NonAdminConsoleOutput
     } `
-    -Skip:$(
+        -Skip:$(
         $whoamiValue = (whoami)
 
         ($PSEdition -eq 'Core') -or
@@ -669,21 +565,18 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
     #
     It "InstallModuleWithWhatIf" {
         $outputPath = $script:TempPath
-        $guid =  [system.guid]::newguid().tostring()
+        $guid = [system.guid]::newguid().tostring()
         $outputFilePath = Join-Path $outputPath "$guid"
         $runspace = CreateRunSpace $outputFilePath 1
         $content = $null
 
-        try
-        {
+        try {
             $result = ExecuteCommand $runspace 'Install-Module -Name ContosoServer -WhatIf'
         }
-        finally
-        {
+        finally {
             $fileName = "WriteLine-0.txt"
             $path = join-path $outputFilePath $fileName
-            if(Test-Path $path)
-            {
+            if (Test-Path $path) {
                 $content = get-content $path
             }
 
@@ -698,7 +591,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         $mod = Get-Module ContosoServer -ListAvailable
         Assert (-not $mod) "Install-Module should not install the module with -WhatIf option"
     } `
-    -Skip:$(($PSEdition -eq 'Core') -or ([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
+        -Skip:$(($PSEdition -eq 'Core') -or ([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
 
     # Purpose: InstallModuleWithConfirmAndNoToPrompt
     #
@@ -708,24 +601,21 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
     #
     It "InstallModuleWithConfirmAndNoToPrompt" {
         $outputPath = $script:TempPath
-        $guid =  [system.guid]::newguid().tostring()
+        $guid = [system.guid]::newguid().tostring()
         $outputFilePath = Join-Path $outputPath "$guid"
         $runspace = CreateRunSpace $outputFilePath 1
 
         # 2 is mapped to NO in ShouldProcess prompt
-        $Global:proxy.UI.ChoiceToMake=2
+        $Global:proxy.UI.ChoiceToMake = 2
         $content = $null
 
-        try
-        {
+        try {
             $result = ExecuteCommand $runspace 'Install-Module ContosoServer -Repository PSGallery -Confirm'
         }
-        finally
-        {
+        finally {
             $fileName = "PromptForChoice-0.txt"
             $path = join-path $outputFilePath $fileName
-            if(Test-Path $path)
-            {
+            if (Test-Path $path) {
                 $content = get-content $path
             }
 
@@ -741,7 +631,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         $res = Get-Module ContosoServer -ListAvailable
         AssertNull $res "Install-Module should not install a module if Confirm is not accepted"
     } `
-    -Skip:$(($PSEdition -eq 'Core') -or ([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
+        -Skip:$(($PSEdition -eq 'Core') -or ([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
 
     # Purpose: InstallModuleWithConfirmAndYesToPrompt
     #
@@ -751,24 +641,21 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
     #
     It "InstallModuleWithConfirmAndYesToPrompt" {
         $outputPath = $script:TempPath
-        $guid =  [system.guid]::newguid().tostring()
+        $guid = [system.guid]::newguid().tostring()
         $outputFilePath = Join-Path $outputPath "$guid"
         $runspace = CreateRunSpace $outputFilePath 1
 
         # 0 is mapped to YES in ShouldProcess prompt
-        $Global:proxy.UI.ChoiceToMake=0
+        $Global:proxy.UI.ChoiceToMake = 0
         $content = $null
 
-        try
-        {
+        try {
             $result = ExecuteCommand $runspace 'Find-Module ContosoServer | Install-Module -Confirm'
         }
-        finally
-        {
+        finally {
             $fileName = "PromptForChoice-0.txt"
             $path = join-path $outputFilePath $fileName
-            if(Test-Path $path)
-            {
+            if (Test-Path $path) {
                 $content = get-content $path
             }
 
@@ -784,7 +671,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         $res = Get-Module ContosoServer -ListAvailable
         Assert (($res.Count -eq 1) -and ($res.Name -eq "ContosoServer")) "Install-Module should install a module if Confirm is accepted"
     } `
-    -Skip:$(($PSEdition -eq 'Core') -or ([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
+        -Skip:$(($PSEdition -eq 'Core') -or ([System.Environment]::OSVersion.Version -lt "6.2.9200.0") -or ($PSCulture -ne 'en-US'))
 
     # Purpose: Validate PowerShellGet related properties on PSModuleInfo
     #
@@ -812,7 +699,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
     #
     It InstallModuleUsingFindRoleCapabilityOutput {
         $moduleName = "DscTestModule"
-        Find-RoleCapability -Name Lev1Maintenance,Lev2Maintenance | Where-Object {$_.ModuleName -eq $moduleName } | Install-Module
+        Find-RoleCapability -Name Lev1Maintenance, Lev2Maintenance | Where-Object { $_.ModuleName -eq $moduleName } | Install-Module
         $res = Get-Module $moduleName -ListAvailable
         AssertEquals $res.Name $moduleName "Install-Module failed to install with Find-RoleCapability output"
     }
@@ -825,7 +712,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
     #
     It InstallModuleUsingFindDscResourceOutput {
         $moduleName = "DscTestModule"
-        Find-DscResource -Name DscTestResource,NewDscTestResource | Where-Object {$_.ModuleName -eq $moduleName } | Install-Module
+        Find-DscResource -Name DscTestResource, NewDscTestResource | Where-Object { $_.ModuleName -eq $moduleName } | Install-Module
         $res = Get-Module $moduleName -ListAvailable
         AssertEquals $res.Name $moduleName "Install-Module failed to install with Find-DscResource output"
     }
@@ -877,15 +764,13 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         $ModuleName = 'ContosoServer'
         $version = "2.0"
 
-        try
-        {
+        try {
             Install-Module -Name $ModuleName -RequiredVersion $version -Force
             $module = Get-InstalledModule -Name $ModuleName -MinimumVersion 1.0
             AssertEquals $module.Name $ModuleName "Get-InstalledModule is not working properly, $module"
             AssertEquals $module.Version $Version "Get-InstalledModule is not working properly, $module"
         }
-        finally
-        {
+        finally {
             PowerShellGet\Uninstall-Module -Name $ModuleName -MinimumVersion $Version
             $module = Get-InstalledModule -Name $ModuleName -ErrorAction SilentlyContinue
             AssertNull $module "Module uninstallation is not working properly, $module"
@@ -897,15 +782,13 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         $ModuleName = 'ContosoServer'
         $version = "2.0"
 
-        try
-        {
+        try {
             Install-Module -Name $ModuleName -RequiredVersion $version -Force
             $module = Get-InstalledModule -Name $ModuleName -MinimumVersion $Version -MaximumVersion $Version
             AssertEquals $module.Name $ModuleName "Get-InstalledModule is not working properly, $module"
             AssertEquals $module.Version $Version "Get-InstalledModule is not working properly, $module"
         }
-        finally
-        {
+        finally {
             PowerShellGet\Uninstall-Module -Name $ModuleName -MinimumVersion $Version -MaximumVersion $Version
             $module = Get-InstalledModule -Name $ModuleName -ErrorAction SilentlyContinue
             AssertNull $module "Module uninstallation is not working properly, $module"
@@ -917,15 +800,13 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         $ModuleName = 'ContosoServer'
         $version = "2.0"
 
-        try
-        {
+        try {
             Install-Module -Name $ModuleName -RequiredVersion $version -Force
             $module = Get-InstalledModule -Name $ModuleName -RequiredVersion $Version
             AssertEquals $module.Name $ModuleName "Get-InstalledModule is not working properly, $module"
             AssertEquals $module.Version $Version "Get-InstalledModule is not working properly, $module"
         }
-        finally
-        {
+        finally {
             PowerShellGet\Uninstall-Module -Name $ModuleName -RequiredVersion $Version
             $module = Get-InstalledModule -Name $ModuleName -ErrorAction SilentlyContinue
             AssertNull $module "Module uninstallation is not working properly, $module"
@@ -937,15 +818,13 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
         $ModuleName = 'ContosoServer'
         $version = "2.0"
 
-        try
-        {
+        try {
             Install-Module -Name $ModuleName -RequiredVersion $version -Force
             $module = Get-InstalledModule -Name $ModuleName -MaximumVersion $Version
             AssertEquals $module.Name $ModuleName "Get-InstalledModule is not working properly, $module"
             AssertEquals $module.Version $Version "Get-InstalledModule is not working properly, $module"
         }
-        finally
-        {
+        finally {
             PowerShellGet\Uninstall-Module -Name $ModuleName -RequiredVersion $Version
             $module = Get-InstalledModule -Name $ModuleName -ErrorAction SilentlyContinue
             AssertNull $module "Module uninstallation is not working properly, $module"
@@ -961,7 +840,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
     It InstallModuleUsingFindCommandOutput {
         $moduleName1 = "ContosoServer"
         $moduleName2 = "ContosoClient"
-        Find-Command -Name Get-ContosoServer,Get-ContosoClient | Where-Object {($_.ModuleName -eq $moduleName1) -or ($_.ModuleName -eq $moduleName2) } | Install-Module
+        Find-Command -Name Get-ContosoServer, Get-ContosoClient | Where-Object { ($_.ModuleName -eq $moduleName1) -or ($_.ModuleName -eq $moduleName2) } | Install-Module
 
         $res = Get-Module $moduleName1 -ListAvailable
         AssertEquals $res.Name $moduleName1 "Install-Module failed to install with Find-Command output"
@@ -1004,7 +883,8 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
             # Expect: No warning and Success
             $iev | should be $null
             $iwv | should be $null
-        } finally {
+        }
+        finally {
             # Fix PSModulePath again in case the fix in the try-block didn't work
             $env:PSModulePath = $oldPSModulePath
 
@@ -1027,11 +907,11 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT','InnerLoop' {
             }
         }
     } `
-    -Skip:$((-not (Get-Module PKI -ListAvailable)) -or ([Environment]::OSVersion.Version -lt '10.0'))
+        -Skip:$((-not (Get-Module PKI -ListAvailable)) -or ([Environment]::OSVersion.Version -lt '10.0'))
 
 }
 
-Describe PowerShell.PSGet.InstallModuleTests.P1 -Tags 'P1','OuterLoop' {
+Describe PowerShell.PSGet.InstallModuleTests.P1 -Tags 'P1', 'OuterLoop' {
 
     BeforeAll {
         SuiteSetup
@@ -1055,8 +935,8 @@ Describe PowerShell.PSGet.InstallModuleTests.P1 -Tags 'P1','OuterLoop' {
     # Expected Result: Should fail with an error
     #
     It "InstallModuleWithPrefixWildCard" {
-        AssertFullyQualifiedErrorIdEquals -scriptblock {Install-Module *ontosoServer} `
-                                          -expectedFullyQualifiedErrorId 'NameShouldNotContainWildcardCharacters,Install-Module'
+        AssertFullyQualifiedErrorIdEquals -scriptblock { Install-Module *ontosoServer } `
+            -expectedFullyQualifiedErrorId 'NameShouldNotContainWildcardCharacters,Install-Module'
     }
 
     # Purpose: Install a module with postfixed wildcard
@@ -1066,8 +946,8 @@ Describe PowerShell.PSGet.InstallModuleTests.P1 -Tags 'P1','OuterLoop' {
     # Expected Result: Should fail with an error
     #
     It "InstallModuleWithPostfixWildCard" {
-        AssertFullyQualifiedErrorIdEquals -scriptblock {Install-Module ContosoServe*} `
-                                          -expectedFullyQualifiedErrorId 'NameShouldNotContainWildcardCharacters,Install-Module'
+        AssertFullyQualifiedErrorIdEquals -scriptblock { Install-Module ContosoServe* } `
+            -expectedFullyQualifiedErrorId 'NameShouldNotContainWildcardCharacters,Install-Module'
     }
 
     # Purpose: InstallModuleWithRangeWildCards
@@ -1077,8 +957,8 @@ Describe PowerShell.PSGet.InstallModuleTests.P1 -Tags 'P1','OuterLoop' {
     # Expected Result: should fail with an error
     #
     It "InstallModuleWithRangeWildCards" {
-        AssertFullyQualifiedErrorIdEquals -scriptblock {Install-Module -Name "Co[nN]t?soS[a-z]r?er"} `
-                                          -expectedFullyQualifiedErrorId 'NameShouldNotContainWildcardCharacters,Install-Module'
+        AssertFullyQualifiedErrorIdEquals -scriptblock { Install-Module -Name "Co[nN]t?soS[a-z]r?er" } `
+            -expectedFullyQualifiedErrorId 'NameShouldNotContainWildcardCharacters,Install-Module'
     }
 
     # Purpose: Install a module with wildcard
@@ -1088,8 +968,8 @@ Describe PowerShell.PSGet.InstallModuleTests.P1 -Tags 'P1','OuterLoop' {
     # Expected Result: Should fail with an error
     #
     It "InstallModuleWithWildCards" {
-        AssertFullyQualifiedErrorIdEquals -scriptblock {Install-Module *ContosoServer*} `
-                                          -expectedFullyQualifiedErrorId 'NameShouldNotContainWildcardCharacters,Install-Module'
+        AssertFullyQualifiedErrorIdEquals -scriptblock { Install-Module *ContosoServer* } `
+            -expectedFullyQualifiedErrorId 'NameShouldNotContainWildcardCharacters,Install-Module'
     }
 
     # Purpose: Validate PowerShellGet related properties on PSModuleInfo got from Import-Module
@@ -1125,32 +1005,27 @@ Describe PowerShell.PSGet.InstallModuleTests.P1 -Tags 'P1','OuterLoop' {
             AssertEqualsCaseInsensitive $moduleRepo.SourceLocation $script:UntrustedRepoSourceLocation "Test repository 'UntrustedTestRepo' is not registered properly"
 
             $outputPath = $script:TempPath
-            $guid =  [system.guid]::newguid().tostring()
+            $guid = [system.guid]::newguid().tostring()
             $outputFilePath = Join-Path $outputPath "$guid"
             $runspace = CreateRunSpace $outputFilePath 1
 
-            if($PSVersionTable.PSVersion -ge '4.0.0')
-            {
+            if ($PSVersionTable.PSVersion -ge '4.0.0') {
                 # 2 is mapped to NO in ShouldProcess prompt
-                $Global:proxy.UI.ChoiceToMake=2
+                $Global:proxy.UI.ChoiceToMake = 2
             }
-            else
-            {
+            else {
                 # 1 is mapped to No in prompt
-                $Global:proxy.UI.ChoiceToMake=1
+                $Global:proxy.UI.ChoiceToMake = 1
             }
 
             $content = $null
-            try
-            {
+            try {
                 $result = ExecuteCommand $runspace "Install-Module ContosoServer -Repository UntrustedTestRepo"
             }
-            finally
-            {
+            finally {
                 $fileName = "PromptForChoice-0.txt"
                 $path = join-path $outputFilePath $fileName
-                if(Test-Path $path)
-                {
+                if (Test-Path $path) {
                     $content = get-content $path
                 }
 
@@ -1183,23 +1058,20 @@ Describe PowerShell.PSGet.InstallModuleTests.P1 -Tags 'P1','OuterLoop' {
             AssertEqualsCaseInsensitive $moduleRepo.SourceLocation $script:UntrustedRepoSourceLocation "Test repository 'UntrustedTestRepo' is not registered properly"
 
             $outputPath = $script:TempPath
-            $guid =  [system.guid]::newguid().tostring()
+            $guid = [system.guid]::newguid().tostring()
             $outputFilePath = Join-Path $outputPath "$guid"
             $runspace = CreateRunSpace $outputFilePath 1
 
             # 0 is mapped to YES in prompt
-            $Global:proxy.UI.ChoiceToMake=0
+            $Global:proxy.UI.ChoiceToMake = 0
             $content = $null
-            try
-            {
+            try {
                 $result = ExecuteCommand $runspace "Install-Module ContosoServer -Repository UntrustedTestRepo"
             }
-            finally
-            {
+            finally {
                 $fileName = "PromptForChoice-0.txt"
                 $path = join-path $outputFilePath $fileName
-                if(Test-Path $path)
-                {
+                if (Test-Path $path) {
                     $content = get-content $path
                 }
 
@@ -1220,84 +1092,84 @@ Describe PowerShell.PSGet.InstallModuleTests.P1 -Tags 'P1','OuterLoop' {
 
     # Get-InstalledModule error cases
     It ValidateGetInstalledModuleWithMultiNamesAndRequiredVersion {
-        AssertFullyQualifiedErrorIdEquals -scriptblock {Get-InstalledModule -Name ContosoClient,ContosoServer -RequiredVersion 3.0 } `
-                                    -expectedFullyQualifiedErrorId "VersionParametersAreAllowedOnlyWithSingleName,Get-InstalledModule"
+        AssertFullyQualifiedErrorIdEquals -scriptblock { Get-InstalledModule -Name ContosoClient, ContosoServer -RequiredVersion 3.0 } `
+            -expectedFullyQualifiedErrorId "VersionParametersAreAllowedOnlyWithSingleName,Get-InstalledModule"
     }
 
     It ValidateGetInstalledModuleWithMultiNamesAndMinVersion {
-        AssertFullyQualifiedErrorIdEquals -scriptblock {Get-InstalledModule -Name ContosoClient,ContosoServer -MinimumVersion 3.0 } `
-                                    -expectedFullyQualifiedErrorId "VersionParametersAreAllowedOnlyWithSingleName,Get-InstalledModule"
+        AssertFullyQualifiedErrorIdEquals -scriptblock { Get-InstalledModule -Name ContosoClient, ContosoServer -MinimumVersion 3.0 } `
+            -expectedFullyQualifiedErrorId "VersionParametersAreAllowedOnlyWithSingleName,Get-InstalledModule"
     }
 
     It ValidateGetInstalledModuleWithMultiNamesAndMaxVersion {
-        AssertFullyQualifiedErrorIdEquals -scriptblock {Get-InstalledModule -Name ContosoClient,ContosoServer -MaximumVersion 3.0 } `
-                                    -expectedFullyQualifiedErrorId "VersionParametersAreAllowedOnlyWithSingleName,Get-InstalledModule"
+        AssertFullyQualifiedErrorIdEquals -scriptblock { Get-InstalledModule -Name ContosoClient, ContosoServer -MaximumVersion 3.0 } `
+            -expectedFullyQualifiedErrorId "VersionParametersAreAllowedOnlyWithSingleName,Get-InstalledModule"
     }
 
     It ValidateGetInstalledModuleWithSingleWildcardNameAndRequiredVersion {
-        AssertFullyQualifiedErrorIdEquals -scriptblock {Get-InstalledModule -Name Contoso*Client -RequiredVersion 3.0 } `
-                                    -expectedFullyQualifiedErrorId "VersionParametersAreAllowedOnlyWithSingleName,Get-InstalledModule"
+        AssertFullyQualifiedErrorIdEquals -scriptblock { Get-InstalledModule -Name Contoso*Client -RequiredVersion 3.0 } `
+            -expectedFullyQualifiedErrorId "VersionParametersAreAllowedOnlyWithSingleName,Get-InstalledModule"
     }
 
     It ValidateGetInstalledModuleWithSingleWildcardNameAndMinVersion {
-        AssertFullyQualifiedErrorIdEquals -scriptblock {Get-InstalledModule -Name Contoso*Client -MinimumVersion 3.0 } `
-                                    -expectedFullyQualifiedErrorId "VersionParametersAreAllowedOnlyWithSingleName,Get-InstalledModule"
+        AssertFullyQualifiedErrorIdEquals -scriptblock { Get-InstalledModule -Name Contoso*Client -MinimumVersion 3.0 } `
+            -expectedFullyQualifiedErrorId "VersionParametersAreAllowedOnlyWithSingleName,Get-InstalledModule"
     }
 
     It ValidateGetInstalledModuleWithSingleWildcardNameAndMaxVersion {
-        AssertFullyQualifiedErrorIdEquals -scriptblock {Get-InstalledModule -Name Contoso*Client -MaximumVersion 3.0 } `
-                                    -expectedFullyQualifiedErrorId "VersionParametersAreAllowedOnlyWithSingleName,Get-InstalledModule"
+        AssertFullyQualifiedErrorIdEquals -scriptblock { Get-InstalledModule -Name Contoso*Client -MaximumVersion 3.0 } `
+            -expectedFullyQualifiedErrorId "VersionParametersAreAllowedOnlyWithSingleName,Get-InstalledModule"
     }
 
     It ValidateGetInstalledModuleWithSingleNameRequiredandMinVersion {
-        AssertFullyQualifiedErrorIdEquals -scriptblock {Get-InstalledModule -Name ContosoClient -RequiredVersion 3.0 -MinimumVersion 1.0 } `
-                                    -expectedFullyQualifiedErrorId "VersionRangeAndRequiredVersionCannotBeSpecifiedTogether,Get-InstalledModule"
+        AssertFullyQualifiedErrorIdEquals -scriptblock { Get-InstalledModule -Name ContosoClient -RequiredVersion 3.0 -MinimumVersion 1.0 } `
+            -expectedFullyQualifiedErrorId "VersionRangeAndRequiredVersionCannotBeSpecifiedTogether,Get-InstalledModule"
     }
 
     It ValidateGetInstalledModuleWithSingleNameRequiredandMaxVersion {
-        AssertFullyQualifiedErrorIdEquals -scriptblock {Get-InstalledModule -Name ContosoClient -RequiredVersion 3.0 -MaximumVersion 1.0 } `
-                                    -expectedFullyQualifiedErrorId "VersionRangeAndRequiredVersionCannotBeSpecifiedTogether,Get-InstalledModule"
+        AssertFullyQualifiedErrorIdEquals -scriptblock { Get-InstalledModule -Name ContosoClient -RequiredVersion 3.0 -MaximumVersion 1.0 } `
+            -expectedFullyQualifiedErrorId "VersionRangeAndRequiredVersionCannotBeSpecifiedTogether,Get-InstalledModule"
     }
 
     It ValidateGetInstalledModuleWithSingleNameInvalidMinMaxRange {
-        AssertFullyQualifiedErrorIdEquals -scriptblock {Get-InstalledModule -Name ContosoClient -MinimumVersion 3.0 -MaximumVersion 1.0 } `
-                                    -expectedFullyQualifiedErrorId "MinimumVersionIsGreaterThanMaximumVersion,Get-InstalledModule"
+        AssertFullyQualifiedErrorIdEquals -scriptblock { Get-InstalledModule -Name ContosoClient -MinimumVersion 3.0 -MaximumVersion 1.0 } `
+            -expectedFullyQualifiedErrorId "MinimumVersionIsGreaterThanMaximumVersion,Get-InstalledModule"
     }
 
     # Uninstall-Module error cases
     It ValidateUninstallModuleWithMultiNamesAndRequiredVersion {
-        AssertFullyQualifiedErrorIdEquals -scriptblock {PowerShellGet\Uninstall-Module -Name ContosoClient,ContosoServer -RequiredVersion 3.0 } `
-                                    -expectedFullyQualifiedErrorId "VersionParametersAreAllowedOnlyWithSingleName,Uninstall-Module"
+        AssertFullyQualifiedErrorIdEquals -scriptblock { PowerShellGet\Uninstall-Module -Name ContosoClient, ContosoServer -RequiredVersion 3.0 } `
+            -expectedFullyQualifiedErrorId "VersionParametersAreAllowedOnlyWithSingleName,Uninstall-Module"
     }
 
     It ValidateUninstallModuleWithMultiNamesAndMinVersion {
-        AssertFullyQualifiedErrorIdEquals -scriptblock {PowerShellGet\Uninstall-Module -Name ContosoClient,ContosoServer -MinimumVersion 3.0 } `
-                                    -expectedFullyQualifiedErrorId "VersionParametersAreAllowedOnlyWithSingleName,Uninstall-Module"
+        AssertFullyQualifiedErrorIdEquals -scriptblock { PowerShellGet\Uninstall-Module -Name ContosoClient, ContosoServer -MinimumVersion 3.0 } `
+            -expectedFullyQualifiedErrorId "VersionParametersAreAllowedOnlyWithSingleName,Uninstall-Module"
     }
 
     It ValidateUninstallModuleWithMultiNamesAndMaxVersion {
-        AssertFullyQualifiedErrorIdEquals -scriptblock {PowerShellGet\Uninstall-Module -Name ContosoClient,ContosoServer -MaximumVersion 3.0 } `
-                                    -expectedFullyQualifiedErrorId "VersionParametersAreAllowedOnlyWithSingleName,Uninstall-Module"
+        AssertFullyQualifiedErrorIdEquals -scriptblock { PowerShellGet\Uninstall-Module -Name ContosoClient, ContosoServer -MaximumVersion 3.0 } `
+            -expectedFullyQualifiedErrorId "VersionParametersAreAllowedOnlyWithSingleName,Uninstall-Module"
     }
 
     It ValidateUninstallModuleWithSingleWildcard {
-        AssertFullyQualifiedErrorIdEquals -scriptblock {PowerShellGet\Uninstall-Module -Name Contoso*Client} `
-                                    -expectedFullyQualifiedErrorId "NameShouldNotContainWildcardCharacters,Uninstall-Module"
+        AssertFullyQualifiedErrorIdEquals -scriptblock { PowerShellGet\Uninstall-Module -Name Contoso*Client } `
+            -expectedFullyQualifiedErrorId "NameShouldNotContainWildcardCharacters,Uninstall-Module"
     }
 
     It ValidateUninstallModuleWithSingleNameRequiredandMinVersion {
-        AssertFullyQualifiedErrorIdEquals -scriptblock {PowerShellGet\Uninstall-Module -Name ContosoClient -RequiredVersion 3.0 -MinimumVersion 1.0 } `
-                                    -expectedFullyQualifiedErrorId "VersionRangeAndRequiredVersionCannotBeSpecifiedTogether,Uninstall-Module"
+        AssertFullyQualifiedErrorIdEquals -scriptblock { PowerShellGet\Uninstall-Module -Name ContosoClient -RequiredVersion 3.0 -MinimumVersion 1.0 } `
+            -expectedFullyQualifiedErrorId "VersionRangeAndRequiredVersionCannotBeSpecifiedTogether,Uninstall-Module"
     }
 
     It ValidateUninstallModuleWithSingleNameRequiredandMaxVersion {
-        AssertFullyQualifiedErrorIdEquals -scriptblock {PowerShellGet\Uninstall-Module -Name ContosoClient -RequiredVersion 3.0 -MaximumVersion 1.0 } `
-                                    -expectedFullyQualifiedErrorId "VersionRangeAndRequiredVersionCannotBeSpecifiedTogether,Uninstall-Module"
+        AssertFullyQualifiedErrorIdEquals -scriptblock { PowerShellGet\Uninstall-Module -Name ContosoClient -RequiredVersion 3.0 -MaximumVersion 1.0 } `
+            -expectedFullyQualifiedErrorId "VersionRangeAndRequiredVersionCannotBeSpecifiedTogether,Uninstall-Module"
     }
 
     It ValidateUninstallModuleWithSingleNameInvalidMinMaxRange {
-        AssertFullyQualifiedErrorIdEquals -scriptblock {PowerShellGet\Uninstall-Module -Name ContosoClient -MinimumVersion 3.0 -MaximumVersion 1.0 } `
-                                    -expectedFullyQualifiedErrorId "MinimumVersionIsGreaterThanMaximumVersion,Uninstall-Module"
+        AssertFullyQualifiedErrorIdEquals -scriptblock { PowerShellGet\Uninstall-Module -Name ContosoClient -MinimumVersion 3.0 -MaximumVersion 1.0 } `
+            -expectedFullyQualifiedErrorId "MinimumVersionIsGreaterThanMaximumVersion,Uninstall-Module"
     }
 
     # Purpose: Validate Save-Module cmdlet with Find-RoleCapability cmdlet output
@@ -1311,8 +1183,7 @@ Describe PowerShell.PSGet.InstallModuleTests.P1 -Tags 'P1','OuterLoop' {
         $ModuleName = 'DscTestModule'
         $res1 = Find-RoleCapability -Name $RoleCapabilityName
 
-        try
-        {
+        try {
             AssertEquals $res1.Name $RoleCapabilityName "Find-RoleCapability didn't find a role capability, $res1"
             AssertEquals $res1.ModuleName $ModuleName "Find-RoleCapability didn't find a role capability, $res1"
 
@@ -1320,9 +1191,8 @@ Describe PowerShell.PSGet.InstallModuleTests.P1 -Tags 'P1','OuterLoop' {
             $ActualModuleDetails = Get-InstalledModule -Name $ModuleName -RequiredVersion $res1.Version
             AssertNotNull $ActualModuleDetails "$ModuleName module with dependencies is not saved properly"
         }
-        finally
-        {
-            $res1.ModuleName  | ForEach-Object {PSGetTestUtils\Uninstall-Module $_}
+        finally {
+            $res1.ModuleName  | ForEach-Object { PSGetTestUtils\Uninstall-Module $_ }
         }
     }
 
@@ -1337,8 +1207,7 @@ Describe PowerShell.PSGet.InstallModuleTests.P1 -Tags 'P1','OuterLoop' {
         $ModuleName = 'DscTestModule'
         $res1 = Find-DscResource -Name $DscResourceName
 
-        try
-        {
+        try {
             AssertEquals $res1.Name $DscResourceName "Find-DscResource didn't find a DscResource, $res1"
             AssertEquals $res1.ModuleName $ModuleName "Find-DscResource didn't find a DscResource, $res1"
 
@@ -1346,9 +1215,8 @@ Describe PowerShell.PSGet.InstallModuleTests.P1 -Tags 'P1','OuterLoop' {
             $ActualModuleDetails = Get-InstalledModule -Name $ModuleName -RequiredVersion $res1.Version
             AssertNotNull $ActualModuleDetails "$ModuleName module with dependencies is not saved properly"
         }
-        finally
-        {
-            $res1.ModuleName  | ForEach-Object {PSGetTestUtils\Uninstall-Module $_}
+        finally {
+            $res1.ModuleName  | ForEach-Object { PSGetTestUtils\Uninstall-Module $_ }
         }
     }
 
@@ -1359,7 +1227,7 @@ Describe PowerShell.PSGet.InstallModuleTests.P1 -Tags 'P1','OuterLoop' {
     # Expected Result: Should get the installed modules with/without wildcards
     #
     It GetInstalledModuleWithWildcard {
-        $ModuleNames = 'Contoso','ContosoServer','ContosoClient'
+        $ModuleNames = 'Contoso', 'ContosoServer', 'ContosoClient'
 
         Install-Module -Name $ModuleNames
 
@@ -1382,8 +1250,7 @@ Describe PowerShell.PSGet.InstallModuleTests.P1 -Tags 'P1','OuterLoop' {
         $TempNuGetSourceName = "$(Get-Random)"
         $RepositoryName = "PSGallery"
         Register-PackageSource -Provider nuget -Name $TempNuGetSourceName -Location $Global:PSGallerySourceUri -Trusted
-        try
-        {
+        try {
             Install-Module -Name $ModuleName -Repository $RepositoryName
 
             $res1 = Get-InstalledModule -Name $ModuleName
@@ -1393,19 +1260,16 @@ Describe PowerShell.PSGet.InstallModuleTests.P1 -Tags 'P1','OuterLoop' {
             AssertEquals $res1.Repository $RepositoryName "PSGetItemInfo object was created with wrong repository name"
 
             $expectedInstalledLocation = Join-Path $script:ProgramFilesModulesPath -ChildPath $res1.Name
-            if($script:IsCoreCLR)
-            {
+            if ($script:IsCoreCLR) {
                 $expectedInstalledLocation = Join-Path -Path $script:MyDocumentsModulesPath -ChildPath $res1.Name
             }
-            if($PSVersionTable.PSVersion -ge '5.0.0')
-            {
+            if ($PSVersionTable.PSVersion -ge '5.0.0') {
                 $expectedInstalledLocation = Join-Path -Path $expectedInstalledLocation -ChildPath $res1.Version
             }
 
             AssertEquals $res1.InstalledLocation $expectedInstalledLocation "Invalid InstalledLocation value on PSGetItemInfo object"
         }
-        finally
-        {
+        finally {
             Unregister-PackageSource -ProviderName NuGet -Name $TempNuGetSourceName -Force
         }
     }
@@ -1421,8 +1285,7 @@ Describe PowerShell.PSGet.InstallModuleTests.P1 -Tags 'P1','OuterLoop' {
         $ModuleName = 'ContosoServer'
         $res1 = Find-Command -Name $CommandName -ModuleName $ModuleName
 
-        try
-        {
+        try {
             AssertEquals $res1.Name $CommandName "Find-Command didn't find a Command, $res1"
             AssertEquals $res1.ModuleName $ModuleName "Find-Command didn't find a Command, $res1"
 
@@ -1430,17 +1293,16 @@ Describe PowerShell.PSGet.InstallModuleTests.P1 -Tags 'P1','OuterLoop' {
             $ActualModuleDetails = Get-InstalledModule -Name $ModuleName -RequiredVersion $res1.Version
             AssertNotNull $ActualModuleDetails "$ModuleName module is not saved properly"
         }
-        finally
-        {
-            $res1.ModuleName  | ForEach-Object {PSGetTestUtils\Uninstall-Module $_}
+        finally {
+            $res1.ModuleName  | ForEach-Object { PSGetTestUtils\Uninstall-Module $_ }
         }
     }
 }
 
-Describe PowerShell.PSGet.InstallModuleTests.P2 -Tags 'P2','OuterLoop' {
+Describe PowerShell.PSGet.InstallModuleTests.P2 -Tags 'P2', 'OuterLoop' {
     # Not executing these tests on MacOS as
     # the total execution time is exceeding allowed 50 min in TravisCI daily builds.
-    if($IsMacOS) {
+    if ($IsMacOS) {
         return
     }
 
@@ -1469,15 +1331,14 @@ Describe PowerShell.PSGet.InstallModuleTests.P2 -Tags 'P2','OuterLoop' {
         $ModuleName = "ModuleWithDependencies1"
         $DepencyModuleNames = @()
 
-        try
-        {
+        try {
             $res1 = Find-Module -Name $ModuleName -MaximumVersion "1.0" -MinimumVersion "0.1"
             AssertEquals $res1.Name $ModuleName "Find-Module didn't find the exact module which has dependencies, $res1"
 
             $DepencyModuleNames = $res1.Dependencies.Name
 
             $res2 = Find-Module -Name $ModuleName -IncludeDependencies -MaximumVersion "1.0" -MinimumVersion "0.1"
-            Assert ($res2.Count -ge ($DepencyModuleNames.Count+1)) "Find-Module with -IncludeDependencies returned wrong results, $res2"
+            Assert ($res2.Count -ge ($DepencyModuleNames.Count + 1)) "Find-Module with -IncludeDependencies returned wrong results, $res2"
 
             Install-Module -Name $ModuleName -MaximumVersion "1.0" -MinimumVersion "0.1" -AllowClobber
             $ActualModuleDetails = Get-InstalledModule -Name $ModuleName -RequiredVersion $res1.Version
@@ -1487,59 +1348,57 @@ Describe PowerShell.PSGet.InstallModuleTests.P2 -Tags 'P2','OuterLoop' {
             AssertNotNull $DepModuleDetails "$DepencyModuleNames dependencies is not installed properly"
             Assert ($DepModuleDetails.Count -ge $DepencyModuleNames.Count)  "$DepencyModuleNames dependencies is not installed properly"
 
-            if($PSVersionTable.PSVersion -ge '5.0.0')
-            {
+            if ($PSVersionTable.PSVersion -ge '5.0.0') {
                 $res2 | ForEach-Object {
                     $mod = Get-InstalledModule -Name $_.Name -MinimumVersion $_.Version
                     AssertNotNull $mod "$($_.Name) module is not installed properly"
                 }
 
-                $depModuleDetails = $res1.Dependencies | Where-Object {$_.Name -eq 'NestedRequiredModule2'}
+                $depModuleDetails = $res1.Dependencies | Where-Object { $_.Name -eq 'NestedRequiredModule2' }
                 $mod = Get-InstalledModule -Name $depModuleDetails.Name `
-                                           -MinimumVersion $depModuleDetails.MinimumVersion
+                    -MinimumVersion $depModuleDetails.MinimumVersion
                 AssertNotNull $mod "$($depModuleDetails.Name) module with MinimumVersion is not installed properly"
 
-                $depModuleDetails = $res1.Dependencies | Where-Object {$_.Name -eq 'RequiredModule2'}
+                $depModuleDetails = $res1.Dependencies | Where-Object { $_.Name -eq 'RequiredModule2' }
                 $mod = Get-InstalledModule -Name $depModuleDetails.Name `
-                                           -MinimumVersion $depModuleDetails.MinimumVersion
+                    -MinimumVersion $depModuleDetails.MinimumVersion
                 AssertNotNull $mod "$($depModuleDetails.Name) module with MinimumVersion is not installed properly"
 
-                $depModuleDetails = $res1.Dependencies | Where-Object {$_.Name -eq 'NestedRequiredModule3'}
+                $depModuleDetails = $res1.Dependencies | Where-Object { $_.Name -eq 'NestedRequiredModule3' }
                 $mod = Get-InstalledModule -Name $depModuleDetails.Name `
-                                           -RequiredVersion $depModuleDetails.RequiredVersion
+                    -RequiredVersion $depModuleDetails.RequiredVersion
                 AssertNotNull $mod "$($depModuleDetails.Name) module with exact version is not installed properly"
 
-                $depModuleDetails = $res1.Dependencies | Where-Object {$_.Name -eq 'RequiredModule3'}
+                $depModuleDetails = $res1.Dependencies | Where-Object { $_.Name -eq 'RequiredModule3' }
                 $mod = Get-InstalledModule -Name $depModuleDetails.Name `
-                                           -RequiredVersion $depModuleDetails.RequiredVersion
+                    -RequiredVersion $depModuleDetails.RequiredVersion
                 AssertNotNull $mod "$($depModuleDetails.Name) module with exact version is not installed properly"
 
-                $depModuleDetails = $res1.Dependencies | Where-Object {$_.Name -eq 'NestedRequiredModule4'}
+                $depModuleDetails = $res1.Dependencies | Where-Object { $_.Name -eq 'NestedRequiredModule4' }
                 $mod = Get-InstalledModule -Name $depModuleDetails.Name `
-                                           -MinimumVersion $depModuleDetails.MinimumVersion `
-                                           -MaximumVersion $depModuleDetails.MaximumVersion
+                    -MinimumVersion $depModuleDetails.MinimumVersion `
+                    -MaximumVersion $depModuleDetails.MaximumVersion
                 AssertNotNull $mod "$($depModuleDetails.Name) module with version range is not installed properly"
 
-                $depModuleDetails = $res1.Dependencies | Where-Object {$_.Name -eq 'RequiredModule4'}
+                $depModuleDetails = $res1.Dependencies | Where-Object { $_.Name -eq 'RequiredModule4' }
                 $mod = Get-InstalledModule -Name $depModuleDetails.Name `
-                                           -MinimumVersion $depModuleDetails.MinimumVersion `
-                                           -MaximumVersion $depModuleDetails.MaximumVersion
+                    -MinimumVersion $depModuleDetails.MinimumVersion `
+                    -MaximumVersion $depModuleDetails.MaximumVersion
                 AssertNotNull $mod "$($depModuleDetails.Name) module with version range is not installed properly"
 
-                $depModuleDetails = $res1.Dependencies | Where-Object {$_.Name -eq 'NestedRequiredModule5'}
+                $depModuleDetails = $res1.Dependencies | Where-Object { $_.Name -eq 'NestedRequiredModule5' }
                 $mod = Get-InstalledModule -Name $depModuleDetails.Name `
-                                           -MaximumVersion $depModuleDetails.MaximumVersion
+                    -MaximumVersion $depModuleDetails.MaximumVersion
                 AssertNotNull $mod "$($depModuleDetails.Name) module with maximum version is not installed properly"
 
-                $depModuleDetails = $res1.Dependencies | Where-Object {$_.Name -eq 'RequiredModule5'}
+                $depModuleDetails = $res1.Dependencies | Where-Object { $_.Name -eq 'RequiredModule5' }
                 $mod = Get-InstalledModule -Name $depModuleDetails.Name `
-                                           -MaximumVersion $depModuleDetails.MaximumVersion
+                    -MaximumVersion $depModuleDetails.MaximumVersion
                 AssertNotNull $mod "$($depModuleDetails.Name) module with maximum version is not installed properly"
 
             }
         }
-        finally
-        {
+        finally {
             Get-InstalledModule -Name $ModuleName -AllVersions | PowerShellGet\Uninstall-Module -Force
             $DepencyModuleNames | ForEach-Object { Get-InstalledModule -Name $_ -AllVersions | PowerShellGet\Uninstall-Module -Force }
         }
@@ -1557,8 +1416,7 @@ Describe PowerShell.PSGet.InstallModuleTests.P2 -Tags 'P2','OuterLoop' {
         $res1 = Find-Module -Name $ModuleName -RequiredVersion "1.0"
         $DepencyModuleNames = @()
 
-        try
-        {
+        try {
             AssertEquals $res1.Name $ModuleName "Find-Module didn't find the exact module which has dependencies, $res1"
             $DepencyModuleNames = $res1.Dependencies.Name
 
@@ -1570,8 +1428,7 @@ Describe PowerShell.PSGet.InstallModuleTests.P2 -Tags 'P2','OuterLoop' {
             AssertNotNull $DepModuleDetails "$DepencyModuleNames dependencies is not saved properly"
             Assert ($DepModuleDetails.Count -ge $DepencyModuleNames.Count)  "$DepencyModuleNames dependencies is not saved properly"
         }
-        finally
-        {
+        finally {
             Get-InstalledModule -Name $res1.Name -AllVersions | PowerShellGet\Uninstall-Module -Force
             $DepencyModuleNames | ForEach-Object { Get-InstalledModule -Name $_ -AllVersions | PowerShellGet\Uninstall-Module -Force }
         }
@@ -1589,8 +1446,7 @@ Describe PowerShell.PSGet.InstallModuleTests.P2 -Tags 'P2','OuterLoop' {
         $res1 = Find-Module -Name $ModuleName -RequiredVersion "2.0"
         $DepencyModuleNames = @()
 
-        try
-        {
+        try {
             AssertEquals $res1.Name $ModuleName "Find-Module didn't find the exact module which has dependencies, $res1"
             $DepencyModuleNames = $res1.Dependencies.Name
 
@@ -1602,8 +1458,7 @@ Describe PowerShell.PSGet.InstallModuleTests.P2 -Tags 'P2','OuterLoop' {
             AssertNotNull $DepModuleDetails "$DepencyModuleNames dependencies is not saved properly"
             Assert ($DepModuleDetails.Count -ge $DepencyModuleNames.Count)  "$DepencyModuleNames dependencies is not saved properly"
         }
-        finally
-        {
+        finally {
             Get-InstalledModule -Name $res1.Name -AllVersions | PowerShellGet\Uninstall-Module -Force
             $DepencyModuleNames | ForEach-Object { Get-InstalledModule -Name $_ -AllVersions | PowerShellGet\Uninstall-Module -Force }
         }

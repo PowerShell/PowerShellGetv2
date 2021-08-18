@@ -80,6 +80,10 @@ function Find-Script {
     )
 
     Begin {
+        # Change security protocol to TLS 1.2
+        $script:securityProtocol = [Net.ServicePointManager]::SecurityProtocol
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
         Install-NuGetClientBinaries -CallerPSCmdlet $PSCmdlet -Proxy $Proxy -ProxyCredential $ProxyCredential
     }
 
@@ -166,12 +170,13 @@ function Find-Script {
                 else {
                     $psgetItemInfo
                 }
-            } elseif ($PSBoundParameters['Name'] -and -not (Test-WildcardPattern -Name ($Name | Microsoft.PowerShell.Core\Where-Object { $psgetItemInfo.Name -like $_ }))) {
+            }
+            elseif ($PSBoundParameters['Name'] -and -not (Test-WildcardPattern -Name ($Name | Microsoft.PowerShell.Core\Where-Object { $psgetItemInfo.Name -like $_ }))) {
                 $message = $LocalizedData.MatchInvalidType -f ($psgetItemInfo.Name, $psgetItemInfo.Type, $script:PSArtifactTypeScript)
                 Write-Error -Message $message `
-                            -ErrorId 'MatchInvalidType' `
-                            -Category InvalidArgument `
-                            -TargetObject $Name
+                    -ErrorId 'MatchInvalidType' `
+                    -Category InvalidArgument `
+                    -TargetObject $Name
             }
 
             if ($psgetItemInfo -and
@@ -187,5 +192,10 @@ function Find-Script {
         if ($isRepositoryNullOrPSGallerySpecified) {
             Log-ArtifactNotFoundInPSGallery -SearchedName $Name -FoundName $scriptsFoundInPSGallery -operationName PSGET_FIND_SCRIPT
         }
+    }
+
+    End {
+        # Change back to user specified security protocol
+        [Net.ServicePointManager]::SecurityProtocol = $script:securityProtocol
     }
 }

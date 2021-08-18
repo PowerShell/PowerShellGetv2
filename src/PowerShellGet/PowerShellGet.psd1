@@ -1,6 +1,6 @@
 @{
     RootModule        = 'PSModule.psm1'
-    ModuleVersion     = '2.2.4'
+    ModuleVersion     = '2.2.6'
     GUID              = '1d73a601-4a6c-43c5-ba3f-619b18bbb404'
     Author            = 'Microsoft Corporation'
     CompanyName       = 'Microsoft Corporation'
@@ -55,10 +55,16 @@ FunctionsToExport = @(
             ProjectUri   = 'https://go.microsoft.com/fwlink/?LinkId=828955'
             LicenseUri   = 'https://go.microsoft.com/fwlink/?LinkId=829061'
             ReleaseNotes = @'
-### 2.2.4
+### 2.2.6
 Bug Fix
 
 - Keep AllUsers scope for PowerShell Core script/modules as well (not just up to PS 5.1) when updating via Update-Script and Update-Module
+
+### 2.2.5
+- Security patch for code injection bug
+
+### 2.2.4.1
+- Remove catalog file
 
 ### 2.2.3
 - Update `HelpInfoUri` to point to the latest content (#560)

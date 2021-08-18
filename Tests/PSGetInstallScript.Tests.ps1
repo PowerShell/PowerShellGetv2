@@ -44,14 +44,6 @@ function SuiteSetup {
     Get-InstalledScript -Name Fabrikam-ServerScript -ErrorAction SilentlyContinue | Uninstall-Script -Force
     Get-InstalledScript -Name Fabrikam-ClientScript -ErrorAction SilentlyContinue | Uninstall-Script -Force
 
-    if ($script:IsWindowsOS) {
-        $script:userName = "PSGetUser"
-        $password = "Password1"
-        $null = net user $script:userName $password /add
-        $secstr = ConvertTo-SecureString $password -AsPlainText -Force
-        $script:credential = new-object -typename System.Management.Automation.PSCredential -argumentlist $script:userName, $secstr
-    }
-
     $script:assertTimeOutms = 20000
     $script:UntrustedRepoSourceLocation = 'https://powershell.myget.org/F/powershellget-test-items/api/v2/'
     $script:UntrustedRepoPublishLocation = 'https://powershell.myget.org/F/powershellget-test-items/api/v2/package'
@@ -503,90 +495,6 @@ Describe PowerShell.PSGet.InstallScriptTests -Tags 'BVT', 'InnerLoop' {
         AssertEquals $res2.Name $scriptName "Only one script should be available after changing the -Scope with -Force on Install-Script cmdlet, $res2"
         AssertEquals $res2.InstalledLocation $script:ProgramFilesScriptsPath "Install-Script with AllUsers scope and -Force did not install Fabrikam-ServerScript to program files scripts folder, $res2"
     }
-
-    # Purpose: Install a script with all users scope parameter for non-admin user
-    #
-    # Action: Try to install a script with all users scope in a non-admin console
-    #
-    # Expected Result: It should fail with an error
-    #
-    It "InstallScriptWithAllUsersScopeParameterForNonAdminUser" {
-        $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
-
-        $psProcess = "PowerShell.exe"
-        if ($script:IsCoreCLR) {
-            $psProcess = "pwsh.exe"
-        }
-
-        Start-Process $psProcess -ArgumentList '-command if(-not (Get-PSRepository -Name PoshTest -ErrorAction SilentlyContinue)) {
-                                                    Register-PSRepository -Name PoshTest -SourceLocation https://www.poshtestgallery.com/api/v2/ -InstallationPolicy Trusted
-                                                }
-                                                Install-Script -Name Fabrikam-Script -NoPathUpdate -Scope AllUsers -ErrorVariable ev -ErrorAction SilentlyContinue;
-                                                Write-Output "$ev"' `
-            -Credential $script:credential `
-            -Wait `
-            -WorkingDirectory $PSHOME `
-            -RedirectStandardOutput $NonAdminConsoleOutput
-
-        waitFor { Test-Path $NonAdminConsoleOutput } -timeoutInMilliseconds $script:assertTimeOutms -exceptionMessage "Install-Script on non-admin console failed to complete"
-        $content = Get-Content $NonAdminConsoleOutput
-        RemoveItem $NonAdminConsoleOutput
-
-        AssertNotNull ($content) "Install-Script with AllUsers scope on non-admin user console should not succeed"
-        Assert ($content -match "Administrator rights are required to install" ) "Install script with AllUsers scope on non-admin user console should fail, $content"
-    } `
-        -Skip:$(
-        $whoamiValue = (whoami)
-
-        ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
-        ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
-        ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
-        ($PSVersionTable.PSVersion -lt '4.0.0') -or
-        (-not $script:IsWindowsOS) -or
-        # Temporarily disable tests for Core
-        ($script:IsCoreCLR)
-    )
-
-    # Purpose: Install a script with default scope parameter for non-admin user
-    #
-    # Action: Try to install a script with default (current user) scope in a non-admin console
-    #
-    # Expected Result: It should succeed and install only to current user
-    #
-    It "InstallScriptDefaultUserScopeParameterForNonAdminUser" {
-        $NonAdminConsoleOutput = Join-Path ([System.IO.Path]::GetTempPath()) 'nonadminconsole-out.txt'
-
-        $psProcess = "PowerShell.exe"
-        if ($script:IsCoreCLR) {
-            $psProcess = "pwsh.exe"
-        }
-
-        Start-Process $psProcess -ArgumentList '-command Install-Script -Name Fabrikam-ServerScript -NoPathUpdate;
-                                                Get-InstalledScript Fabrikam-ServerScript | Format-List Name, InstalledLocation' `
-            -Credential $script:credential `
-            -Wait `
-            -WorkingDirectory $PSHOME `
-            -RedirectStandardOutput $NonAdminConsoleOutput
-
-        waitFor { Test-Path $NonAdminConsoleOutput } -timeoutInMilliseconds $script:assertTimeOutms -exceptionMessage "Install-Script on non-admin console failed to complete"
-        $content = Get-Content $NonAdminConsoleOutput
-        RemoveItem $NonAdminConsoleOutput
-
-        AssertNotNull ($content) "Install-Script with default current user scope on non-admin user console should succeed"
-        Assert ($content -match "Fabrikam-ServerScript") "Script did not install correctly"
-        Assert ($content -match "Documents") "Script did not install to the correct location"
-    } `
-        -Skip:$(
-        $whoamiValue = (whoami)
-
-        ($whoamiValue -eq "NT AUTHORITY\SYSTEM") -or
-        ($whoamiValue -eq "NT AUTHORITY\LOCAL SERVICE") -or
-        ($whoamiValue -eq "NT AUTHORITY\NETWORK SERVICE") -or
-        ($PSVersionTable.PSVersion -lt '4.0.0') -or
-        (-not $script:IsWindowsOS) -or
-        # Temporarily disable tests for Core
-        ($script:IsCoreCLR)
-    )
 
     # Purpose: InstallScript_AllUsers_NO_toThePromptForAddingtoPATHVariable
     #

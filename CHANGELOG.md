@@ -1,4 +1,13 @@
 # Changelog
+### 2.2.5
+- Security patch for code injection bug
+
+### 2.2.4.1
+- Remove catalog file
+
+### 2.2.4
+- Enforce a security protocol of TLS 1.2 when interacting with online repositories (#598)
+
 ### 2.2.3
 
 - Update `HelpInfoUri` to point to the latest content (#560)

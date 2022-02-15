@@ -105,6 +105,14 @@ stages:
           **\*.ps1xml
           **\*.mof
 
+    - ${{ if ne(variables.SkipSigning, 'True') }}:
+      - template: Sbom.yml@ComplianceRepo
+        parameters:
+          BuildDropPath: $(signOutPath)
+          Build_Repository_Uri: 'https://github.com/powershell/powershellgetv2'
+          PackageName: 'PowerShellGet'
+          PackageVersion: '2.2.5'
+
     # finally publish the parts of the build which will be used in the next stages
     # if it's not published, the subsequent stages will not be able to access it.
     # This is the build directory (it contains all of the dll/pdb files)

@@ -18,7 +18,7 @@ function Get-CredsFromCredentialProvider {
     # Example query: https://pkgs.dev.azure.com/onegettest/_packaging/onegettest/nuget/v2
     $regex = [regex] '^(\S*pkgs.dev.azure.com\S*/v2)$|^(\S*pkgs.visualstudio.com\S*/v2)$'
 
-    if (!($SourceLocation -match $regex)) {
+    if (!($SourceLocation.AbsoluteUri -match $regex)) {
         return $null;
     }
 
@@ -105,7 +105,7 @@ function Get-CredsFromCredentialProvider {
     }
 
     $filename = $credProviderPath
-    $arguments = "-U $SourceLocation"
+    $arguments = "-U $($SourceLocation.AbsoluteUri)"
     if ($callDotnet) {
         $filename = "dotnet"
         $arguments = "$credProviderPath $arguments"

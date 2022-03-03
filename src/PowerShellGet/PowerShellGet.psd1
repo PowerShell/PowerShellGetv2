@@ -1,60 +1,60 @@
 @{
-    RootModule        = 'PSModule.psm1'
-    ModuleVersion     = '2.2.5'
-    GUID              = '1d73a601-4a6c-43c5-ba3f-619b18bbb404'
-    Author            = 'Microsoft Corporation'
-    CompanyName       = 'Microsoft Corporation'
-    Copyright         = '(c) Microsoft Corporation. All rights reserved.'
-    Description       = 'PowerShell module with commands for discovering, installing, updating and publishing the PowerShell artifacts like Modules, DSC Resources, Role Capabilities and Scripts.'
-    PowerShellVersion = '3.0'
-    FormatsToProcess  = 'PSGet.Format.ps1xml'
-    FunctionsToExport = @(
-        'Find-Command',
-        'Find-DSCResource',
-        'Find-Module',
-        'Find-RoleCapability',
-        'Find-Script',
-        'Get-CredsFromCredentialProvider',
-        'Get-InstalledModule',
-        'Get-InstalledScript',
-        'Get-PSRepository',
-        'Install-Module',
-        'Install-Script',
-        'New-ScriptFileInfo',
-        'Publish-Module',
-        'Publish-Script',
-        'Register-PSRepository',
-        'Save-Module',
-        'Save-Script',
-        'Set-PSRepository',
-        'Test-ScriptFileInfo',
-        'Uninstall-Module',
-        'Uninstall-Script',
-        'Unregister-PSRepository',
-        'Update-Module',
-        'Update-ModuleManifest',
-        'Update-Script',
-        'Update-ScriptFileInfo')
+  RootModule        = 'PSModule.psm1'
+  ModuleVersion     = '2.2.5.1'
+  GUID              = '1d73a601-4a6c-43c5-ba3f-619b18bbb404'
+  Author            = 'Microsoft Corporation'
+  CompanyName       = 'Microsoft Corporation'
+  Copyright         = '(c) Microsoft Corporation. All rights reserved.'
+  Description       = 'PowerShell module with commands for discovering, installing, updating and publishing the PowerShell artifacts like Modules, DSC Resources, Role Capabilities and Scripts.'
+  PowerShellVersion = '3.0'
+  FormatsToProcess  = 'PSGet.Format.ps1xml'
+  FunctionsToExport = @(
+    'Find-Command',
+    'Find-DSCResource',
+    'Find-Module',
+    'Find-RoleCapability',
+    'Find-Script',
+    'Get-CredsFromCredentialProvider',
+    'Get-InstalledModule',
+    'Get-InstalledScript',
+    'Get-PSRepository',
+    'Install-Module',
+    'Install-Script',
+    'New-ScriptFileInfo',
+    'Publish-Module',
+    'Publish-Script',
+    'Register-PSRepository',
+    'Save-Module',
+    'Save-Script',
+    'Set-PSRepository',
+    'Test-ScriptFileInfo',
+    'Uninstall-Module',
+    'Uninstall-Script',
+    'Unregister-PSRepository',
+    'Update-Module',
+    'Update-ModuleManifest',
+    'Update-Script',
+    'Update-ScriptFileInfo')
 
-    VariablesToExport = 'PSGetPath'
-    AliasesToExport   = @('inmo', 'fimo', 'upmo', 'pumo')
-    FileList          = @('PSModule.psm1',
-        'PSGet.Format.ps1xml',
-        'PSGet.Resource.psd1')
-    RequiredModules   = @(@{ModuleName = 'PackageManagement'; ModuleVersion = '1.4.4' })
-    PrivateData       = @{
-        "PackageManagementProviders"           = 'PSModule.psm1'
-        "SupportedPowerShellGetFormatVersions" = @('1.x', '2.x')
-        PSData                                 = @{
-            Tags         = @('Packagemanagement',
-                'Provider',
-                'PSEdition_Desktop',
-                'PSEdition_Core',
-                'Linux',
-                'Mac')
-            ProjectUri   = 'https://go.microsoft.com/fwlink/?LinkId=828955'
-            LicenseUri   = 'https://go.microsoft.com/fwlink/?LinkId=829061'
-            ReleaseNotes = @'
+  VariablesToExport = 'PSGetPath'
+  AliasesToExport   = @('inmo', 'fimo', 'upmo', 'pumo')
+  FileList          = @('PSModule.psm1',
+    'PSGet.Format.ps1xml',
+    'PSGet.Resource.psd1')
+  RequiredModules   = @(@{ModuleName = 'PackageManagement'; ModuleVersion = '1.4.4' })
+  PrivateData       = @{
+    "PackageManagementProviders"           = 'PSModule.psm1'
+    "SupportedPowerShellGetFormatVersions" = @('1.x', '2.x')
+    PSData                                 = @{
+      Tags         = @('Packagemanagement',
+        'Provider',
+        'PSEdition_Desktop',
+        'PSEdition_Core',
+        'Linux',
+        'Mac')
+      ProjectUri   = 'https://go.microsoft.com/fwlink/?LinkId=828955'
+      LicenseUri   = 'https://go.microsoft.com/fwlink/?LinkId=829061'
+      ReleaseNotes = @'
 ### 2.2.5
 - Security patch for code injection bug
 
@@ -119,7 +119,7 @@ New Feature
 Breaking Change
 
 - Default installation scope for Update-Module and Update-Script has changed to match Install-Module and Install-Script. For Windows PowerShell (version 5.1 or below), the default scope is AllUsers when running in an elevated session, and CurrentUser at all other times.
-  For PowerShell version 6.0.0 and above, the default installation scope is always CurrentUser. (#421)
+For PowerShell version 6.0.0 and above, the default installation scope is always CurrentUser. (#421)
 
 Bug Fixes
 
@@ -163,7 +163,7 @@ Bug fixes
 
 Breaking Change
 - Default installation scope for Install-Module, Install-Script, and Install-Package has changed. For Windows PowerShell (version 5.1 or below), the default scope is AllUsers when running in an elevated session, and CurrentUser at all other times.
-  For PowerShell version 6.0.0 and above, the default installation scope is always CurrentUser.
+For PowerShell version 6.0.0 and above, the default installation scope is always CurrentUser.
 
 ## 1.6.7
 
@@ -190,18 +190,18 @@ Bug fixes
 
 New features
 * Allow Pester/PSReadline installation when signed by non-Microsoft certificate (#258)
-  - Whitelist installation of non-Microsoft signed Pester and PSReadline over Microsoft signed Pester and PSReadline.
+- Whitelist installation of non-Microsoft signed Pester and PSReadline over Microsoft signed Pester and PSReadline.
 
 Build and Code Cleanup Improvements
 * Splitting of functions (#229) (Thanks @Benny1007)
-  - Moves private functions into respective private folder.
-  - Moves public functions as defined in PSModule.psd1 into respective public folder.
-  - Removes all functions from PSModule.psm1 file.
-  - Dot sources the functions from PSModule.psm1 file.
-  - Uses Export-ModuleMember to export the public functions from PSModule.psm1 file.
+- Moves private functions into respective private folder.
+- Moves public functions as defined in PSModule.psd1 into respective public folder.
+- Removes all functions from PSModule.psm1 file.
+- Dot sources the functions from PSModule.psm1 file.
+- Uses Export-ModuleMember to export the public functions from PSModule.psm1 file.
 
 * Add build step to construct a single .psm1 file (#242) (Thanks @Benny1007)
-  - Merged public and private functions into one .psm1 file to increase load time performance.
+- Merged public and private functions into one .psm1 file to increase load time performance.
 
 Bug fixes
 - Fix null parameter error caused by MinimumVersion in Publish-PackageUtility (#201)
@@ -217,15 +217,15 @@ Bug fixes
 
 New features
 * Prerelease Version Support (#185)
-  - Implemented prerelease versions functionality in PowerShellGet cmdlets.
-  - Enables publishing, discovering, and installing the prerelease versions of modules and scripts from the PowerShell Gallery.
-  - [Documentation](https://docs.microsoft.com/en-us/powershell/gallery/psget/module/PrereleaseModule)
+- Implemented prerelease versions functionality in PowerShellGet cmdlets.
+- Enables publishing, discovering, and installing the prerelease versions of modules and scripts from the PowerShell Gallery.
+- [Documentation](https://docs.microsoft.com/en-us/powershell/gallery/psget/module/PrereleaseModule)
 
 * Enabled publish cmdlets on PWSH and Nano Server (#196)
-  - Dotnet command version 2.0.0 or newer should be installed by the user prior to using the publish cmdlets on PWSH and Windows Nano Server.
-  - Users can install the dotnet command by following the instructions specified at https://aka.ms/dotnet-install-script.
-  - On Windows, users can install the dotnet command by running *Invoke-WebRequest -Uri 'https://dot.net/v1/dotnet-install.ps1' -OutFile '.\dotnet-install.ps1'; & '.\dotnet-install.ps1' -Channel Current -Version '2.0.0'*
-  - Publish cmdlets on Windows PowerShell supports using the dotnet command for publishing operations.
+- Dotnet command version 2.0.0 or newer should be installed by the user prior to using the publish cmdlets on PWSH and Windows Nano Server.
+- Users can install the dotnet command by following the instructions specified at https://aka.ms/dotnet-install-script.
+- On Windows, users can install the dotnet command by running *Invoke-WebRequest -Uri 'https://dot.net/v1/dotnet-install.ps1' -OutFile '.\dotnet-install.ps1'; & '.\dotnet-install.ps1' -Channel Current -Version '2.0.0'*
+- Publish cmdlets on Windows PowerShell supports using the dotnet command for publishing operations.
 
 Breaking Change
 - PWSH: Changed the installation location of AllUsers scope to the parent of $PSHOME instead of $PSHOME. It is the SHARED_MODULES folder on PWSH.
@@ -239,14 +239,14 @@ Bug fixes
 
 New features
 * Added support for modules requiring license acceptance (#150)
-  - [Documentation](https://docs.microsoft.com/en-us/powershell/gallery/psget/module/RequireLicenseAcceptance)
+- [Documentation](https://docs.microsoft.com/en-us/powershell/gallery/psget/module/RequireLicenseAcceptance)
 
 * Added version for REQUIREDSCRIPTS (#162)
-  - Enabled following scenarios for REQUIREDSCRIPTS
-    - [1.0] - RequiredVersion
-    - [1.0,2.0] - Min and Max Version
-    - (,1.0] - Max Version
-    - 1.0 - Min Version
+- Enabled following scenarios for REQUIREDSCRIPTS
+  - [1.0] - RequiredVersion
+  - [1.0,2.0] - Min and Max Version
+  - (,1.0] - Max Version
+  - 1.0 - Min Version
 
 Bug fixes
 * Fixed empty version value in nuspec (#157)
@@ -280,8 +280,8 @@ Bug fixes
 ## For full history of release notes see changelog:
 https://github.com/PowerShell/PowerShellGet/blob/master/CHANGELOG.md
 '@
-        }
     }
+  }
 
-    HelpInfoURI       = 'http://go.microsoft.com/fwlink/?linkid=2113539'
+  HelpInfoURI       = 'http://go.microsoft.com/fwlink/?linkid=2113539'
 }

@@ -157,7 +157,7 @@ Bug fixes
 New features
 
 - Allow Pester/PSReadline installation when signed by non-Microsoft certificate (#258)
-  - Allowlist installation of non-Microsoft signed Pester and PSReadline over Microsoft signed Pester and PSReadline.
+  - Whitelist installation of non-Microsoft signed Pester and PSReadline over Microsoft signed Pester and PSReadline.
 
 Build and Code Cleanup Improvements
 

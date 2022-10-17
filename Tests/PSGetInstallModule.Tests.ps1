@@ -81,7 +81,7 @@ function SuiteSetup {
         # If it doesn't exist, attempt to download it.
         # If this is run offline, just fail the test for now.
         # This module is expected to be Microsoft-signed.
-        # This is essentially a test hook to get around the hardcoded allowlist.
+        # This is essentially a test hook to get around the hardcoded whitelist.
         $signedPester = (Get-Module Pester -ListAvailable | Where-Object { $_.Version -eq '3.4.0' }).ModuleBase
         if (-not $signedPester) {
             $psName = [System.Guid]::NewGuid().ToString()
@@ -849,7 +849,7 @@ Describe PowerShell.PSGet.InstallModuleTests -Tags 'BVT', 'InnerLoop' {
         AssertEquals $res.Name $moduleName2 "Install-Module failed to install with Find-Command output"
     }
 
-    # Purpose: Install a allowlisted non-Microsoft signed Pester or PSReadline version without -SkipPublisherCheck
+    # Purpose: Install a whitelisted non-Microsoft signed Pester or PSReadline version without -SkipPublisherCheck
     #
     # Action: Install-Module -Name Pester -RequiredVersion <Anything non-Microsoft signed>
     #

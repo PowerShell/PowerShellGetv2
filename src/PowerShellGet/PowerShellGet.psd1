@@ -57,7 +57,6 @@ FunctionsToExport = @(
             ReleaseNotes = @'
 ### 2.2.6
 Bug Fix
-
 - Keep AllUsers scope for PowerShell Core script/modules as well (not just up to PS 5.1) when updating via Update-Script and Update-Module
 
 ### 2.2.5
@@ -195,7 +194,7 @@ Bug fixes
 
 New features
 * Allow Pester/PSReadline installation when signed by non-Microsoft certificate (#258)
-  - Whitelist installation of non-Microsoft signed Pester and PSReadline over Microsoft signed Pester and PSReadline.
+  - Allowlist installation of non-Microsoft signed Pester and PSReadline over Microsoft signed Pester and PSReadline.
 
 Build and Code Cleanup Improvements
 * Splitting of functions (#229) (Thanks @Benny1007)
@@ -285,9 +284,9 @@ Bug fixes
 ## For full history of release notes see changelog:
 https://github.com/PowerShell/PowerShellGet/blob/master/CHANGELOG.md
 '@
-        }
     }
+  }
 
-    HelpInfoURI       = 'http://go.microsoft.com/fwlink/?linkid=855963'
+  HelpInfoURI       = 'http://go.microsoft.com/fwlink/?linkid=855963'
 }
 

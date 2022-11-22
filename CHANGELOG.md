@@ -1,4 +1,11 @@
 # Changelog
+### 2.2.5.1
+- Improved error handling for Register-PSRepository
+- Improved handling of Azure DeVOps urls (#672 Thanks @sebastianrogers!)
+- Improved handling of publishing with non en-US locale (#613 Thanks @glatzert!)
+- Tab completion for -Name parameter in Set-PSRepository (#603 Thanks @bergmeister!)
+- Updated PSGet reference links (#589 Thanks @srjennings!)
+
 ### 2.2.5
 - Security patch for code injection bug
 

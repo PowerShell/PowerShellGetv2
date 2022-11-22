@@ -45,7 +45,7 @@ build: off
 
 # branches to build
 branches:
-  # whitelist
+  # allowlist
   only:
     - master
     - development

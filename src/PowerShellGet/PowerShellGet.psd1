@@ -1,6 +1,6 @@
 @{
   RootModule        = 'PSModule.psm1'
-  ModuleVersion     = '2.2.5'
+  ModuleVersion     = '2.2.5.1'
   GUID              = '1d73a601-4a6c-43c5-ba3f-619b18bbb404'
   Author            = 'Microsoft Corporation'
   CompanyName       = 'Microsoft Corporation'
@@ -55,6 +55,13 @@
       ProjectUri   = 'https://go.microsoft.com/fwlink/?LinkId=828955'
       LicenseUri   = 'https://go.microsoft.com/fwlink/?LinkId=829061'
       ReleaseNotes = @'
+### 2.2.5.1
+- Improved error handling for Register-PSRepository
+- Improved handling of Azure DeVOps urls (#672 Thanks @sebastianrogers!)
+- Improved handling of publishing with non en-US locale (#613 Thanks @glatzert!)
+- Tab completion for -Name parameter in Set-PSRepository (#603 Thanks @bergmeister!)
+- Updated PSGet reference links (#589 Thanks @srjennings!)
+
 ### 2.2.5
 - Security patch for code injection bug
 

@@ -55,7 +55,7 @@ function Resolve-Location {
 
         Write-Debug -Message "Ping-Endpoint: location=$Location, statuscode=$statusCode, resolvedLocation=$resolvedLocation"
 
-        if ((($statusCode -eq ([System.Net.HttpStatusCode]::OK) -or ($statusCode -eq [System.Net.HttpStatusCode]::Unauthorized) `
+        if ((($statusCode -eq [System.Net.HttpStatusCode]::OK) -or ($statusCode -eq [System.Net.HttpStatusCode]::Unauthorized) `
             -or ($statusCode -eq [System.Net.HttpStatusCode]::Forbidden) -or ($statusCode -eq [System.Net.HttpStatusCode]::MethodNotAllowed) `
             -or ($statusCode -eq [System.Net.HttpStatusCode]::ProxyAuthenticationRequired)) `
             -and $resolvedLocation) {

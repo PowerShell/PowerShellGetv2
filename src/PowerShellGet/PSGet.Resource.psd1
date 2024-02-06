@@ -55,7 +55,7 @@ ConvertFrom-StringData @'
         TestingModuleInUse=Testing if the module to update is in use.
         ModuleDestination= The specified module will be installed in '{0}'.
         ScriptDestination= The specified script will be installed in '{0}' and its dependent modules will be installed in '{1}'.
-        ModuleIsInUse=Module '{0}' is in currently in use or you don't have the required permissions.
+        ModuleIsInUse=Module '{0}' is currently in use or you don't have the required permissions.
         ModuleInstalledSuccessfully=Module '{0}' was installed successfully to path '{1}'.
         ModuleSavedSuccessfully=Module '{0}' was saved successfully to path '{1}'.
         ScriptInstalledSuccessfully=Script '{0}' was installed successfully to path '{1}'.
